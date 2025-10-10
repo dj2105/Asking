@@ -47,24 +47,8 @@ export async function copyToClipboard(text) {
   }
 }
 
-function canonicalize(value) {
-  if (Array.isArray(value)) {
-    return value.map((v) => canonicalize(v));
-  }
-  if (value && typeof value === "object" && !(value instanceof Date)) {
-    const out = {};
-    const keys = Object.keys(value).sort();
-    for (const key of keys) {
-      out[key] = canonicalize(value[key]);
-    }
-    return out;
-  }
-  return value;
-}
-
 export function canonicalJSONStringify(obj) {
-  const canon = canonicalize(obj);
-  return JSON.stringify(canon, (_k, v) => v, 0);
+  return JSON.stringify(obj);
 }
 
 export async function sha256Hex(data) {
