@@ -1,0 +1,7 @@
+CD C:\Users\Spaniel\Downloads\Jemima-main
+
+python -m http.server 8080
+
+firebase emulators:start
+
+Codex "In C:\Users\Spaniel\Downloads\Jemima-main I'm running python -m http.server 8080, and firebase emulators:start. I'm getting this in console:  main.js:63 [router] hash: #/lobby | route: lobby | qs:  Lobby.js:63 [router] hash: #/lobby | route: lobby | qs: main.js:105 [router] lobby: missing mount(). Received: Module mountRoute @ main.js:105 Lobby.js:105 [router] lobby: missing mount(). Received: Module mountRoute @ Lobby.js:105  why?"

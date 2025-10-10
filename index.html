@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jemima’s Asking</title>
+
+    <!-- 🧶 Stylesheet: must load before JS to ensure full CSS adherence -->
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- favicon (optional) -->
+    <link rel="icon" href="favicon.ico" />
+  </head>
+
+  <body>
+    <!-- Main app root -->
+    <div id="app"></div>
+
+    <!-- Firebase emulator warning (safe to leave) -->
+    <p class="firebase-emulator-warning" style="
+        position: fixed;
+        width: 100%;
+        background: rgba(255,255,255,.9);
+        border-top: 1px solid #e0e0e0;
+        left: 0;
+        bottom: 0;
+        margin: 0;
+        font-family: inherit;
+        font-size: 0.9em;
+        text-align: center;
+        z-index: 1000;
+        padding: 4px 0;
+      ">
+      Running in emulator mode. Do not use with production credentials.
+    </p>
+
+    <!-- Main app entry -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
