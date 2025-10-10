@@ -16,7 +16,8 @@ import {
   getDoc,
   onSnapshot,
   updateDoc,
-  serverTimestamp
+  serverTimestamp,
+  runTransaction
 } from "../lib/firebase.js";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
@@ -27,7 +28,7 @@ const mountMathsPane =
    typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
    null);
 
-const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
+const VERDICT = { RIGHT: "right", WRONG: "wrong" };
 const MARKING_WINDOW_MS = 30_000;
 
 function el(tag, attrs = {}, kids = []) {
@@ -44,9 +45,13 @@ function el(tag, attrs = {}, kids = []) {
   return node;
 }
 
+function same(a, b) {
+  return String(a || "").trim() === String(b || "").trim();
+}
+
 export default {
   async mount(container) {
-    await initFirebase();
+    const { db } = await initFirebase();
     const me = await ensureAuth();
 
     const params = getHashParams();
@@ -99,6 +104,7 @@ export default {
     let published = false;
     let stopRoomWatch = null;
     let tickHandle = null;
+    let promoting = false;
 
     try {
       if (mountMathsPane && roomData0.maths) {
@@ -170,8 +176,9 @@ export default {
       if (published) return;
       published = true;
 
-      marks = marks.map((v) => (v === VERDICT.RIGHT || v === VERDICT.WRONG ? v : VERDICT.UNKNOWN));
+      marks = marks.map((v) => (v === VERDICT.RIGHT ? VERDICT.RIGHT : VERDICT.WRONG));
       disableFns.forEach((fn) => { try { fn(); } catch {} });
+      waitMsg.textContent = "Waiting for opponent…";
       waitMsg.style.display = "";
 
       const patch = {};
@@ -189,11 +196,54 @@ export default {
       }
     };
 
+    const promoteToAward = async (force = false) => {
+      if (promoting) return;
+      promoting = true;
+      try {
+        await runTransaction(db, async (tx) => {
+          const snap = await tx.get(rRef);
+          if (!snap.exists()) return;
+          const data = snap.data() || {};
+          if ((data.state || "").toLowerCase() !== "marking") return;
+
+          const ackHost = Boolean(((data.markingAck || {}).host || {})[round]);
+          const ackGuest = Boolean(((data.markingAck || {}).guest || {})[round]);
+          if (!(ackHost && ackGuest) && !force) return;
+
+          const answersHost = (((data.answers || {}).host || {})[round] || []);
+          const answersGuest = (((data.answers || {}).guest || {})[round] || []);
+          const countCorrect = (arr) => arr.reduce((acc, ans) =>
+            acc + (same(ans?.chosen, ans?.correct) ? 1 : 0), 0);
+          const roundHost = countCorrect(answersHost);
+          const roundGuest = countCorrect(answersGuest);
+
+          const baseScores = ((data.scores || {}).questions) || {};
+          const currentHost = Number(baseScores.host || 0);
+          const currentGuest = Number(baseScores.guest || 0);
+
+          console.log(`[flow] marking -> award | code=${code} round=${round}`);
+          tx.update(rRef, {
+            state: "award",
+            "scores.questions.host": currentHost + roundHost,
+            "scores.questions.guest": currentGuest + roundGuest,
+            "marking.startAt": null,
+            "timestamps.updatedAt": serverTimestamp(),
+          });
+        });
+      } catch (err) {
+        console.warn("[marking] failed to promote to award:", err);
+      } finally {
+        promoting = false;
+      }
+    };
+
     if (Array.isArray(((roomData0.marking || {})[myRole] || {})[round])) {
       // Already submitted earlier — show waiting state immediately
       marks = (((roomData0.marking || {})[myRole] || {})[round] || []).slice();
+      marks = marks.map((v) => (v === VERDICT.RIGHT ? VERDICT.RIGHT : VERDICT.WRONG));
       published = true;
       disableFns.forEach((fn) => { try { fn(); } catch {} });
+      waitMsg.textContent = "Waiting for opponent…";
       waitMsg.style.display = "";
     }
 
@@ -242,12 +292,7 @@ export default {
         const elapsed = markingStartAt && timeUntil(markingStartAt + MARKING_WINDOW_MS) <= 0;
 
         if ((myAck && oppAck) || elapsed) {
-          try {
-            console.log(`[flow] marking -> award | code=${code} round=${round} role=${myRole}`);
-            await updateDoc(rRef, { state: "award", "timestamps.updatedAt": serverTimestamp() });
-          } catch (err) {
-            console.warn("[marking] failed to flip to award:", err);
-          }
+          promoteToAward(!myAck || !oppAck);
         }
       }
     }, (err) => {

@@ -19,6 +19,8 @@ import {
   initFirebase,
   ensureAuth,
   roomRef,
+  roundSubColRef,
+  doc,
   getDoc,
   onSnapshot,
   updateDoc,
@@ -30,9 +32,6 @@ import {
   timeUntil,
   getStoredRole,
 } from "../lib/util.js";
-
-const COUNTDOWN_REARM_MS = 5_000;
-const COUNTDOWN_STALE_TOLERANCE_MS = 12_000;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -96,6 +95,9 @@ export default {
 
     let countdownStartAt = Number(room0?.countdown?.startAt || 0) || 0;
     let hasFlipped = false;
+    let roundReady = false;
+    let stopRoundWatch = null;
+    const roundsCol = roundSubColRef(code);
 
     // Allow round label to follow doc updates (e.g., if host armed next round before guest arrived)
     if (Number(room0.round)) {
@@ -103,27 +105,34 @@ export default {
       title.textContent = `Round ${round}`;
     }
 
-    const armCountdownIfNeeded = async () => {
-      if (myRole !== "host") return;
-      const now = Date.now();
-      const stale = !countdownStartAt || now - countdownStartAt > COUNTDOWN_STALE_TOLERANCE_MS;
-      if (!stale) return; // already armed (or only slightly in past for rejoin)
-
-      countdownStartAt = Date.now() + COUNTDOWN_REARM_MS;
-      try {
-        console.log(`[flow] arm countdown | code=${code} round=${round} role=${myRole}`);
-        await updateDoc(rRef, {
-          state: "countdown",
-          round,
-          "countdown.startAt": countdownStartAt,
-          "timestamps.updatedAt": serverTimestamp()
-        });
-      } catch (err) {
-        console.warn("[countdown] failed to arm timer:", err);
+    const updateSubMessage = () => {
+      if (!countdownStartAt) {
+        sub.textContent = myRole === "host"
+          ? "Press Start in the Key Room when Jaime has joined."
+          : "Waiting for Daniel to press Start…";
+      } else if (!roundReady) {
+        sub.textContent = "Preparing questions…";
+      } else {
+        sub.textContent = "";
       }
     };
 
-    await armCountdownIfNeeded();
+    const watchRoundDoc = (rNum) => {
+      if (stopRoundWatch) { try { stopRoundWatch(); } catch {} }
+      const docRef = doc(roundsCol, String(rNum));
+      stopRoundWatch = onSnapshot(docRef, (snap) => {
+        const d = snap.data() || {};
+        const hostItems = Array.isArray(d.hostItems) ? d.hostItems.length : 0;
+        const guestItems = Array.isArray(d.guestItems) ? d.guestItems.length : 0;
+        roundReady = hostItems === 3 && guestItems === 3;
+        updateSubMessage();
+      }, (err) => {
+        console.warn("[countdown] round snapshot error:", err);
+      });
+    };
+
+    watchRoundDoc(round);
+    updateSubMessage();
 
     const stop = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
@@ -131,6 +140,8 @@ export default {
       if (Number(data.round) && Number(data.round) !== round) {
         round = Number(data.round);
         title.textContent = `Round ${round}`;
+        roundReady = false;
+        watchRoundDoc(round);
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
@@ -138,6 +149,11 @@ export default {
         countdownStartAt = remoteStart;
         hasFlipped = false;
       }
+      if (!remoteStart) {
+        countdownStartAt = 0;
+        hasFlipped = false;
+      }
+      updateSubMessage();
 
       if (data.state === "questions") {
         setTimeout(() => {
@@ -159,14 +175,6 @@ export default {
         return;
       }
 
-      if (!remoteStart) {
-        sub.textContent = myRole === "host"
-          ? "Pressing go…"
-          : "Waiting for Daniel to arm the timer…";
-        armCountdownIfNeeded();
-      } else {
-        sub.textContent = "";
-      }
     }, (err) => {
       console.warn("[countdown] snapshot error:", err);
     });
@@ -174,6 +182,7 @@ export default {
     const tick = setInterval(async () => {
       if (!countdownStartAt) {
         timer.textContent = "—";
+        updateSubMessage();
         return;
       }
 
@@ -182,6 +191,10 @@ export default {
       timer.textContent = String(secs > 0 ? secs : 0);
 
       if (remainMs <= 0 && !hasFlipped) {
+        if (!roundReady) {
+          updateSubMessage();
+          return;
+        }
         hasFlipped = true;
         if (myRole === "host") {
           try {
@@ -202,6 +215,7 @@ export default {
     this.unmount = () => {
       try { stop && stop(); } catch {}
       try { clearInterval(tick); } catch {}
+      if (stopRoundWatch) { try { stopRoundWatch(); } catch {} }
     };
   },
 

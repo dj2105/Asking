@@ -53,6 +53,8 @@ function targetForState(state, code, round) {
       return `#/interlude?code=${code}&round=${r}`;
     case "award":
       return `#/award?code=${code}&round=${r}`;
+    case "keyroom":
+      return `#/keyroom?code=${code}`;
     case "maths":
       return `#/maths?code=${code}`;
     case "final":
