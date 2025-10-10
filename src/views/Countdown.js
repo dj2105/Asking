@@ -24,11 +24,15 @@ import {
   updateDoc,
   serverTimestamp
 } from "../lib/firebase.js";
+import {
+  clampCode,
+  getHashParams,
+  timeUntil,
+  getStoredRole,
+} from "../lib/util.js";
 
-const clampCode = (s) => String(s || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
-const hp = () => new URLSearchParams((location.hash.split("?")[1] || ""));
-
-const COUNTDOWN_WINDOW_MS = 3_000;
+const COUNTDOWN_REARM_MS = 5_000;
+const COUNTDOWN_STALE_TOLERANCE_MS = 12_000;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -49,7 +53,7 @@ export default {
     await initFirebase();
     const me = await ensureAuth();
 
-    const qs = hp();
+    const qs = getHashParams();
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
@@ -85,7 +89,10 @@ export default {
     const snap0 = await getDoc(rRef);
     const room0 = snap0.data() || {};
     const { hostUid, guestUid } = room0.meta || {};
-    const myRole = hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
+    const storedRole = getStoredRole(code);
+    const myRole = storedRole === "host" || storedRole === "guest"
+      ? storedRole
+      : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
 
     let countdownStartAt = Number(room0?.countdown?.startAt || 0) || 0;
     let hasFlipped = false;
@@ -99,10 +106,10 @@ export default {
     const armCountdownIfNeeded = async () => {
       if (myRole !== "host") return;
       const now = Date.now();
-      const stale = !countdownStartAt || now - countdownStartAt > COUNTDOWN_WINDOW_MS * 5;
+      const stale = !countdownStartAt || now - countdownStartAt > COUNTDOWN_STALE_TOLERANCE_MS;
       if (!stale) return; // already armed (or only slightly in past for rejoin)
 
-      countdownStartAt = Date.now() + COUNTDOWN_WINDOW_MS;
+      countdownStartAt = Date.now() + COUNTDOWN_REARM_MS;
       try {
         console.log(`[flow] arm countdown | code=${code} round=${round} role=${myRole}`);
         await updateDoc(rRef, {
@@ -129,6 +136,7 @@ export default {
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
       if (remoteStart && remoteStart !== countdownStartAt) {
         countdownStartAt = remoteStart;
+        hasFlipped = false;
       }
 
       if (data.state === "questions") {
@@ -169,8 +177,7 @@ export default {
         return;
       }
 
-      const now = Date.now();
-      const remainMs = Math.max(0, (countdownStartAt) - now);
+      const remainMs = timeUntil(countdownStartAt);
       const secs = Math.ceil(remainMs / 1000);
       timer.textContent = String(secs > 0 ? secs : 0);
 

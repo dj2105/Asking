@@ -26,14 +26,12 @@ import {
 } from "../lib/firebase.js";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
+import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
    typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
    null);
-
-const qs = () => new URLSearchParams((location.hash.split("?")[1] || ""));
-const clampCode = s => String(s||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3);
 
 function el(tag, attrs = {}, kids = []) {
   const n = document.createElement(tag);
@@ -54,7 +52,8 @@ export default {
     await initFirebase();
     const me = await ensureAuth();
 
-    const code = clampCode(qs().get("code") || "");
+    const params = getHashParams();
+    const code = clampCode(params.get("code") || "");
 
     // Per-view ink hue
     const hue = Math.floor(Math.random()*360);
@@ -107,7 +106,10 @@ export default {
     const roomSnap0 = await getDoc(rRef);
     const room0 = roomSnap0.data() || {};
     const { hostUid, guestUid } = room0.meta || {};
-    const myRole  = (hostUid === me.uid) ? "host" : (guestUid === me.uid) ? "guest" : "guest";
+    const storedRole = getStoredRole(code);
+    const myRole  = (storedRole === "host" || storedRole === "guest")
+      ? storedRole
+      : (hostUid === me.uid) ? "host" : (guestUid === me.uid) ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
 
     // Mount maths pane in "maths" mode; it shows location + both questions

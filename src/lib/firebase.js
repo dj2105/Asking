@@ -225,3 +225,4 @@ export const updateDoc = (...a) => _exports.updateDoc(...a);
 export const onSnapshot = (...a) => _exports.onSnapshot(...a);
 export const serverTimestamp = (...a) => _exports.serverTimestamp(...a);
 export const collection = (...a) => _exports.collection(...a);
+export const runTransaction = (...a) => _exports.runTransaction(...a);

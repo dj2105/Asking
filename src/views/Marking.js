@@ -20,14 +20,12 @@ import {
 } from "../lib/firebase.js";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
+import { clampCode, getHashParams, getStoredRole, timeUntil } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
    typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
    null);
-
-const clampCode = (s) => String(s || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
-const hp = () => new URLSearchParams((location.hash.split("?")[1] || ""));
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
 const MARKING_WINDOW_MS = 30_000;
@@ -51,8 +49,9 @@ export default {
     await initFirebase();
     const me = await ensureAuth();
 
-    const code = clampCode(hp().get("code") || "");
-    const round = parseInt(hp().get("round") || "1", 10) || 1;
+    const params = getHashParams();
+    const code = clampCode(params.get("code") || "");
+    const round = parseInt(params.get("round") || "1", 10) || 1;
 
     const hue = Math.floor(Math.random() * 360);
     document.documentElement.style.setProperty("--ink-h", String(hue));
@@ -90,7 +89,10 @@ export default {
     const roomSnap = await getDoc(rRef);
     const roomData0 = roomSnap.data() || {};
     const { hostUid, guestUid } = roomData0.meta || {};
-    const myRole = hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
+    const storedRole = getStoredRole(code);
+    const myRole = storedRole === "host" || storedRole === "guest"
+      ? storedRole
+      : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
 
     let markingStartAt = Number(roomData0?.marking?.startAt || 0) || 0;
@@ -124,8 +126,8 @@ export default {
       row.appendChild(el("div", { class: "a mono" }, chosen || "(no answer recorded)"));
 
       const pair = el("div", { class: "verdict-row" });
-      const btnRight = el("button", { class: "btn outline choice-tick" }, "✓");
-      const btnWrong = el("button", { class: "btn outline choice-cross" }, "✕");
+      const btnRight = el("button", { class: "btn outline choice-tick" }, "✓ He's right");
+      const btnWrong = el("button", { class: "btn outline choice-cross" }, "✕ Totally wrong");
 
       const reflect = () => {
         btnRight.classList.toggle("active", marks[idx] === VERDICT.RIGHT);
@@ -237,8 +239,7 @@ export default {
       if (myRole === "host") {
         const myAck = Boolean(((data.markingAck || {})[myRole] || {})[round]);
         const oppAck = Boolean(((data.markingAck || {})[oppRole] || {})[round]);
-        const now = Date.now();
-        const elapsed = markingStartAt && now - markingStartAt >= MARKING_WINDOW_MS;
+        const elapsed = markingStartAt && timeUntil(markingStartAt + MARKING_WINDOW_MS) <= 0;
 
         if ((myAck && oppAck) || elapsed) {
           try {
@@ -259,7 +260,7 @@ export default {
         return;
       }
 
-      const remainMs = Math.max(0, (markingStartAt + MARKING_WINDOW_MS) - Date.now());
+      const remainMs = Math.max(0, timeUntil(markingStartAt + MARKING_WINDOW_MS));
       const secs = Math.ceil(remainMs / 1000);
       timerBadge.textContent = String(secs > 0 ? secs : 0);
 

@@ -1,136 +1,163 @@
 // /src/views/KeyRoom.js
+// Host-only sealed-pack upload flow.
+// • Decrypts the uploaded .sealed pack with the demo password.
+// • Validates checksum/schema locally, displays generated date + verified badge.
+// • Seeds Firestore with rooms/{code} and rounds/{1..5}, arms countdown 7s ahead.
+// • Logs progress to a monospace console and routes host to the countdown view.
+
 import {
-  initFirebase, ensureAuth,
-  roomRef, getDoc, setDoc, updateDoc, serverTimestamp,
-  claimRoleIfEmpty
+  initFirebase,
+  ensureAuth,
 } from "../lib/firebase.js";
+import {
+  unsealFile,
+  seedFirestoreFromPack,
+  DEMO_PACK_PASSWORD,
+} from "../lib/seedUnsealer.js";
+import {
+  clampCode,
+  copyToClipboard,
+  getHashParams,
+  setStoredRole,
+} from "../lib/util.js";
 
 function el(tag, attrs = {}, kids = []) {
-  const n = document.createElement(tag);
-  for (const k in attrs) {
-    const v = attrs[k];
-    if (k === "class") n.className = v;
-    else if (k.startsWith("on") && typeof v === "function") n.addEventListener(k.slice(2), v);
-    else n.setAttribute(k, v);
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === "class") node.className = value;
+    else if (key.startsWith("on") && typeof value === "function") node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value);
   }
-  (Array.isArray(kids) ? kids : [kids]).forEach(c =>
-    n.appendChild(typeof c === "string" ? document.createTextNode(c) : c)
+  (Array.isArray(kids) ? kids : [kids]).forEach((child) =>
+    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child)
   );
-  return n;
-}
-
-const clampCode = s => String(s || "")
-  .trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
-
-function randCode() {
-  const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let s = "";
-  for (let i = 0; i < 3; i++) s += A[(Math.random() * A.length) | 0];
-  return s;
+  return node;
 }
 
 export default {
   async mount(container) {
-    await initFirebase();
-    const me = await ensureAuth();
+    const { db } = await initFirebase();
+    await ensureAuth();
 
-    // Theme hue per view
     const hue = Math.floor(Math.random() * 360);
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
-    // Parse / generate code
-    const qs = new URLSearchParams((location.hash.split("?")[1] || ""));
-    const code = clampCode(qs.get("code") || randCode());
+    const params = getHashParams();
+    const hintedCode = clampCode(params.get("code") || "");
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-keyroom" });
+    root.appendChild(el("h1", { class: "title" }, "Key Room"));
 
-    // Header
-    root.appendChild(el("h1", { class: "title", style: "text-align:center; font-weight:700;" }, "Key Room"));
+    const card = el("div", { class: "card" });
+    const intro = el("div", { class: "mono", style: "margin-bottom:10px;" },
+      "Upload Jemima’s sealed pack to start the duel.");
+    card.appendChild(intro);
 
-    // Code display (no box wrapper; keep minimal)
-    const codeRow = el("div", { class: "mono", style: "margin:8px 0 10px; text-align:center;" }, `Room code: ${code}`);
-    root.appendChild(codeRow);
+    const fileLabel = el("label", {
+      class: "mono", style: "display:block;margin-bottom:8px;font-weight:700;"
+    }, "Sealed pack (.sealed)");
+    card.appendChild(fileLabel);
 
-    // Fields
-    const hint = el("div", { class: "mono", style: "margin-top:6px;" }, "Paste keys/config below (stored locally):");
-    const keyIn = el("input", {
-      type: "text",
-      placeholder: "Gemini API Key (Pro/Flash)",
-      style: "width:100%; margin-top:6px; padding:10px; border:2px solid var(--ink); border-radius:12px; background:transparent;"
+    const fileInput = el("input", {
+      type: "file",
+      accept: ".sealed",
+      class: "input",
+      onchange: onFileChange,
     });
-    keyIn.value = localStorage.getItem("geminiKey") || "";
+    card.appendChild(fileInput);
 
-    const qcfgIn = el("textarea", {
-      placeholder: "Paste QCFG JSON",
-      style: "width:100%; height:130px; margin-top:8px; padding:10px; border:2px solid var(--ink); border-radius:12px; background:transparent;"
+    const status = el("div", { class: "mono small", style: "margin-top:10px;min-height:18px;" }, hintedCode
+      ? `Waiting for pack ${hintedCode}…`
+      : "Waiting for pack…");
+    card.appendChild(status);
+
+    const codeRow = el("div", {
+      class: "mono", style: "margin-top:14px;display:none;align-items:center;gap:10px;justify-content:center;"
     });
-    qcfgIn.value = localStorage.getItem("qcfgJson") || "";
-
-    const jmathsIn = el("textarea", {
-      placeholder: "Paste JMaths JSON",
-      style: "width:100%; height:130px; margin-top:8px; padding:10px; border:2px solid var(--ink); border-radius:12px; background:transparent;"
+    const codeText = el("span", { class: "code-tag" }, "");
+    const copyBtn = el("button", { class: "btn outline", disabled: "" }, "Copy");
+    copyBtn.addEventListener("click", async () => {
+      const ok = await copyToClipboard(codeText.textContent || "");
+      if (ok) status.textContent = "Code copied.";
     });
-    jmathsIn.value = localStorage.getItem("jmathsJson") || "";
+    codeRow.appendChild(codeText);
+    codeRow.appendChild(copyBtn);
+    card.appendChild(codeRow);
 
-    const status = el("div", { class: "mono", style: "margin-top:8px; min-height:18px;" }, "");
-    const startBtn = el("button", { class: "btn throb", style: "margin-top:12px;" }, "Start seeding");
+    const metaRow = el("div", {
+      class: "mono small", style: "margin-top:6px;display:none;justify-content:center;align-items:center;gap:6px;"
+    });
+    const verifiedDot = el("span", { class: "verified-dot verified-dot--ok" });
+    metaRow.appendChild(verifiedDot);
+    const generatedLabel = el("span", {}, "");
+    metaRow.appendChild(generatedLabel);
+    card.appendChild(metaRow);
 
-    // Save-on-edit
-    keyIn.addEventListener("input", () => localStorage.setItem("geminiKey", keyIn.value.trim()));
-    qcfgIn.addEventListener("input", () => localStorage.setItem("qcfgJson", qcfgIn.value.trim()));
-    jmathsIn.addEventListener("input", () => localStorage.setItem("jmathsJson", jmathsIn.value.trim()));
+    const logEl = el("pre", {
+      class: "mono small", style: "margin-top:14px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:180px;overflow:auto;"
+    });
+    card.appendChild(logEl);
 
-    root.appendChild(hint);
-    root.appendChild(keyIn);
-    root.appendChild(qcfgIn);
-    root.appendChild(jmathsIn);
-    root.appendChild(status);
-    root.appendChild(startBtn);
-
+    root.appendChild(card);
     container.appendChild(root);
 
-    // ----- Host-only initialisation -----
-    const ref = roomRef(code);
-    const snap = await getDoc(ref);
+    let seeded = false;
 
-    if (!snap.exists()) {
-      // Create the room (host-only)
-      await setDoc(ref, {
-        state: "lobby",
-        round: 1,
-        meta: { hostUid: me.uid },
-        seeds: { progress: 0, counters: { approved: 0, rejected: 0 } },
-        timestamps: { createdAt: serverTimestamp(), updatedAt: serverTimestamp() }
-      });
-      status.textContent = "Room created.";
-    } else {
-      // Claim host if empty; never overwrite
+    if (hintedCode) {
+      codeText.textContent = `Room ${hintedCode}`;
+      codeRow.style.display = "flex";
+    }
+
+    function log(message) {
+      const stamp = new Date().toISOString().split("T")[1].replace(/Z$/, "");
+      logEl.textContent += `[${stamp}] ${message}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(`[keyroom] ${message}`);
+    }
+
+    async function onFileChange(event) {
+      if (seeded) return;
+      const file = event.target?.files?.[0];
+      if (!file) return;
+
+      status.textContent = "Unsealing pack…";
+      log(`selected ${file.name}`);
       try {
-        await claimRoleIfEmpty(code, me.uid, "host");
-        status.textContent = "Host claimed.";
-      } catch {
-        status.textContent = "Host ready.";
+        const { pack, code } = await unsealFile(file, { password: DEMO_PACK_PASSWORD });
+        codeText.textContent = `Room ${code}`;
+        codeRow.style.display = "flex";
+        copyBtn.disabled = false;
+        const when = new Date(pack.meta.generatedAt);
+        generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
+        metaRow.style.display = "inline-flex";
+        status.textContent = "Pack verified.";
+        log(`unsealed pack ${code}`);
+        log(`checksum OK (${pack.integrity.checksum.slice(0, 8)}…)`);
+
+        log("seeding Firestore…");
+        const { startAt } = await seedFirestoreFromPack(db, pack);
+        seeded = true;
+        fileInput.disabled = true;
+        status.textContent = "Countdown armed.";
+        log(`rooms/${code} updated; countdown starts at ${new Date(startAt).toLocaleTimeString()}`);
+
+        setStoredRole(code, "host");
+
+        setTimeout(() => {
+          location.hash = `#/countdown?code=${code}&round=1`;
+        }, 400);
+      } catch (err) {
+        const message = err?.message || "Failed to load sealed pack.";
+        status.textContent = message;
+        log(`error: ${message}`);
+        console.error("[keyroom]", err);
+        event.target.value = "";
       }
     }
 
-    // ----- Start seeding -> go to seeding view -----
-    startBtn.addEventListener("click", async () => {
-      startBtn.disabled = true;
-      status.textContent = "Arming seeding…";
-      try {
-        await updateDoc(ref, {
-          state: "seeding",
-          round: 1,
-          "timestamps.updatedAt": serverTimestamp()
-        });
-        location.hash = `#/seeding?code=${code}`;
-      } catch (e) {
-        status.textContent = "Failed to arm seeding. Is Firestore emulator running?";
-        startBtn.disabled = false;
-      }
-    });
+    this.unmount = () => {};
   },
 
-  async unmount() {}
+  async unmount() {},
 };
