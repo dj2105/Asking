@@ -1,0 +1,178 @@
+Questions 2
+
+{
+  "version": "qcfg-1",
+  "purpose": "Mechanics and guardrails for constructing high-quality two-choice quiz questions using Gemini.",
+  "generation_prompt": "You are generating multiple-choice quiz items to be delivered as two-option questions. Produce JSON only. Each item MUST have: subject, difficulty_tier in {pub, enthusiast, specialist}, question (≤160 chars, ≤28 words, single fact), correct_answer, distractors {easy, medium, hard}. The distractors must be false. The hard distractor must be close to the truth but still wrong. Keep answers ≤80 chars. Avoid trivial, over-used questions. No ambiguous items. Use British English. DO NOT reuse or paraphrase any examples previously shown. Ensure variety across subjects and enforce max 2 questions per subject per game.",
+  "verification_prompt": "Verify the following quiz items for factual accuracy. For each item, check that the question statement is unambiguously true/false evaluable, the correct_answer is certainly correct, and each distractor is certainly incorrect. Flag any ambiguity, time-sensitivity without scope, or common counterexamples. Provide a verdict {pass|fail} and a brief justification citing at least two reputable references by name (e.g., Britannica, NASA, Oxford Reference). If fail, explain why and mark the item for discard.",
+  "delivery_format": {
+    "answer_options_per_question": 2,
+    "option_roles": {
+      "correct": "Absolutely, verifiably true.",
+      "wrong": "Factually false. Plausibility tuned to round difficulty."
+    },
+    "distractor_difficulty_rules": {
+      "easy": "Clearly implausible to an informed layperson.",
+      "medium": "Plausible at a glance; wrong on a key fact.",
+      "hard": "Close to correct but still false (date off, near-miss term, adjacent concept)."
+    },
+    "round_progression": ["pub", "enthusiast", "specialist"],
+    "wrong_option_selection_policy": "At serve-time, one distractor is randomly chosen by runtime code."
+  },
+  "selection_rules": {
+    "max_questions_per_subject_per_game": 2,
+    "min_unique_subjects_per_game": 6,
+    "avoid_repetition_window_games": 3,
+    "ban_list_of_trivial_patterns": [
+      "What is the capital of {well-known country}?",
+      "2+2=?, basic arithmetic",
+      "Who wrote ‘Romeo and Juliet’?",
+      "Which planet is known as the Red Planet?",
+      "Largest ocean on Earth?",
+      "Primary colours lists",
+      "Obvious national animals/flags for most famous countries"
+    ],
+    "freshness_rules": {
+      "when_applicable": "For current-events or evolving science/tech topics, only generate if a reliable source consensus exists and a date scope is included.",
+      "avoid_speculation": true
+    }
+  },
+  "constraints": {
+    "max_question_length_chars": 160,
+    "max_question_length_words": 28,
+    "max_answer_length_chars": 80,
+    "style": {
+      "use_plain_British_English": true,
+      "no_unnecessary_adjectives": true,
+      "single_fact_per_question": true,
+      "no_open_ended_or_opinion": true
+    },
+    "content_safety": {
+      "no_hate_harassment": true,
+      "no_medical_or_legal_advice_questions": true,
+      "no_personal_data": true
+    },
+    "do_not_copy_examples": true
+  },
+  "screening_and_verification": {
+    "factuality_pipeline": [
+      "Draft with Gemini using the generation prompt.",
+      "Self-check with Gemini using the verification prompt.",
+      "Reject any item where verification returns low confidence, conflicting claims, or lacks reputable references.",
+      "Re-generate up to 2 times; if still dubious, discard."
+    ],
+    "disallowed_question_flags": [
+      "Ambiguous or multi-correct",
+      "Time-sensitive without date scope",
+      "Regional spelling traps only",
+      "Trick wording that changes truth conditions"
+    ]
+  },
+  "topic_catalogue": [
+    "The Roman Empire",
+    "Laws of Physics",
+    "Marine Biology",
+    "Famous Inventions",
+    "World Capitals",
+    "Classic Literature",
+    "The Cold War",
+    "Human Anatomy",
+    "Art Movements",
+    "History of Cinema",
+    "Geology",
+    "Ancient Mythology",
+    "Astronomy",
+    "Computer Science Basics",
+    "British History",
+    "Environmental Science",
+    "Mathematics",
+    "Irish History",
+    "Culinary Science",
+    "Modern Architecture",
+    "Renaissance Art",
+    "Microeconomics",
+    "Virology (general)",
+    "1990s Pop Music"
+  ],
+  "gemini_prompts": {
+    "generation_prompt": "See top-level generation_prompt.",
+    "verification_prompt": "See top-level verification_prompt."
+  },
+  "question_blueprints": [
+    {
+      "subject": "World Capitals",
+      "do_not_ask": ["France → Paris", "Japan → Tokyo", "USA → Washington, D.C."],
+      "ask_instead": [
+        "Historically moved capitals",
+        "Capitals with identical city+country names",
+        "Administrative vs constitutional capitals"
+      ]
+    },
+    {
+      "subject": "Laws of Physics",
+      "pub": "Name/fate of a law in everyday phenomena.",
+      "enthusiast": "Quantitative relationships without heavy algebra.",
+      "specialist": "Boundary cases, historical formulation nuances, lesser-known constraints."
+    }
+  ],
+  "post_generation_checks": {
+    "length_check": "Drop questions >160 chars or >28 words.",
+    "subject_cap_check": "At most 2 items per subject in final set.",
+    "variety_check": "Ensure ≥6 distinct subjects per game.",
+    "distractor_quality_check": "Easy/medium/hard plausibility gradient present.",
+    "banlist_check": "Reject trivial/predictable templates.",
+    "duplication_check": "No reuse/paraphrase of embedded examples."
+  },
+  "sample_questions": [
+    {
+      "subject": "The Roman Empire",
+      "difficulty_tier": "pub",
+      "question": "Which emperor completed the Colosseum’s inauguration games?",
+      "correct_answer": "Titus",
+      "distractors": { "easy": "Julius Caesar", "medium": "Hadrian", "hard": "Vespasian" }
+    },
+    {
+      "subject": "Laws of Physics",
+      "difficulty_tier": "pub",
+      "question": "Which law explains why a rocket accelerates when expelling gas?",
+      "correct_answer": "Newton’s third law",
+      "distractors": { "easy": "Ohm’s law", "medium": "Bernoulli’s principle", "hard": "Conservation of charge" }
+    },
+    {
+      "subject": "Marine Biology",
+      "difficulty_tier": "enthusiast",
+      "question": "Which structure do bony fish use to control buoyancy?",
+      "correct_answer": "Swim bladder",
+      "distractors": { "easy": "Gallbladder", "medium": "Lateral line", "hard": "Operculum" }
+    }
+  ],
+  "api_contract": {
+    "item_schema": {
+      "subject": "string",
+      "difficulty_tier": "pub|enthusiast|specialist",
+      "question": "string ≤160 chars",
+      "correct_answer": "string ≤80 chars",
+      "distractors": {
+        "easy": "string ≤80 chars",
+        "medium": "string ≤80 chars",
+        "hard": "string ≤80 chars"
+      }
+    }
+  },
+  "runtime_enforcement": {
+    "two_choice_delivery": "At serve-time, runtime picks one distractor and shuffles with correct.",
+    "logging": "Record subject, difficulty, length, and verification hash for audits.",
+    "fallbacks": {
+      "on_verification_failure": "Discard item; request regeneration.",
+      "on_length_violation": "Must regenerate."
+    }
+  },
+  "dev_notes": {
+    "pseudocode_pipeline": {
+      "generate": "items = Gemini(generation_prompt, {subject_mix, desired_count})",
+      "verify": "review = Gemini(verification_prompt, items)",
+      "filter": "approved = items where review.verdict == ‘pass’",
+      "assemble_game_set": "ensure variety & round progression"
+    }
+  }
+}

@@ -1,0 +1,216 @@
+Jemima 2
+
+{
+  "version": "jmaths-1",
+  "meta": {
+    "title": "Jemima Maths Interludes (Version D) — Few-Shot Prompt Pack for Gemini 2.0 Flash",
+    "language": "en-GB",
+    "style": "Playful, camp, concise. British English. Use metric and euros by default unless the location implies pounds.",
+    "goal": "Generate a 4-beat mini-story (between quiz rounds) + 2 simple questions with single whole-number (integer) answers and explicit units."
+  },
+
+  "output_contract": {
+    "type": "object",
+    "required": ["location", "beats", "questions", "answers"],
+    "properties": {
+      "location": "string — one of the allowed places or a sensible variant",
+      "beats": "array[4] of strings — 1–2 sentences each, include at least one numeric fact per beat",
+      "questions": "array[2] of strings — each includes a blank and unit, e.g. 'How much change did Jemima get? ___ euros'",
+      "answers": "array[2] of integers — whole-number solutions aligned with 'questions' order"
+    }
+  },
+
+  "constraints": {
+    "beats": {
+      "count": 4,
+      "numbers": "Each beat must contain at least one definite numeric fact.",
+      "difficulty": "One-step maths only (add, subtract, simple multiply/divide by small integers).",
+      "surrealism": "Allowed (e.g., goose honks, laughs) but keep the maths trivial and the units explicit if used in questions.",
+      "red_herrings": "Permitted, but answers must be derivable from included facts without ambiguity."
+    },
+    "questions": {
+      "count": 2,
+      "units_required": true,
+      "whole_number_answers": true,
+      "answers_must_be_integers": true,
+      "types": [
+        "money (euros/pounds contextually correct)",
+        "counts (items, steps, tickets, laughs, goose honks, etc.)",
+        "distance/time/volume/weight (m, km, minutes, ml, kg, etc.)"
+      ]
+    },
+    "locations_allowed": [
+      "Lidl",
+      "Tesco",
+      "Aldi",
+      "Marks and Spencer",
+      "JD Sports",
+      "Galway",
+      "Tower of London",
+      "Praha",
+      "supermarket",
+      "DIY shop",
+      "theme park",
+      "Irish castle",
+      "Black Forest, Germany",
+      "Marlborough",
+      "Panama City",
+      "Panama Canal"
+    ],
+    "units_examples_realistic": [
+      "euros",
+      "pounds",
+      "minutes",
+      "hours",
+      "metres",
+      "kilometres",
+      "millilitres",
+      "litres",
+      "grams",
+      "kilograms",
+      "tickets",
+      "steps"
+    ],
+    "units_examples_surreal": [
+      "goose honks",
+      "laughs",
+      "cat naps",
+      "giant steps",
+      "slices of cake",
+      "clouds",
+      "hats",
+      "unicorns",
+      "pages",
+      "post-it notes"
+    ],
+    "randomisation": {
+      "instruction": "Pick 4 distinct beats from the beat_library (or improvise similar) and present them in any order that still reads like a whimsical mini-story.",
+      "note": "The four-beat prompts listed under 'beat_library' are examples; choose any 4 at random and shuffle."
+    },
+    "examples_usage": "The sample_solutions are for reference and illustration only. Do not copy them directly into generated output. Generated passages must come from 'beat_library' or new inventions consistent with style."
+  },
+
+  "beat_library": [
+    "Jemima bought X bananas for €Y each and called them haute couture.",
+    "She ate X biscuits out of a packet of Y and hid the rest under her hat.",
+    "Jemima dropped X coins down a drain with theatrical sorrow.",
+    "She sneezed X times in front of a stone-faced guard.",
+    "Jemima strutted X metres with her shopping, winking at a pigeon.",
+    "She counted X clouds shaped like sandwiches.",
+    "Jemima bought X tickets at €Y each (one may be for an imaginary friend).",
+    "She twirled her moustache X times (she does not have one).",
+    "Jemima carried X bags but lost Y to a gust of wind.",
+    "She drank X ml from a Y ml bottle and burped politely.",
+    "Jemima tipped a busker X euros for a kazoo solo.",
+    "She discovered X slices of toast in her handbag.",
+    "Jemima climbed X steps while humming the wrong anthem.",
+    "She laughed X times at a squid-shaped hat.",
+    "Jemima bought X apples weighing Y kg in total.",
+    "She spotted X unicorns dancing in a shop window.",
+    "Jemima held X tickets, used Y, and hid the rest in her shoe.",
+    "She tied her shoelaces X times and still tripped once.",
+    "Jemima saw X geese and honked back Y.",
+    "She gave 1 mango to a busker who replied with 2 goose honks."
+  ],
+
+  "sample_solutions": [
+    {
+      "location": "DIY shop",
+      "beats": [
+        "Jemima brought €10 to buy hooks for her glamorous bags.",
+        "She bought 2 hooks at €2 each and a tiny 50 mm screw pack for €1.",
+        "Outside, she gave €1 to a juggler because the juggling was ‘adequate’.",
+        "She measured her patience at exactly 3 laughs."
+      ],
+      "questions": [
+        "How much change did Jemima have left? ___ euros",
+        "How many hooks did Jemima buy? ___ hooks"
+      ],
+      "answers": [4, 2]
+    },
+    {
+      "location": "Galway",
+      "beats": [
+        "With €8 in her paw, Jemima bought a warm pastry for €3.",
+        "She walked 400 metres along the quay practising her wave.",
+        "Then she bought a tea for €2 and added 1 sugar (measured in exactly 1 spoon).",
+        "A gull heckled her exactly 5 laughs’ worth."
+      ],
+      "questions": [
+        "How much money remained after the pastry and tea? ___ euros",
+        "How far did Jemima walk along the quay? ___ metres"
+      ],
+      "answers": [3, 400]
+    },
+    {
+      "location": "Marks and Spencer",
+      "beats": [
+        "Jemima entered with £20 and a mission: fancy biscuits.",
+        "She bought 1 tin for £6 and another for £6 (the tin matches her eyes).",
+        "At the till she added a sparkling water for £2.",
+        "She clinked the tins together exactly 4 times like tiny cymbals."
+      ],
+      "questions": [
+        "How much change did Jemima have left? ___ pounds",
+        "How many tins of biscuits did she buy? ___ tins"
+      ],
+      "answers": [6, 2]
+    },
+    {
+      "location": "JD Sports",
+      "beats": [
+        "Jemima had €30 and very athletic intentions.",
+        "She bought 1 headband for €5 and 1 water bottle for €7.",
+        "She did 8 giant steps to test the headband’s speed properties.",
+        "Then she added 1 pair of colourful laces for €3."
+      ],
+      "questions": [
+        "How much money was left after all purchases? ___ euros",
+        "How many items did she buy in total? ___ items"
+      ],
+      "answers": [15, 3]
+    },
+    {
+      "location": "Irish castle",
+      "beats": [
+        "Jemima bought 2 tickets at €4 each (one for her, one for the ghost).",
+        "She climbed 12 steps, then paused for 2 cat naps.",
+        "In the gift nook she bought 1 postcard for €1.",
+        "A suit of armour made her laugh 6 times."
+      ],
+      "questions": [
+        "How much did Jemima spend in total? ___ euros",
+        "How many steps did she climb? ___ steps"
+      ],
+      "answers": [9, 12]
+    },
+    {
+      "location": "Aldi",
+      "beats": [
+        "Jemima entered with €10 and a tote bag that says ‘Yes Chef’.",
+        "She bought 3 apples for €1 each and a 500 ml lemonade for €2.",
+        "She drank 250 ml immediately because fizz is urgent.",
+        "She waved at 4 trolley coins like old friends."
+      ],
+      "questions": [
+        "How much change did Jemima get? ___ euros",
+        "How much lemonade was left? ___ millilitres"
+      ],
+      "answers": [5, 250]
+    },
+    {
+      "location": "Theme park",
+      "beats": [
+        "Jemima purchased 4 ride tickets at €3 each.",
+        "She rode 3 times and saved 1 for later (responsible thrills).",
+        "A mascot made her laugh 7 times, which she counted carefully.",
+        "She bought a cone for €2 but the wind stole exactly 0 sprinkles."
+      ],
+      "questions": [
+        "How much did the ride tickets cost in total? ___ euros",
+        "How many ride tickets does Jemima have left? ___ tickets"
+      ],
+      "answers": [12, 1]
+    }
+  ]
+}
