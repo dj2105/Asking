@@ -158,9 +158,14 @@ export default {
       if (submitting || published) return;
       submitting = true;
 
-      const payload = chosen.slice(0, 3).map((v) => ({ chosen: v }));
+      const payload = triplet.map((entry, idx) => ({
+        question: entry.question || "",
+        chosen: chosen[idx] || "",
+        correct: entry.correct || "",
+      }));
       const patch = {
         [`answers.${myRole}.${round}`]: payload,
+        [`submitted.${myRole}.${round}`]: true,
         "timestamps.updatedAt": serverTimestamp()
       };
 
@@ -192,7 +197,15 @@ export default {
     btn1.addEventListener("click", () => onPick(btn1.textContent));
     btn2.addEventListener("click", () => onPick(btn2.textContent));
 
-    if (existingAns.length === 3) {
+    const tripletReady = triplet.every((entry) =>
+      entry.question && entry.options && entry.options.length === 2
+    );
+
+    if (!tripletReady) {
+      btnWrap.style.display = "none";
+      waitMsg.textContent = "Preparing questions…";
+      waitMsg.style.display = "";
+    } else if (existingAns.length === 3) {
       published = true;
       showWaitingState("Submitted. Waiting for opponent…");
       counter.textContent = "3 / 3";
@@ -229,12 +242,16 @@ export default {
 
       // Host monitors opponent completion to flip state (idempotent)
       if (myRole === "host" && data.state === "questions") {
-        const myDone = Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3;
-        const oppDone = Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3;
+        const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
+        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
         if (myDone && oppDone) {
           try {
             console.log(`[flow] questions -> marking | code=${code} round=${round} role=${myRole}`);
-            await updateDoc(rRef, { state: "marking", "timestamps.updatedAt": serverTimestamp() });
+            await updateDoc(rRef, {
+              state: "marking",
+              "marking.startAt": Date.now(),
+              "timestamps.updatedAt": serverTimestamp()
+            });
           } catch (err) {
             console.warn("[questions] failed to flip to marking:", err);
           }

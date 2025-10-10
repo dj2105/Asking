@@ -8,6 +8,10 @@
 import {
   initFirebase,
   ensureAuth,
+  roomRef,
+  onSnapshot,
+  updateDoc,
+  serverTimestamp,
 } from "../lib/firebase.js";
 import {
   unsealFile,
@@ -94,6 +98,13 @@ export default {
     metaRow.appendChild(generatedLabel);
     card.appendChild(metaRow);
 
+    const startRow = el("div", {
+      class: "mono", style: "margin-top:16px;display:none;justify-content:center;"
+    });
+    const startBtn = el("button", { class: "btn primary", disabled: "" }, "Start");
+    startRow.appendChild(startBtn);
+    card.appendChild(startRow);
+
     const logEl = el("pre", {
       class: "mono small", style: "margin-top:14px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:180px;overflow:auto;"
     });
@@ -103,10 +114,17 @@ export default {
     container.appendChild(root);
 
     let seeded = false;
+    let watchingCode = "";
+    let stopRoomWatch = null;
+    let latestRound = 1;
+    let startPending = false;
+    let lastRoomSummary = { guestPresent: false, state: "keyroom", countdownStart: 0 };
 
     if (hintedCode) {
       codeText.textContent = `Room ${hintedCode}`;
       codeRow.style.display = "flex";
+      startRow.style.display = "none";
+      watchRoom(hintedCode);
     }
 
     function log(message) {
@@ -136,17 +154,14 @@ export default {
         log(`checksum OK (${pack.integrity.checksum.slice(0, 8)}…)`);
 
         log("seeding Firestore…");
-        const { startAt } = await seedFirestoreFromPack(db, pack);
+        const { code: seededCode } = await seedFirestoreFromPack(db, pack);
         seeded = true;
         fileInput.disabled = true;
-        status.textContent = "Countdown armed.";
-        log(`rooms/${code} updated; countdown starts at ${new Date(startAt).toLocaleTimeString()}`);
+        status.textContent = "Pack ready. Waiting for Jaime…";
+        log(`rooms/${code} prepared; waiting for guest before starting.`);
 
         setStoredRole(code, "host");
-
-        setTimeout(() => {
-          location.hash = `#/countdown?code=${code}&round=1`;
-        }, 400);
+        watchRoom(seededCode);
       } catch (err) {
         const message = err?.message || "Failed to load sealed pack.";
         status.textContent = message;
@@ -156,7 +171,100 @@ export default {
       }
     }
 
-    this.unmount = () => {};
+    function updateStartState({ guestPresent, state, countdownStart }) {
+      lastRoomSummary = { guestPresent, state, countdownStart };
+      const ready = seeded && guestPresent && state === "keyroom" && !startPending;
+      startBtn.disabled = !ready;
+      startBtn.classList.toggle("throb", Boolean(ready));
+      if (!guestPresent) {
+        status.textContent = "Pack ready. Waiting for Jaime…";
+      } else if (state === "keyroom") {
+        status.textContent = "Jaime joined. Press Start when ready.";
+      }
+
+      if (state === "countdown" && countdownStart) {
+        status.textContent = "Countdown armed.";
+        startBtn.disabled = true;
+        startBtn.classList.remove("throb");
+        if (!startPending) {
+          setTimeout(() => {
+            location.hash = `#/countdown?code=${watchingCode}&round=${latestRound}`;
+          }, 400);
+        }
+      }
+    }
+
+    const startCountdown = async () => {
+      if (!watchingCode || startPending) return;
+      startPending = true;
+      startBtn.disabled = true;
+      startBtn.classList.remove("throb");
+      status.textContent = "Starting…";
+      const startAt = Date.now() + 7_000;
+      try {
+        await updateDoc(roomRef(watchingCode), {
+          state: "countdown",
+          round: latestRound,
+          "countdown.startAt": startAt,
+          "timestamps.updatedAt": serverTimestamp(),
+        });
+        log(`countdown armed for ${new Date(startAt).toLocaleTimeString()}`);
+        setTimeout(() => {
+          location.hash = `#/countdown?code=${watchingCode}&round=${latestRound}`;
+        }, 400);
+      } catch (err) {
+        console.warn("[keyroom] failed to start countdown:", err);
+        status.textContent = "Failed to start. Try again.";
+        startPending = false;
+        updateStartState(lastRoomSummary);
+      }
+    };
+
+    startBtn.addEventListener("click", startCountdown);
+
+    function watchRoom(code) {
+      if (!code) return;
+      if (stopRoomWatch) { try { stopRoomWatch(); } catch {} }
+      watchingCode = code;
+      stopRoomWatch = onSnapshot(roomRef(code), (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data() || {};
+        latestRound = Number(data.round) || 1;
+        const meta = data.meta || {};
+        const guestPresent = Boolean(meta.guestUid);
+        if (!seeded && data.seeds?.progress === 100) {
+          seeded = true;
+          fileInput.disabled = true;
+          codeText.textContent = `Room ${code}`;
+          codeRow.style.display = "flex";
+          copyBtn.disabled = false;
+          startRow.style.display = "flex";
+          status.textContent = guestPresent ? "Jaime joined. Press Start when ready." : "Pack ready. Waiting for Jaime…";
+        }
+        if (data.meta?.generatedAt && !generatedLabel.textContent) {
+          const when = new Date(data.meta.generatedAt);
+          if (!Number.isNaN(when.valueOf())) {
+            generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
+            metaRow.style.display = "inline-flex";
+          }
+        }
+        const countdownStart = Number(data?.countdown?.startAt || 0) || 0;
+        updateStartState({ guestPresent, state: data.state || "", countdownStart });
+        if (data.state && data.state !== "keyroom" && data.state !== "countdown") {
+          let target = null;
+          if (data.state === "questions") target = `#/questions?code=${code}&round=${data.round || latestRound}`;
+          else if (data.state === "marking") target = `#/marking?code=${code}&round=${data.round || latestRound}`;
+          else if (data.state === "award") target = `#/award?code=${code}&round=${data.round || latestRound}`;
+          else if (data.state === "maths") target = `#/maths?code=${code}`;
+          else if (data.state === "final") target = `#/final?code=${code}`;
+          if (target) setTimeout(() => { location.hash = target; }, 200);
+        }
+      });
+    }
+
+    this.unmount = () => {
+      if (stopRoomWatch) { try { stopRoomWatch(); } catch {} }
+    };
   },
 
   async unmount() {},

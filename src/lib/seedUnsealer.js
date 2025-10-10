@@ -18,7 +18,6 @@ import {
 const TEXT_DECODER = new TextDecoder();
 const PASSWORD_DEMO = "DEMO-ONLY"; // TODO: externalise to env/config.
 const PACK_VERSION = "jemima-pack-1";
-const COUNTDOWN_LEAD_MS = 7_000;
 const PBKDF2_ITERATIONS = 150_000;
 
 function assert(condition, message) {
@@ -175,10 +174,8 @@ export async function seedFirestoreFromPack(db, pack) {
   assert(db, "Firestore database handle required.");
   validatePack(pack);
   const code = clampCode(pack.meta.roomCode);
-  const startAt = Date.now() + COUNTDOWN_LEAD_MS;
-
   const roomDoc = roomRef(code);
-  const countdown = { startAt };
+  const countdown = { startAt: null };
   const maths = clonePlain(pack.maths);
 
   await runTransaction(db, async (tx) => {
@@ -189,7 +186,7 @@ export async function seedFirestoreFromPack(db, pack) {
           hostUid: pack.meta.hostUid,
           guestUid: pack.meta.guestUid,
         },
-        state: "countdown",
+        state: "keyroom",
         round: 1,
         maths,
         countdown,
@@ -198,6 +195,8 @@ export async function seedFirestoreFromPack(db, pack) {
         marking: { host: {}, guest: {}, startAt: null },
         markingAck: { host: {}, guest: {} },
         award: { startAt: null },
+        awardAck: { host: {}, guest: {} },
+        scores: { questions: { host: 0, guest: 0 } },
         seeds: { progress: 100, message: "Pack ready." },
         timestamps: {
           createdAt: serverTimestamp(),
@@ -212,7 +211,7 @@ export async function seedFirestoreFromPack(db, pack) {
 
       tx.update(roomDoc, {
         meta,
-        state: "countdown",
+        state: "keyroom",
         round: 1,
         maths,
         countdown,
@@ -221,6 +220,8 @@ export async function seedFirestoreFromPack(db, pack) {
         marking: { host: {}, guest: {}, startAt: null },
         markingAck: { host: {}, guest: {} },
         award: { startAt: null },
+        awardAck: { host: {}, guest: {} },
+        scores: { questions: { host: 0, guest: 0 } },
         seeds: { progress: 100, message: "Pack ready." },
         "timestamps.updatedAt": serverTimestamp(),
       });
@@ -241,7 +242,7 @@ export async function seedFirestoreFromPack(db, pack) {
     return setDoc(docRef, payload);
   }));
 
-  return { code, startAt };
+  return { code };
 }
 
 export const DEMO_PACK_PASSWORD = PASSWORD_DEMO;
