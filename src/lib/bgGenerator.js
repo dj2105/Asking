@@ -1,4 +1,5 @@
 // /src/lib/bgGenerator.js
+// Legacy (unused in sealed flow).
 // Background generator for Rounds 2–5.
 // Provides: startBackgroundQuestionGen({ apiKey, code, startRound=2, endRound=5, onTick })
 // It streams progress via onTick and writes each round's items + interlude.

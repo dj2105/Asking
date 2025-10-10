@@ -59,6 +59,18 @@ input[type="text"], input[type="number"], .input {
   width: 100%;
 }
 
+.verified-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+}
+.verified-dot--ok {
+  background: var(--ok);
+}
+
 /* Buttons */
 .btn {
   font-family: inherit;

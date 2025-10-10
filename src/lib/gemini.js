@@ -1,4 +1,5 @@
 // /src/lib/gemini.js
+// Legacy (unused in sealed flow).
 // Thin client for Google Generative Language REST API (Gemini).
 // Robust JSON extraction + flexible schema mapping + forced-JSON retry.
 // Exposes: generateItems, verifyItems, generateMaths, callGeminiJemima

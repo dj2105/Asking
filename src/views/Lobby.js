@@ -7,8 +7,9 @@
 
 import {
   initFirebase, ensureAuth,
-  roomRef, getDoc, claimRoleIfEmpty
+  roomRef, getDoc
 } from "../lib/firebase.js";
+import { clampCode as clampCodeShared, setStoredRole } from "../lib/util.js";
 
 function el(tag, attrs = {}, kids = []) {
   const n = document.createElement(tag);
@@ -24,7 +25,7 @@ function el(tag, attrs = {}, kids = []) {
   return n;
 }
 
-const clampCode = (v) => (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+const clampCode = (v) => clampCodeShared(v || "");
 
 function ArrowSVG({ filled }) {
   // Right arrow head + shaft; stroke/ fill tied to currentColor
@@ -58,7 +59,7 @@ function ArrowSVG({ filled }) {
 export default {
   async mount(container) {
     await initFirebase();
-    const user = await ensureAuth();
+    await ensureAuth();
 
     // Theme (random ink hue)
     const hue = Math.floor(Math.random() * 360);
@@ -165,35 +166,12 @@ export default {
           return;
         }
 
-        let claimResult = { status: "error", reason: "skipped" };
-        try {
-          claimResult = await claimRoleIfEmpty(code, user.uid, "guest");
-        } catch (err) {
-          console.error("[lobby] claimRoleIfEmpty threw:", err);
-          claimResult = { status: "error", reason: "exception" };
-        }
+        setStoredRole(code, "guest");
 
-        console.log(`[lobby] join code=${code} | claimRoleIfEmpty -> ${claimResult.status}`, claimResult.reason ? `(${claimResult.reason})` : "");
-
-        if (claimResult.status === "error") {
-          if (claimResult.reason === "occupied") {
-            setStatus("Guest slot already taken. Ask Daniel to free it.");
-            return;
-          }
-          if (claimResult.reason === "missing") {
-            setStatus("Room not found. Check the 3-letter code.");
-            return;
-          }
-          setStatus("Couldn’t claim guest slot. Try again.");
-          return;
-        }
-
-        // Successful claim (or already this device) → route to watcher immediately
         const target = `#/watcher?code=${code}`;
         if (location.hash !== target) {
           location.hash = target;
         } else {
-          // force router to re-run if hash already matches
           setTimeout(() => window.dispatchEvent(new HashChangeEvent("hashchange")), 0);
         }
       } catch (e) {

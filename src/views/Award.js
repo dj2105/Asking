@@ -22,14 +22,12 @@ import {
 } from "../lib/firebase.js";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
+import { clampCode, getHashParams, getStoredRole, timeUntil } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
    typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
    null);
-
-const clampCode = (s) => String(s || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
-const hp = () => new URLSearchParams((location.hash.split("?")[1] || ""));
 
 const AWARD_WINDOW_MS = 30_000;
 
@@ -56,7 +54,7 @@ export default {
     await initFirebase();
     const me = await ensureAuth();
 
-    const qs = hp();
+    const qs = getHashParams();
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
@@ -92,7 +90,10 @@ export default {
     const roomSnap = await getDoc(rRef);
     const roomData0 = roomSnap.data() || {};
     const { hostUid, guestUid } = roomData0.meta || {};
-    const myRole = hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
+    const storedRole = getStoredRole(code);
+    const myRole = storedRole === "host" || storedRole === "guest"
+      ? storedRole
+      : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
 
     let awardStartAt = Number(roomData0?.award?.startAt || 0) || 0;
     let advanced = false;
@@ -235,7 +236,7 @@ export default {
       }
 
       const now = Date.now();
-      const remainMs = Math.max(0, (awardStartAt + AWARD_WINDOW_MS) - now);
+      const remainMs = Math.max(0, timeUntil(awardStartAt + AWARD_WINDOW_MS));
       const secs = Math.ceil(remainMs / 1000);
       timerBadge.textContent = String(secs > 0 ? secs : 0);
 
