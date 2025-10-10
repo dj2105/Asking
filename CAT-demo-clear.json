@@ -1,0 +1,402 @@
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "CAT",
+    "hostUid": "daniel-001",
+    "guestUid": "jaime-001",
+    "generatedAt": "2025-10-10T07:16:34.717223+00:00"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "pub",
+          "question": "[H1] Which city is the capital of Canada?",
+          "correct_answer": "Ottawa",
+          "distractors": {
+            "easy": "Toronto",
+            "medium": "Vancouver",
+            "hard": "Quebec City"
+          }
+        },
+        {
+          "subject": "Physics",
+          "difficulty_tier": "pub",
+          "question": "[H1] Which law links force, mass, acceleration?",
+          "correct_answer": "Newton's second law",
+          "distractors": {
+            "easy": "Ohm's law",
+            "medium": "Hooke's law",
+            "hard": "Energy conservation"
+          }
+        },
+        {
+          "subject": "Biology",
+          "difficulty_tier": "pub",
+          "question": "[H1] What carries oxygen in red blood cells?",
+          "correct_answer": "Haemoglobin",
+          "distractors": {
+            "easy": "Insulin",
+            "medium": "Myosin",
+            "hard": "Collagen"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Astronomy",
+          "difficulty_tier": "pub",
+          "question": "[G1] Which planet is known for its rings?",
+          "correct_answer": "Saturn",
+          "distractors": {
+            "easy": "Venus",
+            "medium": "Mars",
+            "hard": "Uranus"
+          }
+        },
+        {
+          "subject": "History",
+          "difficulty_tier": "pub",
+          "question": "[G1] Who led the Norman conquest of England?",
+          "correct_answer": "William the Conqueror",
+          "distractors": {
+            "easy": "Richard III",
+            "medium": "Henry VIII",
+            "hard": "Edward I"
+          }
+        },
+        {
+          "subject": "Geography",
+          "difficulty_tier": "pub",
+          "question": "[G1] The Nile flows into which sea?",
+          "correct_answer": "Mediterranean",
+          "distractors": {
+            "easy": "Red Sea",
+            "medium": "Black Sea",
+            "hard": "Arabian Sea"
+          }
+        }
+      ],
+      "interlude": "Jemima practices an elegant wink exactly 1 time(s) while waiting."
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "enthusiast",
+          "question": "[H2] Which city is the capital of Canada?",
+          "correct_answer": "Ottawa",
+          "distractors": {
+            "easy": "Toronto",
+            "medium": "Vancouver",
+            "hard": "Quebec City"
+          }
+        },
+        {
+          "subject": "Physics",
+          "difficulty_tier": "enthusiast",
+          "question": "[H2] Which law links force, mass, acceleration?",
+          "correct_answer": "Newton's second law",
+          "distractors": {
+            "easy": "Ohm's law",
+            "medium": "Hooke's law",
+            "hard": "Energy conservation"
+          }
+        },
+        {
+          "subject": "Biology",
+          "difficulty_tier": "enthusiast",
+          "question": "[H2] What carries oxygen in red blood cells?",
+          "correct_answer": "Haemoglobin",
+          "distractors": {
+            "easy": "Insulin",
+            "medium": "Myosin",
+            "hard": "Collagen"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Astronomy",
+          "difficulty_tier": "enthusiast",
+          "question": "[G2] Which planet is known for its rings?",
+          "correct_answer": "Saturn",
+          "distractors": {
+            "easy": "Venus",
+            "medium": "Mars",
+            "hard": "Uranus"
+          }
+        },
+        {
+          "subject": "History",
+          "difficulty_tier": "enthusiast",
+          "question": "[G2] Who led the Norman conquest of England?",
+          "correct_answer": "William the Conqueror",
+          "distractors": {
+            "easy": "Richard III",
+            "medium": "Henry VIII",
+            "hard": "Edward I"
+          }
+        },
+        {
+          "subject": "Geography",
+          "difficulty_tier": "enthusiast",
+          "question": "[G2] The Nile flows into which sea?",
+          "correct_answer": "Mediterranean",
+          "distractors": {
+            "easy": "Red Sea",
+            "medium": "Black Sea",
+            "hard": "Arabian Sea"
+          }
+        }
+      ],
+      "interlude": "Jemima practices an elegant wink exactly 2 time(s) while waiting."
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "enthusiast",
+          "question": "[H3] Which city is the capital of Canada?",
+          "correct_answer": "Ottawa",
+          "distractors": {
+            "easy": "Toronto",
+            "medium": "Vancouver",
+            "hard": "Quebec City"
+          }
+        },
+        {
+          "subject": "Physics",
+          "difficulty_tier": "enthusiast",
+          "question": "[H3] Which law links force, mass, acceleration?",
+          "correct_answer": "Newton's second law",
+          "distractors": {
+            "easy": "Ohm's law",
+            "medium": "Hooke's law",
+            "hard": "Energy conservation"
+          }
+        },
+        {
+          "subject": "Biology",
+          "difficulty_tier": "enthusiast",
+          "question": "[H3] What carries oxygen in red blood cells?",
+          "correct_answer": "Haemoglobin",
+          "distractors": {
+            "easy": "Insulin",
+            "medium": "Myosin",
+            "hard": "Collagen"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Astronomy",
+          "difficulty_tier": "enthusiast",
+          "question": "[G3] Which planet is known for its rings?",
+          "correct_answer": "Saturn",
+          "distractors": {
+            "easy": "Venus",
+            "medium": "Mars",
+            "hard": "Uranus"
+          }
+        },
+        {
+          "subject": "History",
+          "difficulty_tier": "enthusiast",
+          "question": "[G3] Who led the Norman conquest of England?",
+          "correct_answer": "William the Conqueror",
+          "distractors": {
+            "easy": "Richard III",
+            "medium": "Henry VIII",
+            "hard": "Edward I"
+          }
+        },
+        {
+          "subject": "Geography",
+          "difficulty_tier": "enthusiast",
+          "question": "[G3] The Nile flows into which sea?",
+          "correct_answer": "Mediterranean",
+          "distractors": {
+            "easy": "Red Sea",
+            "medium": "Black Sea",
+            "hard": "Arabian Sea"
+          }
+        }
+      ],
+      "interlude": "Jemima practices an elegant wink exactly 3 time(s) while waiting."
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "specialist",
+          "question": "[H4] Which city is the capital of Canada?",
+          "correct_answer": "Ottawa",
+          "distractors": {
+            "easy": "Toronto",
+            "medium": "Vancouver",
+            "hard": "Quebec City"
+          }
+        },
+        {
+          "subject": "Physics",
+          "difficulty_tier": "specialist",
+          "question": "[H4] Which law links force, mass, acceleration?",
+          "correct_answer": "Newton's second law",
+          "distractors": {
+            "easy": "Ohm's law",
+            "medium": "Hooke's law",
+            "hard": "Energy conservation"
+          }
+        },
+        {
+          "subject": "Biology",
+          "difficulty_tier": "specialist",
+          "question": "[H4] What carries oxygen in red blood cells?",
+          "correct_answer": "Haemoglobin",
+          "distractors": {
+            "easy": "Insulin",
+            "medium": "Myosin",
+            "hard": "Collagen"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Astronomy",
+          "difficulty_tier": "specialist",
+          "question": "[G4] Which planet is known for its rings?",
+          "correct_answer": "Saturn",
+          "distractors": {
+            "easy": "Venus",
+            "medium": "Mars",
+            "hard": "Uranus"
+          }
+        },
+        {
+          "subject": "History",
+          "difficulty_tier": "specialist",
+          "question": "[G4] Who led the Norman conquest of England?",
+          "correct_answer": "William the Conqueror",
+          "distractors": {
+            "easy": "Richard III",
+            "medium": "Henry VIII",
+            "hard": "Edward I"
+          }
+        },
+        {
+          "subject": "Geography",
+          "difficulty_tier": "specialist",
+          "question": "[G4] The Nile flows into which sea?",
+          "correct_answer": "Mediterranean",
+          "distractors": {
+            "easy": "Red Sea",
+            "medium": "Black Sea",
+            "hard": "Arabian Sea"
+          }
+        }
+      ],
+      "interlude": "Jemima practices an elegant wink exactly 4 time(s) while waiting."
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "specialist",
+          "question": "[H5] Which city is the capital of Canada?",
+          "correct_answer": "Ottawa",
+          "distractors": {
+            "easy": "Toronto",
+            "medium": "Vancouver",
+            "hard": "Quebec City"
+          }
+        },
+        {
+          "subject": "Physics",
+          "difficulty_tier": "specialist",
+          "question": "[H5] Which law links force, mass, acceleration?",
+          "correct_answer": "Newton's second law",
+          "distractors": {
+            "easy": "Ohm's law",
+            "medium": "Hooke's law",
+            "hard": "Energy conservation"
+          }
+        },
+        {
+          "subject": "Biology",
+          "difficulty_tier": "specialist",
+          "question": "[H5] What carries oxygen in red blood cells?",
+          "correct_answer": "Haemoglobin",
+          "distractors": {
+            "easy": "Insulin",
+            "medium": "Myosin",
+            "hard": "Collagen"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Astronomy",
+          "difficulty_tier": "specialist",
+          "question": "[G5] Which planet is known for its rings?",
+          "correct_answer": "Saturn",
+          "distractors": {
+            "easy": "Venus",
+            "medium": "Mars",
+            "hard": "Uranus"
+          }
+        },
+        {
+          "subject": "History",
+          "difficulty_tier": "specialist",
+          "question": "[G5] Who led the Norman conquest of England?",
+          "correct_answer": "William the Conqueror",
+          "distractors": {
+            "easy": "Richard III",
+            "medium": "Henry VIII",
+            "hard": "Edward I"
+          }
+        },
+        {
+          "subject": "Geography",
+          "difficulty_tier": "specialist",
+          "question": "[G5] The Nile flows into which sea?",
+          "correct_answer": "Mediterranean",
+          "distractors": {
+            "easy": "Red Sea",
+            "medium": "Black Sea",
+            "hard": "Arabian Sea"
+          }
+        }
+      ],
+      "interlude": "Jemima practices an elegant wink exactly 5 time(s) while waiting."
+    }
+  ],
+  "maths": {
+    "location": "Tower of London",
+    "beats": [
+      "Jemima arrived with £20, determined to inspect the Crown Jewels.",
+      "She bought 2 tickets at £8 each (one for a friendly raven).",
+      "Then she bought a souvenir pencil for £1.",
+      "Inside, she sneezed 4 times in front of a stone‑faced guard."
+    ],
+    "questions": [
+      "How much change did Jemima have left? ___ pounds",
+      "How many tickets did Jemima buy? ___ tickets"
+    ],
+    "answers": [
+      3,
+      2
+    ]
+  },
+  "integrity": {
+    "checksum": "0d94ee09e790e409be5eb7689861cd506a8fcbc7497fdaa619235e4d8cf8726b",
+    "verified": true
+  }
+}
