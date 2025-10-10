@@ -1,272 +1,216 @@
-# AGENTS.md
+AGENTS.md
 
-## Project
+Project
 
-**Jemima’s Asking — Two-player quiz duel**
-Stack: Vanilla JS + Vite (static), Firebase Auth (anon), Firestore (RTDB-ish sync), Gemini (content), LocalStorage (drafts), CSS (hand-rolled).
-Audience devices: modern mobile + desktop. Primary test: iPad + Windows 10/11.
+Jemima’s Asking — Two-player quiz duel
+Stack: Vanilla JS (ESM) + Firebase (Auth anon + Firestore) + LocalStorage + hand-rolled CSS.
+Targets: modern mobile/desktop. Primary test: iPad + Windows 10/11.
 
----
+⸻
 
-## North Star (Do Not Drift)
+North Star
+	•	Two players, two devices, fixed roles: Daniel = Host, Jaime = Guest. Roles are claimed once and never overwritten.
+	•	Phases are mostly local; only key moments sync: countdowns, awards, final.
+	•	Content comes from a sealed question pack uploaded by the host. No live LLM calls during play.
 
-* **Two players, two devices, fixed roles.** *Daniel = Host*, *Jaime = Guest*. Roles claimed once and never overwritten.
-* **Shared countdown; local phases.** Devices **only** re-sync after each submit → **no cross-device resets** mid-phase.
-* **5 Q&A rounds → Maths → Final.**
-* **Visuals are minimal, narrow, light backgrounds, dark “ink” accents.** *Never full dark backgrounds* (except the pinned inverted Maths box).
+⸻
 
----
+File Tree (authoritative)
 
-## File Tree (Authoritative)
-
-```
 project-root/
 ├─ index.html
 ├─ styles.css
 ├─ firebase.json
 ├─ firestore.rules
-├─ firebase.config          # injected at build/run; not committed
+├─ firebase.config                # injected at run/deploy; not committed
 └─ src/
-   ├─ main.js               # router + mount + global ink/light seed
-   ├─ roomWatcher.js        # state machine observer + nav
+   ├─ main.js                     # router + per-view theming seed
+   ├─ roomWatcher.js              # state observer → navigation
    ├─ lib/
-   │  ├─ firebase.js        # init, anon auth, db helpers
-   │  ├─ gemini.js          # prompt packs (QCFG, JMaths) + calls
-   │  ├─ bgGenerator.js     # per-view ink/light generation
-   │  └─ MathsPane.js       # pinned inverted maths box component
+   │  ├─ firebase.js              # init, anon auth, db helpers
+   │  ├─ seedUnsealer.js          # decrypt/validate sealed packs, write to Firestore
+   │  ├─ MathsPane.js             # pinned inverted maths info box
+   │  └─ util.js                  # clampCode, getHashParams, timeUntil, etc.
    └─ views/
       ├─ Lobby.js
-      ├─ KeyRoom.js
-      ├─ SeedProgress.js
+      ├─ KeyRoom.js               # upload sealed pack; show code/date/verify; start seeding
+      ├─ SeedProgress.js          # minimal (legacy) seeding UI; now just writes pack
       ├─ Countdown.js
       ├─ Questions.js
       ├─ Marking.js
       ├─ Award.js
-      ├─ Interlude.js
+      ├─ Interlude.js             # (used if ever needed outside Award flow)
       ├─ Maths.js
       └─ Final.js
-```
 
-> Agent rule: **Respect this structure.** If you introduce new modules, tuck them under `/src/lib` or `/src/views` appropriately and update imports using relative paths.
-
----
-
-## Firestore Contract (Canonical)
-
-**Doc:** `rooms/{CODE}`
-Fields:
-
-* `meta.hostUid`, `meta.guestUid`: set once via **transaction**; **never overwritten**.
-* `state`: `"lobby" | "keyroom" | "seeding" | "countdown" | "questions" | "marking" | "interlude" | "award" | "final"`.
-* `round`: integer 1–5 during Q&A; `maths` happens after 5.
-* `answers.host.{round}` / `answers.guest.{round}`: arrays of `{question, chosen, correct}`.
-* `submitted.host.{round}` / `submitted.guest.{round}`: booleans.
-* `marking.host.{round}` / `marking.guest.{round}`: arrays of `"right"|"unsure"|"wrong"`.
-* `markingAck.host.{round}`, `markingAck.guest.{round}`: booleans.
-* `maths`: `{location, beats[4], questions[2], answers[2]}` per **jmaths-1**.
-* `seeds`: `{progress, message, counters, errors?}`.
-* `timestamps.createdAt`, `timestamps.updatedAt`.
-* `countdown.startAt`: ms epoch for next round start.
-
-**Subcollection:** `rooms/{CODE}/rounds/{N}`
-
-* `hostItems[3]`, `guestItems[3]` (each an item: `{subject, difficulty_tier, question, correct_answer, distractors{easy,medium,hard}}`)
-* `interlude`: string (Jemima line)
-
-> Agent rule: **Never** mix host/guest items. **Never** rewrite claimed UIDs. Use server timestamps where available.
-
----
-
-## State Machine (Authoritative)
-
-`Lobby → KeyRoom → Seeding → (Countdown → Questions[local] → Marking[local] → Award[sync] → Interlude/next) ×5 → Maths[local] → Final[sync] → Lobby`
-
-**Local vs Sync:**
-
-* **Local phases** (no cross-device UI changes): Questions, Marking, Maths.
-* **Sync phases**: Countdown, Award, Interlude, Final.
-
----
-
-## Rejoin & Drafts
-
-* **Same device:** auto-restore drafts for Questions/Marking/Maths from LocalStorage **iff** no submitted flag yet.
-* **New device:** Host can generate short takeover codes (room `meta.takeover`) and assign to `host`/`guest`. On success, drafts are not migrated; user continues fresh but with role reclaimed.
-
-> Agent rule: Do **not** clear drafts until write of `submitted.{role}.{round} == true`.
-
----
-
-## Seeding Rules
-
-* Host triggers seeding in **KeyRoom**:
-
-  * Generate **Round 1** items (6) → split to `hostItems[3]`, `guestItems[3]` under `rounds/1`.
-  * Write **maths** once at top level (per `jmaths-1`).
-  * Launch background gen for **Rounds 2–5**.
-  * Once Round 1 present, flip to `state:"countdown"` with a near-future `countdown.startAt`.
-* Guest: read-only log/progress.
-
-> Agent rule: If generation returns more than 6 items, **verify** via `qcfg-1.verification_prompt`, discard fails, and only commit approved items.
-
----
-
-## Questions Phase (Strict UX)
-
-* Show **only the 3 items** for current role (`hostItems` for Host, `guestItems` for Guest).
-* Each screen: 1 question + **two** tappable options.
-* Selecting an option: apply selected style → **auto-advance** after ~600–1200 ms.
-* After Q3: show “Waiting for opponent…”.
-* Pinned **MathsPane** always visible below (inverted scheme), showing the relevant beat.
-
-> Agent rule: Implement “**third answer auto-submits**” (no extra Done). Ensure no network events from the other device can deselect a local choice.
-
----
-
-## Marking Phase (Strict UX)
-
-* Show opponent’s 3 questions with **their chosen** answers.
-* Marking buttons inline per item:
-
-  * ✓ “He’s right” (green)
-  * ? “I dunno” (dark blue)
-  * ✕ “Totally wrong” (red)
-* Clicking a button inverts colours + draws a big hand-scribbled ✓/?/✕ beside the answer.
-* **DONE** throbs once all 3 marked → write `marking.{role}.{round}` and set `markingAck.{role}.{round}=true`.
-* Host process advances to `state:"interlude"` when both acks true.
-* MathsPane pinned at bottom.
-
----
-
-## Visual System (Non-Negotiable)
-
-* **Typeface:** Courier (mono) throughout. Titles/answers bold.
-* **Colour:** per-view random dark **ink** and light **bg** (no full dark backgrounds). MathsPane is the **only** inverted box.
-* **Layout:** central narrow column **≈400–450px**; phone-optimised; tidy spacing hierarchy: `title → panel → status`.
-* **Buttons:** rounded; outline→filled on “ready”; **throb** animation when active/primary. Lobby arrow is bold Courier `→`.
-* **Tone:** clean, functional; only Jemima’s interludes carry playful flavour.
-
-> Agent rule: Preserve these tokens/classes. If consolidating CSS, do not alter visual output (pixel-snap width and spacings must remain).
-
----
-
-## Prompt Packs (Source of Truth)
-
-* **QCFG (`version: qcfg-1`)**: generation + verification prompts, delivery rules (two-choice), subject variety caps, banlists, constraints.
-* **JMaths (`version: jmaths-1`)**: 4-beat whimsical story + 2 integer questions with explicit units; allowed locations/units; trivial maths only.
-
-> Agent rule: *Never* paste sample questions verbatim into live rounds. Verification must cite reputable sources by name.
-
----
-
-## Runtime Invariants / Acceptance Criteria
-
-* Role isolation: **a host can never see guestItems in Questions**, and vice versa.
-* Idempotent claiming: once `meta.hostUid` or `meta.guestUid` set, transactions must reject writes that change them.
-* Local phases immune to remote writes: no selection gets cleared because the other player progressed.
-* Submits: writing `submitted.{role}.{round}=true` locks local drafts for that round and unmounts local inputs.
-* State transitions only from watcher/host actions as defined (no accidental loops).
-* MathsPane always mounted and inverted; never full-screen dark elsewhere.
-* CSS: consistent `.btn`, `.btn--choice`, `.throb`, and ink/bg custom properties per view.
-
----
-
-## Safe Tasks You Can Do (Examples)
-
-1. **Role separation audit**
-
-   * *Goal:* Ensure Questions.js pulls from `{role}Items` and never leaks the other.
-   * *Edits:* `/src/views/Questions.js`, shared util for role, tests (if present).
-   * *Definition of done:* For `emu=1`, forcing `role=guest` shows only `guestItems`; no cross-reads anywhere.
-
-2. **Third-answer auto-submit**
-
-   * *Goal:* After 3rd selection, write `answers.{role}.{round}`, set `submitted`, show waiting pane.
-   * *Edits:* `/src/views/Questions.js`, maybe `/src/styles.css` for button state.
-   * *DOD:* No “Done” button appears; submit happens with a short delay; drafts cleared on success.
-
-3. **Shared utils extraction**
-
-   * *Goal:* Factor `getHashParams`, `clampCode`, role inference into `/src/lib/util.js`.
-   * *DOD:* All imports updated; no circular deps; dead code removed.
-
-4. **Countdown reliability**
-
-   * *Goal:* Use `countdown.startAt` and client clock; count to zero even offline; flip to Questions only when time elapsed + round data ready.
-   * *DOD:* Degrades gracefully if clock skew <±5s.
-
-5. **Seeding resilience**
-
-   * *Goal:* Wrap Gemini calls with retries; verify items (`qcfg-1`); write approved; stream progress.
-   * *DOD:* `seeds.progress` advances; `seeds.message` human-readable; background rounds continue even if one fails.
-
----
-
-## Commands (Codex CLI)
-
-Use small, goal-scoped briefs at repo root:
-
-```
-codex "Audit Questions.js, Marking.js, Award.js, roomWatcher.js for strict host/guest isolation. Create /src/lib/role.js with inferRole(). Replace ad-hoc role parsing. Do not alter visuals."
-```
-
-```
-codex "Implement third-answer auto-submit in Questions.js. Keep throb animation and button styling intact. Update styles only if necessary without changing look."
-```
-
-```
-codex "Extract shared utils: getHashParams, clampCode, timeUntil(startAt). Create /src/lib/util.js and refactor imports. No behaviour changes."
-```
-
-```
-codex "Harden KeyRoom seeding: verify items per qcfg-1, write rounds/1 split, maths at top-level, queue rounds 2–5. Progress updates under seeds.*"
-```
-
-**Approval mode:** start in **Read Only** → review plan/diffs → then **Auto** for that task only.
-**Windows note:** prefer WSL2 for smooth shell.
-
----
-
-## Testing (Emulator Checklist to Script)
-
-* Create `rooms/XL6` per example in the project description and the following:
-
-  * Distinct `meta.hostUid` / `meta.guestUid`.
-  * `rounds/1` has 3 + 3 split, different content.
-  * Set both `submitted.{role}.1 = true` to unlock Marking.
-  * Fill `marking.*.1` arrays, set both `markingAck.*.1 = true`.
-  * Advance to `interlude` → `countdown` for round 2 with future `startAt`.
-  * `maths` present and valid (integers for answers).
-* Verify CSS: narrow column, inverted MathsPane, throbbing primaries.
-
----
-
-## Style & Semantics Conventions
-
-* JS: modern ESM, no jQuery, minimal dependencies.
-* CSS: utility classes limited; rely on custom properties for `--ink`, `--bg`, `--inkSoft`.
-* Naming:
-
-  * Booleans: `is*`, `has*`, `*Ack`
-  * Firestore: camelCase for fields, numeric keys as strings in per-round maps.
-* Errors: log human-readable to console and to `seeds.message` during seeding.
-
----
-
-## Hard “DO NOT” List
-
-* Do **not** introduce global dark themes or full dark backgrounds.
-* Do **not** change courier typography or column width behaviour.
-* Do **not** co-locate host/guest items or allow role flipping after claim.
-* Do **not** block local inputs based on the other device’s progress.
-* Do **not** paste sample questions/answers verbatim into gameplay.
-
----
-
-## Maintainers’ Notes
-
-* If you must create new files, prefer tiny modules over monoliths.
-* Keep Gemini prompt packs pristine and versioned.
-* Always gate multi-file edits behind a plan + diff review.
-
----
+Keep any new modules under /src/lib or /src/views and use relative ESM imports.
+
+⸻
+
+Sealed Question Pack (single source of truth)
+	•	Filename: <ROOM>.sealed (e.g., CAT.sealed).
+	•	Encryption: AES-GCM (binary blob). Decrypted only in-app by seedUnsealer.js.
+	•	Internal JSON schema (pre-encryption):
+
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "CAT",
+    "hostUid": "daniel-001",
+    "guestUid": "jaime-001",
+    "generatedAt": "ISO-8601 string"
+  },
+  "rounds": [
+    { "round": 1, "hostItems":[x3], "guestItems":[x3], "interlude": "string" },
+    … up to round 5 …
+  ],
+  "maths": {
+    "location": "string",
+    "beats": ["b1","b2","b3","b4"],
+    "questions": ["q1","q2"],
+    "answers": [int,int]
+  },
+  "integrity": {
+    "checksum": "sha256 hex of canonical content",
+    "verified": true
+  }
+}
+
+
+	•	Items (QCFG shape):
+{ subject, difficulty_tier: "pub|enthusiast|specialist", question, correct_answer, distractors{easy,medium,hard} }
+Host and guest each get distinct 3 per round. Difficulty ramps by round via the pack’s selection.
+
+⸻
+
+Firestore Contract
+
+Doc: rooms/{CODE}
+	•	meta.hostUid, meta.guestUid — written once (transaction), never overwritten.
+	•	state — "lobby" | "keyroom" | "countdown" | "questions" | "marking" | "award" | "maths" | "final".
+	•	round — 1…5 during Q&A.
+	•	answers.host.{round} / answers.guest.{round} — arrays of {questionId?, chosen, correct}.
+	•	submitted.host.{round} / submitted.guest.{round} — booleans.
+	•	marking.host.{round} / marking.guest.{round} — arrays of "right"|"wrong" (no “unsure” scoring).
+	•	markingAck.host.{round} / markingAck.guest.{round} — booleans.
+	•	maths — the object from the pack.
+	•	countdown.startAt — ms epoch for next phase start.
+	•	timestamps.createdAt, timestamps.updatedAt.
+	•	Optional: seeds.progress/message during initial write.
+
+Subcollection: rooms/{CODE}/rounds/{N}
+	•	hostItems[3], guestItems[3], interlude.
+
+Never mix host/guest items; never rewrite claimed UIDs.
+
+⸻
+
+Roles & Identity
+	•	Fixed IDs shipped in the pack:
+hostUid = "daniel-001", guestUid = "jaime-001" (or your chosen constants).
+	•	These are stable across all games. Security derives from sealed content, not rotating IDs.
+
+⸻
+
+Flow (authoritative UX)
+
+1) Lobby (both)
+	•	Minimal welcome. Jaime’s entrance link to watcher page; Daniel’s entrance to Key Room.
+
+2) Key Room (host uploads the pack)
+	•	Large header shows room code (from file name and pack), with Copy.
+	•	File input accepts *.sealed. The recommended naming is <CODE>.sealed.
+	•	On load:
+	•	Decrypt + validate checksum/schema.
+	•	Display Generated date from meta.generatedAt.
+	•	Show a green verified circle when integrity passes.
+	•	Write Firestore:
+	•	rooms/{CODE} with meta.hostUid/guestUid, round=1, state="countdown".
+	•	rounds/1…5 items from the pack.
+	•	maths at room level.
+	•	Set a near-future countdown.startAt and navigate both clients to Countdown.
+	•	A file picker remains visible to replace with a different pack before countdown (defensive UX).
+
+3) Guest Join (watcher)
+	•	Jaime enters room code (same as file name). Lobby stays identical.
+	•	On join, watcher navigates to Countdown for the same startAt.
+
+4) Countdown (sync)
+	•	Full-screen seconds. Score strip visible (thin, full-width; left: CODE  Round N; right: Daniel  x    Jaime  y).
+	•	On zero → Questions.
+
+5) Questions (local)
+	•	Exactly 3 items for the player’s own role (hostItems vs guestItems).
+	•	Each screen = question + two options. Selecting auto-advances; the 3rd auto-submits.
+	•	MathsPane (inverted box) pinned below with the current beat.
+	•	After submit: “Waiting for opponent…” locally; no cross-device resets.
+
+6) Marking (local, 30s timer)
+	•	Each player sees the opponent’s three questions and the opponent’s chosen answers (bold).
+	•	Two buttons per item, centered: ✓ He’s right (green) / ✕ Totally wrong (red). Only one can be active.
+	•	Timer (30s) top-right in bold Courier. Unmarked when time ends count as 0 (no score change).
+	•	On submit (or timeout): write marking.{role}.{round} and markingAck.{role}.{round}=true.
+
+7) Award (sync, 30s timer)
+	•	Shows your own three answered questions with ✓/✕ against your choices.
+	•	Updates the score strip (scores change only here, once both acks true and the award begins).
+	•	After timer → Countdown for the next round.
+
+8) Interludes
+	•	The pack provides an interlude per round describing surreal things Jemima does while waiting.
+	•	Interludes are shown to the player who finishes questions first while they wait (never blocking the other).
+	•	Not a global phase; purely local filler between Questions and Marking/Award.
+
+9) Maths (local, after Round 5 award)
+	•	Two integer answers with explicit units. MathsPane remains visible.
+	•	On submit → Final.
+
+10) Final (sync)
+	•	Minimal summary; option to return to Lobby.
+
+⸻
+
+Score Strip (always on, except Lobby/KeyRoom)
+	•	Full-width, dark ink strip; light text in Courier.
+	•	Left: CODE   Round N
+	•	Right: Daniel  X      Jaime  Y
+	•	Scores update at the start of each Questions round (i.e., after Award).
+
+⸻
+
+Runtime Invariants
+	•	Host never sees guestItems in Questions and vice versa.
+	•	Claimed UIDs are immutable.
+	•	Local phases ignore remote writes that could change UI state mid-phase.
+	•	Submits set submitted.{role}.{round} and lock drafts.
+	•	Maths answers are integers only; JSON validated.
+	•	MathsPane always mounted and inverted; no full dark pages elsewhere.
+
+⸻
+
+Testing Checklist (Emulator)
+	•	Upload CAT.sealed in Key Room → see generated date + green verified dot.
+	•	Firestore shows rooms/CAT, rounds/1..5, maths present.
+	•	Guest joins with CAT → both see the same countdown.
+	•	Distinct question sets per role; auto-advance works; third answer auto-submits.
+	•	Marking timer enforces 30s; ✓/✕ writes correct arrays; Award updates scores once per round.
+	•	Interlude appears only to the player who finished early.
+	•	Maths validates integer answers and proceeds to Final.
+
+⸻
+
+Style (non-negotiable)
+	•	Courier everywhere; titles/answers bold.
+	•	Narrow centered column (≈400–450px).
+	•	No global dark themes; only MathsPane uses inverted scheme.
+	•	Buttons rounded; primary actions throb when actionable.
+
+⸻
+
+Safe Agent Tasks
+	•	Role isolation audit (Questions/Marking fetch paths).
+	•	Award score consistency (update only at award start).
+	•	KeyRoom verify UI (date + green verified circle + copy code + re-upload).
+	•	Countdown robustness (client clock drift tolerance ±5s).
+
+⸻
