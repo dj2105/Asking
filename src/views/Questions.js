@@ -54,14 +54,16 @@ export default {
 
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
-    const round = parseInt(params.get("round") || "1", 10) || 1;
+    const requestedRound = parseInt(params.get("round") || "", 10);
+    let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
     const hue = Math.floor(Math.random() * 360);
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-questions" });
-    root.appendChild(el("h1", { class: "title" }, `Round ${round}`));
+    const title = el("h1", { class: "title" }, `Round ${round || "—"}`);
+    root.appendChild(title);
 
     const card = el("div", { class: "card" });
     const topRow = el("div", { class: "mono", style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;" });
@@ -91,11 +93,25 @@ export default {
 
     container.appendChild(root);
 
+    let stopWatcher = null;
+    let alive = true;
+    this.unmount = () => {
+      alive = false;
+      try { stopWatcher && stopWatcher(); } catch {}
+    };
+
     const rRef = roomRef(code);
-    const rdRef = doc(roundSubColRef(code), String(round));
 
     const roomSnap0 = await getDoc(rRef);
     const room0 = roomSnap0.data() || {};
+    if (!round) {
+      const roomRound = Number(room0.round);
+      round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
+    }
+    title.textContent = `Round ${round}`;
+    roomTag.textContent = `Room ${code}`;
+
+    const rdRef = doc(roundSubColRef(code), String(round));
     const { hostUid, guestUid } = room0.meta || {};
     const storedRole = getStoredRole(code);
     const myRole = storedRole === "host" || storedRole === "guest"
@@ -111,11 +127,40 @@ export default {
       console.warn("[questions] MathsPane mount failed:", err);
     }
 
-    const rdSnap = await getDoc(rdRef);
-    const rd = rdSnap.data() || {};
-    const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
-
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
+
+    const setButtonsEnabled = (enabled) => {
+      btn1.disabled = !enabled;
+      btn2.disabled = !enabled;
+      btn1.classList.toggle("throb", enabled);
+      btn2.classList.toggle("throb", enabled);
+    };
+
+    const waitForRoundData = async () => {
+      let firstWait = true;
+      while (alive) {
+        try {
+          const snap = await getDoc(rdRef);
+          if (snap.exists()) return snap.data() || {};
+        } catch (err) {
+          console.warn("[questions] failed to load round doc:", err);
+        }
+        if (firstWait) {
+          waitMsg.textContent = "Waiting for round data…";
+          waitMsg.style.display = "";
+          btnWrap.style.display = "none";
+          setButtonsEnabled(false);
+          firstWait = false;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 600));
+      }
+      return {};
+    };
+
+    const rd = await waitForRoundData();
+    if (!alive) return;
+
+    const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
 
     const tier = roundTier(round);
     const triplet = [0, 1, 2].map((i) => {
@@ -131,13 +176,6 @@ export default {
     const chosen = [];
     let published = false;
     let submitting = false;
-
-    const setButtonsEnabled = (enabled) => {
-      btn1.disabled = !enabled;
-      btn2.disabled = !enabled;
-      btn1.classList.toggle("throb", enabled);
-      btn2.classList.toggle("throb", enabled);
-    };
 
     function renderIndex() {
       const cur = triplet[idx];
@@ -217,7 +255,7 @@ export default {
       renderIndex();
     }
 
-    const stop = onSnapshot(rRef, async (snap) => {
+    stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
 
       if (data.state === "marking") {
@@ -262,7 +300,8 @@ export default {
     });
 
     this.unmount = () => {
-      try { stop && stop(); } catch {}
+      alive = false;
+      try { stopWatcher && stopWatcher(); } catch {}
     };
   },
 
