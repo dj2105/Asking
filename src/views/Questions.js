@@ -73,15 +73,38 @@ export default {
     topRow.appendChild(counter);
     card.appendChild(topRow);
 
-    const qText = el("div", { class: "mono", style: "font-weight:600; white-space:pre-wrap; min-height:56px;" }, "");
+    const qText = el("textarea", {
+      class: "mono question-area",
+      readonly: "",
+      style: "font-weight:600;min-height:64px;resize:vertical;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,0.25);background:rgba(0,0,0,0.02);width:100%;",
+    }, "");
     card.appendChild(qText);
 
-    const btnWrap = el("div", { style: "display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap;" });
+    const btnWrap = el("div", { style: "display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap;width:100%;align-items:stretch;" });
     const btn1 = el("button", { class: "btn big outline" }, "");
     const btn2 = el("button", { class: "btn big outline" }, "");
     btnWrap.appendChild(btn1);
     btnWrap.appendChild(btn2);
     card.appendChild(btnWrap);
+
+    function syncButtonWidths() {
+      requestAnimationFrame(() => {
+        if (!btnWrap || btnWrap.offsetParent === null) return;
+        btn1.style.minWidth = "";
+        btn2.style.minWidth = "";
+        const w1 = btn1.getBoundingClientRect().width;
+        const w2 = btn2.getBoundingClientRect().width;
+        const max = Math.max(w1, w2);
+        if (max > 0) {
+          const target = Math.ceil(max);
+          btn1.style.minWidth = `${target}px`;
+          btn2.style.minWidth = `${target}px`;
+        }
+      });
+    }
+
+    const handleResize = () => syncButtonWidths();
+    window.addEventListener("resize", handleResize);
 
     const waitMsg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-top:12px;display:none;" }, "Waiting for opponent…");
     card.appendChild(waitMsg);
@@ -97,6 +120,7 @@ export default {
     let alive = true;
     this.unmount = () => {
       alive = false;
+      window.removeEventListener("resize", handleResize);
       try { stopWatcher && stopWatcher(); } catch {}
     };
 
@@ -163,13 +187,44 @@ export default {
     const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
 
     const tier = roundTier(round);
+    const normalizedItems = Array.isArray(myItems) ? myItems.filter(Boolean) : [];
+    const safeItems = normalizedItems.length ? normalizedItems.slice() : [{}, {}, {}];
+    if (!normalizedItems.length) {
+      safeItems[0] = {};
+      safeItems[1] = {};
+      safeItems[2] = {};
+    }
+    while (safeItems.length < 3) {
+      const src = normalizedItems.length
+        ? normalizedItems[safeItems.length % normalizedItems.length] || {}
+        : {};
+      safeItems.push(src ? { ...src } : {});
+    }
+
+    const fillerQuestion = (slot) => `Jemima spins a filler challenge ${round}-${slot + 1}.`;
+    const fillerOption = (slot, label) => `Choice ${label} ${round}-${slot + 1}`;
+
     const triplet = [0, 1, 2].map((i) => {
-      const it = myItems[i] || {};
-      const correct = it.correct_answer || "";
+      const it = safeItems[i] || {};
+      const baseQuestion = typeof it.question === "string" ? it.question.trim() : "";
+      const question = baseQuestion || fillerQuestion(i);
       const distractors = it.distractors || {};
-      const wrong = distractors[tier] || distractors.medium || distractors.easy || distractors.hard || "";
+      const baseCorrect = typeof it.correct_answer === "string" ? it.correct_answer.trim() : "";
+      const correct = baseCorrect || fillerOption(i, "A");
+      let wrong = "";
+      const maybe = [distractors[tier], distractors.medium, distractors.easy, distractors.hard];
+      for (const candidate of maybe) {
+        if (typeof candidate === "string" && candidate.trim()) {
+          wrong = candidate.trim();
+          break;
+        }
+      }
+      if (!wrong || wrong === correct) {
+        wrong = wrong === correct ? fillerOption(i, "B+") : fillerOption(i, "B");
+        if (wrong === correct) wrong = `${wrong} alt`;
+      }
       const [optA, optB] = shuffle2(correct, wrong);
-      return { question: it.question || "", options: [optA, optB], correct };
+      return { question, options: [optA, optB], correct };
     });
 
     let idx = 0;
@@ -178,11 +233,16 @@ export default {
     let submitting = false;
 
     function renderIndex() {
-      const cur = triplet[idx];
+      const cur = triplet[idx] || { question: "", options: ["", ""], correct: "" };
       counter.textContent = `${Math.min(idx + 1, 3)} / 3`;
-      qText.textContent = cur?.question || "";
-      btn1.textContent = cur?.options?.[0] || "";
-      btn2.textContent = cur?.options?.[1] || "";
+      qText.value = cur.question || "";
+      qText.scrollTop = 0;
+      btn1.textContent = cur.options?.[0] || "";
+      btn2.textContent = cur.options?.[1] || "";
+      btnWrap.style.display = "flex";
+      waitMsg.style.display = "none";
+      setButtonsEnabled(true);
+      syncButtonWidths();
     }
 
     const showWaitingState = (text = "Waiting for opponent…") => {
@@ -247,7 +307,8 @@ export default {
       published = true;
       showWaitingState("Submitted. Waiting for opponent…");
       counter.textContent = "3 / 3";
-      qText.textContent = triplet[2]?.question || "";
+      qText.value = triplet[2]?.question || "";
+      syncButtonWidths();
     } else {
       btnWrap.style.display = "flex";
       waitMsg.style.display = "none";

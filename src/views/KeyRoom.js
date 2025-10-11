@@ -67,6 +67,33 @@ export default {
     );
     card.appendChild(intro);
 
+    const codeEntryRow = el("div", {
+      class: "mono",
+      style: "display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:12px;",
+    });
+    const codeInput = el("input", {
+      type: "text",
+      inputmode: "text",
+      autocapitalize: "characters",
+      maxlength: "5",
+      minlength: "1",
+      pattern: "[A-Z0-9]{1,5}",
+      placeholder: "CODE?",
+      class: "input",
+      style: "max-width:160px;text-align:center;letter-spacing:.3em;text-transform:uppercase;",
+    });
+    const goBtn = el("button", { class: "btn primary go-btn", disabled: "" }, "GO!");
+    codeEntryRow.appendChild(codeInput);
+    codeEntryRow.appendChild(goBtn);
+    card.appendChild(codeEntryRow);
+
+    const codeEntryHint = el(
+      "div",
+      { class: "mono small", style: "text-align:center;margin-top:-6px;margin-bottom:10px;" },
+      "Enter a 1–5 character code, then press GO!."
+    );
+    card.appendChild(codeEntryHint);
+
     const uploadGrid = el("div", {
       class: "mono",
       style: "display:flex;flex-direction:column;gap:10px;margin-bottom:10px;",
@@ -110,6 +137,57 @@ export default {
     }
 
     const inputs = Object.values(slotMap).map((slot) => slot.input);
+
+    let manualCode = "";
+
+    function updateGoButtonState() {
+      const raw = codeInput.value || "";
+      const cleaned = clampCode(raw);
+      if (raw !== cleaned) {
+        codeInput.value = cleaned;
+      }
+      manualCode = cleaned;
+      const ok = cleaned.length >= 1;
+      goBtn.disabled = !ok || seeded;
+      goBtn.classList.toggle("throb", ok && !seeded);
+    }
+
+    codeInput.addEventListener("input", updateGoButtonState);
+    codeInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        if (!goBtn.disabled) {
+          goBtn.click();
+        }
+      }
+    });
+
+    goBtn.addEventListener("click", () => {
+      if (goBtn.disabled) return;
+      const chosen = clampCode(codeInput.value);
+      if (!chosen) return;
+      manualCode = chosen;
+      seeded = false;
+      startPending = false;
+      if (stopRoomWatch) {
+        try { stopRoomWatch(); } catch (err) { console.warn("[keyroom] failed to stop watcher before relock", err); }
+        stopRoomWatch = null;
+      }
+      watchingCode = "";
+      setInputsDisabled(false);
+      resetStageUI(true);
+      stage.code = chosen;
+      showRoomCode(chosen);
+      copyBtn.disabled = false;
+      status.textContent = `Code ${chosen} locked. Upload the sealed files.`;
+      log(`manual code locked: ${chosen}`);
+      goBtn.classList.add("throb");
+      startRow.style.display = "none";
+      startBtn.disabled = true;
+      startBtn.classList.remove("throb");
+      metaRow.style.display = "none";
+      generatedLabel.textContent = "";
+    });
 
     const progressLine = el("div", {
       class: "mono small",
@@ -188,7 +266,8 @@ export default {
       progressLine.textContent = `Verified: ${count}/3`;
     }
 
-    function resetStageUI() {
+    function resetStageUI(preserveCode = false) {
+      const savedCode = preserveCode ? stage.code || manualCode || "" : "";
       stage = createStage();
       stageLoaded.host = false;
       stageLoaded.guest = false;
@@ -196,7 +275,18 @@ export default {
       Object.values(slotMap).forEach((slot) => {
         slot.statusEl.textContent = slot.initialText;
       });
+      if (preserveCode && savedCode) {
+        stage.code = savedCode;
+        manualCode = savedCode;
+        showRoomCode(savedCode);
+      }
       updateProgress();
+      updateGoButtonState();
+      metaRow.style.display = "none";
+      generatedLabel.textContent = "";
+      startRow.style.display = "none";
+      startBtn.disabled = true;
+      startBtn.classList.remove("throb");
     }
 
     function showRoomCode(code) {
@@ -217,6 +307,14 @@ export default {
       inputs.forEach((input) => {
         input.disabled = Boolean(flag);
       });
+      if (flag) {
+        goBtn.disabled = true;
+        goBtn.classList.remove("throb");
+        codeInput.disabled = true;
+      } else {
+        codeInput.disabled = false;
+        updateGoButtonState();
+      }
     }
 
     function ensureStageCode(code) {
@@ -375,7 +473,7 @@ export default {
     }
 
     async function handleFullPack(result) {
-      resetStageUI();
+      resetStageUI(true);
       const { pack, code } = result;
       showRoomCode(code);
       copyBtn.disabled = false;
@@ -489,12 +587,15 @@ export default {
       }
     }
 
-    resetStageUI();
+    resetStageUI(true);
 
     if (hintedCode) {
       showRoomCode(hintedCode);
       startRow.style.display = "none";
       watchRoom(hintedCode);
+      codeInput.value = hintedCode;
+      manualCode = hintedCode;
+      updateGoButtonState();
     }
 
     function updateStartState({ guestPresent, state, countdownStart }) {

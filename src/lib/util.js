@@ -5,7 +5,7 @@ const CODE_REGEX = /[^A-Z0-9]/g;
 const ROLE_STORAGE_PREFIX = "jemimaRole:";
 
 export function clampCode(input) {
-  return String(input || "").trim().toUpperCase().replace(CODE_REGEX, "").slice(0, 3);
+  return String(input || "").trim().toUpperCase().replace(CODE_REGEX, "").slice(0, 5);
 }
 
 export function getHashParams() {

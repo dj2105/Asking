@@ -9,7 +9,7 @@ import {
 } from "./firebase.js";
 import * as Gemini from "./gemini.js";
 
-function clampCode(s){ return String(s||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3); }
+function clampCode(s){ return String(s||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5); }
 
 async function writeProgress(code, progress, message){
   try{

@@ -18,7 +18,7 @@ const mountMathsPane =
    typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
    null);
 
-const clampCode = s => String(s||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3);
+const clampCode = s => String(s||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
 const hp = () => new URLSearchParams((location.hash.split("?")[1]||""));
 
 function el(tag, attrs={}, kids=[]){

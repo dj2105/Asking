@@ -85,8 +85,8 @@ export default {
       type: "text",
       autocomplete: "off",
       autocapitalize: "characters",
-      maxlength: "3",
-      placeholder: "C A T",
+      maxlength: "5",
+      placeholder: "C A T 7",
       class: "code-input",
       style: `
         width: 240px;
@@ -141,7 +141,7 @@ export default {
     function setStatus(msg) { status.textContent = msg || ""; }
 
     function reflect() {
-      const ok = input.value.length === 3;
+      const ok = input.value.length >= 1 && input.value.length <= 5;
       arrowBtn.disabled = !ok;
       arrowBtn.classList.toggle("ready", ok);
       arrowBtn.classList.toggle("throb", ok);
@@ -154,14 +154,14 @@ export default {
     async function join() {
       setStatus("");
       const code = clampCode(input.value);
-      if (code.length !== 3) return;
+      if (code.length < 1 || code.length > 5) return;
 
       try {
         const rRef = roomRef(code);
         const snap = await getDoc(rRef);
 
         if (!snap.exists()) {
-          setStatus("Room not found. Check the 3-letter code.");
+          setStatus("Room not found. Check the code and try again.");
           console.warn(`[lobby] join code=${code} | room not found`);
           return;
         }
