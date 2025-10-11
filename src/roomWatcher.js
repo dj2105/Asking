@@ -23,7 +23,7 @@ function el(tag, attrs = {}, kids = []) {
   return n;
 }
 
-const clampCode = (s) => String(s || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+const clampCode = (s) => String(s || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
 function getHashParams() {
   const raw = window.location.hash || "";
   return new URLSearchParams(raw.split("?")[1] || "");
