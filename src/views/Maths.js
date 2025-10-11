@@ -113,7 +113,11 @@ export default {
     const oppRole = myRole === "host" ? "guest" : "host";
 
     // Mount maths pane in "maths" mode; it shows location + both questions
-    try { if (mountMathsPane && room0.maths) mountMathsPane(mathsMount, { maths: room0.maths, mode:"maths" }); }
+    try {
+      if (mountMathsPane && room0.maths) {
+        mountMathsPane(mathsMount, { maths: room0.maths, mode:"maths", roomCode: code, userUid: me.uid });
+      }
+    }
     catch(e){ console.warn("[maths] MathsPane mount failed:", e); }
 
     const M = room0.maths || { questions: ["", ""] };

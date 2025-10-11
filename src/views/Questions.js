@@ -14,6 +14,7 @@ import {
   roundSubColRef,
   doc,
   getDoc,
+  setDoc,
   updateDoc,
   onSnapshot,
   serverTimestamp
@@ -112,6 +113,7 @@ export default {
     roomTag.textContent = `Room ${code}`;
 
     const rdRef = doc(roundSubColRef(code), String(round));
+    const playerRef = doc(roomRef(code), "players", me.uid);
     const { hostUid, guestUid } = room0.meta || {};
     const storedRole = getStoredRole(code);
     const myRole = storedRole === "host" || storedRole === "guest"
@@ -121,13 +123,15 @@ export default {
 
     try {
       if (mountMathsPane && room0.maths) {
-        mountMathsPane(mathsMount, { maths: room0.maths, round, mode: "inline" });
+        mountMathsPane(mathsMount, { maths: room0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
       }
     } catch (err) {
       console.warn("[questions] MathsPane mount failed:", err);
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
+    let roundStartAt = Number((room0.countdown || {}).startAt || 0) || 0;
+    let qDoneMsLocal = null;
 
     const setButtonsEnabled = (enabled) => {
       btn1.disabled = !enabled;
@@ -219,6 +223,19 @@ export default {
       }
     }
 
+    const recordQuestionTiming = (ms) => {
+      if (!ms) return;
+      qDoneMsLocal = ms;
+      const roundTimingPatch = { timings: { [me.uid]: { qDoneMs: ms } } };
+      setDoc(rdRef, roundTimingPatch, { merge: true }).catch((err) => {
+        console.warn("[questions] failed to write round timing:", err);
+      });
+      const playerTimingPatch = { rounds: { [round]: { timings: { qDoneMs: ms } } } };
+      setDoc(playerRef, playerTimingPatch, { merge: true }).catch((err) => {
+        console.warn("[questions] failed to mirror player timing:", err);
+      });
+    };
+
     function onPick(text) {
       if (published || submitting) return;
       chosen[idx] = text;
@@ -226,6 +243,10 @@ export default {
       if (idx >= 3) {
         counter.textContent = "3 / 3";
         setButtonsEnabled(false);
+        if (!qDoneMsLocal) {
+          const stamp = Date.now();
+          recordQuestionTiming(stamp);
+        }
         publishAnswers();
       } else {
         renderIndex();
@@ -257,6 +278,10 @@ export default {
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
+
+      if (Number((data.countdown || {}).startAt)) {
+        roundStartAt = Number(data.countdown.startAt);
+      }
 
       if (data.state === "marking") {
         setTimeout(() => {
