@@ -124,11 +124,11 @@ export async function ensureAuth() {
 
 // ---------- refs ----------
 export function roomRef(code) {
-  const c = String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+  const c = String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
   return _exports.doc(_exports.collection(_db, "rooms"), c);
 }
 export function roundSubColRef(code) {
-  const c = String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+  const c = String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
   return _exports.collection(roomRef(c), "rounds");
 }
 

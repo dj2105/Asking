@@ -118,6 +118,8 @@ export default {
     const rd = rdSnap.data() || {};
     const oppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
     const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
+    const fillerReview = (slot) => `Filler review ${round}-${slot + 1}.`;
+    const fillerAnswer = (slot) => `Placeholder choice ${round}-${slot + 1}`;
 
     let marks = [null, null, null];
     const disableFns = [];
@@ -128,8 +130,10 @@ export default {
 
     const buildRow = (idx, question, chosen) => {
       const row = el("div", { class: "mark-row" });
-      row.appendChild(el("div", { class: "q mono" }, `${idx + 1}. ${question || "(missing question)"}`));
-      row.appendChild(el("div", { class: "a mono" }, chosen || "(no answer recorded)"));
+      const safeQuestion = (question || "").trim() || fillerReview(idx);
+      const safeChosen = (chosen || "").trim() || fillerAnswer(idx);
+      row.appendChild(el("div", { class: "q mono" }, `${idx + 1}. ${safeQuestion}`));
+      row.appendChild(el("div", { class: "a mono" }, safeChosen));
 
       const pair = el("div", { class: "verdict-row" });
       const btnRight = el("button", { class: "btn outline choice-tick" }, "✓ He's right");

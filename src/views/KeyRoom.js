@@ -67,6 +67,33 @@ export default {
     );
     card.appendChild(intro);
 
+    const codeEntryRow = el("div", {
+      class: "mono",
+      style: "display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:12px;",
+    });
+    const codeInput = el("input", {
+      type: "text",
+      inputmode: "text",
+      autocapitalize: "characters",
+      maxlength: "5",
+      minlength: "1",
+      pattern: "[A-Z0-9]{1,5}",
+      placeholder: "CODE?",
+      class: "input",
+      style: "max-width:160px;text-align:center;letter-spacing:.3em;text-transform:uppercase;",
+    });
+    const goBtn = el("button", { class: "btn primary go-btn", disabled: "" }, "GO!");
+    codeEntryRow.appendChild(codeInput);
+    codeEntryRow.appendChild(goBtn);
+    card.appendChild(codeEntryRow);
+
+    const codeEntryHint = el(
+      "div",
+      { class: "mono small", style: "text-align:center;margin-top:-6px;margin-bottom:10px;" },
+      "Enter a 1–5 character code, then press GO!."
+    );
+    card.appendChild(codeEntryHint);
+
     const uploadGrid = el("div", {
       class: "mono",
       style: "display:flex;flex-direction:column;gap:10px;margin-bottom:10px;",
@@ -110,6 +137,57 @@ export default {
     }
 
     const inputs = Object.values(slotMap).map((slot) => slot.input);
+
+    let manualCode = "";
+
+    function updateGoButtonState() {
+      const raw = codeInput.value || "";
+      const cleaned = clampCode(raw);
+      if (raw !== cleaned) {
+        codeInput.value = cleaned;
+      }
+      manualCode = cleaned;
+      const ok = cleaned.length >= 1;
+      goBtn.disabled = !ok || seeded;
+      goBtn.classList.toggle("throb", ok && !seeded);
+    }
+
+    codeInput.addEventListener("input", updateGoButtonState);
+    codeInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        if (!goBtn.disabled) {
+          goBtn.click();
+        }
+      }
+    });
+
+    goBtn.addEventListener("click", () => {
+      if (goBtn.disabled) return;
+      const chosen = clampCode(codeInput.value);
+      if (!chosen) return;
+      manualCode = chosen;
+      seeded = false;
+      startPending = false;
+      if (stopRoomWatch) {
+        try { stopRoomWatch(); } catch (err) { console.warn("[keyroom] failed to stop watcher before relock", err); }
+        stopRoomWatch = null;
+      }
+      watchingCode = "";
+      setInputsDisabled(false);
+      resetStageUI(true);
+      stage.code = chosen;
+      showRoomCode(chosen);
+      copyBtn.disabled = false;
+      status.textContent = `Code ${chosen} locked. Upload the sealed files.`;
+      log(`manual code locked: ${chosen}`);
+      goBtn.classList.add("throb");
+      startRow.style.display = "none";
+      startBtn.disabled = true;
+      startBtn.classList.remove("throb");
+      metaRow.style.display = "none";
+      generatedLabel.textContent = "";
+    });
 
     const progressLine = el("div", {
       class: "mono small",
@@ -188,7 +266,8 @@ export default {
       progressLine.textContent = `Verified: ${count}/3`;
     }
 
-    function resetStageUI() {
+    function resetStageUI(preserveCode = false) {
+      const savedCode = preserveCode ? stage.code || manualCode || "" : "";
       stage = createStage();
       stageLoaded.host = false;
       stageLoaded.guest = false;
@@ -196,7 +275,18 @@ export default {
       Object.values(slotMap).forEach((slot) => {
         slot.statusEl.textContent = slot.initialText;
       });
+      if (preserveCode && savedCode) {
+        stage.code = savedCode;
+        manualCode = savedCode;
+        showRoomCode(savedCode);
+      }
       updateProgress();
+      updateGoButtonState();
+      metaRow.style.display = "none";
+      generatedLabel.textContent = "";
+      startRow.style.display = "none";
+      startBtn.disabled = true;
+      startBtn.classList.remove("throb");
     }
 
     function showRoomCode(code) {
@@ -217,22 +307,22 @@ export default {
       inputs.forEach((input) => {
         input.disabled = Boolean(flag);
       });
+      if (flag) {
+        goBtn.disabled = true;
+        goBtn.classList.remove("throb");
+        codeInput.disabled = true;
+      } else {
+        codeInput.disabled = false;
+        updateGoButtonState();
+      }
     }
 
-    function ensureStageCode(code) {
-      const next = clampCode(code);
-      if (!next) {
-        return { ok: false, expected: stage.code || "", got: clampCode(code) };
-      }
-      if (!stage.code) {
-        stage.code = next;
-        showRoomCode(next);
-        return { ok: true };
-      }
-      if (stage.code === next) {
-        return { ok: true };
-      }
-      return { ok: false, expected: stage.code, got: next };
+    function ensureCodeLocked() {
+      if (stage.code) return true;
+      const message = "Press GO! to lock your room code before uploading.";
+      status.textContent = message;
+      log(`error: ${message}`);
+      return false;
     }
 
     function clone(value) {
@@ -293,9 +383,13 @@ export default {
     }
 
     async function seedPackAndWatch(pack, code, generatedAtISO) {
+      const preparedPack = {
+        ...pack,
+        meta: { ...pack.meta, roomCode: code },
+      };
       status.textContent = "Seeding Firestore…";
       log("seeding Firestore…");
-      const { code: seededCode } = await seedFirestoreFromPack(db, pack);
+      const { code: seededCode } = await seedFirestoreFromPack(db, preparedPack);
       seeded = true;
       setInputsDisabled(true);
       startRow.style.display = "flex";
@@ -375,9 +469,11 @@ export default {
     }
 
     async function handleFullPack(result) {
-      resetStageUI();
-      const { pack, code } = result;
-      showRoomCode(code);
+      if (!ensureCodeLocked()) return;
+      resetStageUI(true);
+      const { pack, code: packCode } = result;
+      const activeCode = stage.code;
+      showRoomCode(activeCode);
       copyBtn.disabled = false;
       const when = new Date(pack.meta.generatedAt);
       if (!Number.isNaN(when.valueOf())) {
@@ -385,10 +481,13 @@ export default {
         metaRow.style.display = "inline-flex";
       }
       status.textContent = "Pack verified.";
-      log(`unsealed pack ${code}`);
+      log(`unsealed pack meta code ${packCode || "(none)"}`);
+      if (packCode && packCode !== activeCode) {
+        log(`using manual code ${activeCode}; meta code ignored.`);
+      }
       log(`checksum OK (${pack.integrity.checksum.slice(0, 8)}…)`);
       try {
-        await seedPackAndWatch(pack, code, pack.meta.generatedAt);
+        await seedPackAndWatch(pack, activeCode, pack.meta.generatedAt);
         slotMap.host.statusEl.textContent = "Full pack loaded.";
         slotMap.guest.statusEl.textContent = "Full pack loaded.";
         slotMap.maths.statusEl.textContent = "Full pack loaded.";
@@ -401,14 +500,8 @@ export default {
     }
 
     async function handleHalfpack(result) {
+      if (!ensureCodeLocked()) return;
       const { halfpack, which, code } = result;
-      const ensure = ensureStageCode(code);
-      if (!ensure.ok) {
-        const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
-        status.textContent = message;
-        log(`error: ${message}`);
-        return;
-      }
       if (stageLoaded[which]) {
         status.textContent = "This side is already loaded.";
         log(`ignored duplicate ${which} halfpack`);
@@ -432,20 +525,17 @@ export default {
       const message = which === "host" ? "Host (15) verified." : "Guest (15) verified.";
       slotMap[which].statusEl.textContent = message;
       status.textContent = message;
-      log(`${which} halfpack verified for ${code}`);
+      log(`${which} halfpack verified (meta code ${code || "(none)"})`);
+      if (code && code !== stage.code) {
+        log(`using manual code ${stage.code}; meta code ignored.`);
+      }
       updateProgress();
       await tryCompleteStage();
     }
 
     async function handleMaths(result) {
+      if (!ensureCodeLocked()) return;
       const { maths, code } = result;
-      const ensure = ensureStageCode(code);
-      if (!ensure.ok) {
-        const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
-        status.textContent = message;
-        log(`error: ${message}`);
-        return;
-      }
       if (stageLoaded.maths) {
         status.textContent = "This side is already loaded.";
         log("ignored duplicate maths block");
@@ -456,7 +546,10 @@ export default {
       stageLoaded.maths = true;
       slotMap.maths.statusEl.textContent = "Maths verified.";
       status.textContent = "Maths verified.";
-      log(`maths block verified for ${code}`);
+      log(`maths block verified (meta code ${code || "(none)"})`);
+      if (code && code !== stage.code) {
+        log(`using manual code ${stage.code}; meta code ignored.`);
+      }
       updateProgress();
       await tryCompleteStage();
     }
@@ -489,12 +582,15 @@ export default {
       }
     }
 
-    resetStageUI();
+    resetStageUI(true);
 
     if (hintedCode) {
       showRoomCode(hintedCode);
       startRow.style.display = "none";
       watchRoom(hintedCode);
+      codeInput.value = hintedCode;
+      manualCode = hintedCode;
+      updateGoButtonState();
     }
 
     function updateStartState({ guestPresent, state, countdownStart }) {

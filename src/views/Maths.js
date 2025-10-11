@@ -73,12 +73,12 @@ export default {
     const row1 = el("div", { class:"mono", style:"margin-top:6px;" });
     const row2 = el("div", { class:"mono", style:"margin-top:10px;" });
 
-    const q1 = el("div", { class:"mono", style:"font-weight:600; white-space:pre-wrap;" }, "");
+    const q1 = el("div", { class:"mono", style:"font-weight:600; white-space:pre-wrap; resize:vertical; overflow:auto; min-height:56px; padding:8px 10px; border:1px solid rgba(0,0,0,0.2); border-radius:12px; background:rgba(0,0,0,0.02);" }, "");
     const i1 = el("input", { type:"number", class:"input", placeholder:"Answer 1 (integer)" });
     row1.appendChild(q1);
     row1.appendChild(i1);
 
-    const q2 = el("div", { class:"mono", style:"font-weight:600; white-space:pre-wrap; margin-top:10px;" }, "");
+    const q2 = el("div", { class:"mono", style:"font-weight:600; white-space:pre-wrap; margin-top:10px; resize:vertical; overflow:auto; min-height:56px; padding:8px 10px; border:1px solid rgba(0,0,0,0.2); border-radius:12px; background:rgba(0,0,0,0.02);" }, "");
     const i2 = el("input", { type:"number", class:"input", placeholder:"Answer 2 (integer)" });
     row2.appendChild(q2);
     row2.appendChild(i2);
@@ -86,7 +86,7 @@ export default {
     form.appendChild(row1);
     form.appendChild(row2);
 
-    const done = el("button", { class:"btn", style:"width:100%;margin-top:12px;", disabled:"" }, "DONE");
+    const done = el("button", { class:"btn primary", style:"width:100%;margin-top:12px;", disabled:"" }, "DONE");
     card.appendChild(form);
     card.appendChild(done);
 
@@ -117,8 +117,9 @@ export default {
     catch(e){ console.warn("[maths] MathsPane mount failed:", e); }
 
     const M = room0.maths || { questions: ["", ""] };
-    q1.textContent = M.questions?.[0] || "";
-    q2.textContent = M.questions?.[1] || "";
+    const fillerMaths = (slot) => `Filler maths challenge ${slot + 1}.`;
+    q1.textContent = (M.questions?.[0] || "").trim() || fillerMaths(0);
+    q2.textContent = (M.questions?.[1] || "").trim() || fillerMaths(1);
 
     // Enable DONE when both filled
     function validate() {

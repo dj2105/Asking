@@ -47,7 +47,10 @@ function same(a, b) {
   return String(a || "").trim() === String(b || "").trim();
 }
 
-function buildOptions(item, round) {
+const fillerAwardQuestion = (round, slot) => `Filler recap ${round}-${slot + 1}.`;
+const fillerAwardOption = (round, slot, tag) => `Option ${tag} ${round}-${slot + 1}`;
+
+function buildOptions(item, round, slotIndex) {
   const tier = roundTier(round);
   const correct = item?.correct_answer || "";
   const distractors = item?.distractors || {};
@@ -59,7 +62,10 @@ function buildOptions(item, round) {
     const alt = Object.values(distractors).find((d) => d && !same(d, correct) && !same(d, wrong));
     if (alt) options.push(alt);
   }
-  while (options.length < 2) options.push("(missing option)");
+  while (options.length < 2) {
+    const label = options.length === 0 ? "A" : "B";
+    options.push(fillerAwardOption(round, slotIndex, label));
+  }
   return options.slice(0, 2);
 }
 
@@ -73,10 +79,10 @@ function renderPlayerBlock(label, items, answers, round) {
   for (let i = 0; i < 3; i += 1) {
     const item = items[i] || {};
     const answer = answers[i] || {};
-    const question = item.question || answer.question || "(missing question)";
+    const question = (item.question || answer.question || "").trim() || fillerAwardQuestion(round, i);
     const correct = answer.correct || item.correct_answer || "";
     const chosen = answer.chosen || "";
-    const options = buildOptions(item, round);
+    const options = buildOptions(item, round, i);
 
     const row = el("div", { class: "mark-row" });
     row.appendChild(el("div", { class: "q mono" }, `${i + 1}. ${question}`));
