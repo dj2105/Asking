@@ -7,7 +7,7 @@
 
 import {
   initFirebase, ensureAuth,
-  roomRef, getDoc
+  roomRef, getDoc, updateDoc, serverTimestamp
 } from "../lib/firebase.js";
 import { clampCode as clampCodeShared, setStoredRole } from "../lib/util.js";
 
@@ -166,7 +166,24 @@ export default {
           return;
         }
 
+        const data = snap.data() || {};
         setStoredRole(code, "guest");
+
+        if (data.state === "keyroom") {
+          const startAt = Date.now() + 7_000;
+          const round = Number(data.round) || 1;
+          try {
+            await updateDoc(rRef, {
+              state: "countdown",
+              round,
+              "countdown.startAt": startAt,
+              "timestamps.updatedAt": serverTimestamp(),
+            });
+            console.log(`[lobby] auto-armed countdown for room ${code}`);
+          } catch (err) {
+            console.warn("[lobby] failed to arm countdown:", err);
+          }
+        }
 
         const target = `#/watcher?code=${code}`;
         if (location.hash !== target) {
