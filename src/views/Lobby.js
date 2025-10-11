@@ -58,23 +58,18 @@ export default {
         .view-lobby .lobby-card {
           position: relative;
           width: min(360px, 88vw);
-          border: 2px solid rgba(0, 0, 0, 0.65);
-          border-radius: 20px;
-          background: rgba(255, 255, 255, 0.95);
-          padding: 32px 28px 30px;
+          border: 2px solid rgba(0, 0, 0, 0.5);
+          border-radius: 22px;
+          background: var(--card-bg, #ffffff);
+          padding: 34px 28px 32px;
           display: flex;
           flex-direction: column;
-          align-items: flex-start;
-          gap: 18px;
-          transition: background 180ms ease, border-color 180ms ease, transform 220ms ease;
-          box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+          align-items: center;
+          gap: 22px;
+          text-align: center;
+          transition: background 200ms ease, transform 220ms ease, box-shadow 220ms ease;
+          box-shadow: 0 18px 28px rgba(0, 0, 0, 0.08);
           animation: lobbyCardShadow 6s ease-in-out infinite alternate;
-        }
-
-        .view-lobby .lobby-card.ready {
-          background: #20ff73;
-          border-color: rgba(0, 0, 0, 0.8);
-          color: #052d12;
         }
 
         .view-lobby .lobby-title {
@@ -84,37 +79,33 @@ export default {
         }
 
         .view-lobby .lobby-prompt {
-          font-size: 19px;
+          font-size: 18px;
           font-weight: 700;
           line-height: 1.4;
           margin: 0;
-          max-width: 280px;
+          max-width: 320px;
         }
 
         .view-lobby .lobby-stack {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 18px;
           width: 100%;
+          align-items: center;
         }
 
         .view-lobby .lobby-code-input {
           width: 100%;
           border: 2px solid rgba(0, 0, 0, 0.5);
           border-radius: 14px;
-          background: rgba(255, 255, 255, 0.88);
+          background: rgba(255, 255, 255, 0.96);
           padding: 14px 18px;
           font-size: 24px;
           letter-spacing: 0.4em;
           text-transform: uppercase;
-          text-align: left;
+          text-align: center;
           box-sizing: border-box;
           transition: border-color 160ms ease, background 160ms ease;
-        }
-
-        .view-lobby .lobby-card.ready .lobby-code-input {
-          border-color: rgba(0, 0, 0, 0.55);
-          background: rgba(255, 255, 255, 0.6);
         }
 
         .view-lobby .lobby-status {
@@ -122,31 +113,31 @@ export default {
           min-height: 18px;
         }
 
-        .view-lobby .lobby-go {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 48px;
-          font-weight: 900;
-          letter-spacing: 0.22em;
-          color: rgba(0, 0, 0, 0.25);
+        .view-lobby .lobby-start {
+          font-family: 'Helvetica Neue', Arial, sans-serif;
+          font-weight: 700;
+          font-size: 18px;
+          letter-spacing: 0.18em;
+          color: rgba(12, 87, 33, 0.85);
           background: transparent;
           border: none;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 160ms ease, color 160ms ease;
           cursor: pointer;
+          opacity: 0;
+          transform: translateX(0);
+          transition: opacity 160ms ease, transform 220ms ease;
+          position: relative;
+          padding: 4px 0 6px;
         }
 
-        .view-lobby .lobby-card.ready .lobby-go {
-          opacity: 1;
-          pointer-events: auto;
-          color: rgba(0, 0, 0, 0.3);
+        .view-lobby .lobby-start:disabled {
+          cursor: default;
         }
 
-        .view-lobby .lobby-go:focus-visible {
+        .view-lobby .lobby-start.animate {
+          animation: lobbyStartDrift 1.1s ease-in-out infinite alternate;
+        }
+
+        .view-lobby .lobby-start:focus-visible {
           outline: 2px dashed rgba(0, 0, 0, 0.4);
           outline-offset: 4px;
         }
@@ -159,6 +150,15 @@ export default {
           to {
             box-shadow: 0 22px 44px rgba(0, 0, 0, 0.12);
             transform: translateY(-3px);
+          }
+        }
+
+        @keyframes lobbyStartDrift {
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(9px);
           }
         }
       `;
@@ -179,7 +179,7 @@ export default {
       type: "text",
       autocomplete: "off",
       autocapitalize: "characters",
-      maxlength: "3",
+      maxlength: "5",
       placeholder: "C A T",
       class: "lobby-code-input",
       oninput: (e) => { e.target.value = clampCode(e.target.value); reflect(); },
@@ -190,18 +190,18 @@ export default {
     stack.appendChild(prompt);
     stack.appendChild(input);
 
+    const startButton = el("button", {
+      class: "lobby-start",
+      type: "button",
+      onclick: join,
+      "aria-label": "Submit room code"
+    }, "START");
+
     const status = el("div", { class: "lobby-status" }, "");
+    stack.appendChild(startButton);
     stack.appendChild(status);
 
     card.appendChild(stack);
-
-    const goButton = el("button", {
-      class: "lobby-go",
-      type: "button",
-      onclick: join,
-      "aria-label": "Join room"
-    }, "GO!");
-    card.appendChild(goButton);
 
     view.appendChild(card);
 
@@ -214,10 +214,30 @@ export default {
 
     function setStatus(msg) { status.textContent = msg || ""; }
 
+    function tintForChars(count) {
+      const capped = Math.min(Math.max(count, 0), 5);
+      const palette = [
+        "#ffffff",
+        "#f4fbf4",
+        "#e9f7ea",
+        "#dff3e0",
+        "#d5efd6",
+        "#cbeccd"
+      ];
+      return palette[capped];
+    }
+
     function reflect() {
-      const ok = input.value.length === 3;
-      card.classList.toggle("ready", ok);
-      goButton.disabled = !ok;
+      const value = clampCode(input.value);
+      if (value !== input.value) input.value = value;
+      const length = value.length;
+
+      card.style.setProperty("--card-bg", tintForChars(length));
+
+      const opacities = [0, 0.45, 0.7, 1, 1, 1];
+      startButton.style.opacity = opacities[Math.min(length, opacities.length - 1)];
+      startButton.disabled = length < 3;
+      startButton.classList.toggle("animate", length >= 3);
     }
 
     async function join() {
