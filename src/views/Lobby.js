@@ -1,9 +1,9 @@
 // /src/views/Lobby.js
-// Guest-only join screen (clean layout, no card box).
+// Guest-only join screen styled as a centered business card.
 // - NEVER creates rooms, NEVER routes to KeyRoom.
 // - If code doesn’t exist → inline “Room not found” (stay here).
 // - If room exists → (optionally) claim guest slot if free, then ALWAYS route to `#/watcher?code=XYZ`.
-// - Big monospace prompt + input; SVG arrow that fills + throbs when ready.
+// - Card glows green with a GO! overlay when the code is ready to submit.
 
 import {
   initFirebase, ensureAuth,
@@ -27,35 +27,6 @@ function el(tag, attrs = {}, kids = []) {
 
 const clampCode = (v) => clampCodeShared(v || "");
 
-function ArrowSVG({ filled }) {
-  // Right arrow head + shaft; stroke/ fill tied to currentColor
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 48 24");
-  svg.setAttribute("width", "48");
-  svg.setAttribute("height", "24");
-  svg.style.display = "block";
-
-  const shaft = document.createElementNS(svg.namespaceURI, "rect");
-  shaft.setAttribute("x", "4");
-  shaft.setAttribute("y", "10");
-  shaft.setAttribute("width", "28");
-  shaft.setAttribute("height", "4");
-  shaft.setAttribute("fill", filled ? "currentColor" : "transparent");
-  shaft.setAttribute("stroke", "currentColor");
-  shaft.setAttribute("stroke-width", "2");
-
-  const head = document.createElementNS(svg.namespaceURI, "polygon");
-  head.setAttribute("points", "28,4 44,12 28,20");
-  head.setAttribute("fill", filled ? "currentColor" : "transparent");
-  head.setAttribute("stroke", "currentColor");
-  head.setAttribute("stroke-width", "2");
-  head.setAttribute("stroke-linejoin", "round");
-
-  svg.appendChild(shaft);
-  svg.appendChild(head);
-  return svg;
-}
-
 export default {
   async mount(container) {
     await initFirebase();
@@ -67,19 +38,142 @@ export default {
     document.documentElement.style.setProperty("--ink-s", "70%");
     document.documentElement.style.setProperty("--ink-l", "18%");
 
-    // Layout (no card wrapper)
+    // Inject lobby-specific styles once
+    if (!document.getElementById("lobby-style")) {
+      const style = document.createElement("style");
+      style.id = "lobby-style";
+      style.textContent = `
+        .view-lobby {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          background: #f5f1e8;
+          padding: 40px 16px;
+          box-sizing: border-box;
+          font-family: 'Courier New', Courier, monospace;
+        }
+
+        .view-lobby .lobby-card {
+          position: relative;
+          width: min(360px, 88vw);
+          border: 2px solid rgba(0, 0, 0, 0.65);
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.95);
+          padding: 32px 28px 30px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 18px;
+          transition: background 180ms ease, border-color 180ms ease, transform 220ms ease;
+          box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+          animation: lobbyCardShadow 6s ease-in-out infinite alternate;
+        }
+
+        .view-lobby .lobby-card.ready {
+          background: #20ff73;
+          border-color: rgba(0, 0, 0, 0.8);
+          color: #052d12;
+        }
+
+        .view-lobby .lobby-title {
+          font-size: 24px;
+          font-weight: 900;
+          margin: 0;
+        }
+
+        .view-lobby .lobby-prompt {
+          font-size: 19px;
+          font-weight: 700;
+          line-height: 1.4;
+          margin: 0;
+          max-width: 280px;
+        }
+
+        .view-lobby .lobby-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          width: 100%;
+        }
+
+        .view-lobby .lobby-code-input {
+          width: 100%;
+          border: 2px solid rgba(0, 0, 0, 0.5);
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.88);
+          padding: 14px 18px;
+          font-size: 24px;
+          letter-spacing: 0.4em;
+          text-transform: uppercase;
+          text-align: left;
+          box-sizing: border-box;
+          transition: border-color 160ms ease, background 160ms ease;
+        }
+
+        .view-lobby .lobby-card.ready .lobby-code-input {
+          border-color: rgba(0, 0, 0, 0.55);
+          background: rgba(255, 255, 255, 0.6);
+        }
+
+        .view-lobby .lobby-status {
+          font-size: 13px;
+          min-height: 18px;
+        }
+
+        .view-lobby .lobby-go {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 48px;
+          font-weight: 900;
+          letter-spacing: 0.22em;
+          color: rgba(0, 0, 0, 0.25);
+          background: transparent;
+          border: none;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 160ms ease, color 160ms ease;
+          cursor: pointer;
+        }
+
+        .view-lobby .lobby-card.ready .lobby-go {
+          opacity: 1;
+          pointer-events: auto;
+          color: rgba(0, 0, 0, 0.3);
+        }
+
+        .view-lobby .lobby-go:focus-visible {
+          outline: 2px dashed rgba(0, 0, 0, 0.4);
+          outline-offset: 4px;
+        }
+
+        @keyframes lobbyCardShadow {
+          from {
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+            transform: translateY(0);
+          }
+          to {
+            box-shadow: 0 22px 44px rgba(0, 0, 0, 0.12);
+            transform: translateY(-3px);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Layout (card centered on pale backdrop)
     container.innerHTML = "";
-    const view = el("div", { class: "view view-lobby", style: "text-align:center;" });
-    view.appendChild(el("h1", { class: "title" }, "Jemima’s Asking"));
+    const view = el("div", { class: "view view-lobby" });
     container.appendChild(view);
 
-    const prompt = el("div", {
-      class: "h2",
-      style: "margin: 4px 0 10px 0; font-family: 'Courier New', Courier, monospace; font-weight: 900; font-size: 26px;"
-    }, "Jaime, what’s the code?");
-    view.appendChild(prompt);
-
-    const row = el("div", { class: "row", style: "gap:10px; justify-content:center; align-items:center;" });
+    const card = el("div", { class: "lobby-card" });
+    const stack = el("div", { class: "lobby-stack" });
+    const title = el("h1", { class: "lobby-title" }, "Jemima’s Asking");
+    const prompt = el("p", { class: "lobby-prompt" }, "Jaime, what’s the code?");
 
     const input = el("input", {
       type: "text",
@@ -87,54 +181,34 @@ export default {
       autocapitalize: "characters",
       maxlength: "3",
       placeholder: "C A T",
-      class: "code-input",
-      style: `
-        width: 240px;
-        text-align: center;
-        letter-spacing: .42em;
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 22px;
-        padding: 10px 12px;
-      `,
+      class: "lobby-code-input",
       oninput: (e) => { e.target.value = clampCode(e.target.value); reflect(); },
       onkeydown: (e) => { if (e.key === "Enter") join(); }
     });
 
-    const arrowBtn = el("button", {
-      class: "btn btn-arrow",
-      title: "Join",
+    stack.appendChild(title);
+    stack.appendChild(prompt);
+    stack.appendChild(input);
+
+    const status = el("div", { class: "lobby-status" }, "");
+    stack.appendChild(status);
+
+    card.appendChild(stack);
+
+    const goButton = el("button", {
+      class: "lobby-go",
+      type: "button",
       onclick: join,
-      disabled: true,
-      style: `
-        padding: 8px 12px;
-        border: 2px solid currentColor;
-        background: transparent;
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      `
-    });
+      "aria-label": "Join room"
+    }, "GO!");
+    card.appendChild(goButton);
 
-    // Insert initial hollow SVG
-    let arrowIcon = ArrowSVG({ filled: false });
-    arrowBtn.appendChild(arrowIcon);
-
-    row.appendChild(input);
-    row.appendChild(arrowBtn);
-    view.appendChild(row);
-
-    // Inline error/status line
-    const status = el("div", {
-      class: "status-bar",
-      style: "min-height: 18px; margin-top: 10px; font-size: 13px;"
-    }, "");
-    view.appendChild(status);
+    view.appendChild(card);
 
     // Host link (host-only path)
     const hostLink = el("a", {
       href: "#/keyroom",
-      style: "display:inline-block;margin-top:12px;text-decoration:underline;"
+      style: "position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-size:12px;text-decoration:underline;"
     }, "Daniel’s entrance");
     view.appendChild(hostLink);
 
@@ -142,13 +216,8 @@ export default {
 
     function reflect() {
       const ok = input.value.length === 3;
-      arrowBtn.disabled = !ok;
-      arrowBtn.classList.toggle("ready", ok);
-      arrowBtn.classList.toggle("throb", ok);
-      // Swap the SVG fill state
-      arrowBtn.removeChild(arrowIcon);
-      arrowIcon = ArrowSVG({ filled: ok });
-      arrowBtn.appendChild(arrowIcon);
+      card.classList.toggle("ready", ok);
+      goButton.disabled = !ok;
     }
 
     async function join() {
