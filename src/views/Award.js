@@ -137,6 +137,12 @@ export default {
     }, "Daniel 0 — 0 Jaime");
     card.appendChild(scoreHeadline);
 
+    const snippetChip = el("div", {
+      class: "mono",
+      style: "text-align:center;margin-bottom:12px;padding:6px 16px;border-radius:999px;border:1px solid currentColor;display:inline-block;align-self:center;"
+    }, "Snippet Winner: — (tie)");
+    card.appendChild(snippetChip);
+
     const reviewWrap = el("div", { style: "display:flex;flex-direction:column;gap:16px;" });
     card.appendChild(reviewWrap);
 
@@ -199,7 +205,7 @@ export default {
 
     try {
       if (mountMathsPane && roomData0.maths) {
-        mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline" });
+        mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
       }
     } catch (err) {
       console.warn("[award] MathsPane mount failed:", err);
@@ -291,6 +297,26 @@ export default {
       }
     });
 
+    const nameForUid = (uid) => {
+      if (!uid) return "Snippet Winner: — (tie)";
+      if (uid === hostUid) return "Snippet Winner: Daniel";
+      if (uid === guestUid) return "Snippet Winner: Jaime";
+      return "Snippet Winner: —";
+    };
+
+    const updateSnippetChip = (uid) => {
+      snippetChip.textContent = nameForUid(uid);
+    };
+
+    updateSnippetChip(rd.snippetWinnerUid || null);
+
+    const stopRoundDoc = onSnapshot(rdRef, (snap) => {
+      const data = snap.data() || {};
+      updateSnippetChip(data.snippetWinnerUid || null);
+    }, (err) => {
+      console.warn("[award] round snippet watch error:", err);
+    });
+
     const stop = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
 
@@ -349,6 +375,7 @@ export default {
 
     this.unmount = () => {
       try { stop && stop(); } catch {}
+      try { stopRoundDoc && stopRoundDoc(); } catch {}
     };
   },
 

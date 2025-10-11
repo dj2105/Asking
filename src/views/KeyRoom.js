@@ -74,6 +74,7 @@ export default {
     card.appendChild(uploadGrid);
 
     const slotConfigs = {
+      full: { label: "Full Pack", initial: "Awaiting full pack." },
       host: { label: "Host (15)", initial: "Awaiting host halfpack." },
       guest: { label: "Guest (15)", initial: "Awaiting guest halfpack." },
       maths: { label: "Maths", initial: "Awaiting maths block." },
@@ -81,35 +82,69 @@ export default {
 
     const slotMap = {};
 
-    function createSlot(labelText, initialStatus) {
-      const statusEl = el("span", {
-        class: "mono small",
-        style: "min-height:18px;display:block;",
-      }, initialStatus);
+    function createSlot(key, labelText, initialStatus) {
+      const statusEl = el(
+        "span",
+        {
+          class: "mono small",
+          style: "min-height:18px;display:block;",
+        },
+        initialStatus
+      );
       const input = el("input", {
         type: "file",
         accept: ".sealed",
-        class: "input",
+        style: "display:none;",
+        "data-slot-key": key,
         onchange: onFileChange,
       });
-      const label = el("label", {
-        class: "mono",
-        style: "display:flex;flex-direction:column;gap:6px;padding:10px;border:1px dashed rgba(0,0,0,0.25);border-radius:10px;cursor:pointer;",
-      }, [
-        el("span", { style: "font-weight:700;" }, labelText),
+      const uploadBtn = el(
+        "button",
+        { class: "btn outline", type: "button" },
+        "Upload"
+      );
+      uploadBtn.addEventListener("click", () => {
+        if (!uploadBtn.disabled) input.click();
+      });
+      const clearBtn = el(
+        "button",
+        { class: "btn outline", type: "button", disabled: "" },
+        "Clear"
+      );
+      clearBtn.addEventListener("click", () => {
+        clearSlot(key);
+      });
+      const buttonRow = el(
+        "div",
+        { style: "display:flex;gap:8px;flex-wrap:wrap;" },
+        [uploadBtn, clearBtn]
+      );
+      const wrapper = el(
+        "div",
+        {
+          class: "mono",
+          style:
+            "display:flex;flex-direction:column;gap:6px;padding:10px;border:1px dashed rgba(0,0,0,0.25);border-radius:10px;",
+        },
+        [el("span", { style: "font-weight:700;" }, labelText), buttonRow, statusEl, input]
+      );
+      return {
+        key,
+        wrapper,
         input,
         statusEl,
-      ]);
-      return { wrapper: label, input, statusEl, initialText: initialStatus };
+        uploadBtn,
+        clearBtn,
+        initialText: initialStatus,
+        active: false,
+      };
     }
 
     for (const [role, cfg] of Object.entries(slotConfigs)) {
-      const slot = createSlot(cfg.label, cfg.initial);
+      const slot = createSlot(role, cfg.label, cfg.initial);
       slotMap[role] = slot;
       uploadGrid.appendChild(slot.wrapper);
     }
-
-    const inputs = Object.values(slotMap).map((slot) => slot.input);
 
     const progressLine = el("div", {
       class: "mono small",
@@ -181,9 +216,14 @@ export default {
     let lastRoomSummary = { guestPresent: false, state: "keyroom", countdownStart: 0 };
 
     const stageLoaded = { host: false, guest: false, maths: false };
+    let usingFullPack = false;
     let stage = createStage();
 
     function updateProgress() {
+      if (usingFullPack) {
+        progressLine.textContent = "Verified: Full pack ready.";
+        return;
+      }
       const count = (stageLoaded.host ? 1 : 0) + (stageLoaded.guest ? 1 : 0) + (stageLoaded.maths ? 1 : 0);
       progressLine.textContent = `Verified: ${count}/3`;
     }
@@ -193,8 +233,68 @@ export default {
       stageLoaded.host = false;
       stageLoaded.guest = false;
       stageLoaded.maths = false;
+      usingFullPack = false;
       Object.values(slotMap).forEach((slot) => {
         slot.statusEl.textContent = slot.initialText;
+        slot.active = false;
+        slot.clearBtn.disabled = true;
+        slot.uploadBtn.disabled = false;
+      });
+      updateProgress();
+    }
+
+    function clearSlot(key) {
+      const slot = slotMap[key];
+      if (!slot) return;
+      if (seeded) return;
+
+      if (key === "full") {
+        resetStageUI();
+        status.textContent = "Full pack cleared.";
+        log("full pack cleared.");
+        return;
+      }
+
+      if (key === "host" || key === "guest") {
+        for (let i = 1; i <= 5; i += 1) {
+          if (key === "host") {
+            stage.rounds[i].hostItems = [];
+          } else {
+            stage.rounds[i].guestItems = [];
+          }
+        }
+        stageLoaded[key] = false;
+        slot.statusEl.textContent = slot.initialText;
+        slot.active = false;
+        slot.clearBtn.disabled = true;
+        slot.uploadBtn.disabled = false;
+        status.textContent = key === "host" ? "Host halfpack cleared." : "Guest halfpack cleared.";
+        log(`${key} halfpack cleared.`);
+        updateProgress();
+        return;
+      }
+
+      if (key === "maths") {
+        stage.maths = null;
+        stageLoaded.maths = false;
+        slot.statusEl.textContent = slot.initialText;
+        slot.active = false;
+        slot.clearBtn.disabled = true;
+        slot.uploadBtn.disabled = false;
+        status.textContent = "Maths block cleared.";
+        log("maths block cleared.");
+        updateProgress();
+      }
+    }
+
+    function applyFullPackDominance() {
+      usingFullPack = true;
+      Object.entries(slotMap).forEach(([key, slot]) => {
+        if (key === "full") return;
+        slot.statusEl.textContent = "Overridden by full pack.";
+        slot.active = false;
+        slot.clearBtn.disabled = true;
+        slot.uploadBtn.disabled = true;
       });
       updateProgress();
     }
@@ -213,9 +313,11 @@ export default {
       console.log(`[keyroom] ${message}`);
     }
 
-    function setInputsDisabled(flag) {
-      inputs.forEach((input) => {
-        input.disabled = Boolean(flag);
+    function setSlotsDisabled(flag) {
+      Object.values(slotMap).forEach((slot) => {
+        slot.input.disabled = Boolean(flag);
+        slot.uploadBtn.disabled = Boolean(flag);
+        slot.clearBtn.disabled = Boolean(flag || !slot.active);
       });
     }
 
@@ -292,12 +394,13 @@ export default {
       throw new Error("Unsupported sealed version.");
     }
 
-    async function seedPackAndWatch(pack, code, generatedAtISO) {
+    async function seedPackAndWatch(pack, code, generatedAtISO, options = {}) {
+      const { viaFull = false } = options;
       status.textContent = "Seeding Firestore…";
       log("seeding Firestore…");
       const { code: seededCode } = await seedFirestoreFromPack(db, pack);
       seeded = true;
-      setInputsDisabled(true);
+      setSlotsDisabled(true);
       startRow.style.display = "flex";
       status.textContent = "Pack ready. Waiting for Jaime…";
       log(`rooms/${code} prepared; waiting for guest before starting.`);
@@ -308,7 +411,7 @@ export default {
         generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
         metaRow.style.display = "inline-flex";
       }
-      progressLine.textContent = "Verified: 3/3";
+      progressLine.textContent = viaFull ? "Verified: Full pack ready." : "Verified: 3/3";
       watchRoom(seededCode);
     }
 
@@ -377,6 +480,13 @@ export default {
     async function handleFullPack(result) {
       resetStageUI();
       const { pack, code } = result;
+      const fullSlot = slotMap.full;
+      if (fullSlot) {
+        fullSlot.active = true;
+        fullSlot.clearBtn.disabled = false;
+        fullSlot.statusEl.textContent = "Full pack verified.";
+      }
+      applyFullPackDominance();
       showRoomCode(code);
       copyBtn.disabled = false;
       const when = new Date(pack.meta.generatedAt);
@@ -388,13 +498,28 @@ export default {
       log(`unsealed pack ${code}`);
       log(`checksum OK (${pack.integrity.checksum.slice(0, 8)}…)`);
       try {
-        await seedPackAndWatch(pack, code, pack.meta.generatedAt);
-        slotMap.host.statusEl.textContent = "Full pack loaded.";
-        slotMap.guest.statusEl.textContent = "Full pack loaded.";
-        slotMap.maths.statusEl.textContent = "Full pack loaded.";
+        await seedPackAndWatch(pack, code, pack.meta.generatedAt, { viaFull: true });
+        if (fullSlot) {
+          fullSlot.statusEl.textContent = "Full pack loaded.";
+          fullSlot.clearBtn.disabled = true;
+        }
       } catch (err) {
         const message = err?.message || "Failed to seed Firestore.";
         status.textContent = message;
+        if (fullSlot) {
+          fullSlot.statusEl.textContent = message;
+          fullSlot.active = false;
+          fullSlot.clearBtn.disabled = false;
+        }
+        Object.entries(slotMap).forEach(([key, slot]) => {
+          if (key === "full") return;
+          slot.statusEl.textContent = slot.initialText;
+          slot.active = false;
+          slot.clearBtn.disabled = true;
+          slot.uploadBtn.disabled = false;
+        });
+        usingFullPack = false;
+        updateProgress();
         log(`error: ${message}`);
         console.error("[keyroom]", err);
       }
@@ -403,14 +528,25 @@ export default {
     async function handleHalfpack(result) {
       const { halfpack, which, code } = result;
       const ensure = ensureStageCode(code);
+      const slot = slotMap[which];
       if (!ensure.ok) {
         const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
         status.textContent = message;
+        if (slot) {
+          slot.statusEl.textContent = message;
+          slot.active = false;
+          slot.clearBtn.disabled = true;
+        }
         log(`error: ${message}`);
         return;
       }
       if (stageLoaded[which]) {
         status.textContent = "This side is already loaded.";
+        if (slot) {
+          slot.statusEl.textContent = "This side is already loaded.";
+          slot.active = true;
+          slot.clearBtn.disabled = false;
+        }
         log(`ignored duplicate ${which} halfpack`);
         return;
       }
@@ -423,14 +559,16 @@ export default {
         } else {
           stage.rounds[rnum].guestItems = clone(round.guestItems);
         }
-        if (!stage.rounds[rnum].interlude) {
-          stage.rounds[rnum].interlude = round.interlude;
-        }
+        stage.rounds[rnum].interlude = round.interlude;
       });
 
       stageLoaded[which] = true;
       const message = which === "host" ? "Host (15) verified." : "Guest (15) verified.";
-      slotMap[which].statusEl.textContent = message;
+      if (slot) {
+        slot.statusEl.textContent = message;
+        slot.active = true;
+        slot.clearBtn.disabled = false;
+      }
       status.textContent = message;
       log(`${which} halfpack verified for ${code}`);
       updateProgress();
@@ -440,21 +578,36 @@ export default {
     async function handleMaths(result) {
       const { maths, code } = result;
       const ensure = ensureStageCode(code);
+      const slot = slotMap.maths;
       if (!ensure.ok) {
         const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
         status.textContent = message;
+        if (slot) {
+          slot.statusEl.textContent = message;
+          slot.active = false;
+          slot.clearBtn.disabled = true;
+        }
         log(`error: ${message}`);
         return;
       }
       if (stageLoaded.maths) {
         status.textContent = "This side is already loaded.";
+        if (slot) {
+          slot.statusEl.textContent = "This side is already loaded.";
+          slot.active = true;
+          slot.clearBtn.disabled = false;
+        }
         log("ignored duplicate maths block");
         return;
       }
 
       stage.maths = clone(maths);
       stageLoaded.maths = true;
-      slotMap.maths.statusEl.textContent = "Maths verified.";
+      if (slot) {
+        slot.statusEl.textContent = "Maths verified.";
+        slot.active = true;
+        slot.clearBtn.disabled = false;
+      }
       status.textContent = "Maths verified.";
       log(`maths block verified for ${code}`);
       updateProgress();
@@ -466,26 +619,48 @@ export default {
         event.target.value = "";
         return;
       }
+      const key = event.target?.dataset?.slotKey || "";
+      const slot = key ? slotMap[key] : null;
       const file = event.target?.files?.[0];
       event.target.value = "";
       if (!file) return;
 
       status.textContent = "Unsealing pack…";
+      if (slot) {
+        slot.statusEl.textContent = "Unsealing…";
+        slot.active = false;
+        slot.clearBtn.disabled = true;
+      }
       log(`selected ${file.name}`);
+      let processedKey = null;
       try {
         const result = await determineSealedType(file);
         if (result.type === "full") {
           await handleFullPack(result);
+          processedKey = "full";
         } else if (result.type === "half") {
           await handleHalfpack(result);
+          processedKey = result.which;
         } else if (result.type === "maths") {
           await handleMaths(result);
+          processedKey = "maths";
         }
       } catch (err) {
         const message = err?.message || "Failed to load sealed pack.";
         status.textContent = message;
+        if (slot) {
+          slot.statusEl.textContent = message;
+        }
         log(`error: ${message}`);
         console.error("[keyroom]", err);
+        return;
+      }
+
+      if (slot && processedKey && processedKey !== key) {
+        slot.statusEl.textContent = slot.initialText;
+        slot.active = false;
+        slot.clearBtn.disabled = true;
+        slot.uploadBtn.disabled = false;
       }
     }
 
@@ -562,14 +737,17 @@ export default {
         const guestPresent = Boolean(meta.guestUid);
         if (!seeded && data.seeds?.progress === 100) {
           seeded = true;
-          setInputsDisabled(true);
+          setSlotsDisabled(true);
           showRoomCode(code);
           copyBtn.disabled = false;
           startRow.style.display = "flex";
-          progressLine.textContent = "Verified: 3/3";
-          slotMap.host.statusEl.textContent = "Pack ready (remote).";
-          slotMap.guest.statusEl.textContent = "Pack ready (remote).";
-          slotMap.maths.statusEl.textContent = "Pack ready (remote).";
+          progressLine.textContent = "Pack ready (remote).";
+          Object.values(slotMap).forEach((slot) => {
+            slot.statusEl.textContent = "Pack ready (remote).";
+            slot.active = false;
+            slot.clearBtn.disabled = true;
+            slot.uploadBtn.disabled = true;
+          });
           status.textContent = guestPresent ? "Jaime joined. Press Start when ready." : "Pack ready. Waiting for Jaime…";
         }
         if (data.meta?.generatedAt && !generatedLabel.textContent) {

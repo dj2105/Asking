@@ -73,7 +73,7 @@ export default {
     // mount maths if exists
     try {
       if (mountMathsPane && roomData.maths) {
-        mountMathsPane(mathsMount, { maths: roomData.maths, round, mode:"inline" });
+        mountMathsPane(mathsMount, { maths: roomData.maths, round, mode:"inline", roomCode: code, userUid: me.uid });
       }
     } catch(e){ console.warn("MathsPane mount fail", e); }
 
