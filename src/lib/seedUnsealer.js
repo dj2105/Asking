@@ -17,7 +17,9 @@ import {
 
 const TEXT_DECODER = new TextDecoder();
 const PASSWORD_DEMO = "DEMO-ONLY"; // TODO: externalise to env/config.
-const PACK_VERSION = "jemima-pack-1";
+export const PACK_VERSION_FULL = "jemima-pack-1";
+export const PACK_VERSION_HALF = "jemima-halfpack-1";
+export const PACK_VERSION_MATHS = "jemima-maths-1";
 const PBKDF2_ITERATIONS = 150_000;
 
 function assert(condition, message) {
@@ -93,7 +95,7 @@ function validateItem(item, label) {
 
 function validatePack(pack) {
   assert(pack && typeof pack === "object", "Decrypted pack empty.");
-  assert(pack.version === PACK_VERSION, `Unsupported pack version: ${pack.version || "unknown"}.`);
+  assert(pack.version === PACK_VERSION_FULL, "Unsupported sealed version.");
 
   const meta = pack.meta || {};
   assert(meta && typeof meta === "object", "Pack meta missing.");
@@ -145,7 +147,11 @@ function validatePack(pack) {
   return { code };
 }
 
-export async function unsealFile(file, { password = PASSWORD_DEMO } = {}) {
+function clonePlain(value) {
+  return JSON.parse(JSON.stringify(value ?? null));
+}
+
+async function readSealedContent(file, password) {
   assert(file && typeof file.text === "function", "Invalid file supplied.");
   const envelopeText = await file.text();
   let envelope;
@@ -155,19 +161,115 @@ export async function unsealFile(file, { password = PASSWORD_DEMO } = {}) {
     throw new Error("Sealed pack is not valid JSON.");
   }
 
-  const pack = await decryptEnvelope(envelope, password || PASSWORD_DEMO);
-  const { code } = validatePack(pack);
+  return decryptEnvelope(envelope, password || PASSWORD_DEMO);
+}
 
-  const { integrity, ...withoutIntegrity } = pack;
+async function verifyIntegrity(pack, mismatchMessage = "Pack integrity checksum mismatch.") {
+  const integrity = pack.integrity || {};
+  assert(typeof integrity.checksum === "string" && /^[0-9a-f]{64}$/i.test(integrity.checksum), "Integrity checksum invalid.");
+  if ("verified" in integrity) {
+    assert(Boolean(integrity.verified), "Integrity flag must be true.");
+  }
+
+  const { integrity: _, ...withoutIntegrity } = pack;
   const canonical = canonicalJSONStringify(withoutIntegrity);
   const checksum = await sha256Hex(canonical);
-  assert(checksum === integrity.checksum, "Pack integrity checksum mismatch.");
+  assert(checksum === integrity.checksum, mismatchMessage);
+}
 
+function validateHalfpack(pack) {
+  assert(pack && typeof pack === "object", "Decrypted pack empty.");
+  assert(pack.version === PACK_VERSION_HALF, "Unsupported sealed version.");
+
+  const meta = pack.meta || {};
+  assert(meta && typeof meta === "object", "Pack meta missing.");
+  const code = clampCode(meta.roomCode);
+  assert(code && code.length === 3, "Pack room code invalid.");
+  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3 chars).");
+  assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
+  assert(meta.which === "host" || meta.which === "guest", "Halfpack meta.which invalid.");
+
+  const expectedSide = meta.which === "host" ? "hostItems" : "guestItems";
+  const otherSide = meta.which === "host" ? "guestItems" : "hostItems";
+  const rounds = Array.isArray(pack.rounds) ? pack.rounds : [];
+  assert(rounds.length === 5, "Halfpack must contain 5 rounds.");
+
+  const seenRounds = new Set();
+  rounds.forEach((round, idx) => {
+    assert(round && typeof round === "object", `Round entry ${idx + 1} invalid.`);
+    const rnum = Number(round.round);
+    assert(Number.isInteger(rnum) && rnum >= 1 && rnum <= 5, `Round number invalid at index ${idx}.`);
+    seenRounds.add(rnum);
+
+    const activeItems = Array.isArray(round[expectedSide]) ? round[expectedSide] : [];
+    const inactiveItems = Array.isArray(round[otherSide]) ? round[otherSide] : [];
+    if (activeItems.length !== 3 || inactiveItems.length !== 0) {
+      throw new Error("Halfpack invalid: each round needs exactly 3 items for its side.");
+    }
+    activeItems.forEach((item, i) => validateItem(item, `Round ${rnum} ${meta.which} item ${i + 1}`));
+
+    assert(typeof round.interlude === "string" && round.interlude.trim(), `Round ${rnum} interlude missing.`);
+  });
+
+  assert(seenRounds.size === 5, "Pack rounds must cover 1–5 exactly.");
+  for (let i = 1; i <= 5; i += 1) {
+    assert(seenRounds.has(i), "Pack rounds must cover 1–5 exactly.");
+  }
+
+  return { code, which: meta.which };
+}
+
+function validateMaths(pack) {
+  assert(pack && typeof pack === "object", "Decrypted pack empty.");
+  assert(pack.version === PACK_VERSION_MATHS, "Unsupported sealed version.");
+
+  const meta = pack.meta || {};
+  assert(meta && typeof meta === "object", "Pack meta missing.");
+  const code = clampCode(meta.roomCode);
+  assert(code && code.length === 3, "Pack room code invalid.");
+  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3 chars).");
+  assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
+
+  const maths = pack.maths || {};
+  assert(typeof maths.location === "string" && maths.location.trim(), "Maths location missing.");
+  const beats = Array.isArray(maths.beats) ? maths.beats : [];
+  assert(beats.length === 4, "Maths requires four beats.");
+  beats.forEach((beat, idx) => {
+    assert(typeof beat === "string" && beat.trim(), `Maths beat ${idx + 1} missing.`);
+  });
+  const questions = Array.isArray(maths.questions) ? maths.questions : [];
+  assert(questions.length === 2, "Maths requires two questions.");
+  questions.forEach((question, idx) => {
+    assert(typeof question === "string" && question.trim(), `Maths question ${idx + 1} missing.`);
+  });
+  const answers = Array.isArray(maths.answers) ? maths.answers : [];
+  assert(answers.length === 2, "Maths requires two answers.");
+  answers.forEach((ans, idx) => {
+    assert(Number.isInteger(ans), `Maths answer ${idx + 1} must be an integer.`);
+  });
+
+  return { code };
+}
+
+export async function unsealFile(file, { password = PASSWORD_DEMO } = {}) {
+  const pack = await readSealedContent(file, password);
+  const { code } = validatePack(pack);
+  await verifyIntegrity(pack, "Pack integrity checksum mismatch.");
   return { pack, verified: true, code };
 }
 
-function clonePlain(value) {
-  return JSON.parse(JSON.stringify(value ?? null));
+export async function unsealHalfpack(file, { password = PASSWORD_DEMO } = {}) {
+  const pack = await readSealedContent(file, password);
+  const { code, which } = validateHalfpack(pack);
+  await verifyIntegrity(pack, "Pack integrity checksum mismatch.");
+  return { halfpack: clonePlain(pack), which, code };
+}
+
+export async function unsealMaths(file, { password = PASSWORD_DEMO } = {}) {
+  const pack = await readSealedContent(file, password);
+  const { code } = validateMaths(pack);
+  await verifyIntegrity(pack, "Pack integrity checksum mismatch.");
+  return { maths: clonePlain(pack.maths), code };
 }
 
 export async function seedFirestoreFromPack(db, pack) {
