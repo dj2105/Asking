@@ -19,6 +19,7 @@ const TEXT_DECODER = new TextDecoder();
 const PASSWORD_DEMO = "DEMO-ONLY"; // TODO: externalise to env/config.
 export const PACK_VERSION_FULL = "jemima-pack-1";
 export const PACK_VERSION_HALF = "jemima-halfpack-1";
+export const PACK_VERSION_QUESTIONS = "jemima-questionpack-1";
 export const PACK_VERSION_MATHS = "jemima-maths-1";
 const PBKDF2_ITERATIONS = 150_000;
 
@@ -219,6 +220,47 @@ function validateHalfpack(pack) {
   return { code, which: meta.which };
 }
 
+function validateQuestionPack(pack) {
+  assert(pack && typeof pack === "object", "Decrypted pack empty.");
+  assert(pack.version === PACK_VERSION_QUESTIONS, "Unsupported sealed version.");
+
+  const meta = pack.meta || {};
+  assert(meta && typeof meta === "object", "Pack meta missing.");
+  const code = clampCode(meta.roomCode);
+  assert(code && code.length === 3, "Pack room code invalid.");
+  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3 chars).");
+  if (typeof meta.generatedAt === "string" && meta.generatedAt.trim()) {
+    assert(!Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
+  }
+
+  const rounds = Array.isArray(pack.rounds) ? pack.rounds : [];
+  assert(rounds.length === 5, "Question pack must contain 5 rounds.");
+
+  const seenRounds = new Set();
+  rounds.forEach((round, idx) => {
+    assert(round && typeof round === "object", `Round entry ${idx + 1} invalid.`);
+    const rnum = Number(round.round);
+    assert(Number.isInteger(rnum) && rnum >= 1 && rnum <= 5, `Round number invalid at index ${idx}.`);
+    seenRounds.add(rnum);
+
+    const hostItems = Array.isArray(round.hostItems) ? round.hostItems : [];
+    const guestItems = Array.isArray(round.guestItems) ? round.guestItems : [];
+    assert(hostItems.length === 3, `Round ${rnum} hostItems must be 3.`);
+    assert(guestItems.length === 3, `Round ${rnum} guestItems must be 3.`);
+    hostItems.forEach((item, i) => validateItem(item, `Round ${rnum} host item ${i + 1}`));
+    guestItems.forEach((item, i) => validateItem(item, `Round ${rnum} guest item ${i + 1}`));
+
+    assert(typeof round.interlude === "string" && round.interlude.trim(), `Round ${rnum} interlude missing.`);
+  });
+
+  assert(seenRounds.size === 5, "Question pack rounds must cover 1–5 exactly.");
+  for (let i = 1; i <= 5; i += 1) {
+    assert(seenRounds.has(i), "Question pack rounds must cover 1–5 exactly.");
+  }
+
+  return { code };
+}
+
 function validateMaths(pack) {
   assert(pack && typeof pack === "object", "Decrypted pack empty.");
   assert(pack.version === PACK_VERSION_MATHS, "Unsupported sealed version.");
@@ -263,6 +305,13 @@ export async function unsealHalfpack(file, { password = PASSWORD_DEMO } = {}) {
   const { code, which } = validateHalfpack(pack);
   await verifyIntegrity(pack, "Pack integrity checksum mismatch.");
   return { halfpack: clonePlain(pack), which, code };
+}
+
+export async function unsealQuestionPack(file, { password = PASSWORD_DEMO } = {}) {
+  const pack = await readSealedContent(file, password);
+  const { code } = validateQuestionPack(pack);
+  await verifyIntegrity(pack, "Pack integrity checksum mismatch.");
+  return { questions: clonePlain(pack), code };
 }
 
 export async function unsealMaths(file, { password = PASSWORD_DEMO } = {}) {

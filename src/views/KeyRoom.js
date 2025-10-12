@@ -18,11 +18,13 @@ import {
   unsealFile,
   unsealHalfpack,
   unsealMaths,
+  unsealQuestionPack,
   seedFirestoreFromPack,
   DEMO_PACK_PASSWORD,
   PACK_VERSION_FULL,
   PACK_VERSION_HALF,
   PACK_VERSION_MATHS,
+  PACK_VERSION_QUESTIONS,
 } from "../lib/seedUnsealer.js";
 import {
   clampCode,
@@ -57,9 +59,8 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-keyroom" });
-    root.appendChild(el("h1", { class: "title" }, "Key Room"));
-
     const card = el("div", { class: "card" });
+    card.appendChild(el("h1", { class: "title" }, "Key Room"));
     const intro = el(
       "div",
       { class: "mono", style: "margin-bottom:10px;" },
@@ -75,6 +76,10 @@ export default {
 
     const slotConfigs = {
       full: { label: "Full Pack", initial: "Awaiting full pack." },
+      questions: {
+        label: "All Questions (30)",
+        initial: "Awaiting 30-question pack.",
+      },
       host: { label: "Host (15)", initial: "Awaiting host halfpack." },
       guest: { label: "Guest (15)", initial: "Awaiting guest halfpack." },
       maths: { label: "Maths", initial: "Awaiting maths block." },
@@ -149,7 +154,7 @@ export default {
     const progressLine = el("div", {
       class: "mono small",
       style: "margin-top:4px;text-align:center;min-height:18px;",
-    }, "Verified: 0/3");
+    }, "Sources → Host: — · Guest: — · Maths: —");
     card.appendChild(progressLine);
 
     const status = el(
@@ -201,11 +206,14 @@ export default {
     container.appendChild(root);
 
     function createStage() {
-      const rounds = {};
-      for (let i = 1; i <= 5; i += 1) {
-        rounds[i] = { hostItems: [], guestItems: [], interlude: "" };
-      }
-      return { code: "", rounds, maths: null };
+      return {
+        code: "",
+        base: null,
+        questionsOverride: null,
+        hostOverride: null,
+        guestOverride: null,
+        mathsOverride: null,
+      };
     }
 
     let seeded = false;
@@ -215,88 +223,164 @@ export default {
     let startPending = false;
     let lastRoomSummary = { guestPresent: false, state: "keyroom", countdownStart: 0 };
 
-    const stageLoaded = { host: false, guest: false, maths: false };
-    let usingFullPack = false;
     let stage = createStage();
+    let seedingInFlight = false;
+    let reseedRequested = false;
 
-    function updateProgress() {
-      if (usingFullPack) {
-        progressLine.textContent = "Verified: Full pack ready.";
+    function hideRoomCode() {
+      codeText.textContent = "";
+      codeRow.style.display = "none";
+      copyBtn.disabled = true;
+    }
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value ?? null));
+    }
+
+    function normalizeFullRounds(rounds = []) {
+      const map = {};
+      for (let i = 1; i <= 5; i += 1) {
+        map[i] = { hostItems: [], guestItems: [], interlude: "" };
+      }
+      rounds.forEach((round) => {
+        const rnum = Number(round?.round);
+        if (!Number.isInteger(rnum) || rnum < 1 || rnum > 5) return;
+        map[rnum] = {
+          hostItems: clone(round.hostItems || []),
+          guestItems: clone(round.guestItems || []),
+          interlude: typeof round.interlude === "string" ? round.interlude : "",
+        };
+      });
+      return map;
+    }
+
+    function normalizeHalfpackRounds(rounds = [], which) {
+      const map = {};
+      for (let i = 1; i <= 5; i += 1) {
+        map[i] = { hostItems: [], guestItems: [], interlude: "" };
+      }
+      rounds.forEach((round) => {
+        const rnum = Number(round?.round);
+        if (!Number.isInteger(rnum) || rnum < 1 || rnum > 5) return;
+        const entry = map[rnum];
+        if (which === "host") {
+          entry.hostItems = clone(round.hostItems || []);
+        } else {
+          entry.guestItems = clone(round.guestItems || []);
+        }
+        if (typeof round.interlude === "string" && round.interlude.trim()) {
+          entry.interlude = round.interlude;
+        }
+      });
+      return map;
+    }
+
+    function recalcStageCode() {
+      const codes = [
+        stage.base?.code,
+        stage.questionsOverride?.code,
+        stage.hostOverride?.code,
+        stage.guestOverride?.code,
+        stage.mathsOverride?.code,
+      ].filter(Boolean);
+      const unique = Array.from(new Set(codes));
+      if (unique.length === 0) {
+        stage.code = "";
+        hideRoomCode();
         return;
       }
-      const count = (stageLoaded.host ? 1 : 0) + (stageLoaded.guest ? 1 : 0) + (stageLoaded.maths ? 1 : 0);
-      progressLine.textContent = `Verified: ${count}/3`;
+      stage.code = unique[0];
+      showRoomCode(stage.code);
+    }
+
+    function getSourceLabel(kind) {
+      if (kind === "host") {
+        if (stage.hostOverride) return "Host (15)";
+        if (stage.questionsOverride) return "All Questions (30)";
+        if (stage.base) return "Full Pack";
+        return null;
+      }
+      if (kind === "guest") {
+        if (stage.guestOverride) return "Guest (15)";
+        if (stage.questionsOverride) return "All Questions (30)";
+        if (stage.base) return "Full Pack";
+        return null;
+      }
+      if (kind === "maths") {
+        if (stage.mathsOverride) return "Maths Pack";
+        if (stage.base?.maths) return "Full Pack";
+        return null;
+      }
+      return null;
+    }
+
+    function updateProgress() {
+      const hostSource = getSourceLabel("host") || "—";
+      const guestSource = getSourceLabel("guest") || "—";
+      const mathsSource = getSourceLabel("maths") || "—";
+      progressLine.textContent = `Sources → Host: ${hostSource} · Guest: ${guestSource} · Maths: ${mathsSource}`;
     }
 
     function resetStageUI() {
       stage = createStage();
-      stageLoaded.host = false;
-      stageLoaded.guest = false;
-      stageLoaded.maths = false;
-      usingFullPack = false;
+      seeded = false;
+      seedingInFlight = false;
+      reseedRequested = false;
       Object.values(slotMap).forEach((slot) => {
         slot.statusEl.textContent = slot.initialText;
         slot.active = false;
         slot.clearBtn.disabled = true;
         slot.uploadBtn.disabled = false;
       });
+      hideRoomCode();
+      generatedLabel.textContent = "";
+      metaRow.style.display = "none";
+      startRow.style.display = "none";
       updateProgress();
     }
 
     function clearSlot(key) {
       const slot = slotMap[key];
       if (!slot) return;
-      if (seeded) return;
+      if (seedingInFlight) {
+        status.textContent = "Please wait for the current seeding to finish.";
+        return;
+      }
 
       if (key === "full") {
-        resetStageUI();
+        stage.base = null;
         status.textContent = "Full pack cleared.";
         log("full pack cleared.");
-        return;
-      }
-
-      if (key === "host" || key === "guest") {
-        for (let i = 1; i <= 5; i += 1) {
-          if (key === "host") {
-            stage.rounds[i].hostItems = [];
-          } else {
-            stage.rounds[i].guestItems = [];
-          }
+        generatedLabel.textContent = "";
+        metaRow.style.display = "none";
+      } else if (key === "questions") {
+        stage.questionsOverride = null;
+        status.textContent = "All questions pack cleared.";
+        log("questions pack cleared.");
+      } else if (key === "host" || key === "guest") {
+        if (key === "host") {
+          stage.hostOverride = null;
+          status.textContent = "Host halfpack cleared.";
+          log("host halfpack cleared.");
+        } else {
+          stage.guestOverride = null;
+          status.textContent = "Guest halfpack cleared.";
+          log("guest halfpack cleared.");
         }
-        stageLoaded[key] = false;
-        slot.statusEl.textContent = slot.initialText;
-        slot.active = false;
-        slot.clearBtn.disabled = true;
-        slot.uploadBtn.disabled = false;
-        status.textContent = key === "host" ? "Host halfpack cleared." : "Guest halfpack cleared.";
-        log(`${key} halfpack cleared.`);
-        updateProgress();
-        return;
-      }
-
-      if (key === "maths") {
-        stage.maths = null;
-        stageLoaded.maths = false;
-        slot.statusEl.textContent = slot.initialText;
-        slot.active = false;
-        slot.clearBtn.disabled = true;
-        slot.uploadBtn.disabled = false;
+      } else if (key === "maths") {
+        stage.mathsOverride = null;
         status.textContent = "Maths block cleared.";
         log("maths block cleared.");
-        updateProgress();
       }
-    }
 
-    function applyFullPackDominance() {
-      usingFullPack = true;
-      Object.entries(slotMap).forEach(([key, slot]) => {
-        if (key === "full") return;
-        slot.statusEl.textContent = "Overridden by full pack.";
-        slot.active = false;
-        slot.clearBtn.disabled = true;
-        slot.uploadBtn.disabled = true;
-      });
+      slot.statusEl.textContent = slot.initialText;
+      slot.active = false;
+      slot.clearBtn.disabled = true;
+      slot.uploadBtn.disabled = false;
+
+      recalcStageCode();
       updateProgress();
+      maybeAssembleAndSeed();
     }
 
     function showRoomCode(code) {
@@ -364,9 +448,11 @@ export default {
       const order = [];
       if (versionHint === PACK_VERSION_FULL) order.push("full");
       else if (versionHint === PACK_VERSION_HALF) order.push("half");
+      else if (versionHint === PACK_VERSION_QUESTIONS) order.push("questions");
       else if (versionHint === PACK_VERSION_MATHS) order.push("maths");
       if (!order.includes("full")) order.push("full");
       if (!order.includes("half")) order.push("half");
+      if (!order.includes("questions")) order.push("questions");
       if (!order.includes("maths")) order.push("maths");
 
       for (const type of order) {
@@ -378,6 +464,10 @@ export default {
           if (type === "half") {
             const result = await unsealHalfpack(stubFile, { password: DEMO_PACK_PASSWORD });
             return { type: "half", ...result };
+          }
+          if (type === "questions") {
+            const result = await unsealQuestionPack(stubFile, { password: DEMO_PACK_PASSWORD });
+            return { type: "questions", ...result };
           }
           if (type === "maths") {
             const result = await unsealMaths(stubFile, { password: DEMO_PACK_PASSWORD });
@@ -396,133 +486,275 @@ export default {
 
     async function seedPackAndWatch(pack, code, generatedAtISO, options = {}) {
       const { viaFull = false } = options;
+      setSlotsDisabled(true);
       status.textContent = "Seeding Firestore…";
       log("seeding Firestore…");
-      const { code: seededCode } = await seedFirestoreFromPack(db, pack);
-      seeded = true;
-      setSlotsDisabled(true);
-      startRow.style.display = "flex";
-      status.textContent = "Pack ready. Waiting for Jaime…";
-      log(`rooms/${code} prepared; waiting for guest before starting.`);
-      setStoredRole(code, "host");
-      showRoomCode(code);
-      const when = new Date(generatedAtISO);
-      if (!Number.isNaN(when.valueOf())) {
-        generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
-        metaRow.style.display = "inline-flex";
-      }
-      progressLine.textContent = viaFull ? "Verified: Full pack ready." : "Verified: 3/3";
-      watchRoom(seededCode);
-    }
-
-    async function tryCompleteStage() {
-      if (seeded) return;
-      if (!stageLoaded.host || !stageLoaded.guest || !stageLoaded.maths) return;
-
-      for (let i = 1; i <= 5; i += 1) {
-        const round = stage.rounds[i];
-        if (!round) {
-          status.textContent = "Halfpack invalid: each round needs exactly 3 items for its side.";
-          return;
-        }
-        if (!Array.isArray(round.hostItems) || round.hostItems.length !== 3 ||
-            !Array.isArray(round.guestItems) || round.guestItems.length !== 3) {
-          status.textContent = "Halfpack invalid: each round needs exactly 3 items for its side.";
-          return;
-        }
-        if (typeof round.interlude !== "string" || !round.interlude.trim()) {
-          status.textContent = "Halfpack invalid: each round needs exactly 3 items for its side.";
-          return;
-        }
-      }
-
-      if (!stage.maths) return;
-
-      progressLine.textContent = "Verified: 3/3";
-      status.textContent = "Assembling pack…";
-      log(`assembling full pack from halfpacks (${stage.code})`);
-
-      const nowIso = new Date().toISOString();
-      const rounds = [];
-      for (let i = 1; i <= 5; i += 1) {
-        const round = stage.rounds[i];
-        rounds.push({
-          round: i,
-          hostItems: clone(round.hostItems),
-          guestItems: clone(round.guestItems),
-          interlude: round.interlude,
-        });
-      }
-
-      const fullPack = {
-        version: PACK_VERSION_FULL,
-        meta: {
-          roomCode: stage.code,
-          generatedAt: nowIso,
-          hostUid: "demo-host",
-          guestUid: "demo-guest",
-        },
-        rounds,
-        maths: clone(stage.maths),
-        integrity: { checksum: "0".repeat(64), verified: true },
-      };
-
       try {
-        await seedPackAndWatch(fullPack, stage.code, nowIso);
+        const { code: seededCode } = await seedFirestoreFromPack(db, pack);
+        seeded = true;
+        startRow.style.display = "flex";
+        status.textContent = "Pack ready. Waiting for Jaime…";
+        log(`rooms/${code} prepared; waiting for guest before starting.`);
+        setStoredRole(code, "host");
+        showRoomCode(code);
+        const when = new Date(generatedAtISO);
+        if (!Number.isNaN(when.valueOf())) {
+          generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
+          metaRow.style.display = "inline-flex";
+        }
+        if (viaFull) {
+          log("base pack seeded (no overrides).");
+        } else {
+          log("composite pack seeded.");
+        }
+        watchRoom(seededCode);
       } catch (err) {
+        seeded = false;
         const message = err?.message || "Failed to seed Firestore.";
         status.textContent = message;
         log(`error: ${message}`);
         console.error("[keyroom]", err);
+        throw err;
+      } finally {
+        setSlotsDisabled(false);
+        updateProgress();
+      }
+    }
+
+    function buildAssembledPack() {
+      const code = clampCode(stage.code);
+      if (!code) return null;
+
+      const hostSource = stage.hostOverride || stage.questionsOverride || stage.base;
+      const guestSource = stage.guestOverride || stage.questionsOverride || stage.base;
+      const mathsSource = stage.mathsOverride || stage.base;
+
+      if (!hostSource || !guestSource || !mathsSource) return null;
+
+      const rounds = [];
+      for (let i = 1; i <= 5; i += 1) {
+        const baseRound = stage.base?.rounds?.[i] || { hostItems: [], guestItems: [], interlude: "" };
+        const questionsRound = stage.questionsOverride?.rounds?.[i];
+        const hostRound = stage.hostOverride?.rounds?.[i];
+        const guestRound = stage.guestOverride?.rounds?.[i];
+
+        const hostItems =
+          hostRound?.hostItems?.length === 3
+            ? clone(hostRound.hostItems)
+            : questionsRound?.hostItems?.length === 3
+            ? clone(questionsRound.hostItems)
+            : clone(baseRound.hostItems);
+
+        const guestItems =
+          guestRound?.guestItems?.length === 3
+            ? clone(guestRound.guestItems)
+            : questionsRound?.guestItems?.length === 3
+            ? clone(questionsRound.guestItems)
+            : clone(baseRound.guestItems);
+
+        if (!Array.isArray(hostItems) || hostItems.length !== 3) return null;
+        if (!Array.isArray(guestItems) || guestItems.length !== 3) return null;
+
+        const interludeCandidates = [];
+        if (typeof baseRound.interlude === "string" && baseRound.interlude.trim()) {
+          interludeCandidates.push({ value: baseRound.interlude, loadedAt: stage.base?.loadedAt || 0 });
+        }
+        if (questionsRound && typeof questionsRound.interlude === "string" && questionsRound.interlude.trim()) {
+          interludeCandidates.push({ value: questionsRound.interlude, loadedAt: stage.questionsOverride?.loadedAt || 0 });
+        }
+        if (hostRound && typeof hostRound.interlude === "string" && hostRound.interlude.trim()) {
+          interludeCandidates.push({ value: hostRound.interlude, loadedAt: stage.hostOverride?.loadedAt || 0 });
+        }
+        if (guestRound && typeof guestRound.interlude === "string" && guestRound.interlude.trim()) {
+          interludeCandidates.push({ value: guestRound.interlude, loadedAt: stage.guestOverride?.loadedAt || 0 });
+        }
+        interludeCandidates.sort((a, b) => a.loadedAt - b.loadedAt);
+        const chosen = interludeCandidates.length ? interludeCandidates[interludeCandidates.length - 1] : null;
+        const interlude = chosen ? chosen.value : "";
+        if (!interlude) return null;
+
+        rounds.push({
+          round: i,
+          hostItems,
+          guestItems,
+          interlude,
+        });
+      }
+
+      const maths = clone((stage.mathsOverride?.maths || stage.base?.maths) || null);
+      if (!maths) return null;
+
+      const meta = stage.base?.meta || {};
+      const questionsMeta = stage.questionsOverride?.meta || {};
+      const hostUid = meta.hostUid || questionsMeta.hostUid || "demo-host";
+      const guestUid = meta.guestUid || questionsMeta.guestUid || "demo-guest";
+
+      const overridesActive = Boolean(
+        stage.questionsOverride || stage.hostOverride || stage.guestOverride || stage.mathsOverride
+      );
+
+      const generatedAt =
+        !overridesActive && stage.base?.generatedAt
+          ? stage.base.generatedAt
+          : new Date().toISOString();
+
+      const pack = {
+        version: PACK_VERSION_FULL,
+        meta: {
+          roomCode: code,
+          generatedAt,
+          hostUid,
+          guestUid,
+        },
+        rounds,
+        maths,
+        integrity: { checksum: "0".repeat(64), verified: true },
+      };
+
+      return { pack, code, generatedAt, viaFull: Boolean(stage.base) && !overridesActive };
+    }
+
+    async function maybeAssembleAndSeed() {
+      const assembled = buildAssembledPack();
+      if (!assembled) {
+        seeded = false;
+        startRow.style.display = "none";
+        if (!startPending) {
+          startBtn.disabled = true;
+          startBtn.classList.remove("throb");
+        }
+        const hasHost = Boolean(stage.hostOverride || stage.questionsOverride || stage.base);
+        const hasGuest = Boolean(stage.guestOverride || stage.questionsOverride || stage.base);
+        const hasMaths = Boolean(stage.mathsOverride || stage.base?.maths);
+        if (!hasHost || !hasGuest) {
+          status.textContent = "Need host & guest questions before seeding.";
+        } else if (!hasMaths) {
+          status.textContent = "Need maths block before seeding.";
+        } else {
+          status.textContent = "Awaiting complete pack…";
+        }
+        return;
+      }
+
+      seeded = false;
+      if (!startPending) {
+        startBtn.disabled = true;
+        startBtn.classList.remove("throb");
+      }
+      status.textContent = assembled.viaFull ? "Preparing full pack…" : "Assembling pack…";
+      if (!assembled.viaFull) {
+        log(`assembling overrides for ${assembled.code}`);
+      }
+
+      if (seedingInFlight) {
+        reseedRequested = true;
+        return;
+      }
+
+      seedingInFlight = true;
+      reseedRequested = false;
+      try {
+        await seedPackAndWatch(assembled.pack, assembled.code, assembled.generatedAt, {
+          viaFull: assembled.viaFull,
+        });
+      } catch (err) {
+        // handled in seedPackAndWatch
+      } finally {
+        seedingInFlight = false;
+        if (reseedRequested) {
+          reseedRequested = false;
+          maybeAssembleAndSeed();
+        }
       }
     }
 
     async function handleFullPack(result) {
       resetStageUI();
       const { pack, code } = result;
+      const ensure = ensureStageCode(code);
+      if (!ensure.ok) {
+        const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
+        status.textContent = message;
+        log(`error: ${message}`);
+        return;
+      }
+
+      stage.base = {
+        code,
+        rounds: normalizeFullRounds(pack.rounds || []),
+        maths: clone(pack.maths),
+        meta: {
+          hostUid: pack.meta?.hostUid || "demo-host",
+          guestUid: pack.meta?.guestUid || "demo-guest",
+        },
+        generatedAt: pack.meta?.generatedAt || new Date().toISOString(),
+        checksum: pack.integrity?.checksum || "",
+        loadedAt: Date.now(),
+      };
+
       const fullSlot = slotMap.full;
       if (fullSlot) {
+        fullSlot.statusEl.textContent = "Full pack loaded (base).";
         fullSlot.active = true;
         fullSlot.clearBtn.disabled = false;
-        fullSlot.statusEl.textContent = "Full pack verified.";
       }
-      applyFullPackDominance();
-      showRoomCode(code);
       copyBtn.disabled = false;
-      const when = new Date(pack.meta.generatedAt);
+      const when = new Date(stage.base.generatedAt);
       if (!Number.isNaN(when.valueOf())) {
         generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
         metaRow.style.display = "inline-flex";
+      } else {
+        generatedLabel.textContent = "";
+        metaRow.style.display = "none";
       }
-      status.textContent = "Pack verified.";
+      status.textContent = "Full pack loaded. Override boxes will replace matching sections.";
       log(`unsealed pack ${code}`);
-      log(`checksum OK (${pack.integrity.checksum.slice(0, 8)}…)`);
-      try {
-        await seedPackAndWatch(pack, code, pack.meta.generatedAt, { viaFull: true });
-        if (fullSlot) {
-          fullSlot.statusEl.textContent = "Full pack loaded.";
-          fullSlot.clearBtn.disabled = true;
-        }
-      } catch (err) {
-        const message = err?.message || "Failed to seed Firestore.";
+      if (stage.base.checksum) {
+        log(`checksum OK (${stage.base.checksum.slice(0, 8)}…)`);
+      }
+      updateProgress();
+      await maybeAssembleAndSeed();
+    }
+
+    async function handleQuestionsPack(result) {
+      const { questions, code } = result;
+      const ensure = ensureStageCode(code);
+      const slot = slotMap.questions;
+      if (!ensure.ok) {
+        const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
         status.textContent = message;
-        if (fullSlot) {
-          fullSlot.statusEl.textContent = message;
-          fullSlot.active = false;
-          fullSlot.clearBtn.disabled = false;
-        }
-        Object.entries(slotMap).forEach(([key, slot]) => {
-          if (key === "full") return;
-          slot.statusEl.textContent = slot.initialText;
+        if (slot) {
+          slot.statusEl.textContent = message;
           slot.active = false;
           slot.clearBtn.disabled = true;
-          slot.uploadBtn.disabled = false;
-        });
-        usingFullPack = false;
-        updateProgress();
+        }
         log(`error: ${message}`);
-        console.error("[keyroom]", err);
+        return;
       }
+
+      const qMeta = questions.meta || {};
+      stage.questionsOverride = {
+        code,
+        rounds: normalizeFullRounds(questions.rounds || []),
+        meta: {
+          hostUid: typeof qMeta.hostUid === "string" ? qMeta.hostUid : "",
+          guestUid: typeof qMeta.guestUid === "string" ? qMeta.guestUid : "",
+        },
+        generatedAt:
+          typeof qMeta.generatedAt === "string" && !Number.isNaN(Date.parse(qMeta.generatedAt))
+            ? qMeta.generatedAt
+            : "",
+        loadedAt: Date.now(),
+      };
+      if (slot) {
+        slot.statusEl.textContent = "All questions pack loaded.";
+        slot.active = true;
+        slot.clearBtn.disabled = false;
+      }
+      status.textContent = "Host & guest questions now come from the 30-question pack.";
+      log(`30-question pack verified for ${code}`);
+      updateProgress();
+      await maybeAssembleAndSeed();
     }
 
     async function handleHalfpack(result) {
@@ -540,39 +772,33 @@ export default {
         log(`error: ${message}`);
         return;
       }
-      if (stageLoaded[which]) {
-        status.textContent = "This side is already loaded.";
-        if (slot) {
-          slot.statusEl.textContent = "This side is already loaded.";
-          slot.active = true;
-          slot.clearBtn.disabled = false;
-        }
-        log(`ignored duplicate ${which} halfpack`);
-        return;
+
+      const loadedAt = Date.now();
+      if (which === "host") {
+        stage.hostOverride = {
+          code,
+          rounds: normalizeHalfpackRounds(halfpack.rounds || [], "host"),
+          loadedAt,
+        };
+      } else {
+        stage.guestOverride = {
+          code,
+          rounds: normalizeHalfpackRounds(halfpack.rounds || [], "guest"),
+          loadedAt,
+        };
       }
 
-      halfpack.rounds.forEach((round) => {
-        const rnum = Number(round.round);
-        if (!stage.rounds[rnum]) return;
-        if (which === "host") {
-          stage.rounds[rnum].hostItems = clone(round.hostItems);
-        } else {
-          stage.rounds[rnum].guestItems = clone(round.guestItems);
-        }
-        stage.rounds[rnum].interlude = round.interlude;
-      });
-
-      stageLoaded[which] = true;
-      const message = which === "host" ? "Host (15) verified." : "Guest (15) verified.";
       if (slot) {
-        slot.statusEl.textContent = message;
+        slot.statusEl.textContent = which === "host" ? "Host (15) loaded." : "Guest (15) loaded.";
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
-      status.textContent = message;
+      status.textContent = which === "host"
+        ? "Host questions overriding base content."
+        : "Guest questions overriding base content.";
       log(`${which} halfpack verified for ${code}`);
       updateProgress();
-      await tryCompleteStage();
+      await maybeAssembleAndSeed();
     }
 
     async function handleMaths(result) {
@@ -590,32 +816,26 @@ export default {
         log(`error: ${message}`);
         return;
       }
-      if (stageLoaded.maths) {
-        status.textContent = "This side is already loaded.";
-        if (slot) {
-          slot.statusEl.textContent = "This side is already loaded.";
-          slot.active = true;
-          slot.clearBtn.disabled = false;
-        }
-        log("ignored duplicate maths block");
-        return;
-      }
 
-      stage.maths = clone(maths);
-      stageLoaded.maths = true;
+      stage.mathsOverride = {
+        code,
+        maths: clone(maths),
+        loadedAt: Date.now(),
+      };
       if (slot) {
-        slot.statusEl.textContent = "Maths verified.";
+        slot.statusEl.textContent = "Maths block loaded.";
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
-      status.textContent = "Maths verified.";
+      status.textContent = "Maths block overriding base content.";
       log(`maths block verified for ${code}`);
       updateProgress();
-      await tryCompleteStage();
+      await maybeAssembleAndSeed();
     }
 
     async function onFileChange(event) {
-      if (seeded) {
+      if (seedingInFlight) {
+        status.textContent = "Please wait for the current seeding to finish.";
         event.target.value = "";
         return;
       }
@@ -638,6 +858,9 @@ export default {
         if (result.type === "full") {
           await handleFullPack(result);
           processedKey = "full";
+        } else if (result.type === "questions") {
+          await handleQuestionsPack(result);
+          processedKey = "questions";
         } else if (result.type === "half") {
           await handleHalfpack(result);
           processedKey = result.which;
@@ -650,6 +873,9 @@ export default {
         status.textContent = message;
         if (slot) {
           slot.statusEl.textContent = message;
+          slot.active = false;
+          slot.clearBtn.disabled = true;
+          slot.uploadBtn.disabled = false;
         }
         log(`error: ${message}`);
         console.error("[keyroom]", err);
@@ -663,6 +889,7 @@ export default {
         slot.uploadBtn.disabled = false;
       }
     }
+
 
     resetStageUI();
 
