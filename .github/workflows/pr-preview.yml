@@ -1,0 +1,41 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/.github/workflows/pr-preview.yml b/.github/workflows/pr-preview.yml
+new file mode 100644
+index 0000000000000000000000000000000000000000..ef1963c82765852fb3d9d87026b7ca1d47010b14
+--- /dev/null
++++ b/.github/workflows/pr-preview.yml
+@@ -0,0 +1,31 @@
++name: Firebase PR preview
++
++on:
++  pull_request:
++    branches:
++      - main
++
++jobs:
++  preview:
++    name: Deploy preview channel
++    runs-on: ubuntu-latest
++    if: ${{ !github.event.pull_request.head.repo.fork }}
++
++    steps:
++      - uses: actions/checkout@v4
++
++      - name: Set up Node.js
++        uses: actions/setup-node@v4
++        with:
++          node-version: '20'
++
++      - name: Install Firebase CLI
++        run: npm install -g firebase-tools
++
++      - name: Deploy preview
++        uses: FirebaseExtended/action-hosting-deploy@v0
++        with:
++          repoToken: ${{ secrets.GITHUB_TOKEN }}
++          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
++          channelId: pr-${{ github.event.number }}
++          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+ 
+EOF
+)
