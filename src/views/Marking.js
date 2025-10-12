@@ -29,6 +29,7 @@ const mountMathsPane =
    null);
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong" };
+const AWARD_SYNC_DELAY_MS = 4_000;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -119,6 +120,7 @@ export default {
     let finalizeInFlight = false;
     let latestTotalForMe = null;
     let latestRoundTimings = {};
+    let awardNavTimer = null;
 
     try {
       if (mountMathsPane && roomData0.maths) {
@@ -302,6 +304,7 @@ export default {
     const finalizeSnippet = async (attempt = 0) => {
       if (snippetResolved || finalizeInFlight) return;
       finalizeInFlight = true;
+      const proposedAwardStart = Date.now() + AWARD_SYNC_DELAY_MS;
       try {
         await runTransaction(db, async (tx) => {
           const roomSnapCur = await tx.get(rRef);
@@ -342,11 +345,18 @@ export default {
           const nextHost = Number(baseScores.host || 0) + roundHostScore;
           const nextGuest = Number(baseScores.guest || 0) + roundGuestScore;
 
+          const awardData = roomData.award || {};
+          const existingStart = Number(awardData.startAt) || 0;
+          const chosenAwardStart = existingStart > Date.now()
+            ? existingStart
+            : proposedAwardStart;
+
           tx.update(rRef, {
             state: "award",
             "scores.questions.host": nextHost,
             "scores.questions.guest": nextGuest,
             "marking.startAt": null,
+            "award.startAt": chosenAwardStart,
             "timestamps.updatedAt": serverTimestamp(),
           });
 
@@ -374,6 +384,10 @@ export default {
       }
     };
 
+    const navigateToAward = () => {
+      location.hash = `#/award?code=${code}&round=${round}`;
+    };
+
     stopRoomWatch = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
       if (Number((data.countdown || {}).startAt)) {
@@ -381,10 +395,21 @@ export default {
       }
 
       if (data.state === "award") {
-        setTimeout(() => {
-          location.hash = `#/award?code=${code}&round=${round}`;
-        }, 80);
+        snippetResolved = true;
+        const startAt = Number(((data.award || {}).startAt) || 0);
+        const now = Date.now();
+        const delay = startAt > now ? Math.max(0, startAt - now) : 0;
+        if (awardNavTimer) clearTimeout(awardNavTimer);
+        awardNavTimer = setTimeout(() => {
+          awardNavTimer = null;
+          navigateToAward();
+        }, delay);
         return;
+      }
+
+      if (awardNavTimer) {
+        try { clearTimeout(awardNavTimer); } catch {}
+        awardNavTimer = null;
       }
 
       if (data.state === "countdown") {
@@ -422,7 +447,7 @@ export default {
 
       const hostReady = Boolean(hostUid) && Number.isFinite(Number((latestRoundTimings[hostUid] || {}).totalMs));
       const guestReady = Boolean(guestUid) && Number.isFinite(Number((latestRoundTimings[guestUid] || {}).totalMs));
-      if (hostReady && guestReady && myRole === "host" && !snippetResolved) {
+      if (hostReady && guestReady && !snippetResolved) {
         finalizeSnippet();
       }
     }, (err) => {
@@ -432,6 +457,10 @@ export default {
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       try { stopRoundWatch && stopRoundWatch(); } catch {}
+      if (awardNavTimer) {
+        try { clearTimeout(awardNavTimer); } catch {}
+        awardNavTimer = null;
+      }
     };
   },
 
