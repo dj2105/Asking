@@ -95,7 +95,7 @@ async function mountRoute() {
     // Conditionally mount the score strip (not in lobby/keyroom/seeding/final)
     if (!STRIP_EXCLUDE.has(actualRoute)) {
       // Prefer code from URL
-      const code = (qs.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+      const code = (qs.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
       if (code) {
         // Mount or update the strip at the top of the current view container
         ScoreStrip.mount(app, { code });

@@ -100,8 +100,8 @@ function validatePack(pack) {
   const meta = pack.meta || {};
   assert(meta && typeof meta === "object", "Pack meta missing.");
   const code = clampCode(meta.roomCode);
-  assert(code && code.length === 3, "Pack room code invalid.");
-  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3 chars).");
+  assert(code && code.length >= 3 && code.length <= 5, "Pack room code invalid.");
+  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3–5 chars).");
   assert(typeof meta.hostUid === "string" && meta.hostUid.trim(), "Pack hostUid missing.");
   assert(typeof meta.guestUid === "string" && meta.guestUid.trim(), "Pack guestUid missing.");
   assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
@@ -184,8 +184,8 @@ function validateHalfpack(pack) {
   const meta = pack.meta || {};
   assert(meta && typeof meta === "object", "Pack meta missing.");
   const code = clampCode(meta.roomCode);
-  assert(code && code.length === 3, "Pack room code invalid.");
-  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3 chars).");
+  assert(code && code.length >= 3 && code.length <= 5, "Pack room code invalid.");
+  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3–5 chars).");
   assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
   assert(meta.which === "host" || meta.which === "guest", "Halfpack meta.which invalid.");
 
@@ -226,8 +226,8 @@ function validateMaths(pack) {
   const meta = pack.meta || {};
   assert(meta && typeof meta === "object", "Pack meta missing.");
   const code = clampCode(meta.roomCode);
-  assert(code && code.length === 3, "Pack room code invalid.");
-  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3 chars).");
+  assert(code && code.length >= 3 && code.length <= 5, "Pack room code invalid.");
+  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3–5 chars).");
   assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
 
   const maths = pack.maths || {};

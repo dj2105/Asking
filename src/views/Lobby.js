@@ -1,9 +1,9 @@
 // /src/views/Lobby.js
-// Guest-only join screen (clean layout, no card box).
+// Guest-only join screen (clean carded layout).
 // - NEVER creates rooms, NEVER routes to KeyRoom.
 // - If code doesn’t exist → inline “Room not found” (stay here).
 // - If room exists → (optionally) claim guest slot if free, then ALWAYS route to `#/watcher?code=XYZ`.
-// - Big monospace prompt + input; SVG arrow that fills + throbs when ready.
+// - Input allows 3–5 char codes; Start button gently throbs when actionable.
 
 import {
   initFirebase, ensureAuth,
@@ -27,35 +27,6 @@ function el(tag, attrs = {}, kids = []) {
 
 const clampCode = (v) => clampCodeShared(v || "");
 
-function ArrowSVG({ filled }) {
-  // Right arrow head + shaft; stroke/ fill tied to currentColor
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 48 24");
-  svg.setAttribute("width", "48");
-  svg.setAttribute("height", "24");
-  svg.style.display = "block";
-
-  const shaft = document.createElementNS(svg.namespaceURI, "rect");
-  shaft.setAttribute("x", "4");
-  shaft.setAttribute("y", "10");
-  shaft.setAttribute("width", "28");
-  shaft.setAttribute("height", "4");
-  shaft.setAttribute("fill", filled ? "currentColor" : "transparent");
-  shaft.setAttribute("stroke", "currentColor");
-  shaft.setAttribute("stroke-width", "2");
-
-  const head = document.createElementNS(svg.namespaceURI, "polygon");
-  head.setAttribute("points", "28,4 44,12 28,20");
-  head.setAttribute("fill", filled ? "currentColor" : "transparent");
-  head.setAttribute("stroke", "currentColor");
-  head.setAttribute("stroke-width", "2");
-  head.setAttribute("stroke-linejoin", "round");
-
-  svg.appendChild(shaft);
-  svg.appendChild(head);
-  return svg;
-}
-
 export default {
   async mount(container) {
     await initFirebase();
@@ -67,101 +38,68 @@ export default {
     document.documentElement.style.setProperty("--ink-s", "70%");
     document.documentElement.style.setProperty("--ink-l", "18%");
 
-    // Layout (no card wrapper)
     container.innerHTML = "";
-    const view = el("div", { class: "view view-lobby", style: "text-align:center;" });
-    view.appendChild(el("h1", { class: "title" }, "Jemima’s Asking"));
+    const view = el("div", { class: "view view-lobby" });
+    const card = el("div", { class: "card lobby-card" });
+    view.appendChild(card);
     container.appendChild(view);
 
-    const prompt = el("div", {
-      class: "h2",
-      style: "margin: 4px 0 10px 0; font-family: 'Courier New', Courier, monospace; font-weight: 900; font-size: 26px;"
-    }, "Jaime, what’s the code?");
-    view.appendChild(prompt);
-
-    const row = el("div", { class: "row", style: "gap:10px; justify-content:center; align-items:center;" });
+    card.appendChild(el("h1", { class: "lobby-title" }, "Jemima’s Asking"));
+    card.appendChild(el("p", { class: "lobby-prompt" }, "Jaime, what’s the code?"));
 
     const input = el("input", {
       type: "text",
       autocomplete: "off",
       autocapitalize: "characters",
-      maxlength: "3",
-      placeholder: "C A T",
-      class: "code-input",
-      style: `
-        width: 240px;
-        text-align: center;
-        letter-spacing: .42em;
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 22px;
-        padding: 10px 12px;
-      `,
+      maxlength: "5",
+      placeholder: "C A T 9",
+      class: "lobby-code-input",
       oninput: (e) => { e.target.value = clampCode(e.target.value); reflect(); },
       onkeydown: (e) => { if (e.key === "Enter") join(); }
     });
 
-    const arrowBtn = el("button", {
-      class: "btn btn-arrow",
-      title: "Join",
+    const inputWrap = el("div", { class: "lobby-input-wrap" }, input);
+    card.appendChild(inputWrap);
+
+    const startBtn = el("button", {
+      class: "btn lobby-start-btn",
+      type: "button",
       onclick: join,
       disabled: true,
-      style: `
-        padding: 8px 12px;
-        border: 2px solid currentColor;
-        background: transparent;
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      `
-    });
+    }, "START");
+    card.appendChild(startBtn);
 
-    // Insert initial hollow SVG
-    let arrowIcon = ArrowSVG({ filled: false });
-    arrowBtn.appendChild(arrowIcon);
+    const status = el("div", { class: "lobby-status" }, "");
+    card.appendChild(status);
 
-    row.appendChild(input);
-    row.appendChild(arrowBtn);
-    view.appendChild(row);
-
-    // Inline error/status line
-    const status = el("div", {
-      class: "status-bar",
-      style: "min-height: 18px; margin-top: 10px; font-size: 13px;"
-    }, "");
-    view.appendChild(status);
-
-    // Host link (host-only path)
     const hostLink = el("a", {
       href: "#/keyroom",
-      style: "display:inline-block;margin-top:12px;text-decoration:underline;"
+      class: "lobby-host-link"
     }, "Daniel’s entrance");
-    view.appendChild(hostLink);
+    card.appendChild(hostLink);
 
     function setStatus(msg) { status.textContent = msg || ""; }
 
     function reflect() {
-      const ok = input.value.length === 3;
-      arrowBtn.disabled = !ok;
-      arrowBtn.classList.toggle("ready", ok);
-      arrowBtn.classList.toggle("throb", ok);
-      // Swap the SVG fill state
-      arrowBtn.removeChild(arrowIcon);
-      arrowIcon = ArrowSVG({ filled: ok });
-      arrowBtn.appendChild(arrowIcon);
+      const value = clampCode(input.value);
+      if (value !== input.value) input.value = value;
+      const ready = value.length >= 3;
+      startBtn.disabled = !ready;
+      startBtn.classList.toggle("is-ready", ready);
+      startBtn.classList.toggle("throb-soft", ready);
     }
 
     async function join() {
       setStatus("");
       const code = clampCode(input.value);
-      if (code.length !== 3) return;
+      if (code.length < 3) return;
 
       try {
         const rRef = roomRef(code);
         const snap = await getDoc(rRef);
 
         if (!snap.exists()) {
-          setStatus("Room not found. Check the 3-letter code.");
+          setStatus("Room not found. Check the 3–5 letter code.");
           console.warn(`[lobby] join code=${code} | room not found`);
           return;
         }
