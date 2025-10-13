@@ -44,8 +44,15 @@ async function loadFirebase() {
 }
 
 // ---------- config helpers ----------
-function readInjectedConfig() {
+async function readInjectedConfig() {
   try {
+    if (window.__FIREBASE_CONFIG_PROMISE__ && typeof window.__FIREBASE_CONFIG_PROMISE__.then === "function") {
+      try {
+        await window.__FIREBASE_CONFIG_PROMISE__;
+      } catch (err) {
+        console.warn("[firebase] config promise rejected; continuing with current value.", err);
+      }
+    }
     if (window.__FIREBASE_CONFIG__ && typeof window.__FIREBASE_CONFIG__ === "object") {
       return window.__FIREBASE_CONFIG__;
     }
@@ -72,7 +79,7 @@ export async function initFirebase() {
   if (_app) return { app: _app, db: _db, auth: _auth };
 
   _fb = await loadFirebase();
-  const config = readInjectedConfig();
+  const config = await readInjectedConfig();
   usingEmu = computeShouldUseEmu(config);
   console.log("Firebase config injected", config);
   console.log("[firebase] usingEmu =", usingEmu);

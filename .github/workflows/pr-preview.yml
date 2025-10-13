@@ -32,5 +32,6 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_PROJECT_ID=asking-6d3d45 }}
           channelId: pr-${{ github.event.number }}
           projectId: ${{ secrets.FIREBASE_PROJECT_ID || fromJson(secrets.FIREBASE_SERVICE_ACCOUNT).project_id }}
