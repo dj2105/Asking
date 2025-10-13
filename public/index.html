@@ -29,42 +29,40 @@
       Running in emulator mode. Do not use with production credentials.
     </p>
 
-    <script type="module">
-      const qs = new URLSearchParams(window.location.search);
-      const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname) || qs.get("emu") === "1";
-      const banner = document.getElementById("emuBanner");
-      if (isLocal && banner) {
-        banner.hidden = false;
+<script type="importmap">
+{
+  "imports": {
+    "firebase/app": "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"
+  }
+}
+</script>
+
+<script type="module">
+  // Optional: show emulator banner only on localhost or ?emu=1
+  const qs = new URLSearchParams(location.search);
+  const isLocal = ["localhost","127.0.0.1"].includes(location.hostname) || qs.get("emu")==="1";
+  const banner = document.getElementById("emuBanner");
+  if (isLocal && banner) banner.style.display = "block";
+
+  // Try to fetch Hosting config; don't block if missing (local Python server etc.)
+  async function injectFirebaseConfig() {
+    const ctl = new AbortController();
+    const timeout = setTimeout(() => ctl.abort(), 1500);
+    try {
+      const res = await fetch("/__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && typeof json === "object") window.__FIREBASE_CONFIG__ = json;
       }
+    } catch (_) {} finally {
+      clearTimeout(timeout);
+    }
+  }
 
-      (async () => {
-        let controller = null;
-        let timeoutId = null;
-        if (typeof AbortController === "function") {
-          controller = new AbortController();
-          timeoutId = setTimeout(() => controller.abort(), 1500);
-        }
-
-        try {
-          const options = { cache: "no-store" };
-          if (controller) options.signal = controller.signal;
-          const res = await fetch("/__/firebase/init.json", options);
-          if (res && res.ok) {
-            const json = await res.json();
-            if (json && typeof json === "object") {
-              window.__FIREBASE_CONFIG__ = json;
-            }
-          }
-        } catch (err) {
-          if (!err || err.name !== "AbortError") {
-            console.warn("[firebase] init.json unavailable; using bundled config", err);
-          }
-        }
-
-        if (timeoutId) clearTimeout(timeoutId);
-
-        await import("/src/main.js");
-      })();
-    </script>
+  await injectFirebaseConfig();
+  await import("/src/main.js");   // <— exactly one import; do NOT duplicate
+</script>
   </body>
 </html>
