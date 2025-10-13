@@ -1,65 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en-GB">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Jemima’s Asking</title>
 
-    <!-- 🧶 Stylesheet: must load before JS to ensure full CSS adherence -->
-    <link rel="stylesheet" href="styles.css" />
-
-    <!-- favicon (optional) -->
-    <link rel="icon" href="favicon.ico" />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="icon" href="/favicon.ico" />
   </head>
-
   <body>
-    <!-- Main app root -->
     <div id="app"></div>
 
-    <!-- Firebase emulator warning (safe to leave) -->
-    <p class="firebase-emulator-warning" style="
-        position: fixed;
-        width: 100%;
-        background: rgba(255,255,255,.9);
-        border-top: 1px solid #e0e0e0;
-        left: 0;
-        bottom: 0;
-        margin: 0;
-        font-family: inherit;
-        font-size: 0.9em;
-        text-align: center;
-        z-index: 1000;
-        padding: 4px 0;
-      ">
+    <!-- Emulator banner (only shows on localhost or ?emu=1) -->
+    <p id="emuBanner" style="
+      display:none; position:fixed; left:0; bottom:0; width:100%;
+      margin:0; padding:4px 0; text-align:center; font-size:.9em;
+      background:rgba(255,255,255,.9); border-top:1px solid #e0e0e0; z-index:1000;">
       Running in emulator mode. Do not use with production credentials.
     </p>
 
-    <!-- Firebase config loader must run before the app boots -->
+    <!-- Firebase ESM import map (served by Firebase Hosting) -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "/__/firebase/12.4.0/firebase-app.js",
+        "firebase/auth": "/__/firebase/12.4.0/firebase-auth.js",
+        "firebase/firestore": "/__/firebase/12.4.0/firebase-firestore.js"
+      }
+    }
+    </script>
+
+    <!-- Bootstrap: fetch Hosting config, set env flags, then load the app once -->
     <script type="module">
+      // Show emulator banner only on localhost or when ?emu=1
+      const qs = new URLSearchParams(location.search);
+      const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || qs.get("emu") === "1";
+      if (isLocal) document.getElementById("emuBanner").style.display = "block";
+
+      // Fetch Firebase Hosting's init.json (optional but handy)
       async function injectFirebaseConfig() {
-        if (window.__FIREBASE_CONFIG__ && typeof window.__FIREBASE_CONFIG__ === "object") {
-          return window.__FIREBASE_CONFIG__;
-        }
-
-        const initPath = "/__/firebase/init.json";
-
         try {
-          const res = await fetch(initPath, { cache: "no-store" });
-          if (!res.ok) throw new Error(`init.json fetch failed: ${res.status}`);
-          const json = await res.json();
-          if (json && typeof json === "object") {
-            window.__FIREBASE_CONFIG__ = json;
-            return json;
+          const res = await fetch("/__/firebase/init.json", { cache: "no-store" });
+          if (res.ok) {
+            const json = await res.json();
+            if (json && typeof json === "object") {
+              window.__FIREBASE_CONFIG__ = json; // available to your firebase.js if you want it
+            }
           }
-        } catch (err) {
-          console.warn("[firebase] Unable to fetch hosting config; falling back to defaults.", err);
+        } catch (e) {
+          console.warn("[firebase] init.json not available, proceeding with hard-coded config", e);
         }
-
-        return window.__FIREBASE_CONFIG__;
       }
 
-      window.__FIREBASE_CONFIG_PROMISE__ = injectFirebaseConfig();
-      await window.__FIREBASE_CONFIG_PROMISE__;
+      await injectFirebaseConfig();
+
+      // Load your app exactly once
       await import("/src/main.js");
     </script>
   </body>
