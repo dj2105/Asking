@@ -7,18 +7,16 @@
 // • Host watches both submissions and flips state → "marking".
 // • Local UI keeps selections in memory only; Firestore only written on submission.
 
+import { ensureAuth, db } from "../lib/firebase.js";
 import {
-  initFirebase,
-  ensureAuth,
-  roomRef,
-  roundSubColRef,
   doc,
+  collection,
   getDoc,
   setDoc,
   updateDoc,
   onSnapshot,
-  serverTimestamp
-} from "../lib/firebase.js";
+  serverTimestamp,
+} from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
@@ -48,9 +46,11 @@ function shuffle2(a, b) {
   return Math.random() < 0.5 ? [a, b] : [b, a];
 }
 
+const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
+
 export default {
   async mount(container) {
-    await initFirebase();
     const me = await ensureAuth();
 
     const params = getHashParams();

@@ -6,19 +6,17 @@
 // • Submission writes marking.{role}.{round}, markingAck.{role}.{round} = true, and timing metadata for snippet race.
 // • Host waits for both totals, computes the snippet winner, mirrors retained flags, and advances to award.
 
+import { ensureAuth, db } from "../lib/firebase.js";
 import {
-  initFirebase,
-  ensureAuth,
-  roomRef,
-  roundSubColRef,
   doc,
+  collection,
   getDoc,
   onSnapshot,
   setDoc,
   updateDoc,
   serverTimestamp,
-  runTransaction
-} from "../lib/firebase.js";
+  runTransaction,
+} from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
@@ -48,9 +46,11 @@ function same(a, b) {
   return String(a || "").trim() === String(b || "").trim();
 }
 
+const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
+
 export default {
   async mount(container) {
-    const { db } = await initFirebase();
     const me = await ensureAuth();
 
     const params = getHashParams();

@@ -4,12 +4,20 @@
 // Provides: startBackgroundQuestionGen({ apiKey, code, startRound=2, endRound=5, onTick })
 // It streams progress via onTick and writes each round's items + interlude.
 
+import { db } from "./firebase.js";
 import {
-  roomRef, roundSubColRef, doc, setDoc, updateDoc, serverTimestamp
-} from "./firebase.js";
+  doc,
+  collection,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import * as Gemini from "./gemini.js";
 
 function clampCode(s){ return String(s||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3); }
+
+const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
 
 async function writeProgress(code, progress, message){
   try{

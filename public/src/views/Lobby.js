@@ -5,10 +5,10 @@
 // - If room exists → (optionally) claim guest slot if free, then ALWAYS route to `#/watcher?code=XYZ`.
 // - Input allows 3–5 char codes; Start button gently throbs when actionable.
 
-import {
-  initFirebase, ensureAuth,
-  roomRef, getDoc, updateDoc, serverTimestamp
-} from "../lib/firebase.js";
+import { ensureAuth, db } from "../lib/firebase.js";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+
+const roomRef = (code) => doc(db, "rooms", code);
 import { clampCode as clampCodeShared, setStoredRole } from "../lib/util.js";
 
 function el(tag, attrs = {}, kids = []) {
@@ -29,7 +29,6 @@ const clampCode = (v) => clampCodeShared(v || "");
 
 export default {
   async mount(container) {
-    await initFirebase();
     await ensureAuth();
 
     // Theme (random ink hue)

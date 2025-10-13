@@ -3,12 +3,8 @@
 // • No Gemini calls — simply watches rooms/{code} and mirrors seeds/status fields.
 // • Useful for guests arriving early; automatically routes to countdown when ready.
 
-import {
-  initFirebase,
-  ensureAuth,
-  roomRef,
-  onSnapshot,
-} from "../lib/firebase.js";
+import { ensureAuth, db } from "../lib/firebase.js";
+import { doc, onSnapshot } from "firebase/firestore";
 import {
   clampCode,
   getHashParams,
@@ -28,9 +24,10 @@ function el(tag, attrs = {}, kids = []) {
   return node;
 }
 
+const roomRef = (code) => doc(db, "rooms", code);
+
 export default {
   async mount(container) {
-    await initFirebase();
     await ensureAuth();
 
     const params = getHashParams();

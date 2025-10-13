@@ -5,9 +5,10 @@
 // - Understands all phases: seeding, countdown, questions, marking, interlude, award, final
 // - Works as a "view" at #/watcher?code=XYZ OR as a helper you can call from other views
 
-import {
-  initFirebase, ensureAuth, roomRef, onSnapshot,
-} from "./lib/firebase.js";
+import { ensureAuth, db } from "./lib/firebase.js";
+import { doc, onSnapshot } from "firebase/firestore";
+
+const roomRef = (code) => doc(db, "rooms", code);
 
 // --- tiny DOM helper for the standalone #/watcher view ---
 function el(tag, attrs = {}, kids = []) {
@@ -147,7 +148,6 @@ export function startRoomWatcher(code, { onState } = {}) {
 // --- Default export as a minimal "view" for #/watcher?code=XYZ ---
 export default {
   async mount(container){
-    await initFirebase();
     await ensureAuth();
 
     const code = getQueryCode();
