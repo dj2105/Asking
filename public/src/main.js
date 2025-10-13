@@ -1,3 +1,11 @@
+// ensure hash router lands on lobby by default
+(function ensureDefaultHash() {
+  const h = (location.hash || "").trim();
+  if (!h || h === "#/" || h === "#") {
+    const qs = location.search || ""; // preserve ?emu=1 etc.
+    location.replace(`${location.pathname}${qs}#/lobby`);
+  }
+})();
 // /src/main.js
 //
 // Minimal hash router + global score strip mounting.
@@ -61,12 +69,15 @@ async function mountRoute() {
   const { route, qs } = parseHash();
   // Guard unknown routes → lobby
   const load = VIEW_MAP[route];
-  const actualRoute = load ? route : "lobby";
-  const importer = load || VIEW_MAP.lobby;
 
   if (!load && route !== "lobby") {
     console.log(`[router] redirect ${route} -> lobby`);
+    location.replace("#/lobby");
+    return; // stop, next load will mount lobby
   }
+
+  const actualRoute = load ? route : "lobby";
+  const importer = load || VIEW_MAP.lobby;
 
   console.log(`[router] mount ${actualRoute}`);
 
@@ -88,7 +99,7 @@ async function mountRoute() {
       throw new Error(`[router] ${route}: missing mount() export`);
     }
 
-    await view.mount(app);
+    await view.mount(app, Object.fromEntries(qs.entries()));
     current.mod = view;
     current.unmount = (typeof view.unmount === "function") ? view.unmount.bind(view) : null;
 
