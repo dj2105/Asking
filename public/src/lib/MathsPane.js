@@ -12,6 +12,7 @@
 
 import { db } from "./firebase.js";
 import { doc, collection, onSnapshot } from "firebase/firestore";
+import { SNIPPET_TIE_TOKEN } from "./util.js";
 
 const roundSubColRef = (code) => collection(doc(db, "rooms", code), "rounds");
 
@@ -115,6 +116,25 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
 
   box.appendChild(core);
 
+  const currentSnippetWrap = document.createElement("div");
+  currentSnippetWrap.style.cssText = `
+    margin-top: 16px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12);
+    display: none;
+  `;
+  const currentSnippetTitle = document.createElement("div");
+  currentSnippetTitle.className = "mono";
+  currentSnippetTitle.style.cssText = "font-weight:700;margin-bottom:6px;";
+  currentSnippetTitle.textContent = "Current Snippet";
+  const currentSnippetBody = document.createElement("div");
+  currentSnippetBody.className = "mono";
+  currentSnippetBody.style.cssText = "white-space:pre-wrap;";
+  currentSnippetWrap.appendChild(currentSnippetTitle);
+  currentSnippetWrap.appendChild(currentSnippetBody);
+
   const retainedWrap = document.createElement("div");
   retainedWrap.style.cssText = `
     margin-top: 16px;
@@ -132,6 +152,7 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
   retainedList.style.cssText = "display:flex;flex-direction:column;gap:4px;";
   retainedWrap.appendChild(retainedTitle);
   retainedWrap.appendChild(retainedList);
+  box.appendChild(currentSnippetWrap);
   box.appendChild(retainedWrap);
 
   container.appendChild(box);
@@ -141,10 +162,28 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
     return;
   }
 
+  const currentRoundNum = Number(round) || 0;
+
   const renderRetained = (dataMap) => {
-    const entries = Array.from((dataMap || new Map()).entries())
-      .filter(([, info]) => info && info.winnerUid === userUid && info.snippet)
-      .sort((a, b) => Number(a[0]) - Number(b[0]));
+    const map = dataMap || new Map();
+    const currentInfo = map.get(currentRoundNum);
+    if (currentInfo && currentInfo.snippet) {
+      currentSnippetBody.textContent = currentInfo.snippet;
+      currentSnippetWrap.style.display = "block";
+    } else {
+      currentSnippetBody.textContent = "Awaiting Jemima’s snippet…";
+      currentSnippetWrap.style.display = "block";
+    }
+
+    const entries = Array.from(map.entries())
+      .filter(([roundNum, info]) => {
+        if (!info || !info.snippet) return false;
+        const rNum = Number(roundNum) || 0;
+        if (rNum === currentRoundNum) return false;
+        if (info.winnerUid === SNIPPET_TIE_TOKEN) return true;
+        return info.winnerUid === userUid;
+      })
+      .sort((a, b) => Number(b[0]) - Number(a[0]));
 
     if (!entries.length) {
       retainedList.innerHTML = "";
@@ -160,11 +199,13 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
       retainedList.appendChild(line);
     });
     retainedWrap.style.display = "block";
+
   };
 
   const store = ensureSnippetStore(roomCode);
   if (!store) {
     retainedWrap.style.display = "none";
+    currentSnippetWrap.style.display = "none";
     return;
   }
 

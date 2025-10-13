@@ -16,7 +16,7 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { clampCode, getHashParams, getStoredRole, SNIPPET_TIE_TOKEN } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -298,7 +298,8 @@ export default {
     });
 
     const nameForUid = (uid) => {
-      if (!uid) return "Snippet Winner: — (tie)";
+      if (uid === SNIPPET_TIE_TOKEN) return "Snippet Winners: Daniel & Jaime";
+      if (!uid) return "Snippet Winner: —";
       if (uid === hostUid) return "Snippet Winner: Daniel";
       if (uid === guestUid) return "Snippet Winner: Jaime";
       return "Snippet Winner: —";

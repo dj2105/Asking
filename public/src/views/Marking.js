@@ -19,7 +19,7 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { clampCode, getHashParams, getStoredRole, SNIPPET_TIE_TOKEN } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -49,6 +49,10 @@ function same(a, b) {
 const roomRef = (code) => doc(db, "rooms", code);
 const roundSubColRef = (code) => collection(roomRef(code), "rounds");
 
+const STOP_DELAY_MS = 5_000;
+const COUNTDOWN_ARM_MS = 3_000;
+const TIE_EPSILON_MS = 2;
+
 export default {
   async mount(container) {
     const me = await ensureAuth();
@@ -71,22 +75,34 @@ export default {
     const list = el("div", { class: "qa-list" });
     card.appendChild(list);
 
-    const doneBtn = el("button", { class: "btn primary", style: "margin-top:12px;", disabled: "" }, "DONE");
-    card.appendChild(doneBtn);
+    const stopRow = el("div", {
+      style: "display:flex;align-items:center;justify-content:center;gap:14px;margin-top:16px;"
+    });
+    const stopBtn = el("button", {
+      class: "btn primary",
+      style: "min-width:120px;font-weight:700;",
+      disabled: ""
+    }, "STOP");
+    const liveTimer = el("div", {
+      class: "mono",
+      style: "font-size:26px;font-weight:700;min-width:120px;text-align:center;"
+    }, "0.000");
+    stopRow.appendChild(stopBtn);
+    stopRow.appendChild(liveTimer);
+    card.appendChild(stopRow);
 
     const resultWrap = el("div", {
-      style: "text-align:center;margin-top:18px;display:none;"
+      style: "text-align:center;margin-top:24px;display:none;"
     });
-    const finishLine = el("div", {
+    const frozenTimer = el("div", {
       class: "mono",
-      style: "font-weight:700;font-size:18px;"
+      style: "font-size:52px;font-weight:700;line-height:1;"
+    }, "0.000");
+    const messageBox = el("div", {
+      style: "margin-top:16px;text-align:center;font-family:Courier,monospace;font-weight:700;"
     }, "");
-    const waitingLine = el("div", {
-      class: "mono",
-      style: "opacity:0.75;margin-top:4px;"
-    }, "Waiting for opponent…");
-    resultWrap.appendChild(finishLine);
-    resultWrap.appendChild(waitingLine);
+    resultWrap.appendChild(frozenTimer);
+    resultWrap.appendChild(messageBox);
     card.appendChild(resultWrap);
 
     root.appendChild(card);
@@ -98,7 +114,7 @@ export default {
 
     const rRef = roomRef(code);
     const rdRef = doc(roundSubColRef(code), String(round));
-    const playerRef = doc(rRef, "players", me.uid);
+    const playerRef = doc(rRef, "players", myUid);
 
     const roomSnap = await getDoc(rRef);
     const roomData0 = roomSnap.data() || {};
@@ -108,6 +124,8 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const myUid = me.uid;
+    const oppUid = oppRole === "host" ? hostUid : guestUid;
 
     let roundStartAt = Number((roomData0.countdown || {}).startAt || 0) || 0;
     const markingEnterAt = Date.now();
@@ -119,10 +137,158 @@ export default {
     let finalizeInFlight = false;
     let latestTotalForMe = null;
     let latestRoundTimings = {};
+    let timerInterval = null;
+    let timerFrozen = false;
+    let displayedMs = 0;
+    let messageMode = "idle";
+    let currentWinnerToken = null;
+    let scheduledAdvance = false;
+    let advanceTimeout = null;
+
+    const formatSeconds = (ms) => {
+      const value = Number(ms);
+      if (!Number.isFinite(value) || value <= 0) return "0.000";
+      return (value / 1000).toFixed(3);
+    };
+
+    const computeElapsed = () => {
+      const base = Number(roundStartAt) || 0;
+      const ref = base > 0 ? base : markingEnterAt;
+      return Math.max(0, Date.now() - ref);
+    };
+
+    const refreshLiveTimer = () => {
+      if (timerFrozen) return;
+      const elapsed = computeElapsed();
+      displayedMs = elapsed;
+      liveTimer.textContent = formatSeconds(elapsed);
+    };
+
+    const startLiveTimer = () => {
+      if (timerInterval) clearInterval(timerInterval);
+      timerFrozen = false;
+      refreshLiveTimer();
+      timerInterval = setInterval(refreshLiveTimer, 60);
+    };
+
+    const freezeTimerDisplay = (ms) => {
+      const value = Number.isFinite(ms) && ms >= 0 ? ms : displayedMs;
+      timerFrozen = true;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      const pretty = formatSeconds(value);
+      liveTimer.textContent = pretty;
+      frozenTimer.textContent = pretty;
+      displayedMs = value;
+    };
+
+    const resetMessageStyles = () => {
+      messageBox.style.fontFamily = "Courier, monospace";
+      messageBox.style.fontWeight = "700";
+      messageBox.style.fontSize = "16px";
+      messageBox.style.color = "rgba(0,0,0,0.7)";
+      messageBox.style.display = "block";
+      messageBox.style.textTransform = "none";
+      messageBox.style.lineHeight = "1.4";
+      messageBox.style.letterSpacing = "normal";
+      messageBox.style.flexDirection = "";
+      messageBox.style.alignItems = "";
+      messageBox.style.justifyContent = "";
+      messageBox.style.gap = "";
+    };
+
+    const showWaitingMessage = (text = "Connecting…") => {
+      if (messageMode === `waiting:${text}`) return;
+      resetMessageStyles();
+      messageBox.textContent = text;
+      messageMode = `waiting:${text}`;
+    };
+
+    const showWinnerMessage = () => {
+      if (messageMode === "winner") return;
+      messageMode = "winner";
+      messageBox.innerHTML = "";
+      messageBox.style.fontFamily = "Impact, Haettenschweiler, 'Arial Black', sans-serif";
+      messageBox.style.fontWeight = "700";
+      messageBox.style.fontSize = "36px";
+      messageBox.style.color = "#b7f7c2";
+      messageBox.style.display = "flex";
+      messageBox.style.flexDirection = "column";
+      messageBox.style.alignItems = "center";
+      messageBox.style.justifyContent = "center";
+      messageBox.style.gap = "6px";
+      ["YOU\u2019RE", "A", "WINNER!"].forEach((word) => {
+        const line = document.createElement("div");
+        line.textContent = word;
+        messageBox.appendChild(line);
+      });
+    };
+
+    const showTieMessage = () => {
+      showWinnerMessage();
+    };
+
+    const showLoserMessage = (totalMs) => {
+      if (messageMode === "loser") return;
+      resetMessageStyles();
+      messageBox.textContent = `ROUND COMPLETED IN ${formatSeconds(totalMs)} SECONDS`;
+      messageBox.style.fontSize = "18px";
+      messageBox.style.color = "rgba(0,0,0,0.75)";
+      messageMode = "loser";
+    };
+
+    const enterPostStop = (totalMs) => {
+      const value = Number.isFinite(totalMs) ? totalMs : displayedMs;
+      freezeTimerDisplay(value);
+      stopBtn.disabled = true;
+      stopBtn.classList.remove("throb");
+      stopRow.style.display = "none";
+      list.style.display = "none";
+      resultWrap.style.display = "block";
+      showWaitingMessage();
+    };
+
+    const updateOutcome = () => {
+      if (!published) return;
+      const myTiming = latestTotalForMe ?? Number((latestRoundTimings[myUid] || {}).totalMs);
+      const myTotal = Number(myTiming);
+      if (!Number.isFinite(myTotal)) return;
+
+      const oppTiming = oppUid ? latestRoundTimings[oppUid] || {} : {};
+      const oppTotal = Number(oppTiming.totalMs);
+
+      if (currentWinnerToken === SNIPPET_TIE_TOKEN) {
+        showTieMessage();
+        return;
+      }
+      if (currentWinnerToken === myUid) {
+        showWinnerMessage();
+        return;
+      }
+      if (currentWinnerToken && oppUid && currentWinnerToken === oppUid) {
+        showLoserMessage(myTotal);
+        return;
+      }
+
+      if (Number.isFinite(oppTotal)) {
+        if (Math.abs(myTotal - oppTotal) <= TIE_EPSILON_MS) {
+          showTieMessage();
+        } else if (myTotal < oppTotal) {
+          showWinnerMessage();
+        } else {
+          showLoserMessage(myTotal);
+        }
+        return;
+      }
+
+      showWinnerMessage();
+    };
 
     try {
       if (mountMathsPane && roomData0.maths) {
-        mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
+        mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: myUid });
       }
     } catch (err) {
       console.warn("[marking] MathsPane mount failed:", err);
@@ -137,26 +303,15 @@ export default {
     let marks = [null, null, null];
     const disableFns = [];
 
-    const showPostSubmit = (totalMs) => {
-      const secs = Number.isFinite(totalMs) && totalMs > 0 ? (totalMs / 1000).toFixed(1) : null;
-      finishLine.textContent = secs
-        ? `You finished this round in ${secs} seconds.`
-        : "You finished this round.";
-      waitingLine.textContent = "Waiting for opponent…";
-      resultWrap.style.display = "block";
-      list.style.display = "none";
-      doneBtn.style.display = "none";
-    };
-
     const updateDoneState = () => {
       if (published) {
-        doneBtn.disabled = true;
-        doneBtn.classList.remove("throb");
+        stopBtn.disabled = true;
+        stopBtn.classList.remove("throb");
         return;
       }
       const ready = marks.every((v) => v === VERDICT.RIGHT || v === VERDICT.WRONG);
-      doneBtn.disabled = !(ready && !submitting);
-      doneBtn.classList.toggle("throb", ready && !submitting);
+      stopBtn.disabled = !(ready && !submitting);
+      stopBtn.classList.toggle("throb", ready && !submitting);
     };
 
     const buildRow = (idx, question, chosen) => {
@@ -212,11 +367,16 @@ export default {
       marks = existingMarks.map((v) => (v === VERDICT.RIGHT ? VERDICT.RIGHT : VERDICT.WRONG));
       published = true;
       disableFns.forEach((fn) => { try { fn(); } catch {} });
-      latestTotalForMe = Number((latestRoundTimings[me.uid] || {}).totalMs) || null;
-      showPostSubmit(latestTotalForMe);
+      latestTotalForMe = Number((latestRoundTimings[myUid] || {}).totalMs) || null;
+      enterPostStop(latestTotalForMe || 0);
+      updateOutcome();
     }
 
     updateDoneState();
+
+    if (!published) {
+      startLiveTimer();
+    }
 
     const publish = async () => {
       if (published || submitting) return;
@@ -234,7 +394,7 @@ export default {
         const latest = await getDoc(rdRef);
         const latestData = latest.data() || {};
         latestRoundTimings = latestData.timings || {};
-        const candidate = (latestRoundTimings[me.uid] || {}).qDoneMs;
+        const candidate = (latestRoundTimings[myUid] || {}).qDoneMs;
         if (Number(candidate)) qDoneMs = Number(candidate);
       } catch (err) {
         console.warn("[marking] failed to read round timings:", err);
@@ -247,7 +407,7 @@ export default {
           const candidate = (((playerData.rounds || {})[round] || {}).timings || {}).qDoneMs;
           if (Number(candidate)) {
             qDoneMs = Number(candidate);
-            await setDoc(rdRef, { timings: { [me.uid]: { qDoneMs } } }, { merge: true });
+            await setDoc(rdRef, { timings: { [myUid]: { qDoneMs } } }, { merge: true });
           }
         } catch (err) {
           console.warn("[marking] qDone fallback failed:", err);
@@ -266,9 +426,9 @@ export default {
       patch[`markingAck.${myRole}.${round}`] = true;
       patch["timestamps.updatedAt"] = serverTimestamp();
 
-      const roundTimingPayload = { timings: { [me.uid]: { markDoneMs, totalMs } } };
+      const roundTimingPayload = { timings: { [myUid]: { markDoneMs, totalMs } } };
       if (Number.isFinite(qDoneMs) && qDoneMs > 0) {
-        roundTimingPayload.timings[me.uid].qDoneMs = qDoneMs;
+        roundTimingPayload.timings[myUid].qDoneMs = qDoneMs;
       }
 
       const playerTimingPayload = { rounds: {} };
@@ -288,7 +448,8 @@ export default {
         published = true;
         submitting = false;
         disableFns.forEach((fn) => { try { fn(); } catch {} });
-        showPostSubmit(totalMs);
+        enterPostStop(totalMs);
+        updateOutcome();
         updateDoneState();
       } catch (err) {
         console.warn("[marking] publish failed:", err);
@@ -297,11 +458,56 @@ export default {
       }
     };
 
-    doneBtn.addEventListener("click", publish);
+    stopBtn.addEventListener("click", publish);
+
+    const scheduleAdvance = (plan) => {
+      if (!plan || myRole !== "host") return;
+      if (scheduledAdvance && advanceTimeout) return;
+      const waitMs = Math.max(0, Number(plan.advanceAt) - Date.now());
+      scheduledAdvance = true;
+      if (advanceTimeout) {
+        clearTimeout(advanceTimeout);
+        advanceTimeout = null;
+      }
+      advanceTimeout = setTimeout(async () => {
+        try {
+          if (plan.nextState === "countdown") {
+            const nextRoundNum = Number(plan.nextRound) || (round + 1);
+            const countdownStart = Date.now() + COUNTDOWN_ARM_MS;
+            await updateDoc(rRef, {
+              state: "countdown",
+              round: nextRoundNum,
+              "countdown.startAt": countdownStart,
+              "marking.advanceAt": null,
+              "marking.nextState": null,
+              "marking.nextRound": null,
+              "timestamps.updatedAt": serverTimestamp(),
+            });
+          } else if (plan.nextState === "maths") {
+            await updateDoc(rRef, {
+              state: "maths",
+              "countdown.startAt": null,
+              "marking.advanceAt": null,
+              "marking.nextState": null,
+              "marking.nextRound": null,
+              "timestamps.updatedAt": serverTimestamp(),
+            });
+          }
+          advanceTimeout = null;
+          scheduledAdvance = false;
+        } catch (err) {
+          console.warn("[marking] advance dispatch failed:", err);
+          scheduledAdvance = false;
+          advanceTimeout = null;
+          setTimeout(() => scheduleAdvance(plan), 600);
+        }
+      }, waitMs);
+    };
 
     const finalizeSnippet = async (attempt = 0) => {
       if (snippetResolved || finalizeInFlight) return;
       finalizeInFlight = true;
+      let nextPlan = null;
       try {
         await runTransaction(db, async (tx) => {
           const roomSnapCur = await tx.get(rRef);
@@ -320,17 +526,23 @@ export default {
           if (!roundSnapCur.exists()) return;
           const roundData = roundSnapCur.data() || {};
           const timings = roundData.timings || {};
-      const hostTiming = hostId ? timings[hostId] || {} : {};
-      const guestTiming = guestId ? timings[guestId] || {} : {};
-      const hostTotalRaw = hostTiming.totalMs;
-      const guestTotalRaw = guestTiming.totalMs;
-      if (!Number.isFinite(hostTotalRaw) || !Number.isFinite(guestTotalRaw)) return;
-      const hostTotal = Number(hostTotalRaw);
-      const guestTotal = Number(guestTotalRaw);
+          const hostTiming = hostId ? timings[hostId] || {} : {};
+          const guestTiming = guestId ? timings[guestId] || {} : {};
+          const hostTotalRaw = hostTiming.totalMs;
+          const guestTotalRaw = guestTiming.totalMs;
+          if (!Number.isFinite(hostTotalRaw) || !Number.isFinite(guestTotalRaw)) return;
+          const hostTotal = Number(hostTotalRaw);
+          const guestTotal = Number(guestTotalRaw);
 
-          let winnerUid = null;
-          if (hostTotal < guestTotal) winnerUid = hostId;
-          else if (guestTotal < hostTotal) winnerUid = guestId;
+          const winners = [];
+          if (Math.abs(hostTotal - guestTotal) <= TIE_EPSILON_MS) {
+            if (hostId) winners.push(hostId);
+            if (guestId) winners.push(guestId);
+          } else if (hostTotal < guestTotal) {
+            if (hostId) winners.push(hostId);
+          } else if (guestId) {
+            winners.push(guestId);
+          }
 
           const answersHost = (((roomData.answers || {}).host || {})[round] || []);
           const answersGuest = (((roomData.answers || {}).guest || {})[round] || []);
@@ -342,27 +554,41 @@ export default {
           const nextHost = Number(baseScores.host || 0) + roundHostScore;
           const nextGuest = Number(baseScores.guest || 0) + roundGuestScore;
 
+          const winnerToken = winners.length >= 2 ? SNIPPET_TIE_TOKEN : winners[0] || null;
+          const now = Date.now();
+          const advanceAt = now + STOP_DELAY_MS;
+          const nextState = round >= 5 ? "maths" : "countdown";
+          const nextRound = round >= 5 ? round : round + 1;
+
           tx.update(rRef, {
-            state: "award",
             "scores.questions.host": nextHost,
             "scores.questions.guest": nextGuest,
             "marking.startAt": null,
+            "marking.completedAt": serverTimestamp(),
+            "marking.advanceAt": advanceAt,
+            "marking.nextState": nextState,
+            "marking.nextRound": nextRound,
             "timestamps.updatedAt": serverTimestamp(),
           });
 
-          tx.set(rdRef, { snippetWinnerUid: winnerUid || null }, { merge: true });
+          tx.set(rdRef, { snippetWinnerUid: winnerToken }, { merge: true });
 
           if (hostId) {
             const patchHost = { retainedSnippets: {} };
-            patchHost.retainedSnippets[round] = winnerUid === hostId;
+            patchHost.retainedSnippets[round] = winners.includes(hostId);
             tx.set(doc(rRef, "players", hostId), patchHost, { merge: true });
           }
           if (guestId) {
             const patchGuest = { retainedSnippets: {} };
-            patchGuest.retainedSnippets[round] = winnerUid === guestId;
+            patchGuest.retainedSnippets[round] = winners.includes(guestId);
             tx.set(doc(rRef, "players", guestId), patchGuest, { merge: true });
           }
+
+          nextPlan = { nextState, nextRound, advanceAt };
         });
+        if (nextPlan && myRole === "host") {
+          scheduleAdvance(nextPlan);
+        }
         snippetResolved = true;
       } catch (err) {
         console.warn("[marking] finalize failed:", err);
@@ -378,6 +604,18 @@ export default {
       const data = snap.data() || {};
       if (Number((data.countdown || {}).startAt)) {
         roundStartAt = Number(data.countdown.startAt);
+        if (!timerFrozen) {
+          refreshLiveTimer();
+        }
+      }
+
+      const markingMeta = data.marking || {};
+      if (myRole === "host" && markingMeta && markingMeta.nextState && Number(markingMeta.advanceAt)) {
+        scheduleAdvance({
+          nextState: markingMeta.nextState,
+          nextRound: markingMeta.nextRound,
+          advanceAt: Number(markingMeta.advanceAt),
+        });
       }
 
       if (data.state === "award") {
@@ -412,12 +650,19 @@ export default {
       const data = snap.data() || {};
       latestRoundTimings = data.timings || {};
 
-      if (published && !latestTotalForMe) {
-        const myTiming = latestRoundTimings[me.uid] || {};
+      if (published) {
+        const myTiming = latestRoundTimings[myUid] || {};
         if (Number(myTiming.totalMs)) {
           latestTotalForMe = Number(myTiming.totalMs);
-          showPostSubmit(latestTotalForMe);
+          freezeTimerDisplay(latestTotalForMe);
+          resultWrap.style.display = "block";
+          updateOutcome();
         }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, "snippetWinnerUid")) {
+        currentWinnerToken = data.snippetWinnerUid || null;
+        updateOutcome();
       }
 
       const hostReady = Boolean(hostUid) && Number.isFinite(Number((latestRoundTimings[hostUid] || {}).totalMs));
@@ -432,6 +677,14 @@ export default {
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       try { stopRoundWatch && stopRoundWatch(); } catch {}
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      if (advanceTimeout) {
+        clearTimeout(advanceTimeout);
+        advanceTimeout = null;
+      }
     };
   },
 

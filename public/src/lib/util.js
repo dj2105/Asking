@@ -4,6 +4,8 @@
 const CODE_REGEX = /[^A-Z0-9]/g;
 const ROLE_STORAGE_PREFIX = "jemimaRole:";
 
+export const SNIPPET_TIE_TOKEN = "__tie__";
+
 export function clampCode(input) {
   return String(input || "")
     .trim()
@@ -109,4 +111,5 @@ export default {
   downloadBlob,
   setStoredRole,
   getStoredRole,
+  SNIPPET_TIE_TOKEN,
 };
