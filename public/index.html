@@ -20,12 +20,50 @@
     </p>
 
     <!-- Bootstrap: fetch Hosting config, set env flags, then load the app once -->
-    <script type="module">
-      // Show emulator banner only on localhost or when ?emu=1
-      const qs = new URLSearchParams(location.search);
-      const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || qs.get("emu") === "1";
-      if (isLocal) document.getElementById("emuBanner").style.display = "block";
+    <script>
+      (async () => {
+        // Show emulator banner only on localhost or when ?emu=1
+        const qs = new URLSearchParams(location.search);
+        const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || qs.get("emu") === "1";
+        if (isLocal) document.getElementById("emuBanner").style.display = "block";
 
+        const FIREBASE_SDK_VERSION = "12.4.0";
+        const firebaseImportMap = {
+          imports: {
+            "firebase/app": `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`,
+            "firebase/auth": `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`,
+            "firebase/firestore": `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`,
+          },
+        };
+
+        // Fetch Firebase Hosting's init.json (optional but handy)
+        try {
+          const res = await fetch("/__/firebase/init.json", { cache: "no-store" });
+          if (res.ok) {
+            const json = await res.json();
+            if (json && typeof json === "object") {
+              window.__FIREBASE_CONFIG__ = json; // available to your firebase.js if you want it
+              const hostingBase = `/__/firebase/${FIREBASE_SDK_VERSION}/`;
+              firebaseImportMap.imports["firebase/app"] = `${hostingBase}firebase-app.js`;
+              firebaseImportMap.imports["firebase/auth"] = `${hostingBase}firebase-auth.js`;
+              firebaseImportMap.imports["firebase/firestore"] = `${hostingBase}firebase-firestore.js`;
+            }
+          }
+        } catch (e) {
+          console.warn("[firebase] init.json not available, using CDN Firebase modules", e);
+        }
+
+        const importMapEl = document.createElement("script");
+        importMapEl.type = "importmap";
+        importMapEl.textContent = JSON.stringify(firebaseImportMap);
+        document.head.append(importMapEl);
+
+        // Load your app exactly once
+        const entryModule = document.createElement("script");
+        entryModule.type = "module";
+        entryModule.src = "./src/main.js";
+        document.body.append(entryModule);
+      })();
       const FIREBASE_SDK_VERSION = "12.4.0";
       const firebaseImportMap = {
         imports: {
