@@ -151,7 +151,7 @@ export default {
       style: "text-align:center;margin-top:14px;display:none;opacity:.8;"
     }, "Waiting for opponent…");
 
-    const continueBtn = el("button", { class: "btn primary", style: "margin-top:12px;" }, "Continue");
+    const continueBtn = el("button", { class: "btn primary", style: "margin-top:12px;" });
     card.appendChild(continueBtn);
     card.appendChild(waitMsg);
 
@@ -173,6 +173,7 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const oppName = oppRole === "host" ? "Daniel" : "Jaime";
 
     let reviewData = {
       hostItems: [],
@@ -199,8 +200,15 @@ export default {
 
     const refreshReviews = () => {
       reviewWrap.innerHTML = "";
-      reviewWrap.appendChild(renderPlayerBlock("Daniel", reviewData.hostItems, reviewData.hostAnswers, round));
-      reviewWrap.appendChild(renderPlayerBlock("Jaime", reviewData.guestItems, reviewData.guestAnswers, round));
+      const hostBlock = renderPlayerBlock("Daniel", reviewData.hostItems, reviewData.hostAnswers, round);
+      const guestBlock = renderPlayerBlock("Jaime", reviewData.guestItems, reviewData.guestAnswers, round);
+      if (myRole === "host") {
+        reviewWrap.appendChild(hostBlock);
+        reviewWrap.appendChild(guestBlock);
+      } else {
+        reviewWrap.appendChild(guestBlock);
+        reviewWrap.appendChild(hostBlock);
+      }
     };
 
     try {
@@ -214,26 +222,33 @@ export default {
     updateScoresDisplay(((roomData0.scores || {}).questions) || {});
     refreshReviews();
 
+    const nextLabelForRound = (r) => {
+      const n = Number(r) || 0;
+      if (n >= 5) return "Maths Round";
+      return `Round ${n + 1}`;
+    };
+
     let ackMine = Boolean(((roomData0.awardAck || {})[myRole] || {})[round]);
     let ackOpp = Boolean(((roomData0.awardAck || {})[oppRole] || {})[round]);
     let advancing = false;
 
     const updateAckUI = () => {
+      const nextLabel = nextLabelForRound(round);
       if (ackMine) {
         continueBtn.disabled = "";
         continueBtn.classList.remove("throb");
-        continueBtn.textContent = "Waiting…";
-        if (ackOpp) {
-          waitMsg.style.display = "none";
-        } else {
-          waitMsg.textContent = "Waiting for opponent…";
-          waitMsg.style.display = "";
-        }
+        continueBtn.textContent = `Waiting for ${oppName}`;
+        waitMsg.style.display = "none";
       } else {
         continueBtn.disabled = null;
         continueBtn.classList.add("throb");
-        continueBtn.textContent = "Continue";
-        waitMsg.style.display = "none";
+        continueBtn.textContent = nextLabel;
+        if (ackOpp) {
+          waitMsg.textContent = `${oppName} is waiting for you…`;
+          waitMsg.style.display = "";
+        } else {
+          waitMsg.style.display = "none";
+        }
       }
     };
 
@@ -259,6 +274,7 @@ export default {
             tx.update(rRef, {
               state: "maths",
               "countdown.startAt": null,
+              "award.startAt": null,
               "timestamps.updatedAt": serverTimestamp(),
             });
           } else {
@@ -269,6 +285,7 @@ export default {
               state: "countdown",
               round: nextRound,
               "countdown.startAt": nextStart,
+              "award.startAt": null,
               "timestamps.updatedAt": serverTimestamp(),
             });
           }
@@ -283,7 +300,6 @@ export default {
     continueBtn.addEventListener("click", async () => {
       if (ackMine) return;
       ackMine = true;
-      waitMsg.textContent = "Waiting for opponent…";
       updateAckUI();
       try {
         await updateDoc(rRef, {
