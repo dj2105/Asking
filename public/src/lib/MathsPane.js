@@ -42,7 +42,8 @@ function ensureSnippetStore(code) {
             const data = snap.data() || {};
             const snippet = (data.snippet || data.interlude || "").toString();
             const winnerUid = data.snippetWinnerUid || null;
-            store.data.set(r, { snippet, winnerUid });
+            const tie = Boolean(data.snippetTie);
+            store.data.set(r, { snippet, winnerUid, tie });
           }
           store.listeners.forEach((fn) => {
             try { fn(store.data); } catch (err) { console.warn("[maths-pane] listener error:", err); }
@@ -115,40 +116,65 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
 
   box.appendChild(core);
 
-  const retainedWrap = document.createElement("div");
-  retainedWrap.style.cssText = `
+  const snippetWrap = document.createElement("div");
+  snippetWrap.style.cssText = `
     margin-top: 16px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.35);
     background: rgba(255,255,255,0.1);
     display: none;
   `;
+  const currentTitle = document.createElement("div");
+  currentTitle.className = "mono";
+  currentTitle.style.cssText = "font-weight:700;margin-bottom:6px;";
+  currentTitle.textContent = "Current Maths Snippet";
+  const currentLine = document.createElement("div");
+  currentLine.className = "mono";
+  currentLine.style.cssText = "margin-bottom:10px;white-space:pre-wrap;";
   const retainedTitle = document.createElement("div");
   retainedTitle.className = "mono";
-  retainedTitle.style.cssText = "font-weight:700;margin-bottom:6px;";
-  retainedTitle.textContent = "Retained Snippets";
+  retainedTitle.style.cssText = "font-weight:700;margin-bottom:6px;display:none;";
+  retainedTitle.textContent = "Previous Wins";
   const retainedList = document.createElement("div");
   retainedList.style.cssText = "display:flex;flex-direction:column;gap:4px;";
-  retainedWrap.appendChild(retainedTitle);
-  retainedWrap.appendChild(retainedList);
-  box.appendChild(retainedWrap);
+  snippetWrap.appendChild(currentTitle);
+  snippetWrap.appendChild(currentLine);
+  snippetWrap.appendChild(retainedTitle);
+  snippetWrap.appendChild(retainedList);
+  box.appendChild(snippetWrap);
 
   container.appendChild(box);
 
   if (!roomCode || !userUid) {
-    retainedWrap.style.display = "none";
+    snippetWrap.style.display = "none";
     return;
   }
 
   const renderRetained = (dataMap) => {
-    const entries = Array.from((dataMap || new Map()).entries())
-      .filter(([, info]) => info && info.winnerUid === userUid && info.snippet)
-      .sort((a, b) => Number(a[0]) - Number(b[0]));
+    const map = dataMap || new Map();
+    const infoCurrent = map.get(round) || {};
+    const currentSnippet = (infoCurrent && infoCurrent.snippet) || "";
+    if (currentSnippet) {
+      currentTitle.style.display = "block";
+      currentLine.textContent = currentSnippet;
+      snippetWrap.style.display = "block";
+    } else {
+      currentTitle.style.display = "none";
+      currentLine.textContent = "";
+    }
+
+    const entries = Array.from(map.entries())
+      .filter(([r]) => Number(r) !== Number(round))
+      .filter(([, info]) => info && info.snippet && (info.tie || info.winnerUid === userUid))
+      .sort((a, b) => Number(b[0]) - Number(a[0]));
 
     if (!entries.length) {
       retainedList.innerHTML = "";
-      retainedWrap.style.display = "none";
+      retainedTitle.style.display = "none";
+      if (!currentSnippet) {
+        snippetWrap.style.display = "none";
+      }
       return;
     }
 
@@ -159,12 +185,13 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
       line.textContent = `Round ${roundNum} — ${info.snippet}`;
       retainedList.appendChild(line);
     });
-    retainedWrap.style.display = "block";
+    retainedTitle.style.display = "block";
+    snippetWrap.style.display = "block";
   };
 
   const store = ensureSnippetStore(roomCode);
   if (!store) {
-    retainedWrap.style.display = "none";
+    snippetWrap.style.display = "none";
     return;
   }
 
