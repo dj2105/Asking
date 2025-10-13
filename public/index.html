@@ -37,6 +37,27 @@
         banner.hidden = false;
       }
 
+      (async () => {
+        let controller = null;
+        let timeoutId = null;
+        if (typeof AbortController === "function") {
+          controller = new AbortController();
+          timeoutId = setTimeout(() => controller.abort(), 1500);
+        }
+
+        try {
+          const options = { cache: "no-store" };
+          if (controller) options.signal = controller.signal;
+          const res = await fetch("/__/firebase/init.json", options);
+          if (res && res.ok) {
+            const json = await res.json();
+            if (json && typeof json === "object") {
+              window.__FIREBASE_CONFIG__ = json;
+            }
+          }
+        } catch (err) {
+          if (!err || err.name !== "AbortError") {
+            console.warn("[firebase] init.json unavailable; using bundled config", err);
       const controller = typeof AbortController === "function" ? new AbortController() : null;
       const timeoutId = controller ? setTimeout(() => controller.abort(), 1500) : null;
 
@@ -50,7 +71,12 @@
           if (json && typeof json === "object") {
             window.__FIREBASE_CONFIG__ = json;
           }
+        } finally {
+          if (timeoutId) clearTimeout(timeoutId);
         }
+
+        await import("/src/main.js");
+      })();
       } catch (err) {
         if (err?.name !== "AbortError") {
           console.warn("[firebase] init.json unavailable; using bundled config", err);
