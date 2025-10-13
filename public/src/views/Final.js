@@ -1,5 +1,6 @@
 // /src/views/Final.js
-import { initFirebase, ensureAuth, db, doc, onSnapshot, getDoc } from '../lib/firebase.js';
+import { ensureAuth, db } from "../lib/firebase.js";
+import { doc, onSnapshot, getDoc } from "firebase/firestore";
 
 export default function Final(){
   const el=document.createElement('section'); el.className='wrap';
@@ -40,7 +41,7 @@ export default function Final(){
   `;
 
   (async()=>{
-    await initFirebase(); await ensureAuth();
+    await ensureAuth();
     const roomRef=doc(db,'rooms',code);
     onSnapshot(roomRef, async (snap)=>{
       if(!snap.exists()) return;

@@ -20,9 +20,11 @@
 //
 // Visuals are defined mainly in styles.css (.score-strip); this module only renders DOM.
 
-import {
-  roomRef, roundSubColRef, doc, getDoc, onSnapshot
-} from "./firebase.js";
+import { db } from "./firebase.js";
+import { doc, collection, getDoc, onSnapshot } from "firebase/firestore";
+
+const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
 
 const state = {
   node: null,

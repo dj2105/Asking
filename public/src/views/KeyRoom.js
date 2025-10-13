@@ -6,14 +6,8 @@
 // • Seeds Firestore with rooms/{code} and rounds/{1..5}, arms countdown 7s ahead.
 // • Logs progress to a monospace console and routes host to the countdown view.
 
-import {
-  initFirebase,
-  ensureAuth,
-  roomRef,
-  onSnapshot,
-  updateDoc,
-  serverTimestamp,
-} from "../lib/firebase.js";
+import { ensureAuth, db } from "../lib/firebase.js";
+import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import {
   unsealFile,
   unsealHalfpack,
@@ -46,9 +40,10 @@ function el(tag, attrs = {}, kids = []) {
   return node;
 }
 
+const roomRef = (code) => doc(db, "rooms", code);
+
 export default {
   async mount(container) {
-    const { db } = await initFirebase();
     await ensureAuth();
 
     const hue = Math.floor(Math.random() * 360);

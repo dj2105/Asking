@@ -15,17 +15,15 @@
 //
 // Visual language: Courier, narrow column, minimal card.
 
+import { ensureAuth, db } from "../lib/firebase.js";
 import {
-  initFirebase,
-  ensureAuth,
-  roomRef,
-  roundSubColRef,
   doc,
+  collection,
   getDoc,
   onSnapshot,
   updateDoc,
-  serverTimestamp
-} from "../lib/firebase.js";
+  serverTimestamp,
+} from "firebase/firestore";
 import {
   clampCode,
   getHashParams,
@@ -47,9 +45,11 @@ function el(tag, attrs = {}, kids = []) {
   return node;
 }
 
+const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
+
 export default {
   async mount(container) {
-    await initFirebase();
     const me = await ensureAuth();
 
     const qs = getHashParams();

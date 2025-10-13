@@ -6,14 +6,17 @@ import {
   clampCode,
   sha256Hex,
 } from "./util.js";
+import { db } from "./firebase.js";
 import {
-  roomRef,
-  roundSubColRef,
   doc,
+  collection,
   setDoc,
   runTransaction,
   serverTimestamp,
-} from "./firebase.js";
+} from "firebase/firestore";
+
+const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
 
 const TEXT_DECODER = new TextDecoder();
 const PASSWORD_DEMO = "DEMO-ONLY"; // TODO: externalise to env/config.

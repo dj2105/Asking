@@ -4,18 +4,16 @@
 // • Shows cumulative scores and six Q&As (host + guest) with correctness markers.
 // • Both players must tap Continue; host then advances to countdown for the next round (or maths after R5).
 
+import { ensureAuth, db } from "../lib/firebase.js";
 import {
-  initFirebase,
-  ensureAuth,
-  roomRef,
-  roundSubColRef,
   doc,
+  collection,
   getDoc,
   onSnapshot,
   updateDoc,
   serverTimestamp,
-  runTransaction
-} from "../lib/firebase.js";
+  runTransaction,
+} from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
@@ -110,9 +108,11 @@ function renderPlayerBlock(label, items, answers, round) {
   return block;
 }
 
+const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
+
 export default {
   async mount(container) {
-    const { db } = await initFirebase();
     const me = await ensureAuth();
 
     const qs = getHashParams();

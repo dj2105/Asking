@@ -10,46 +10,56 @@ import {
   connectFirestoreEmulator,
 } from "firebase/firestore";
 
-console.log("[firebase] script loaded");
-
-// --- Detect local environment (only use emulator if running locally)
 const qs = new URLSearchParams(location.search);
-const isLocal =
-  location.hostname === "localhost" ||
-  location.hostname === "127.0.0.1" ||
-  qs.get("emu") === "1";
+const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || qs.get("emu") === "1";
 
-// --- Real Firebase config (replace with your actual keys)
-const firebaseConfig = {
+const FALLBACK_CONFIG = {
   apiKey: "AIzaSy*****YOUR_REAL_KEY*****",
   authDomain: "asking-6d3d45.firebaseapp.com",
   projectId: "asking-6d3d45",
   storageBucket: "asking-6d3d45.appspot.com",
   messagingSenderId: "397557111515",
-  appId: "1:397557111515:web:XXXXXXX" // from Firebase console → project settings
+  appId: "1:397557111515:web:XXXXXXX",
 };
 
-// --- Initialise
-const app = initializeApp(firebaseConfig);
+const PLACEHOLDER_RE = /YOUR_REAL_KEY|XXXX|REPLACE|example|demo/i;
+
+function mergeConfig(base, injected) {
+  if (!injected || typeof injected !== "object") return { ...base };
+  const out = { ...base };
+  for (const [key, value] of Object.entries(injected)) {
+    if (value == null) continue;
+    const current = out[key];
+    const currentStr = typeof current === "string" ? current : "";
+    const shouldOverride =
+      current == null ||
+      (typeof current === "string" && PLACEHOLDER_RE.test(currentStr));
+    if (shouldOverride) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+const injectedConfig = typeof window !== "undefined" ? window.__FIREBASE_CONFIG__ : null;
+const firebaseConfig = mergeConfig(FALLBACK_CONFIG, injectedConfig);
+
+export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// --- Connect emulators only when local
 if (isLocal) {
-  console.log("[firebase] Using emulator mode");
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "127.0.0.1", 8081);
-} else {
-  console.log("[firebase] Using real Firebase project");
 }
 
-// --- Ensure anon auth
 export async function ensureAuth() {
+  if (auth.currentUser) return auth.currentUser;
   try {
-    await signInAnonymously(auth);
-    console.log("[firebase] Signed in anonymously");
+    const cred = await signInAnonymously(auth);
+    return cred?.user || auth.currentUser;
   } catch (err) {
-    console.error("[firebase] Sign-in failed:", err);
+    console.error("[firebase] Anonymous sign-in failed", err);
+    return auth.currentUser;
   }
-  return auth.currentUser;
 }

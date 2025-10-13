@@ -10,12 +10,10 @@
 //
 // CSS colours rely on --ink and --paper variables set by each view.
 
-import {
-  initFirebase,
-  roundSubColRef,
-  doc,
-  onSnapshot
-} from "./firebase.js";
+import { db } from "./firebase.js";
+import { doc, collection, onSnapshot } from "firebase/firestore";
+
+const roundSubColRef = (code) => collection(doc(db, "rooms", code), "rounds");
 
 const watcherMap = new WeakMap();
 const snippetStores = new Map();
@@ -35,7 +33,6 @@ function ensureSnippetStore(code) {
 
   (async () => {
     try {
-      await initFirebase();
       for (let r = 1; r <= 5; r += 1) {
         const ref = doc(roundSubColRef(key), String(r));
         const stop = onSnapshot(ref, (snap) => {

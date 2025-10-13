@@ -6,10 +6,15 @@
 // - Guests just watch for the state change and follow automatically
 // - MathsPane pinned at bottom with inverted scheme for continuity
 
+import { ensureAuth, db } from "../lib/firebase.js";
 import {
-  initFirebase, ensureAuth,
-  roomRef, roundSubColRef, doc, getDoc, updateDoc, onSnapshot, serverTimestamp
-} from "../lib/firebase.js";
+  doc,
+  collection,
+  getDoc,
+  updateDoc,
+  onSnapshot,
+  serverTimestamp,
+} from "firebase/firestore";
 import * as MathsPaneMod from "../lib/MathsPane.js";
 
 const mountMathsPane =
@@ -33,9 +38,11 @@ function el(tag, attrs={}, kids=[]){
   return n;
 }
 
+const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
+
 export default {
   async mount(container){
-    await initFirebase();
     const me = await ensureAuth();
 
     const qs = hp();

@@ -20,10 +20,14 @@
 //
 // Query: ?code=ABC
 
+import { ensureAuth, db } from "../lib/firebase.js";
 import {
-  initFirebase, ensureAuth,
-  roomRef, getDoc, updateDoc, onSnapshot, serverTimestamp
-} from "../lib/firebase.js";
+  doc,
+  getDoc,
+  updateDoc,
+  onSnapshot,
+  serverTimestamp,
+} from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
@@ -47,9 +51,10 @@ function el(tag, attrs = {}, kids = []) {
   return n;
 }
 
+const roomRef = (code) => doc(db, "rooms", code);
+
 export default {
   async mount(container) {
-    await initFirebase();
     const me = await ensureAuth();
 
     const params = getHashParams();
