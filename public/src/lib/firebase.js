@@ -1,4 +1,3 @@
-// src/lib/firebase.js
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -10,9 +9,6 @@ import {
   connectFirestoreEmulator,
 } from "firebase/firestore";
 
-const qs = new URLSearchParams(location.search);
-const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || qs.get("emu") === "1";
-
 const FALLBACK_CONFIG = {
   apiKey: "AIzaSy*****YOUR_REAL_KEY*****",
   authDomain: "asking-6d3d45.firebaseapp.com",
@@ -22,31 +18,26 @@ const FALLBACK_CONFIG = {
   appId: "1:397557111515:web:XXXXXXX",
 };
 
-const PLACEHOLDER_RE = /YOUR_REAL_KEY|XXXX|REPLACE|example|demo/i;
+const injectedConfig =
+  typeof window !== "undefined" && window.__FIREBASE_CONFIG__ && typeof window.__FIREBASE_CONFIG__ === "object"
+    ? window.__FIREBASE_CONFIG__
+    : null;
 
-function mergeConfig(base, injected) {
-  if (!injected || typeof injected !== "object") return { ...base };
-  const out = { ...base };
-  for (const [key, value] of Object.entries(injected)) {
-    if (value == null) continue;
-    const current = out[key];
-    const currentStr = typeof current === "string" ? current : "";
-    const shouldOverride =
-      current == null ||
-      (typeof current === "string" && PLACEHOLDER_RE.test(currentStr));
-    if (shouldOverride) {
-      out[key] = value;
+const firebaseConfig = { ...FALLBACK_CONFIG };
+if (injectedConfig) {
+  for (const [key, value] of Object.entries(injectedConfig)) {
+    if (value != null && value !== "") {
+      firebaseConfig[key] = value;
     }
   }
-  return out;
 }
-
-const injectedConfig = typeof window !== "undefined" ? window.__FIREBASE_CONFIG__ : null;
-const firebaseConfig = mergeConfig(FALLBACK_CONFIG, injectedConfig);
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+const qs = new URLSearchParams(window.location.search);
+const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname) || qs.get("emu") === "1";
 
 if (isLocal) {
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
@@ -56,10 +47,10 @@ if (isLocal) {
 export async function ensureAuth() {
   if (auth.currentUser) return auth.currentUser;
   try {
-    const cred = await signInAnonymously(auth);
-    return cred?.user || auth.currentUser;
-  } catch (err) {
-    console.error("[firebase] Anonymous sign-in failed", err);
+    const credential = await signInAnonymously(auth);
+    return credential?.user || auth.currentUser;
+  } catch (error) {
+    console.error("[firebase] Anonymous sign-in failed", error);
     return auth.currentUser;
   }
 }
