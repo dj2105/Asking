@@ -34,7 +34,33 @@
       Running in emulator mode. Do not use with production credentials.
     </p>
 
-    <!-- Main app entry -->
-    <script type="module" src="/src/main.js"></script>
+    <!-- Firebase config loader must run before the app boots -->
+    <script type="module">
+      async function injectFirebaseConfig() {
+        if (window.__FIREBASE_CONFIG__ && typeof window.__FIREBASE_CONFIG__ === "object") {
+          return window.__FIREBASE_CONFIG__;
+        }
+
+        const initPath = "/__/firebase/init.json";
+
+        try {
+          const res = await fetch(initPath, { cache: "no-store" });
+          if (!res.ok) throw new Error(`init.json fetch failed: ${res.status}`);
+          const json = await res.json();
+          if (json && typeof json === "object") {
+            window.__FIREBASE_CONFIG__ = json;
+            return json;
+          }
+        } catch (err) {
+          console.warn("[firebase] Unable to fetch hosting config; falling back to defaults.", err);
+        }
+
+        return window.__FIREBASE_CONFIG__;
+      }
+
+      window.__FIREBASE_CONFIG_PROMISE__ = injectFirebaseConfig();
+      await window.__FIREBASE_CONFIG_PROMISE__;
+      await import("/src/main.js");
+    </script>
   </body>
 </html>
