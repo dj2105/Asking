@@ -58,6 +58,18 @@
         } catch (err) {
           if (!err || err.name !== "AbortError") {
             console.warn("[firebase] init.json unavailable; using bundled config", err);
+      const controller = typeof AbortController === "function" ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 1500) : null;
+
+      try {
+        const res = await fetch("/__/firebase/init.json", {
+          cache: "no-store",
+          signal: controller?.signal,
+        });
+        if (res?.ok) {
+          const json = await res.json();
+          if (json && typeof json === "object") {
+            window.__FIREBASE_CONFIG__ = json;
           }
         } finally {
           if (timeoutId) clearTimeout(timeoutId);
@@ -65,6 +77,15 @@
 
         await import("/src/main.js");
       })();
+      } catch (err) {
+        if (err?.name !== "AbortError") {
+          console.warn("[firebase] init.json unavailable; using bundled config", err);
+        }
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+
+      await import("/src/main.js");
     </script>
   </body>
 </html>
