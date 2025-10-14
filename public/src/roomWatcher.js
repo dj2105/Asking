@@ -56,6 +56,8 @@ function targetForState(state, code, round) {
       return `#/award?code=${code}&round=${r}`;
     case "keyroom":
       return null; // stay put; guests shouldn’t be routed into the key room
+    case "coderoom":
+      return null;
     case "maths":
       return `#/maths?code=${code}`;
     case "final":

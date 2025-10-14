@@ -226,11 +226,11 @@ export default {
     const recordQuestionTiming = (ms) => {
       if (!ms) return;
       qDoneMsLocal = ms;
-      const roundTimingPatch = { timings: { [me.uid]: { qDoneMs: ms } } };
+      const roundTimingPatch = { timings: { [me.uid]: { qDoneMs: ms, role: myRole } } };
       setDoc(rdRef, roundTimingPatch, { merge: true }).catch((err) => {
         console.warn("[questions] failed to write round timing:", err);
       });
-      const playerTimingPatch = { rounds: { [round]: { timings: { qDoneMs: ms } } } };
+      const playerTimingPatch = { rounds: { [round]: { timings: { qDoneMs: ms, role: myRole } } } };
       setDoc(playerRef, playerTimingPatch, { merge: true }).catch((err) => {
         console.warn("[questions] failed to mirror player timing:", err);
       });

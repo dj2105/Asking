@@ -104,11 +104,12 @@ export default {
         }
 
         const data = snap.data() || {};
-        setStoredRole(code, "guest");
+        const state = String(data.state || "").toLowerCase();
+        const round = Number(data.round) || 1;
 
-        if (data.state === "keyroom") {
+        if (state === "coderoom") {
+          setStoredRole(code, "guest");
           const startAt = Date.now() + 7_000;
-          const round = Number(data.round) || 1;
           try {
             await updateDoc(rRef, {
               state: "countdown",
@@ -116,12 +117,20 @@ export default {
               "countdown.startAt": startAt,
               "timestamps.updatedAt": serverTimestamp(),
             });
-            console.log(`[lobby] auto-armed countdown for room ${code}`);
+            console.log(`[lobby] armed countdown for room ${code}`);
           } catch (err) {
             console.warn("[lobby] failed to arm countdown:", err);
           }
+          location.hash = `#/countdown?code=${code}&round=${round}`;
+          return;
         }
 
+        if (!state || state === "keyroom") {
+          setStatus("Daniel hasn’t opened the code room yet.");
+          return;
+        }
+
+        setStoredRole(code, "guest");
         const target = `#/watcher?code=${code}`;
         if (location.hash !== target) {
           location.hash = target;

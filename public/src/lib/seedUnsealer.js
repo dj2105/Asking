@@ -324,13 +324,14 @@ export async function unsealMaths(file, { password = PASSWORD_DEMO } = {}) {
   return { maths: clonePlain(pack.maths), code };
 }
 
-export async function seedFirestoreFromPack(db, pack) {
+export async function seedFirestoreFromPack(db, pack, options = {}) {
   assert(db, "Firestore database handle required.");
   validatePack(pack);
   const code = clampCode(pack.meta.roomCode);
   const roomDoc = roomRef(code);
   const countdown = { startAt: null };
   const maths = clonePlain(pack.maths);
+  const { initialState = "keyroom" } = options;
 
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(roomDoc);
@@ -340,7 +341,7 @@ export async function seedFirestoreFromPack(db, pack) {
           hostUid: pack.meta.hostUid,
           guestUid: pack.meta.guestUid,
         },
-        state: "keyroom",
+        state: initialState,
         round: 1,
         maths,
         countdown,
@@ -365,7 +366,7 @@ export async function seedFirestoreFromPack(db, pack) {
 
       tx.update(roomDoc, {
         meta,
-        state: "keyroom",
+        state: initialState,
         round: 1,
         maths,
         countdown,
