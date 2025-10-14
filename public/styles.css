@@ -231,13 +231,11 @@ input[type="text"], input[type="number"], .input {
 .jemima-maths-box {
   background: var(--ink);
   color: var(--paper);
-  padding: 12px 16px;
+  padding: 16px 18px;
   border-radius: 12px;
   max-width: 460px;
   margin-left: auto;
   margin-right: auto;
-  overflow-y: auto;
-  max-height: 140px;
 }
 
 /* ===========================
