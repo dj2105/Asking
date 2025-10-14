@@ -41,9 +41,13 @@ function computeRound(room = {}) {
   return 1;
 }
 
+const CODE_ROOM_WAIT = "__code_wait__";
+
 function targetForState(state, code, round) {
   const r = round || 1;
   switch (String(state || "").toLowerCase()) {
+    case "coderoom":
+      return CODE_ROOM_WAIT;
     case "countdown":
       return `#/countdown?code=${code}&round=${r}`;
     case "questions":
@@ -114,6 +118,11 @@ export function startRoomWatcher(code, { onState } = {}) {
       }
 
       const target = targetForState(state, c, round);
+
+      if (target === CODE_ROOM_WAIT) {
+        unknownSince = 0;
+        return;
+      }
 
       if (target) {
         unknownSince = 0;

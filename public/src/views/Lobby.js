@@ -104,9 +104,17 @@ export default {
         }
 
         const data = snap.data() || {};
+        const state = String(data.state || "").toLowerCase();
+
+        if (state === "keyroom") {
+          setStatus("Daniel hasn’t opened the code room yet.");
+          console.warn(`[lobby] join code=${code} | host still in key room`);
+          return;
+        }
+
         setStoredRole(code, "guest");
 
-        if (data.state === "keyroom") {
+        if (state === "coderoom") {
           const startAt = Date.now() + 7_000;
           const round = Number(data.round) || 1;
           try {
@@ -116,7 +124,7 @@ export default {
               "countdown.startAt": startAt,
               "timestamps.updatedAt": serverTimestamp(),
             });
-            console.log(`[lobby] auto-armed countdown for room ${code}`);
+            console.log(`[lobby] armed countdown for room ${code}`);
           } catch (err) {
             console.warn("[lobby] failed to arm countdown:", err);
           }

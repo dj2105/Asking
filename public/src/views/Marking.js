@@ -141,6 +141,31 @@ export default {
     let timerFrozenMs = null;
     let snippetOutcome = { winnerUid: null, tie: false };
 
+    const uniqueList = (arr = []) => Array.from(new Set(arr.filter((v) => Boolean(v))));
+    const resolveTimingForRole = (timings = {}, roleName, fallbackIds = []) => {
+      const want = String(roleName || "").toLowerCase();
+      if (!want) return null;
+      const entries = Object.entries(timings || {});
+      for (const [uid, infoRaw] of entries) {
+        const info = infoRaw || {};
+        const got = String(info.role || "").toLowerCase();
+        if (got === want) {
+          return { uid, info };
+        }
+      }
+      const fallbacks = uniqueList(fallbackIds);
+      for (const candidate of fallbacks) {
+        if (candidate && Object.prototype.hasOwnProperty.call(timings || {}, candidate)) {
+          return { uid: candidate, info: (timings || {})[candidate] || {} };
+        }
+      }
+      if (entries.length === 1) {
+        const [uid, infoRaw] = entries[0];
+        return { uid, info: infoRaw || {} };
+      }
+      return null;
+    };
+
     const formatSeconds = (ms) => {
       if (!Number.isFinite(ms) || ms < 0) return "0.000";
       return (ms / 1000).toFixed(3);
@@ -349,13 +374,13 @@ export default {
       patch[`markingAck.${myRole}.${round}`] = true;
       patch["timestamps.updatedAt"] = serverTimestamp();
 
-      const roundTimingPayload = { timings: { [me.uid]: { markDoneMs, totalMs } } };
+      const roundTimingPayload = { timings: { [me.uid]: { markDoneMs, totalMs, role: myRole } } };
       if (Number.isFinite(qDoneMs) && qDoneMs > 0) {
         roundTimingPayload.timings[me.uid].qDoneMs = qDoneMs;
       }
 
       const playerTimingPayload = { rounds: {} };
-      playerTimingPayload.rounds[round] = { timings: { markDoneMs } };
+      playerTimingPayload.rounds[round] = { timings: { markDoneMs, role: myRole } };
       if (Number.isFinite(qDoneMs) && qDoneMs > 0) {
         playerTimingPayload.rounds[round].timings.qDoneMs = qDoneMs;
       }
@@ -403,10 +428,12 @@ export default {
           if (!roundSnapCur.exists()) return;
           const roundData = roundSnapCur.data() || {};
           const timings = roundData.timings || {};
-          const hostTiming = hostId ? timings[hostId] || {} : {};
-          const guestTiming = guestId ? timings[guestId] || {} : {};
-          const hostTotalRaw = hostTiming.totalMs;
-          const guestTotalRaw = guestTiming.totalMs;
+          const hostEntry = resolveTimingForRole(timings, "host", [meta.hostUid, hostUid]);
+          const guestEntry = resolveTimingForRole(timings, "guest", [meta.guestUid, guestUid]);
+          if (!hostEntry || !guestEntry) return;
+
+          const hostTotalRaw = hostEntry.info?.totalMs;
+          const guestTotalRaw = guestEntry.info?.totalMs;
           if (!Number.isFinite(hostTotalRaw) || !Number.isFinite(guestTotalRaw)) return;
           const hostTotal = Number(hostTotalRaw);
           const guestTotal = Number(guestTotalRaw);
@@ -416,8 +443,8 @@ export default {
 
           let winnerUid = null;
           if (!tie) {
-            if (hostTotal < guestTotal) winnerUid = hostId;
-            else if (guestTotal < hostTotal) winnerUid = guestId;
+            if (hostTotal < guestTotal) winnerUid = hostEntry.uid;
+            else if (guestTotal < hostTotal) winnerUid = guestEntry.uid;
           }
 
           const answersHost = (((roomData.answers || {}).host || {})[round] || []);
@@ -450,16 +477,23 @@ export default {
 
           tx.set(rdRef, { snippetWinnerUid: winnerUid || null, snippetTie: tie }, { merge: true });
 
-          if (hostId) {
+          const hostWon = tie || (winnerUid && winnerUid === hostEntry.uid);
+          const guestWon = tie || (winnerUid && winnerUid === guestEntry.uid);
+          const hostDocIds = uniqueList([hostEntry.uid, hostId, meta.hostUid]);
+          const guestDocIds = uniqueList([guestEntry.uid, guestId, meta.guestUid]);
+
+          hostDocIds.forEach((id) => {
+            if (!id) return;
             const patchHost = { retainedSnippets: {} };
-            patchHost.retainedSnippets[round] = tie || winnerUid === hostId;
-            tx.set(doc(rRef, "players", hostId), patchHost, { merge: true });
-          }
-          if (guestId) {
+            patchHost.retainedSnippets[round] = hostWon;
+            tx.set(doc(rRef, "players", id), patchHost, { merge: true });
+          });
+          guestDocIds.forEach((id) => {
+            if (!id) return;
             const patchGuest = { retainedSnippets: {} };
-            patchGuest.retainedSnippets[round] = tie || winnerUid === guestId;
-            tx.set(doc(rRef, "players", guestId), patchGuest, { merge: true });
-          }
+            patchGuest.retainedSnippets[round] = guestWon;
+            tx.set(doc(rRef, "players", id), patchGuest, { merge: true });
+          });
         });
         snippetResolved = true;
       } catch (err) {
@@ -512,8 +546,10 @@ export default {
         }
       }
 
-      const hostReady = Boolean(hostUid) && Number.isFinite(Number((latestRoundTimings[hostUid] || {}).totalMs));
-      const guestReady = Boolean(guestUid) && Number.isFinite(Number((latestRoundTimings[guestUid] || {}).totalMs));
+      const hostTimingEntry = resolveTimingForRole(latestRoundTimings, "host", [hostUid]);
+      const guestTimingEntry = resolveTimingForRole(latestRoundTimings, "guest", [guestUid]);
+      const hostReady = Boolean(hostTimingEntry && Number.isFinite(Number(hostTimingEntry.info?.totalMs)));
+      const guestReady = Boolean(guestTimingEntry && Number.isFinite(Number(guestTimingEntry.info?.totalMs)));
       if (hostReady && guestReady && myRole === "host" && !snippetResolved) {
         finalizeSnippet();
       }
