@@ -15,9 +15,6 @@ import {
   seedFirestoreFromPack,
   DEMO_PACK_PASSWORD,
   PACK_VERSION_FULL,
-  PACK_VERSION_HALF,
-  PACK_VERSION_MATHS,
-  PACK_VERSION_QUESTIONS,
 } from "../lib/seedUnsealer.js";
 import { clampCode, getHashParams, setStoredRole } from "../lib/util.js";
 
@@ -35,6 +32,178 @@ function el(tag, attrs = {}, kids = []) {
 }
 
 const roomRef = (code) => doc(db, "rooms", code);
+const DEFAULT_HOST_UID = "daniel-001";
+const DEFAULT_GUEST_UID = "jaime-001";
+const PLACEHOLDER = "<empty>";
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value ?? null));
+}
+
+function buildEmptyItem() {
+  return {
+    subject: PLACEHOLDER,
+    difficulty_tier: PLACEHOLDER,
+    question: PLACEHOLDER,
+    correct_answer: PLACEHOLDER,
+    distractors: {
+      easy: PLACEHOLDER,
+      medium: PLACEHOLDER,
+      hard: PLACEHOLDER,
+    },
+  };
+}
+
+function padItems(list = []) {
+  const items = Array.isArray(list) ? list.map((item) => clone(item)) : [];
+  while (items.length < 3) items.push(buildEmptyItem());
+  return items.slice(0, 3).map((item) => {
+    const safe = item && typeof item === "object" ? item : buildEmptyItem();
+    return {
+      subject: typeof safe.subject === "string" && safe.subject.trim() ? safe.subject : PLACEHOLDER,
+      difficulty_tier:
+        typeof safe.difficulty_tier === "string" && safe.difficulty_tier.trim()
+          ? safe.difficulty_tier
+          : PLACEHOLDER,
+      question: typeof safe.question === "string" && safe.question.trim() ? safe.question : PLACEHOLDER,
+      correct_answer:
+        typeof safe.correct_answer === "string" && safe.correct_answer.trim()
+          ? safe.correct_answer
+          : PLACEHOLDER,
+      distractors: {
+        easy:
+          typeof safe?.distractors?.easy === "string" && safe.distractors.easy.trim()
+            ? safe.distractors.easy
+            : PLACEHOLDER,
+        medium:
+          typeof safe?.distractors?.medium === "string" && safe.distractors.medium.trim()
+            ? safe.distractors.medium
+            : PLACEHOLDER,
+        hard:
+          typeof safe?.distractors?.hard === "string" && safe.distractors.hard.trim()
+            ? safe.distractors.hard
+            : PLACEHOLDER,
+      },
+    };
+  });
+}
+
+function normalizeFullRounds(rounds = []) {
+  const map = {};
+  for (let i = 1; i <= 5; i += 1) {
+    map[i] = { hostItems: [], guestItems: [], interlude: PLACEHOLDER };
+  }
+  rounds.forEach((round) => {
+    const rnum = Number(round?.round);
+    if (!Number.isInteger(rnum) || rnum < 1 || rnum > 5) return;
+    map[rnum] = {
+      hostItems: clone(round.hostItems || []),
+      guestItems: clone(round.guestItems || []),
+      interlude: typeof round.interlude === "string" && round.interlude.trim() ? round.interlude : PLACEHOLDER,
+    };
+  });
+  return map;
+}
+
+function normalizeHalfpackRounds(rounds = [], which) {
+  const map = {};
+  for (let i = 1; i <= 5; i += 1) {
+    map[i] = { hostItems: [], guestItems: [], interlude: PLACEHOLDER };
+  }
+  rounds.forEach((round) => {
+    const rnum = Number(round?.round);
+    if (!Number.isInteger(rnum) || rnum < 1 || rnum > 5) return;
+    if (which === "host") {
+      map[rnum].hostItems = clone(round.hostItems || []);
+    } else {
+      map[rnum].guestItems = clone(round.guestItems || []);
+    }
+    if (typeof round.interlude === "string" && round.interlude.trim()) {
+      map[rnum].interlude = round.interlude;
+    }
+  });
+  return map;
+}
+
+function normalizeMaths(maths = null) {
+  const src = maths && typeof maths === "object" ? maths : {};
+  const beats = Array.isArray(src.beats) ? src.beats.slice(0, 4) : [];
+  while (beats.length < 4) beats.push(PLACEHOLDER);
+  return {
+    location: typeof src.location === "string" && src.location.trim() ? src.location : PLACEHOLDER,
+    beats: beats.map((beat) => (typeof beat === "string" && beat.trim() ? beat : PLACEHOLDER)),
+    questions: Array.isArray(src.questions) && src.questions.length
+      ? [0, 1].map((idx) => {
+          const q = src.questions[idx];
+          return typeof q === "string" && q.trim() ? q : PLACEHOLDER;
+        })
+      : [PLACEHOLDER, PLACEHOLDER],
+    answers: Array.isArray(src.answers) && src.answers.length
+      ? [0, 1].map((idx) => {
+          const a = src.answers[idx];
+          return Number.isInteger(a) ? a : 0;
+        })
+      : [0, 0],
+  };
+}
+
+function generateRandomCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 3; i += 1) {
+    const idx = Math.floor(Math.random() * alphabet.length);
+    out += alphabet[idx];
+  }
+  return out;
+}
+
+async function determineSealedType(file) {
+  let envelopeText;
+  try {
+    envelopeText = await file.text();
+  } catch (err) {
+    throw new Error("Failed to read sealed file.");
+  }
+  let envelope;
+  try {
+    envelope = JSON.parse(envelopeText);
+  } catch (err) {
+    throw new Error("Sealed pack is not valid JSON.");
+  }
+
+  const stubFile = {
+    name: file.name,
+    async text() {
+      return envelopeText;
+    },
+  };
+
+  const order = ["full", "half", "questions", "maths"];
+  for (const type of order) {
+    try {
+      if (type === "full") {
+        const result = await unsealFile(stubFile, { password: DEMO_PACK_PASSWORD });
+        return { type: "full", ...result };
+      }
+      if (type === "half") {
+        const result = await unsealHalfpack(stubFile, { password: DEMO_PACK_PASSWORD });
+        return { type: "half", ...result };
+      }
+      if (type === "questions") {
+        const result = await unsealQuestionPack(stubFile, { password: DEMO_PACK_PASSWORD });
+        return { type: "questions", ...result };
+      }
+      if (type === "maths") {
+        const result = await unsealMaths(stubFile, { password: DEMO_PACK_PASSWORD });
+        return { type: "maths", ...result };
+      }
+    } catch (err) {
+      if (err?.message === "Unsupported sealed version.") continue;
+      throw err;
+    }
+  }
+  throw new Error("Unsupported sealed version.");
+}
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value ?? null));
@@ -135,13 +304,81 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-keyroom" });
     const card = el("div", { class: "card" });
-    card.appendChild(el("h1", { class: "title" }, "Key Room"));
+    root.appendChild(card);
+    container.appendChild(root);
+
+    const headerRow = el("div", {
+      style: "display:flex;justify-content:space-between;align-items:center;gap:10px;",
+    });
+    headerRow.appendChild(el("h1", { class: "title" }, "Key Room"));
+    const lobbyBtn = el(
+      "button",
+      {
+        class: "btn outline",
+        type: "button",
+        onclick: () => {
+          location.hash = "#/lobby";
+        },
+      },
+      "Back"
+    );
+    headerRow.appendChild(lobbyBtn);
+    card.appendChild(headerRow);
+
     const intro = el(
       "div",
       { class: "mono", style: "margin-bottom:10px;" },
       "Upload any Jemima sealed packs (optional), pick a room code, then press START."
     );
     card.appendChild(intro);
+
+    const codeRow = el("div", {
+      class: "mono",
+      style: "display:flex;align-items:center;gap:8px;margin-bottom:12px;justify-content:center;flex-wrap:wrap;",
+    });
+    const codeInput = el("input", {
+      type: "text",
+      class: "mono",
+      style: "font-size:18px;padding:6px 10px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;width:120px;text-align:center;",
+      maxlength: "5",
+      value: hintedCode,
+      oninput: (event) => {
+        event.target.value = clampCode(event.target.value);
+        reflectStartState();
+      },
+    });
+    const randomBtn = el(
+      "button",
+      {
+        class: "btn outline",
+        type: "button",
+        onclick: () => {
+          codeInput.value = clampCode(generateRandomCode());
+          reflectStartState();
+        },
+      },
+      "Random"
+    );
+    const copyLinkBtn = el(
+      "button",
+      {
+        class: "btn outline",
+        type: "button",
+        onclick: async () => {
+          const code = clampCode(codeInput.value);
+          if (!code) return;
+          const share = `${location.origin}${location.pathname}#/lobby`;
+          const ok = await copyToClipboard(`${share}?code=${code}`);
+          if (ok) status.textContent = "Link copied.";
+        },
+      },
+      "Copy link"
+    );
+    codeRow.appendChild(el("span", { style: "font-weight:700;" }, "Room code"));
+    codeRow.appendChild(codeInput);
+    codeRow.appendChild(randomBtn);
+    codeRow.appendChild(copyLinkBtn);
+    card.appendChild(codeRow);
 
     const uploadGrid = el("div", {
       class: "mono",
@@ -151,10 +388,7 @@ export default {
 
     const slotConfigs = {
       full: { label: "Full Pack", initial: "Awaiting full pack." },
-      questions: {
-        label: "All Questions (30)",
-        initial: "Awaiting 30-question pack.",
-      },
+      questions: { label: "All Questions (30)", initial: "Awaiting 30-question pack." },
       host: { label: "Host (15)", initial: "Awaiting host halfpack." },
       guest: { label: "Guest (15)", initial: "Awaiting guest halfpack." },
       maths: { label: "Maths", initial: "Awaiting maths block." },
@@ -221,7 +455,8 @@ export default {
     }
 
     for (const [role, cfg] of Object.entries(slotConfigs)) {
-      const slot = createSlot(role, cfg.label, cfg.initial);
+    const slot = createSlot(role, cfg.label, cfg.initial);
+    slot.label = cfg.label;
       slotMap[role] = slot;
       uploadGrid.appendChild(slot.wrapper);
     }
@@ -247,11 +482,16 @@ export default {
       class: "mono small",
       style: "margin-top:6px;display:none;justify-content:center;align-items:center;gap:6px;",
     });
-    const verifiedDot = el("span", { class: "verified-dot verified-dot--ok" });
-    metaRow.appendChild(verifiedDot);
     const generatedLabel = el("span", {}, "");
     metaRow.appendChild(generatedLabel);
     card.appendChild(metaRow);
+
+    const status = el(
+      "div",
+      { class: "mono small", style: "margin-top:10px;min-height:18px;" },
+      hintedCode ? `Enter ${hintedCode} or pick a new code.` : "Choose a room code to get started."
+    );
+    card.appendChild(status);
 
     const startRow = el("div", {
       class: "mono",
@@ -424,7 +664,6 @@ export default {
         stage.mathsOverride = null;
         log("maths block cleared.");
       }
-
       slot.statusEl.textContent = slot.initialText;
       slot.active = false;
       slot.clearBtn.disabled = true;
@@ -507,9 +746,8 @@ export default {
     async function handleFullPack(result) {
       const { pack, code } = result;
       stage.base = {
-        code,
         rounds: normalizeFullRounds(pack.rounds || []),
-        maths: clone(pack.maths),
+        maths: normalizeMaths(pack.maths),
         meta: {
           hostUid: pack.meta?.hostUid || "daniel-001",
           guestUid: pack.meta?.guestUid || "jaime-001",
@@ -518,12 +756,11 @@ export default {
         checksum: pack.integrity?.checksum || "",
         loadedAt: Date.now(),
       };
-
-      const fullSlot = slotMap.full;
-      if (fullSlot) {
-        fullSlot.statusEl.textContent = "Full pack loaded (base).";
-        fullSlot.active = true;
-        fullSlot.clearBtn.disabled = false;
+      const slot = slotMap.full;
+      if (slot) {
+        slot.statusEl.textContent = "Full pack loaded (base).";
+        slot.active = true;
+        slot.clearBtn.disabled = false;
       }
       applyGeneratedAt(stage.base.generatedAt);
       log(`unsealed pack ${code}`);
@@ -538,15 +775,14 @@ export default {
       const { questions, code } = result;
       const qMeta = questions.meta || {};
       stage.questionsOverride = {
-        code,
         rounds: normalizeFullRounds(questions.rounds || []),
         meta: {
-          hostUid: typeof qMeta.hostUid === "string" ? qMeta.hostUid : "",
-          guestUid: typeof qMeta.guestUid === "string" ? qMeta.guestUid : "",
+          hostUid: typeof questions.meta?.hostUid === "string" ? questions.meta.hostUid : "",
+          guestUid: typeof questions.meta?.guestUid === "string" ? questions.meta.guestUid : "",
         },
         generatedAt:
-          typeof qMeta.generatedAt === "string" && !Number.isNaN(Date.parse(qMeta.generatedAt))
-            ? qMeta.generatedAt
+          typeof questions.meta?.generatedAt === "string" && !Number.isNaN(Date.parse(questions.meta.generatedAt))
+            ? questions.meta.generatedAt
             : "",
         loadedAt: Date.now(),
       };
@@ -566,15 +802,19 @@ export default {
       const loadedAt = Date.now();
       if (which === "host") {
         stage.hostOverride = {
-          code,
-          rounds: normalizeHalfpackRounds(halfpack.rounds || [], "host"),
-          loadedAt,
+          rounds: normalized,
+          loadedAt: Date.now(),
+          meta: {
+            hostUid: typeof halfMeta.hostUid === "string" ? halfMeta.hostUid : "",
+          },
         };
       } else {
         stage.guestOverride = {
-          code,
-          rounds: normalizeHalfpackRounds(halfpack.rounds || [], "guest"),
-          loadedAt,
+          rounds: normalized,
+          loadedAt: Date.now(),
+          meta: {
+            guestUid: typeof halfMeta.guestUid === "string" ? halfMeta.guestUid : "",
+          },
         };
       }
       const slot = slotMap[which];

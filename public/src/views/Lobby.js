@@ -8,8 +8,9 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
-const roomRef = (code) => doc(db, "rooms", code);
 import { clampCode as clampCodeShared, setStoredRole } from "../lib/util.js";
+
+const roomRef = (code) => doc(db, "rooms", code);
 
 function el(tag, attrs = {}, kids = []) {
   const n = document.createElement(tag);
@@ -26,6 +27,7 @@ function el(tag, attrs = {}, kids = []) {
 }
 
 const clampCode = (v) => clampCodeShared(v || "");
+const DEFAULT_GUEST_UID = "jaime-001";
 
 export default {
   async mount(container) {
@@ -46,6 +48,9 @@ export default {
     card.appendChild(el("h1", { class: "lobby-title" }, "Jemima’s Asking"));
     card.appendChild(el("p", { class: "lobby-prompt" }, "Jaime, what’s the code?"));
 
+    const params = new URLSearchParams((location.hash.split("?")[1] || ""));
+    const initialCode = clampCode(params.get("code") || "");
+
     const input = el("input", {
       type: "text",
       autocomplete: "off",
@@ -53,6 +58,7 @@ export default {
       maxlength: "5",
       placeholder: "C A T 9",
       class: "lobby-code-input",
+      value: initialCode,
       oninput: (e) => { e.target.value = clampCode(e.target.value); reflect(); },
       onkeydown: (e) => { if (e.key === "Enter") join(); }
     });
@@ -116,26 +122,37 @@ export default {
 
         if (state === "coderoom") {
           const startAt = Date.now() + 7_000;
-          const round = Number(data.round) || 1;
           try {
             await updateDoc(rRef, {
               state: "countdown",
               round,
               "countdown.startAt": startAt,
+              "meta.guestUid": data.meta?.guestUid || DEFAULT_GUEST_UID,
+              "links.guestReady": true,
               "timestamps.updatedAt": serverTimestamp(),
             });
             console.log(`[lobby] armed countdown for room ${code}`);
           } catch (err) {
             console.warn("[lobby] failed to arm countdown:", err);
+            setStatus("Couldn’t start the countdown. Try again.");
+            return;
           }
+          location.hash = `#/countdown?code=${code}&round=${round}`;
+          return;
         }
 
-        const target = `#/watcher?code=${code}`;
-        if (location.hash !== target) {
-          location.hash = target;
-        } else {
-          setTimeout(() => window.dispatchEvent(new HashChangeEvent("hashchange")), 0);
+        if (state === "countdown" || state === "questions" || state === "marking" || state === "award" || state === "maths" || state === "final") {
+          const target = `#/watcher?code=${code}`;
+          if (location.hash !== target) {
+            location.hash = target;
+          } else {
+            setTimeout(() => window.dispatchEvent(new HashChangeEvent("hashchange")), 0);
+          }
+          return;
         }
+
+        setStatus("Daniel hasn’t opened the code room yet.");
+        return;
       } catch (e) {
         console.error("[lobby] join failed:", e);
         setStatus("Couldn’t join right now. Please try again.");
@@ -144,6 +161,9 @@ export default {
 
     // First paint
     reflect();
+    if (initialCode) {
+      join();
+    }
   },
 
   async unmount() {}
