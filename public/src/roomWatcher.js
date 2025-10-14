@@ -108,6 +108,11 @@ export function startRoomWatcher(code, { onState } = {}) {
         try { onState({ state, round, room, exists: true }); } catch {}
       }
 
+      if (state.toLowerCase() === "coderoom") {
+        unknownSince = 0;
+        return;
+      }
+
       if (state.toLowerCase() === "seeding") {
         unknownSince = 0;
         return; // stay on watcher with waiting copy

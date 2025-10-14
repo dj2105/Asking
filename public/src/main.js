@@ -37,12 +37,13 @@ const app = document.getElementById("app");
 let current = { route: "", mod: null, unmount: null };
 
 // Routes that should NOT show the score strip
-const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "seeding", "final", "watcher"]);
+const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher"]);
 
 // Map route -> dynamic import path
 const VIEW_MAP = {
   lobby:     () => import("./views/Lobby.js"),
   keyroom:   () => import("./views/KeyRoom.js"),
+  coderoom:  () => import("./views/CodeRoom.js"),
   seeding:   () => import("./views/SeedProgress.js"),
   countdown: () => import("./views/Countdown.js"),
   questions: () => import("./views/Questions.js"),
