@@ -71,21 +71,38 @@ export default {
     const list = el("div", { class: "qa-list" });
     card.appendChild(list);
 
-    const doneBtn = el("button", { class: "btn primary", style: "margin-top:12px;", disabled: "" }, "DONE");
-    card.appendChild(doneBtn);
+    const timerRow = el("div", {
+      style: "display:flex;justify-content:center;align-items:center;gap:12px;margin-top:16px;"
+    });
+    const timerDisplay = el("div", {
+      class: "mono",
+      style: "font-weight:700;font-size:24px;min-width:120px;text-align:center;"
+    }, "0.000");
+    const doneBtn = el("button", {
+      class: "btn primary",
+      style: "font-weight:700;letter-spacing:0.6px;padding-left:28px;padding-right:28px;",
+      disabled: ""
+    }, "STOP");
+    timerRow.appendChild(timerDisplay);
+    timerRow.appendChild(doneBtn);
+    card.appendChild(timerRow);
 
     const resultWrap = el("div", {
       style: "text-align:center;margin-top:18px;display:none;"
     });
-    const finishLine = el("div", {
+    const freezeLine = el("div", {
       class: "mono",
-      style: "font-weight:700;font-size:18px;"
+      style: "font-weight:700;font-size:20px;margin-bottom:10px;"
+    }, "");
+    const winnerLine = el("div", {
+      style: "display:none;font-size:34px;font-weight:700;line-height:1.05;text-transform:uppercase;white-space:pre-line;font-family:Impact,Haettenschweiler,'Arial Black','Arial Narrow Bold',sans-serif;color:#c8f7c5;"
     }, "");
     const waitingLine = el("div", {
       class: "mono",
-      style: "opacity:0.75;margin-top:4px;"
-    }, "Waiting for opponent…");
-    resultWrap.appendChild(finishLine);
+      style: "opacity:0.78;margin-top:6px;"
+    }, "Linking to opponent…");
+    resultWrap.appendChild(freezeLine);
+    resultWrap.appendChild(winnerLine);
     resultWrap.appendChild(waitingLine);
     card.appendChild(resultWrap);
 
@@ -119,6 +136,38 @@ export default {
     let finalizeInFlight = false;
     let latestTotalForMe = null;
     let latestRoundTimings = {};
+    let timerInterval = null;
+    let timerFrozen = false;
+    let timerFrozenMs = null;
+    let snippetOutcome = { winnerUid: null, tie: false };
+
+    const formatSeconds = (ms) => {
+      if (!Number.isFinite(ms) || ms < 0) return "0.000";
+      return (ms / 1000).toFixed(3);
+    };
+
+    const updateTimerDisplay = () => {
+      if (timerFrozen && Number.isFinite(timerFrozenMs)) {
+        timerDisplay.textContent = formatSeconds(timerFrozenMs);
+        return;
+      }
+      const base = Number(roundStartAt) ? Math.max(0, Date.now() - Number(roundStartAt)) : Math.max(0, Date.now() - markingEnterAt);
+      timerDisplay.textContent = formatSeconds(base);
+    };
+
+    const freezeTimer = (ms) => {
+      if (timerFrozen && Number.isFinite(timerFrozenMs)) return;
+      timerFrozen = true;
+      if (Number.isFinite(ms)) timerFrozenMs = Math.max(0, ms);
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      updateTimerDisplay();
+    };
+
+    timerInterval = setInterval(updateTimerDisplay, 60);
+    updateTimerDisplay();
 
     try {
       if (mountMathsPane && roomData0.maths) {
@@ -137,15 +186,49 @@ export default {
     let marks = [null, null, null];
     const disableFns = [];
 
-    const showPostSubmit = (totalMs) => {
-      const secs = Number.isFinite(totalMs) && totalMs > 0 ? (totalMs / 1000).toFixed(1) : null;
-      finishLine.textContent = secs
-        ? `You finished this round in ${secs} seconds.`
-        : "You finished this round.";
-      waitingLine.textContent = "Waiting for opponent…";
+    const updateOutcomeDisplay = () => {
+      if (!published) {
+        resultWrap.style.display = "none";
+        return;
+      }
+      const secsLine = Number.isFinite(latestTotalForMe)
+        ? `ROUND COMPLETED IN ${formatSeconds(latestTotalForMe)} SECONDS`
+        : "ROUND COMPLETED IN — SECONDS";
+      freezeLine.textContent = secsLine;
+      freezeLine.style.display = "block";
+
+      const { winnerUid, tie } = snippetOutcome || {};
+      const isWinner = tie || (winnerUid && winnerUid === me.uid);
+      if (isWinner) {
+        winnerLine.textContent = "YOU’RE\nA\nWINNER!";
+        winnerLine.style.display = "block";
+        waitingLine.textContent = tie
+          ? "Dead heat! Snippet unlocked for both."
+          : "Connected. Snippet secured.";
+      } else if (winnerUid) {
+        winnerLine.style.display = "none";
+        waitingLine.textContent = "Link complete. Await the next round…";
+      } else {
+        winnerLine.style.display = "none";
+        waitingLine.textContent = "Linking to opponent…";
+      }
+
       resultWrap.style.display = "block";
       list.style.display = "none";
-      doneBtn.style.display = "none";
+      timerRow.style.opacity = "0.85";
+    };
+
+    const showPostSubmit = (totalMs) => {
+      if (Number.isFinite(totalMs)) {
+        latestTotalForMe = Number(totalMs);
+        freezeTimer(latestTotalForMe);
+      } else {
+        freezeTimer(totalMs);
+      }
+      doneBtn.disabled = true;
+      doneBtn.classList.remove("throb");
+      doneBtn.style.pointerEvents = "none";
+      updateOutcomeDisplay();
     };
 
     const updateDoneState = () => {
@@ -320,17 +403,22 @@ export default {
           if (!roundSnapCur.exists()) return;
           const roundData = roundSnapCur.data() || {};
           const timings = roundData.timings || {};
-      const hostTiming = hostId ? timings[hostId] || {} : {};
-      const guestTiming = guestId ? timings[guestId] || {} : {};
-      const hostTotalRaw = hostTiming.totalMs;
-      const guestTotalRaw = guestTiming.totalMs;
-      if (!Number.isFinite(hostTotalRaw) || !Number.isFinite(guestTotalRaw)) return;
-      const hostTotal = Number(hostTotalRaw);
-      const guestTotal = Number(guestTotalRaw);
+          const hostTiming = hostId ? timings[hostId] || {} : {};
+          const guestTiming = guestId ? timings[guestId] || {} : {};
+          const hostTotalRaw = hostTiming.totalMs;
+          const guestTotalRaw = guestTiming.totalMs;
+          if (!Number.isFinite(hostTotalRaw) || !Number.isFinite(guestTotalRaw)) return;
+          const hostTotal = Number(hostTotalRaw);
+          const guestTotal = Number(guestTotalRaw);
+
+          const diff = Math.abs(hostTotal - guestTotal);
+          const tie = diff <= 1;
 
           let winnerUid = null;
-          if (hostTotal < guestTotal) winnerUid = hostId;
-          else if (guestTotal < hostTotal) winnerUid = guestId;
+          if (!tie) {
+            if (hostTotal < guestTotal) winnerUid = hostId;
+            else if (guestTotal < hostTotal) winnerUid = guestId;
+          }
 
           const answersHost = (((roomData.answers || {}).host || {})[round] || []);
           const answersGuest = (((roomData.answers || {}).guest || {})[round] || []);
@@ -342,24 +430,34 @@ export default {
           const nextHost = Number(baseScores.host || 0) + roundHostScore;
           const nextGuest = Number(baseScores.guest || 0) + roundGuestScore;
 
+          const currentRound = Number(roomData.round) || round;
+          const maxRounds = 5;
+          const isFinalRound = currentRound >= maxRounds;
+          const nextRound = isFinalRound ? currentRound : currentRound + 1;
+          const nextStart = isFinalRound ? null : Date.now() + 5000;
+
           tx.update(rRef, {
-            state: "award",
+            state: isFinalRound ? "maths" : "countdown",
+            round: nextRound,
             "scores.questions.host": nextHost,
             "scores.questions.guest": nextGuest,
             "marking.startAt": null,
             "timestamps.updatedAt": serverTimestamp(),
+            ...(isFinalRound
+              ? { "countdown.startAt": null }
+              : { "countdown.startAt": nextStart })
           });
 
-          tx.set(rdRef, { snippetWinnerUid: winnerUid || null }, { merge: true });
+          tx.set(rdRef, { snippetWinnerUid: winnerUid || null, snippetTie: tie }, { merge: true });
 
           if (hostId) {
             const patchHost = { retainedSnippets: {} };
-            patchHost.retainedSnippets[round] = winnerUid === hostId;
+            patchHost.retainedSnippets[round] = tie || winnerUid === hostId;
             tx.set(doc(rRef, "players", hostId), patchHost, { merge: true });
           }
           if (guestId) {
             const patchGuest = { retainedSnippets: {} };
-            patchGuest.retainedSnippets[round] = winnerUid === guestId;
+            patchGuest.retainedSnippets[round] = tie || winnerUid === guestId;
             tx.set(doc(rRef, "players", guestId), patchGuest, { merge: true });
           }
         });
@@ -378,13 +476,7 @@ export default {
       const data = snap.data() || {};
       if (Number((data.countdown || {}).startAt)) {
         roundStartAt = Number(data.countdown.startAt);
-      }
-
-      if (data.state === "award") {
-        setTimeout(() => {
-          location.hash = `#/award?code=${code}&round=${round}`;
-        }, 80);
-        return;
+        if (!timerFrozen) updateTimerDisplay();
       }
 
       if (data.state === "countdown") {
@@ -425,6 +517,11 @@ export default {
       if (hostReady && guestReady && myRole === "host" && !snippetResolved) {
         finalizeSnippet();
       }
+
+      const tie = Boolean(data.snippetTie);
+      const winnerUid = data.snippetWinnerUid || null;
+      snippetOutcome = { winnerUid, tie };
+      if (published) updateOutcomeDisplay();
     }, (err) => {
       console.warn("[marking] round snapshot error:", err);
     });
@@ -432,6 +529,9 @@ export default {
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       try { stopRoundWatch && stopRoundWatch(); } catch {}
+      if (timerInterval) {
+        try { clearInterval(timerInterval); } catch {}
+      }
     };
   },
 
