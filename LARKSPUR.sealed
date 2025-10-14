@@ -1,0 +1,462 @@
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "LARKSPUR",
+    "hostUid": "daniel-001",
+    "guestUid": "jaime-001",
+    "generatedAt": "2025-10-14T20:00:00+00:00"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "interlude": "Jemima balances a saucer of salt on her head while waltzing past a bemused seal.",
+      "hostItems": [
+        {
+          "subject": "Cornish Causeways",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "What tidal island in Cornwall lets walkers reach its castle by causeway when the sea slips back each low tide?",
+          "correct_answer": "St Michael's Mount",
+          "distractors": {
+            "easy": "Holy Island",
+            "medium": "Burgh Island",
+            "hard": "Ailsa Craig"
+          },
+          "provenance_hint": "Mount's Bay, Cornwall tide tables"
+        },
+        {
+          "subject": "Great Exhibition Pavilion",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which glass-and-iron palace, later reassembled to glitter above Sydenham Hill, staged the 1851 Great Exhibition in Hyde Park and wowed six million visitors (draughts aside)?",
+          "correct_answer": "The Crystal Palace",
+          "distractors": {
+            "easy": "Alexandra Palace",
+            "medium": "Royal Albert Hall",
+            "hard": "South Kensington Museum"
+          },
+          "provenance_hint": "1851 Crystal Palace, Hyde Park"
+        },
+        {
+          "subject": "Whitby Steam Timetable",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "A heritage steam special leaves York at 09:45 for Whitby, running 72 km at an average of 48 km/h and pausing 15 minutes at Grosmont for water while the crew stretch. When should passengers expect to roll into Whitby station?",
+          "correct_answer": "11:30",
+          "distractors": {
+            "easy": "11:00",
+            "medium": "11:45",
+            "hard": "11:15"
+          },
+          "provenance_hint": "North Yorkshire Moors Railway schedule"
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Hope the Whale",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "Where in South Kensington can you stand beneath the blue whale skeleton nicknamed Hope?",
+          "correct_answer": "The Natural History Museum",
+          "distractors": {
+            "easy": "Science Museum",
+            "medium": "Victoria and Albert Museum",
+            "hard": "British Museum"
+          },
+          "provenance_hint": "Hintze Hall, Natural History Museum"
+        },
+        {
+          "subject": "Penguin Tri-band Design",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which designer sketched the 1935 tri-band Penguin paperback cover for Allen Lane, setting orange-and-white regiments marching along British bookshop shelves and signalling sixpenny modernity?",
+          "correct_answer": "Edward Young",
+          "distractors": {
+            "easy": "Jan Tschichold",
+            "medium": "Stanley Morison",
+            "hard": "Eric Gill"
+          },
+          "provenance_hint": "Penguin Books archive, V&A"
+        },
+        {
+          "subject": "Hut 8 Banburismus Lead",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "In early 1941 at Bletchley Park, Hut 8 cracked Kriegsmarine Enigma by refining Banburismus; which King's College, Cambridge mathematician led that effort before moving on to design the Bombe refinements?",
+          "correct_answer": "Alan Turing",
+          "distractors": {
+            "easy": "Gordon Welchman",
+            "medium": "Dilly Knox",
+            "hard": "Max Newman"
+          },
+          "provenance_hint": "Hut 8 records, Bletchley Park"
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "interlude": "Jemima polishes an imaginary sceptre with marmalade-scented gloves.",
+      "hostItems": [
+        {
+          "subject": "1936 Abdication",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "Which British monarch abdicated voluntarily in December 1936 after less than a year on the throne?",
+          "correct_answer": "Edward VIII",
+          "distractors": {
+            "easy": "George V",
+            "medium": "George VI",
+            "hard": "Edward VII"
+          },
+          "provenance_hint": "Abdication speech, 11 Dec 1936"
+        },
+        {
+          "subject": "Act of Supremacy 1534",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which 1534 statute, enforced after the break with Rome, proclaimed Henry VIII Supreme Head of the Church of England and required subjects to swear the Oath of Supremacy (much paperwork)?",
+          "correct_answer": "The Act of Supremacy",
+          "distractors": {
+            "easy": "The Act of Uniformity",
+            "medium": "The Treasons Act",
+            "hard": "The Submission of the Clergy"
+          },
+          "provenance_hint": "1534 Parliament Rolls"
+        },
+        {
+          "subject": "Elizabeth Coronation Interval",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "Elizabeth I was crowned at Westminster Abbey on 15 January 1559, while Elizabeth II processed to the same coronation chair on 2 June 1953 amid television cameras. Calculating the span, how many years apart were those ceremonies?",
+          "correct_answer": "394",
+          "distractors": {
+            "easy": "390",
+            "medium": "398",
+            "hard": "365"
+          },
+          "provenance_hint": "Westminster coronation records"
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Glamis Castle Birthplace",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "Which Scottish castle served as the childhood home of Elizabeth Bowes-Lyon and the birthplace of Princess Margaret in 1930?",
+          "correct_answer": "Glamis Castle",
+          "distractors": {
+            "easy": "Balmoral Castle",
+            "medium": "Glamorgan Castle",
+            "hard": "Sandringham House"
+          },
+          "provenance_hint": "Angus registers, 1930"
+        },
+        {
+          "subject": "George III Journals",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which Hanoverian monarch kept the journal now called the 'Hanoverian Papers', noting cabinet business in German with the clipped rhythm of a metronome-minded clerk, later used to decode the Regency crisis?",
+          "correct_answer": "George III",
+          "distractors": {
+            "easy": "George II",
+            "medium": "George IV",
+            "hard": "William IV"
+          },
+          "provenance_hint": "Royal Archives, Windsor"
+        },
+        {
+          "subject": "1917 Windsor Proclamation",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "Amid wartime anti-German feeling, George V issued a proclamation at Buckingham Palace on 17 July 1917 declaring the Royal Family would henceforth bear the name Windsor instead of Saxe-Coburg and Gotha. What was that proclamation called?",
+          "correct_answer": "The Royal Proclamation of 17 July 1917",
+          "distractors": {
+            "easy": "The Letters Patent of Marlborough House",
+            "medium": "The Statute of Westminster",
+            "hard": "The Order in Council of Balmoral"
+          },
+          "provenance_hint": "London Gazette, 17 Jul 1917"
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "interlude": "Jemima stir-fries cloudberries with a blowtorch and critiques the sizzle.",
+      "hostItems": [
+        {
+          "subject": "Yeast Gas",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "What gas released by yeast causes bread dough to rise and form those airy crumb bubbles?",
+          "correct_answer": "Carbon dioxide",
+          "distractors": {
+            "easy": "Nitrogen",
+            "medium": "Hydrogen",
+            "hard": "Oxygen"
+          },
+          "provenance_hint": "Bread chemistry primer"
+        },
+        {
+          "subject": "Cyanoacrylate Rediscovery",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which chemist rediscovered cyanoacrylate in 1951 at Eastman Kodak, realising the once-rejected gunsight coating could become Super Glue for household shelves (sticky irony)?",
+          "correct_answer": "Harry Coover",
+          "distractors": {
+            "easy": "Roy Plunkett",
+            "medium": "Spencer Silver",
+            "hard": "Leo Baekeland"
+          },
+          "provenance_hint": "Kodak labs memo, 1951"
+        },
+        {
+          "subject": "Courtois Iodine Reagent",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "In 1811 French chemist Bernard Courtois, processing kelp ash for gunpowder supplies, added a reagent that unleashed a violet vapour and revealed the element iodine. Which reagent did he add during that discovery?",
+          "correct_answer": "Sulfuric acid",
+          "distractors": {
+            "easy": "Nitric acid",
+            "medium": "Hydrochloric acid",
+            "hard": "Potassium hydroxide"
+          },
+          "provenance_hint": "Courtois iodine papers"
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Earl Grey Aroma",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "Which citrus fruit's oil flavours traditional Earl Grey tea?",
+          "correct_answer": "Bergamot",
+          "distractors": {
+            "easy": "Seville orange",
+            "medium": "Lemon",
+            "hard": "Pomelo"
+          },
+          "provenance_hint": "Tea blending manuals"
+        },
+        {
+          "subject": "Newcastle Experiment",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Who led the 1940s 'Newcastle Experiment', dosing schoolchildren with cod liver oil and orange juice for the Ministry of Food, their diet diaries marching like lunch trains to prove rickets prevention?",
+          "correct_answer": "Elsie Widdowson",
+          "distractors": {
+            "easy": "Cicely Williams",
+            "medium": "John Boyd Orr",
+            "hard": "Harold McCance"
+          },
+          "provenance_hint": "Ministry of Food nutrition files"
+        },
+        {
+          "subject": "Custard Ratio Puzzle",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "Jemima has 750 ml of double cream chilled for custard. Her recipe calls for blending cream and whole milk in a 3:2 ratio to produce 1.25 litres of custard for a party trifle. How much milk must she add to match the ratio exactly?",
+          "correct_answer": "500 ml",
+          "distractors": {
+            "easy": "450 ml",
+            "medium": "520 ml",
+            "hard": "375 ml"
+          },
+          "provenance_hint": "Classic custard recipe maths"
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "interlude": "Jemima folds a world map into an origami gondola and hums sea shanties.",
+      "hostItems": [
+        {
+          "subject": "Bhutan Capital",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "Which city serves as the capital of Bhutan, high in the Himalayas?",
+          "correct_answer": "Thimphu",
+          "distractors": {
+            "easy": "Kathmandu",
+            "medium": "Paro",
+            "hard": "Lhasa"
+          },
+          "provenance_hint": "Bhutan government site"
+        },
+        {
+          "subject": "Wakhan Corridor",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which narrow strip of land created by the 1893 Durand Line keeps Afghanistan touching China via a 350 km finger known as the Wakhan Corridor (cartographers sigh)?",
+          "correct_answer": "The Wakhan Corridor",
+          "distractors": {
+            "easy": "The Khyber Pass",
+            "medium": "The Ferghana Valley",
+            "hard": "The Pamir Highway"
+          },
+          "provenance_hint": "Durand Line treaty maps"
+        },
+        {
+          "subject": "Central Place Theory",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "Which German geographer introduced Central Place Theory in his 1933 dissertation analysing the hexagonal pattern of markets in southern Germany, later shaping post-war town planning debates and motorway siting arguments?",
+          "correct_answer": "Walter Christaller",
+          "distractors": {
+            "easy": "Alfred Weber",
+            "medium": "Johann Heinrich von Th\u00fcnen",
+            "hard": "Paul Vidal de la Blache"
+          },
+          "provenance_hint": "Christaller 1933 dissertation"
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Vltava River",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "Which river runs through Prague before joining the Elbe?",
+          "correct_answer": "The Vltava",
+          "distractors": {
+            "easy": "The Danube",
+            "medium": "The Oder",
+            "hard": "The Sava"
+          },
+          "provenance_hint": "Czech hydrology charts"
+        },
+        {
+          "subject": "Tagus Estuary",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which Portuguese river delta shaped Lisbon into a fan of seven hills, with the Ponte 25 de Abril strung across it like a crimson ribbon and cargo ships gliding upstream to the Alc\u00e2ntara docks?",
+          "correct_answer": "The Tagus",
+          "distractors": {
+            "easy": "The Douro",
+            "medium": "The Mondego",
+            "hard": "The Guadiana"
+          },
+          "provenance_hint": "Lisbon port authority data"
+        },
+        {
+          "subject": "Iberian Rail Puzzle",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "A traveller boards the 08:30 train from Madrid to Lisbon covering 600 km at an average of 100 km/h, then continues 300 km to Porto at 75 km/h after a 20-minute change at Santa Apol\u00f3nia. Assuming timetables behave, when should she pull into Porto Campanh\u00e3?",
+          "correct_answer": "18:50",
+          "distractors": {
+            "easy": "18:20",
+            "medium": "19:10",
+            "hard": "17:50"
+          },
+          "provenance_hint": "Renfe & CP timetables"
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "interlude": "Jemima lip-syncs a soliloquy to a stack of first editions, applauding herself politely.",
+      "hostItems": [
+        {
+          "subject": "Larkin Collection",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "Who wrote the 1964 poetry collection 'The Whitsun Weddings'?",
+          "correct_answer": "Philip Larkin",
+          "distractors": {
+            "easy": "Ted Hughes",
+            "medium": "Seamus Heaney",
+            "hard": "Thom Gunn"
+          },
+          "provenance_hint": "Faber poetry catalogue"
+        },
+        {
+          "subject": "Mrs Dalloway Serialisation",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which American literary magazine first serialised Virginia Woolf's story 'Mrs Dalloway in Bond Street' in 1923, smoothing the path to the later novel (deadline jitters)?",
+          "correct_answer": "The Dial",
+          "distractors": {
+            "easy": "The New Yorker",
+            "medium": "The Little Review",
+            "hard": "Harper's Magazine"
+          },
+          "provenance_hint": "The Dial, July 1923 issue"
+        },
+        {
+          "subject": "Negative Capability Letter",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "Which Romantic poet coined the term 'negative capability' in a 21 December 1817 letter to his brothers while travelling between Oxford and Hampstead, arguing great writers dwell in uncertainties without irritable reaching after fact?",
+          "correct_answer": "John Keats",
+          "distractors": {
+            "easy": "Percy Bysshe Shelley",
+            "medium": "Samuel Taylor Coleridge",
+            "hard": "William Wordsworth"
+          },
+          "provenance_hint": "Keats letters, British Library"
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Much Ado Plot",
+          "difficulty_tier": "pub",
+          "length_class": "short",
+          "question": "Which Shakespeare comedy pits sparring lovers Beatrice and Benedick against scheming Don John?",
+          "correct_answer": "Much Ado About Nothing",
+          "distractors": {
+            "easy": "As You Like It",
+            "medium": "Twelfth Night",
+            "hard": "Measure for Measure"
+          },
+          "provenance_hint": "First Folio comedies"
+        },
+        {
+          "subject": "Sonny's Blues Debut",
+          "difficulty_tier": "enthusiast",
+          "length_class": "medium",
+          "question": "Which American magazine first published James Baldwin's short story 'Sonny's Blues' in 1957, sending its jazz-saturated prose out like a radio flicker from Greenwich Village to the wider literary world?",
+          "correct_answer": "Partisan Review",
+          "distractors": {
+            "easy": "Esquire",
+            "medium": "The Atlantic",
+            "hard": "Chicago Review"
+          },
+          "provenance_hint": "Partisan Review 1957 contents"
+        },
+        {
+          "subject": "Booker Reading Schedule",
+          "difficulty_tier": "specialist",
+          "length_class": "long",
+          "question": "Jemima plans to tackle three Booker-winning novels with 360, 420, and 300 pages. She reads 30 pages each weekday evening and 60 pages every Saturday, taking Sundays off to gossip. Beginning on Monday 6 May 2024, on which day of the week will she finish the final page?",
+          "correct_answer": "Monday",
+          "distractors": {
+            "easy": "Saturday",
+            "medium": "Tuesday",
+            "hard": "Sunday"
+          },
+          "provenance_hint": "Reading schedule arithmetic"
+        }
+      ]
+    }
+  ],
+  "maths": {
+    "location": "York signal box",
+    "beats": [
+      "Jemima notes the departure board flashing four services in quick succession.",
+      "Each train needs 3 minutes of platform clearance before the next may enter.",
+      "A late freight arrives 9 minutes behind schedule and must still wait its full clearance time.",
+      "She wants to know when the fourth passenger train can depart after the freight clears."
+    ],
+    "questions": [
+      "How many minutes past 10:00 will the fourth passenger train leave once the sequence plays out?",
+      "How many total minutes of clearance elapse between the freight's arrival and that fourth departure?"
+    ],
+    "answers": [
+      24,
+      12
+    ]
+  },
+  "integrity": {
+    "checksum": "b782c4717c0eeefd9bfb6c42c88768cfceab096080bbcb7e9c31cd1b1c8fd01a",
+    "verified": true
+  }
+}
