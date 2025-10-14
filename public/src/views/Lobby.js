@@ -104,22 +104,27 @@ export default {
         }
 
         const data = snap.data() || {};
+        const state = String(data.state || "").toLowerCase();
+        if (state !== "coderoom") {
+          setStatus("Host hasn’t opened the code room yet.");
+          console.warn(`[lobby] join code=${code} | state=${state}`);
+          return;
+        }
+
         setStoredRole(code, "guest");
 
-        if (data.state === "keyroom") {
-          const startAt = Date.now() + 7_000;
-          const round = Number(data.round) || 1;
-          try {
-            await updateDoc(rRef, {
-              state: "countdown",
-              round,
-              "countdown.startAt": startAt,
-              "timestamps.updatedAt": serverTimestamp(),
-            });
-            console.log(`[lobby] auto-armed countdown for room ${code}`);
-          } catch (err) {
-            console.warn("[lobby] failed to arm countdown:", err);
-          }
+        const startAt = Date.now() + 7_000;
+        const round = Number(data.round) || 1;
+        try {
+          await updateDoc(rRef, {
+            state: "countdown",
+            round,
+            "countdown.startAt": startAt,
+            "timestamps.updatedAt": serverTimestamp(),
+          });
+          console.log(`[lobby] countdown armed for room ${code}`);
+        } catch (err) {
+          console.warn("[lobby] failed to arm countdown:", err);
         }
 
         const target = `#/watcher?code=${code}`;

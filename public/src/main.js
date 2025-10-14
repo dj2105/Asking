@@ -10,7 +10,7 @@
 //
 // Minimal hash router + global score strip mounting.
 // - Routes to views in /src/views
-// - Mounts the ScoreStrip on every *game* route except: lobby, keyroom, seeding, final
+// - Mounts the ScoreStrip on every *game* route except: lobby, keyroom, coderoom, seeding, final
 // - Expects each view module to export default { mount(container), unmount? }
 //
 // Game routes (hash-based):
@@ -37,12 +37,13 @@ const app = document.getElementById("app");
 let current = { route: "", mod: null, unmount: null };
 
 // Routes that should NOT show the score strip
-const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "seeding", "final", "watcher"]);
+const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher"]);
 
 // Map route -> dynamic import path
 const VIEW_MAP = {
   lobby:     () => import("./views/Lobby.js"),
   keyroom:   () => import("./views/KeyRoom.js"),
+  coderoom:  () => import("./views/CodeRoom.js"),
   seeding:   () => import("./views/SeedProgress.js"),
   countdown: () => import("./views/Countdown.js"),
   questions: () => import("./views/Questions.js"),

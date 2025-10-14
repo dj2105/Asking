@@ -1,13 +1,12 @@
 // /src/views/KeyRoom.js
-// Host-only sealed-pack upload flow.
-// • Decrypts the uploaded .sealed pack with the demo password.
-// • Validates checksum/schema locally, displays generated date + verified badge.
-// • Supports the classic single-pack upload and the new three-file halfpack intake.
-// • Seeds Firestore with rooms/{code} and rounds/{1..5}, arms countdown 7s ahead.
-// • Logs progress to a monospace console and routes host to the countdown view.
+// Host-only sealed-pack upload flow with manual room code entry.
+// • Host can upload any mix of sealed packs in any order.
+// • Room code is chosen via text box or randomiser before pressing START.
+// • START assembles the best-available content, fills gaps with "<empty>", seeds Firestore,
+//   sets the room to coderoom state, and routes to the dedicated Code Room view.
 
 import { ensureAuth, db } from "../lib/firebase.js";
-import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import {
   unsealFile,
   unsealHalfpack,
@@ -20,12 +19,9 @@ import {
   PACK_VERSION_MATHS,
   PACK_VERSION_QUESTIONS,
 } from "../lib/seedUnsealer.js";
-import {
-  clampCode,
-  copyToClipboard,
-  getHashParams,
-  setStoredRole,
-} from "../lib/util.js";
+import { clampCode, getHashParams, setStoredRole } from "../lib/util.js";
+
+const MAX_CODE_LENGTH = 3;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -41,6 +37,109 @@ function el(tag, attrs = {}, kids = []) {
 }
 
 const roomRef = (code) => doc(db, "rooms", code);
+const clampRoomCode = (input) => clampCode(input).slice(0, MAX_CODE_LENGTH);
+const PLACEHOLDER_ITEM = {
+  subject: "<empty>",
+  difficulty_tier: "<empty>",
+  question: "<empty>",
+  correct_answer: "<empty>",
+  distractors: { easy: "<empty>", medium: "<empty>", hard: "<empty>" },
+};
+const PLACEHOLDER_MATHS = {
+  location: "<empty>",
+  beats: ["<empty>"],
+  questions: ["<empty>", "<empty>"],
+  answers: [0, 0],
+};
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value ?? null));
+}
+
+function makePlaceholderItem() {
+  return clone(PLACEHOLDER_ITEM);
+}
+
+function fillItems(list = []) {
+  const out = clone(list || []).filter(Boolean).map((item) => {
+    const base = typeof item === "object" && item ? item : {};
+    return {
+      subject: typeof base.subject === "string" && base.subject.trim() ? base.subject : "<empty>",
+      difficulty_tier:
+        typeof base.difficulty_tier === "string" && base.difficulty_tier.trim()
+          ? base.difficulty_tier
+          : "<empty>",
+      question: typeof base.question === "string" && base.question.trim() ? base.question : "<empty>",
+      correct_answer:
+        typeof base.correct_answer === "string" && base.correct_answer.trim()
+          ? base.correct_answer
+          : "<empty>",
+      distractors: {
+        easy:
+          typeof base?.distractors?.easy === "string" && base.distractors.easy.trim()
+            ? base.distractors.easy
+            : "<empty>",
+        medium:
+          typeof base?.distractors?.medium === "string" && base.distractors.medium.trim()
+            ? base.distractors.medium
+            : "<empty>",
+        hard:
+          typeof base?.distractors?.hard === "string" && base.distractors.hard.trim()
+            ? base.distractors.hard
+            : "<empty>",
+      },
+    };
+  });
+  while (out.length < 3) out.push(makePlaceholderItem());
+  return out.slice(0, 3);
+}
+
+function normalizeFullRounds(rounds = []) {
+  const map = {};
+  for (let i = 1; i <= 5; i += 1) {
+    map[i] = { hostItems: [], guestItems: [], interlude: "" };
+  }
+  rounds.forEach((round) => {
+    const rnum = Number(round?.round);
+    if (!Number.isInteger(rnum) || rnum < 1 || rnum > 5) return;
+    map[rnum] = {
+      hostItems: clone(round.hostItems || []),
+      guestItems: clone(round.guestItems || []),
+      interlude: typeof round.interlude === "string" ? round.interlude : "",
+    };
+  });
+  return map;
+}
+
+function normalizeHalfpackRounds(rounds = [], which) {
+  const map = {};
+  for (let i = 1; i <= 5; i += 1) {
+    map[i] = { hostItems: [], guestItems: [], interlude: "" };
+  }
+  rounds.forEach((round) => {
+    const rnum = Number(round?.round);
+    if (!Number.isInteger(rnum) || rnum < 1 || rnum > 5) return;
+    const entry = map[rnum];
+    if (which === "host") {
+      entry.hostItems = clone(round.hostItems || []);
+    } else {
+      entry.guestItems = clone(round.guestItems || []);
+    }
+    if (typeof round.interlude === "string" && round.interlude.trim()) {
+      entry.interlude = round.interlude;
+    }
+  });
+  return map;
+}
+
+function randomCode() {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let out = "";
+  for (let i = 0; i < MAX_CODE_LENGTH; i += 1) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return out;
+}
 
 export default {
   async mount(container) {
@@ -50,7 +149,7 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     const params = getHashParams();
-    const hintedCode = clampCode(params.get("code") || "");
+    const hintedCode = clampRoomCode(params.get("code") || "");
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-keyroom" });
@@ -59,7 +158,7 @@ export default {
     const intro = el(
       "div",
       { class: "mono", style: "margin-bottom:10px;" },
-      "Upload Jemima’s sealed pack (full or trio) to start the duel."
+      "Upload Jemima’s sealed packs in any order, then choose your code."
     );
     card.appendChild(intro);
 
@@ -71,10 +170,7 @@ export default {
 
     const slotConfigs = {
       full: { label: "Full Pack", initial: "Awaiting full pack." },
-      questions: {
-        label: "All Questions (30)",
-        initial: "Awaiting 30-question pack.",
-      },
+      questions: { label: "All Questions (30)", initial: "Awaiting 30-question pack." },
       host: { label: "Host (15)", initial: "Awaiting host halfpack." },
       guest: { label: "Guest (15)", initial: "Awaiting guest halfpack." },
       maths: { label: "Maths", initial: "Awaiting maths block." },
@@ -146,32 +242,22 @@ export default {
       uploadGrid.appendChild(slot.wrapper);
     }
 
-    const progressLine = el("div", {
-      class: "mono small",
-      style: "margin-top:4px;text-align:center;min-height:18px;",
-    }, "Sources → Host: — · Guest: — · Maths: —");
+    const progressLine = el(
+      "div",
+      {
+        class: "mono small",
+        style: "margin-top:4px;text-align:center;min-height:18px;",
+      },
+      "Sources → Host: — · Guest: — · Maths: —"
+    );
     card.appendChild(progressLine);
 
     const status = el(
       "div",
       { class: "mono small", style: "margin-top:10px;min-height:18px;" },
-      hintedCode ? `Waiting for pack ${hintedCode}…` : "Waiting for pack…"
+      "Enter a code and press START when ready."
     );
     card.appendChild(status);
-
-    const codeRow = el("div", {
-      class: "mono",
-      style: "margin-top:14px;display:none;align-items:center;gap:10px;justify-content:center;",
-    });
-    const codeText = el("span", { class: "code-tag" }, "");
-    const copyBtn = el("button", { class: "btn outline", disabled: "" }, "Copy");
-    copyBtn.addEventListener("click", async () => {
-      const ok = await copyToClipboard(codeText.textContent || "");
-      if (ok) status.textContent = "Code copied.";
-    });
-    codeRow.appendChild(codeText);
-    codeRow.appendChild(copyBtn);
-    card.appendChild(codeRow);
 
     const metaRow = el("div", {
       class: "mono small",
@@ -183,26 +269,59 @@ export default {
     metaRow.appendChild(generatedLabel);
     card.appendChild(metaRow);
 
-    const startRow = el("div", {
+    const codeRow = el("div", {
       class: "mono",
-      style: "margin-top:16px;display:none;justify-content:center;",
+      style:
+        "margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;",
     });
-    const startBtn = el("button", { class: "btn primary", disabled: "" }, "Start");
-    startRow.appendChild(startBtn);
-    card.appendChild(startRow);
+    const codeInput = el("input", {
+      type: "text",
+      inputmode: "text",
+      autocapitalize: "characters",
+      maxlength: String(MAX_CODE_LENGTH),
+      class: "input",
+      style: "text-transform:uppercase;width:90px;text-align:center;",
+      value: hintedCode,
+      oninput: (event) => {
+        const next = clampRoomCode(event.target.value);
+        if (event.target.value !== next) event.target.value = next;
+        reflectStartState();
+      },
+    });
+    const randomBtn = el(
+      "button",
+      { class: "btn outline", type: "button" },
+      "RANDOM"
+    );
+    randomBtn.addEventListener("click", () => {
+      codeInput.value = randomCode();
+      reflectStartState();
+    });
+    const startBtn = el("button", { class: "btn primary", type: "button", disabled: "" }, "START");
+    codeRow.appendChild(codeInput);
+    codeRow.appendChild(randomBtn);
+    codeRow.appendChild(startBtn);
+    card.appendChild(codeRow);
 
     const logEl = el("pre", {
       class: "mono small",
-      style: "margin-top:14px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:180px;overflow:auto;",
+      style:
+        "margin-top:14px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:180px;overflow:auto;",
     });
     card.appendChild(logEl);
+
+    const navRow = el(
+      "div",
+      { style: "margin-top:14px;text-align:center;" },
+      el("a", { href: "#/lobby", class: "btn outline" }, "BACK")
+    );
+    card.appendChild(navRow);
 
     root.appendChild(card);
     container.appendChild(root);
 
     function createStage() {
       return {
-        code: "",
         base: null,
         questionsOverride: null,
         hostOverride: null,
@@ -211,179 +330,8 @@ export default {
       };
     }
 
-    let seeded = false;
-    let watchingCode = "";
-    let stopRoomWatch = null;
-    let latestRound = 1;
-    let startPending = false;
-    let lastRoomSummary = { guestPresent: false, state: "keyroom", countdownStart: 0 };
-
     let stage = createStage();
-    let seedingInFlight = false;
-    let reseedRequested = false;
-
-    function hideRoomCode() {
-      codeText.textContent = "";
-      codeRow.style.display = "none";
-      copyBtn.disabled = true;
-    }
-
-    function clone(value) {
-      return JSON.parse(JSON.stringify(value ?? null));
-    }
-
-    function normalizeFullRounds(rounds = []) {
-      const map = {};
-      for (let i = 1; i <= 5; i += 1) {
-        map[i] = { hostItems: [], guestItems: [], interlude: "" };
-      }
-      rounds.forEach((round) => {
-        const rnum = Number(round?.round);
-        if (!Number.isInteger(rnum) || rnum < 1 || rnum > 5) return;
-        map[rnum] = {
-          hostItems: clone(round.hostItems || []),
-          guestItems: clone(round.guestItems || []),
-          interlude: typeof round.interlude === "string" ? round.interlude : "",
-        };
-      });
-      return map;
-    }
-
-    function normalizeHalfpackRounds(rounds = [], which) {
-      const map = {};
-      for (let i = 1; i <= 5; i += 1) {
-        map[i] = { hostItems: [], guestItems: [], interlude: "" };
-      }
-      rounds.forEach((round) => {
-        const rnum = Number(round?.round);
-        if (!Number.isInteger(rnum) || rnum < 1 || rnum > 5) return;
-        const entry = map[rnum];
-        if (which === "host") {
-          entry.hostItems = clone(round.hostItems || []);
-        } else {
-          entry.guestItems = clone(round.guestItems || []);
-        }
-        if (typeof round.interlude === "string" && round.interlude.trim()) {
-          entry.interlude = round.interlude;
-        }
-      });
-      return map;
-    }
-
-    function recalcStageCode() {
-      const codes = [
-        stage.base?.code,
-        stage.questionsOverride?.code,
-        stage.hostOverride?.code,
-        stage.guestOverride?.code,
-        stage.mathsOverride?.code,
-      ].filter(Boolean);
-      const unique = Array.from(new Set(codes));
-      if (unique.length === 0) {
-        stage.code = "";
-        hideRoomCode();
-        return;
-      }
-      stage.code = unique[0];
-      showRoomCode(stage.code);
-    }
-
-    function getSourceLabel(kind) {
-      if (kind === "host") {
-        if (stage.hostOverride) return "Host (15)";
-        if (stage.questionsOverride) return "All Questions (30)";
-        if (stage.base) return "Full Pack";
-        return null;
-      }
-      if (kind === "guest") {
-        if (stage.guestOverride) return "Guest (15)";
-        if (stage.questionsOverride) return "All Questions (30)";
-        if (stage.base) return "Full Pack";
-        return null;
-      }
-      if (kind === "maths") {
-        if (stage.mathsOverride) return "Maths Pack";
-        if (stage.base?.maths) return "Full Pack";
-        return null;
-      }
-      return null;
-    }
-
-    function updateProgress() {
-      const hostSource = getSourceLabel("host") || "—";
-      const guestSource = getSourceLabel("guest") || "—";
-      const mathsSource = getSourceLabel("maths") || "—";
-      progressLine.textContent = `Sources → Host: ${hostSource} · Guest: ${guestSource} · Maths: ${mathsSource}`;
-    }
-
-    function resetStageUI() {
-      stage = createStage();
-      seeded = false;
-      seedingInFlight = false;
-      reseedRequested = false;
-      Object.values(slotMap).forEach((slot) => {
-        slot.statusEl.textContent = slot.initialText;
-        slot.active = false;
-        slot.clearBtn.disabled = true;
-        slot.uploadBtn.disabled = false;
-      });
-      hideRoomCode();
-      generatedLabel.textContent = "";
-      metaRow.style.display = "none";
-      startRow.style.display = "none";
-      updateProgress();
-    }
-
-    function clearSlot(key) {
-      const slot = slotMap[key];
-      if (!slot) return;
-      if (seedingInFlight) {
-        status.textContent = "Please wait for the current seeding to finish.";
-        return;
-      }
-
-      if (key === "full") {
-        stage.base = null;
-        status.textContent = "Full pack cleared.";
-        log("full pack cleared.");
-        generatedLabel.textContent = "";
-        metaRow.style.display = "none";
-      } else if (key === "questions") {
-        stage.questionsOverride = null;
-        status.textContent = "All questions pack cleared.";
-        log("questions pack cleared.");
-      } else if (key === "host" || key === "guest") {
-        if (key === "host") {
-          stage.hostOverride = null;
-          status.textContent = "Host halfpack cleared.";
-          log("host halfpack cleared.");
-        } else {
-          stage.guestOverride = null;
-          status.textContent = "Guest halfpack cleared.";
-          log("guest halfpack cleared.");
-        }
-      } else if (key === "maths") {
-        stage.mathsOverride = null;
-        status.textContent = "Maths block cleared.";
-        log("maths block cleared.");
-      }
-
-      slot.statusEl.textContent = slot.initialText;
-      slot.active = false;
-      slot.clearBtn.disabled = true;
-      slot.uploadBtn.disabled = false;
-
-      recalcStageCode();
-      updateProgress();
-      maybeAssembleAndSeed();
-    }
-
-    function showRoomCode(code) {
-      if (!code) return;
-      codeText.textContent = `Room ${code}`;
-      codeRow.style.display = "flex";
-      copyBtn.disabled = false;
-    }
+    let seeding = false;
 
     function log(message) {
       const stamp = new Date().toISOString().split("T")[1].replace(/Z$/, "");
@@ -398,26 +346,84 @@ export default {
         slot.uploadBtn.disabled = Boolean(flag);
         slot.clearBtn.disabled = Boolean(flag || !slot.active);
       });
+      randomBtn.disabled = Boolean(flag);
+      codeInput.disabled = Boolean(flag);
     }
 
-    function ensureStageCode(code) {
-      const next = clampCode(code);
-      if (!next) {
-        return { ok: false, expected: stage.code || "", got: clampCode(code) };
-      }
-      if (!stage.code) {
-        stage.code = next;
-        showRoomCode(next);
-        return { ok: true };
-      }
-      if (stage.code === next) {
-        return { ok: true };
-      }
-      return { ok: false, expected: stage.code, got: next };
+    function updateProgress() {
+      const hostSource = stage.hostOverride
+        ? "Host (15)"
+        : stage.questionsOverride
+        ? "All Questions (30)"
+        : stage.base
+        ? "Full Pack"
+        : "—";
+      const guestSource = stage.guestOverride
+        ? "Guest (15)"
+        : stage.questionsOverride
+        ? "All Questions (30)"
+        : stage.base
+        ? "Full Pack"
+        : "—";
+      const mathsSource = stage.mathsOverride
+        ? "Maths Pack"
+        : stage.base?.maths
+        ? "Full Pack"
+        : "—";
+      progressLine.textContent = `Sources → Host: ${hostSource} · Guest: ${guestSource} · Maths: ${mathsSource}`;
     }
 
-    function clone(value) {
-      return JSON.parse(JSON.stringify(value ?? null));
+    function resetStageUI() {
+      stage = createStage();
+      Object.values(slotMap).forEach((slot) => {
+        slot.statusEl.textContent = slot.initialText;
+        slot.active = false;
+        slot.clearBtn.disabled = true;
+        slot.uploadBtn.disabled = false;
+      });
+      generatedLabel.textContent = "";
+      metaRow.style.display = "none";
+      updateProgress();
+    }
+
+    function clearSlot(key) {
+      const slot = slotMap[key];
+      if (!slot) return;
+      if (seeding) {
+        status.textContent = "Please wait for the current start to finish.";
+        return;
+      }
+
+      if (key === "full") {
+        stage.base = null;
+        status.textContent = "Full pack cleared.";
+        log("full pack cleared.");
+        generatedLabel.textContent = "";
+        metaRow.style.display = "none";
+      } else if (key === "questions") {
+        stage.questionsOverride = null;
+        status.textContent = "All questions pack cleared.";
+        log("questions pack cleared.");
+      } else if (key === "host") {
+        stage.hostOverride = null;
+        status.textContent = "Host halfpack cleared.";
+        log("host halfpack cleared.");
+      } else if (key === "guest") {
+        stage.guestOverride = null;
+        status.textContent = "Guest halfpack cleared.";
+        log("guest halfpack cleared.");
+      } else if (key === "maths") {
+        stage.mathsOverride = null;
+        status.textContent = "Maths block cleared.";
+        log("maths block cleared.");
+      }
+
+      slot.statusEl.textContent = slot.initialText;
+      slot.active = false;
+      slot.clearBtn.disabled = true;
+      slot.uploadBtn.disabled = false;
+
+      updateProgress();
     }
 
     async function determineSealedType(file) {
@@ -479,121 +485,77 @@ export default {
       throw new Error("Unsupported sealed version.");
     }
 
-    async function seedPackAndWatch(pack, code, generatedAtISO, options = {}) {
-      const { viaFull = false } = options;
-      setSlotsDisabled(true);
-      status.textContent = "Seeding Firestore…";
-      log("seeding Firestore…");
-      try {
-        const { code: seededCode } = await seedFirestoreFromPack(db, pack);
-        seeded = true;
-        startRow.style.display = "flex";
-        status.textContent = "Pack ready. Waiting for Jaime…";
-        log(`rooms/${code} prepared; waiting for guest before starting.`);
-        setStoredRole(code, "host");
-        showRoomCode(code);
-        const when = new Date(generatedAtISO);
-        if (!Number.isNaN(when.valueOf())) {
-          generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
-          metaRow.style.display = "inline-flex";
-        }
-        if (viaFull) {
-          log("base pack seeded (no overrides).");
-        } else {
-          log("composite pack seeded.");
-        }
-        watchRoom(seededCode);
-      } catch (err) {
-        seeded = false;
-        const message = err?.message || "Failed to seed Firestore.";
-        status.textContent = message;
-        log(`error: ${message}`);
-        console.error("[keyroom]", err);
-        throw err;
-      } finally {
-        setSlotsDisabled(false);
-        updateProgress();
-      }
-    }
-
-    function buildAssembledPack() {
-      const code = clampCode(stage.code);
-      if (!code) return null;
-
-      const hostSource = stage.hostOverride || stage.questionsOverride || stage.base;
-      const guestSource = stage.guestOverride || stage.questionsOverride || stage.base;
-      const mathsSource = stage.mathsOverride || stage.base;
-
-      if (!hostSource || !guestSource || !mathsSource) return null;
-
+    function assemblePackForCode(code) {
       const rounds = [];
       for (let i = 1; i <= 5; i += 1) {
-        const baseRound = stage.base?.rounds?.[i] || { hostItems: [], guestItems: [], interlude: "" };
-        const questionsRound = stage.questionsOverride?.rounds?.[i];
-        const hostRound = stage.hostOverride?.rounds?.[i];
-        const guestRound = stage.guestOverride?.rounds?.[i];
+        const baseRound = stage.base?.rounds?.[i] || {};
+        const questionsRound = stage.questionsOverride?.rounds?.[i] || {};
+        const hostRound = stage.hostOverride?.rounds?.[i] || {};
+        const guestRound = stage.guestOverride?.rounds?.[i] || {};
 
-        const hostItems =
-          hostRound?.hostItems?.length === 3
-            ? clone(hostRound.hostItems)
-            : questionsRound?.hostItems?.length === 3
-            ? clone(questionsRound.hostItems)
-            : clone(baseRound.hostItems);
+        const hostItems = hostRound.hostItems?.length
+          ? hostRound.hostItems
+          : questionsRound.hostItems?.length
+          ? questionsRound.hostItems
+          : baseRound.hostItems?.length
+          ? baseRound.hostItems
+          : [];
 
-        const guestItems =
-          guestRound?.guestItems?.length === 3
-            ? clone(guestRound.guestItems)
-            : questionsRound?.guestItems?.length === 3
-            ? clone(questionsRound.guestItems)
-            : clone(baseRound.guestItems);
+        const guestItems = guestRound.guestItems?.length
+          ? guestRound.guestItems
+          : questionsRound.guestItems?.length
+          ? questionsRound.guestItems
+          : baseRound.guestItems?.length
+          ? baseRound.guestItems
+          : [];
 
-        if (!Array.isArray(hostItems) || hostItems.length !== 3) return null;
-        if (!Array.isArray(guestItems) || guestItems.length !== 3) return null;
-
-        const interludeCandidates = [];
-        if (typeof baseRound.interlude === "string" && baseRound.interlude.trim()) {
-          interludeCandidates.push({ value: baseRound.interlude, loadedAt: stage.base?.loadedAt || 0 });
-        }
-        if (questionsRound && typeof questionsRound.interlude === "string" && questionsRound.interlude.trim()) {
-          interludeCandidates.push({ value: questionsRound.interlude, loadedAt: stage.questionsOverride?.loadedAt || 0 });
-        }
-        if (hostRound && typeof hostRound.interlude === "string" && hostRound.interlude.trim()) {
-          interludeCandidates.push({ value: hostRound.interlude, loadedAt: stage.hostOverride?.loadedAt || 0 });
-        }
-        if (guestRound && typeof guestRound.interlude === "string" && guestRound.interlude.trim()) {
-          interludeCandidates.push({ value: guestRound.interlude, loadedAt: stage.guestOverride?.loadedAt || 0 });
-        }
-        interludeCandidates.sort((a, b) => a.loadedAt - b.loadedAt);
-        const chosen = interludeCandidates.length ? interludeCandidates[interludeCandidates.length - 1] : null;
-        const interlude = chosen ? chosen.value : "";
-        if (!interlude) return null;
+        const interludeCandidate = [
+          hostRound.interlude,
+          guestRound.interlude,
+          questionsRound.interlude,
+          baseRound.interlude,
+        ].find((value) => typeof value === "string" && value.trim());
 
         rounds.push({
           round: i,
-          hostItems,
-          guestItems,
-          interlude,
+          hostItems: fillItems(hostItems),
+          guestItems: fillItems(guestItems),
+          interlude: interludeCandidate || "<empty>",
         });
       }
 
-      const maths = clone((stage.mathsOverride?.maths || stage.base?.maths) || null);
-      if (!maths) return null;
+      const sourceMaths = clone(stage.mathsOverride?.maths || stage.base?.maths || null);
+      const maths = sourceMaths
+        ? {
+            location:
+              typeof sourceMaths.location === "string" && sourceMaths.location.trim()
+                ? sourceMaths.location
+                : "<empty>",
+            beats: Array.isArray(sourceMaths.beats) && sourceMaths.beats.length
+              ? sourceMaths.beats.map((beat) =>
+                  typeof beat === "string" && beat.trim() ? beat : "<empty>"
+                )
+              : ["<empty>"],
+            questions: Array.isArray(sourceMaths.questions) && sourceMaths.questions.length >= 2
+              ? sourceMaths.questions
+                  .slice(0, 2)
+                  .map((q) => (typeof q === "string" && q.trim() ? q : "<empty>"))
+              : ["<empty>", "<empty>"],
+            answers: Array.isArray(sourceMaths.answers) && sourceMaths.answers.length >= 2
+              ? sourceMaths.answers.slice(0, 2).map((ans) => (Number.isInteger(ans) ? ans : 0))
+              : [0, 0],
+          }
+        : clone(PLACEHOLDER_MATHS);
 
-      const meta = stage.base?.meta || {};
-      const questionsMeta = stage.questionsOverride?.meta || {};
-      const hostUid = meta.hostUid || questionsMeta.hostUid || "demo-host";
-      const guestUid = meta.guestUid || questionsMeta.guestUid || "demo-guest";
-
-      const overridesActive = Boolean(
-        stage.questionsOverride || stage.hostOverride || stage.guestOverride || stage.mathsOverride
-      );
-
+      const hostUid = stage.base?.meta?.hostUid || stage.questionsOverride?.meta?.hostUid || "daniel-001";
+      const guestUid = stage.base?.meta?.guestUid || stage.questionsOverride?.meta?.guestUid || "jaime-001";
       const generatedAt =
-        !overridesActive && stage.base?.generatedAt
-          ? stage.base.generatedAt
-          : new Date().toISOString();
+        stage.base?.generatedAt ||
+        stage.questionsOverride?.generatedAt ||
+        new Date().toISOString();
+      const checksum = stage.base?.checksum || "0".repeat(64);
 
-      const pack = {
+      return {
         version: PACK_VERSION_FULL,
         meta: {
           roomCode: code,
@@ -603,88 +565,22 @@ export default {
         },
         rounds,
         maths,
-        integrity: { checksum: "0".repeat(64), verified: true },
+        integrity: { checksum, verified: true },
       };
-
-      return { pack, code, generatedAt, viaFull: Boolean(stage.base) && !overridesActive };
-    }
-
-    async function maybeAssembleAndSeed() {
-      const assembled = buildAssembledPack();
-      if (!assembled) {
-        seeded = false;
-        startRow.style.display = "none";
-        if (!startPending) {
-          startBtn.disabled = true;
-          startBtn.classList.remove("throb");
-        }
-        const hasHost = Boolean(stage.hostOverride || stage.questionsOverride || stage.base);
-        const hasGuest = Boolean(stage.guestOverride || stage.questionsOverride || stage.base);
-        const hasMaths = Boolean(stage.mathsOverride || stage.base?.maths);
-        if (!hasHost || !hasGuest) {
-          status.textContent = "Need host & guest questions before seeding.";
-        } else if (!hasMaths) {
-          status.textContent = "Need maths block before seeding.";
-        } else {
-          status.textContent = "Awaiting complete pack…";
-        }
-        return;
-      }
-
-      seeded = false;
-      if (!startPending) {
-        startBtn.disabled = true;
-        startBtn.classList.remove("throb");
-      }
-      status.textContent = assembled.viaFull ? "Preparing full pack…" : "Assembling pack…";
-      if (!assembled.viaFull) {
-        log(`assembling overrides for ${assembled.code}`);
-      }
-
-      if (seedingInFlight) {
-        reseedRequested = true;
-        return;
-      }
-
-      seedingInFlight = true;
-      reseedRequested = false;
-      try {
-        await seedPackAndWatch(assembled.pack, assembled.code, assembled.generatedAt, {
-          viaFull: assembled.viaFull,
-        });
-      } catch (err) {
-        // handled in seedPackAndWatch
-      } finally {
-        seedingInFlight = false;
-        if (reseedRequested) {
-          reseedRequested = false;
-          maybeAssembleAndSeed();
-        }
-      }
     }
 
     async function handleFullPack(result) {
       resetStageUI();
-      const { pack, code } = result;
-      const ensure = ensureStageCode(code);
-      if (!ensure.ok) {
-        const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
-        status.textContent = message;
-        log(`error: ${message}`);
-        return;
-      }
-
+      const { pack } = result;
       stage.base = {
-        code,
         rounds: normalizeFullRounds(pack.rounds || []),
         maths: clone(pack.maths),
         meta: {
-          hostUid: pack.meta?.hostUid || "demo-host",
-          guestUid: pack.meta?.guestUid || "demo-guest",
+          hostUid: pack.meta?.hostUid || "daniel-001",
+          guestUid: pack.meta?.guestUid || "jaime-001",
         },
         generatedAt: pack.meta?.generatedAt || new Date().toISOString(),
-        checksum: pack.integrity?.checksum || "",
-        loadedAt: Date.now(),
+        checksum: pack.integrity?.checksum || "0".repeat(64),
       };
 
       const fullSlot = slotMap.full;
@@ -693,7 +589,6 @@ export default {
         fullSlot.active = true;
         fullSlot.clearBtn.disabled = false;
       }
-      copyBtn.disabled = false;
       const when = new Date(stage.base.generatedAt);
       if (!Number.isNaN(when.valueOf())) {
         generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
@@ -702,34 +597,15 @@ export default {
         generatedLabel.textContent = "";
         metaRow.style.display = "none";
       }
-      status.textContent = "Full pack loaded. Override boxes will replace matching sections.";
-      log(`unsealed pack ${code}`);
-      if (stage.base.checksum) {
-        log(`checksum OK (${stage.base.checksum.slice(0, 8)}…)`);
-      }
+      status.textContent = "Full pack loaded. Overrides will replace matching sections.";
+      log(`unsealed pack ${pack.meta?.roomCode || ""}`);
       updateProgress();
-      await maybeAssembleAndSeed();
     }
 
     async function handleQuestionsPack(result) {
-      const { questions, code } = result;
-      const ensure = ensureStageCode(code);
-      const slot = slotMap.questions;
-      if (!ensure.ok) {
-        const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
-        status.textContent = message;
-        if (slot) {
-          slot.statusEl.textContent = message;
-          slot.active = false;
-          slot.clearBtn.disabled = true;
-        }
-        log(`error: ${message}`);
-        return;
-      }
-
+      const { questions } = result;
       const qMeta = questions.meta || {};
       stage.questionsOverride = {
-        code,
         rounds: normalizeFullRounds(questions.rounds || []),
         meta: {
           hostUid: typeof qMeta.hostUid === "string" ? qMeta.hostUid : "",
@@ -739,50 +615,34 @@ export default {
           typeof qMeta.generatedAt === "string" && !Number.isNaN(Date.parse(qMeta.generatedAt))
             ? qMeta.generatedAt
             : "",
-        loadedAt: Date.now(),
       };
+      const slot = slotMap.questions;
       if (slot) {
         slot.statusEl.textContent = "All questions pack loaded.";
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
       status.textContent = "Host & guest questions now come from the 30-question pack.";
-      log(`30-question pack verified for ${code}`);
+      log("30-question pack verified.");
       updateProgress();
-      await maybeAssembleAndSeed();
     }
 
     async function handleHalfpack(result) {
-      const { halfpack, which, code } = result;
-      const ensure = ensureStageCode(code);
-      const slot = slotMap[which];
-      if (!ensure.ok) {
-        const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
-        status.textContent = message;
-        if (slot) {
-          slot.statusEl.textContent = message;
-          slot.active = false;
-          slot.clearBtn.disabled = true;
-        }
-        log(`error: ${message}`);
-        return;
-      }
-
+      const { halfpack, which } = result;
       const loadedAt = Date.now();
       if (which === "host") {
         stage.hostOverride = {
-          code,
           rounds: normalizeHalfpackRounds(halfpack.rounds || [], "host"),
           loadedAt,
         };
       } else {
         stage.guestOverride = {
-          code,
           rounds: normalizeHalfpackRounds(halfpack.rounds || [], "guest"),
           loadedAt,
         };
       }
 
+      const slot = slotMap[which];
       if (slot) {
         slot.statusEl.textContent = which === "host" ? "Host (15) loaded." : "Guest (15) loaded.";
         slot.active = true;
@@ -791,52 +651,28 @@ export default {
       status.textContent = which === "host"
         ? "Host questions overriding base content."
         : "Guest questions overriding base content.";
-      log(`${which} halfpack verified for ${code}`);
+      log(`${which} halfpack verified.`);
       updateProgress();
-      await maybeAssembleAndSeed();
     }
 
     async function handleMaths(result) {
-      const { maths, code } = result;
-      const ensure = ensureStageCode(code);
+      const { maths } = result;
+      stage.mathsOverride = { maths: clone(maths), loadedAt: Date.now() };
       const slot = slotMap.maths;
-      if (!ensure.ok) {
-        const message = `Room code mismatch: expected ${ensure.expected}, got ${ensure.got}.`;
-        status.textContent = message;
-        if (slot) {
-          slot.statusEl.textContent = message;
-          slot.active = false;
-          slot.clearBtn.disabled = true;
-        }
-        log(`error: ${message}`);
-        return;
-      }
-
-      stage.mathsOverride = {
-        code,
-        maths: clone(maths),
-        loadedAt: Date.now(),
-      };
       if (slot) {
         slot.statusEl.textContent = "Maths block loaded.";
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
       status.textContent = "Maths block overriding base content.";
-      log(`maths block verified for ${code}`);
+      log("maths pack verified.");
       updateProgress();
-      await maybeAssembleAndSeed();
     }
 
     async function onFileChange(event) {
-      if (seedingInFlight) {
-        status.textContent = "Please wait for the current seeding to finish.";
-        event.target.value = "";
-        return;
-      }
-      const key = event.target?.dataset?.slotKey || "";
-      const slot = key ? slotMap[key] : null;
-      const file = event.target?.files?.[0];
+      const key = event.target?.getAttribute("data-slot-key");
+      const slot = slotMap[key];
+      const [file] = event.target.files || [];
       event.target.value = "";
       if (!file) return;
 
@@ -885,119 +721,53 @@ export default {
       }
     }
 
-
-    resetStageUI();
-
-    if (hintedCode) {
-      showRoomCode(hintedCode);
-      startRow.style.display = "none";
-      watchRoom(hintedCode);
-    }
-
-    function updateStartState({ guestPresent, state, countdownStart }) {
-      lastRoomSummary = { guestPresent, state, countdownStart };
-      const ready = seeded && guestPresent && state === "keyroom" && !startPending;
+    function reflectStartState() {
+      const code = clampRoomCode(codeInput.value);
+      const ready = !seeding && code.length === MAX_CODE_LENGTH;
       startBtn.disabled = !ready;
-      startBtn.classList.toggle("throb", Boolean(ready));
-      if (!guestPresent) {
-        status.textContent = "Pack ready. Waiting for Jaime…";
-      } else if (state === "keyroom") {
-        status.textContent = "Jaime joined. Press Start when ready.";
-      }
-
-      if (state === "countdown" && countdownStart) {
-        status.textContent = "Countdown armed.";
-        startBtn.disabled = true;
-        startBtn.classList.remove("throb");
-        if (!startPending) {
-          setTimeout(() => {
-            location.hash = `#/countdown?code=${watchingCode}&round=${latestRound}`;
-          }, 400);
-        }
-      }
+      startBtn.classList.toggle("throb", ready);
     }
 
-    const startCountdown = async () => {
-      if (!watchingCode || startPending) return;
-      startPending = true;
-      startBtn.disabled = true;
-      startBtn.classList.remove("throb");
-      status.textContent = "Starting…";
-      const startAt = Date.now() + 7_000;
+    async function beginRoom() {
+      const code = clampRoomCode(codeInput.value);
+      if (code.length !== MAX_CODE_LENGTH || seeding) return;
+
+      seeding = true;
+      reflectStartState();
+      setSlotsDisabled(true);
+      status.textContent = `Opening room ${code}…`;
+      log(`assembling pack for ${code}`);
+
       try {
-        await updateDoc(roomRef(watchingCode), {
-          state: "countdown",
-          round: latestRound,
-          "countdown.startAt": startAt,
+        const pack = assemblePackForCode(code);
+        await seedFirestoreFromPack(db, pack);
+        await updateDoc(roomRef(code), {
+          state: "coderoom",
+          round: 1,
+          "countdown.startAt": null,
           "timestamps.updatedAt": serverTimestamp(),
         });
-        log(`countdown armed for ${new Date(startAt).toLocaleTimeString()}`);
+        setStoredRole(code, "host");
+        status.textContent = `Room ${code} ready. Share the code with Jaime.`;
+        log(`room ${code} seeded and moved to code room.`);
         setTimeout(() => {
-          location.hash = `#/countdown?code=${watchingCode}&round=${latestRound}`;
-        }, 400);
+          location.hash = `#/coderoom?code=${code}`;
+        }, 150);
       } catch (err) {
-        console.warn("[keyroom] failed to start countdown:", err);
-        status.textContent = "Failed to start. Try again.";
-        startPending = false;
-        updateStartState(lastRoomSummary);
+        console.error("[keyroom] failed to seed:", err);
+        status.textContent = err?.message || "Failed to start. Try again.";
+        log(`error: ${err?.message || err}`);
+      } finally {
+        seeding = false;
+        setSlotsDisabled(false);
+        reflectStartState();
       }
-    };
-
-    startBtn.addEventListener("click", startCountdown);
-
-    function watchRoom(code) {
-      if (!code) return;
-      if (stopRoomWatch) {
-        try { stopRoomWatch(); } catch (err) { console.warn("[keyroom] failed to stop watcher", err); }
-      }
-      watchingCode = code;
-      stopRoomWatch = onSnapshot(roomRef(code), (snap) => {
-        if (!snap.exists()) return;
-        const data = snap.data() || {};
-        latestRound = Number(data.round) || 1;
-        const meta = data.meta || {};
-        const guestPresent = Boolean(meta.guestUid);
-        if (!seeded && data.seeds?.progress === 100) {
-          seeded = true;
-          setSlotsDisabled(true);
-          showRoomCode(code);
-          copyBtn.disabled = false;
-          startRow.style.display = "flex";
-          progressLine.textContent = "Pack ready (remote).";
-          Object.values(slotMap).forEach((slot) => {
-            slot.statusEl.textContent = "Pack ready (remote).";
-            slot.active = false;
-            slot.clearBtn.disabled = true;
-            slot.uploadBtn.disabled = true;
-          });
-          status.textContent = guestPresent ? "Jaime joined. Press Start when ready." : "Pack ready. Waiting for Jaime…";
-        }
-        if (data.meta?.generatedAt && !generatedLabel.textContent) {
-          const when = new Date(data.meta.generatedAt);
-          if (!Number.isNaN(when.valueOf())) {
-            generatedLabel.textContent = `Generated ${when.toLocaleString()}`;
-            metaRow.style.display = "inline-flex";
-          }
-        }
-        const countdownStart = Number(data?.countdown?.startAt || 0) || 0;
-        updateStartState({ guestPresent, state: data.state || "", countdownStart });
-        if (data.state && data.state !== "keyroom" && data.state !== "countdown") {
-          let target = null;
-          if (data.state === "questions") target = `#/questions?code=${code}&round=${data.round || latestRound}`;
-          else if (data.state === "marking") target = `#/marking?code=${code}&round=${data.round || latestRound}`;
-          else if (data.state === "award") target = `#/award?code=${code}&round=${data.round || latestRound}`;
-          else if (data.state === "maths") target = `#/maths?code=${code}`;
-          else if (data.state === "final") target = `#/final?code=${code}`;
-          if (target) setTimeout(() => { location.hash = target; }, 200);
-        }
-      });
     }
 
-    this.unmount = () => {
-      if (stopRoomWatch) {
-        try { stopRoomWatch(); } catch (err) { console.warn("[keyroom] failed to unmount watcher", err); }
-      }
-    };
+    startBtn.addEventListener("click", beginRoom);
+
+    resetStageUI();
+    reflectStartState();
   },
 
   async unmount() {},
