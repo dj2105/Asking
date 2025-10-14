@@ -115,28 +115,6 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
     margin-right: auto;
   `;
 
-  const { location, beats = [], questions = [] } = maths || {};
-  const r = Number(round);
-
-  if (mode === "maths" && maths) {
-    const mathsDetails = document.createElement("div");
-    mathsDetails.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 14px;
-    `;
-    const locationLine = document.createElement("div");
-    locationLine.innerHTML = `<b>Location:</b> ${location || "somewhere"}`;
-    mathsDetails.appendChild(locationLine);
-    for (let i = 0; i < questions.length; i += 1) {
-      const questionLine = document.createElement("div");
-      questionLine.textContent = `Q${i + 1}: ${questions[i] || ""}`;
-      mathsDetails.appendChild(questionLine);
-    }
-    box.appendChild(mathsDetails);
-  }
-
   const heading = document.createElement("div");
   heading.className = "mono";
   heading.style.cssText = `
@@ -156,21 +134,11 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
   `;
   box.appendChild(listEl);
 
-  const baseEntries = [];
   let dynamicEntries = [];
 
   const updateList = () => {
     listEl.innerHTML = "";
-    const combined = [...baseEntries, ...dynamicEntries];
-    if (!combined.length) {
-      const emptyItem = document.createElement("li");
-      emptyItem.style.cssText = "list-style:none;font-style:italic;opacity:0.75;";
-      emptyItem.textContent = "Jemima is thinking about her sums…";
-      listEl.appendChild(emptyItem);
-      return;
-    }
-
-    combined.forEach((entry, index) => {
+    dynamicEntries.forEach((entry, index) => {
       const item = document.createElement("li");
       item.textContent = entry.text;
       if (entry.bold) {
@@ -185,19 +153,6 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
       listEl.appendChild(item);
     });
   };
-
-  const addBaseEntry = (text) => {
-    const normalized = (text || "").toString().split(/\n+/).map((part) => part.trim()).filter(Boolean);
-    normalized.forEach((line) => {
-      baseEntries.push({ text: line });
-    });
-  };
-
-  if (beats.length) {
-    const beatIndex = beats.length ? (r - 1) % beats.length : 0;
-    const beatText = extractSnippetText(beats[beatIndex]) || "";
-    addBaseEntry(beatText);
-  }
 
   updateList();
 
