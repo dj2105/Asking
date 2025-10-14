@@ -103,87 +103,142 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
   box.style.cssText = `
     background: var(--ink);
     color: var(--paper);
-    padding: 12px 16px;
-    border-radius: 12px;
+    padding: 18px 20px;
+    border-radius: 14px;
     margin-top: 24px;
     text-align: left;
     font-family: Courier, monospace;
     font-size: 0.95em;
-    line-height: 1.4;
+    line-height: 1.45;
     max-width: 460px;
     margin-left: auto;
     margin-right: auto;
-    overflow-y: auto;
-    max-height: 160px;
   `;
 
-  const core = document.createElement("div");
+  const heading = document.createElement("div");
+  heading.className = "mono";
+  heading.textContent = "Jemima's List";
+  heading.style.cssText = `
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-size: 1.05em;
+    margin-bottom: 14px;
+  `;
+  box.appendChild(heading);
 
-  if (!maths) {
-    core.innerHTML = "<i>Jemima is thinking about her sums…</i>";
-  } else {
-    const { location, beats = [], questions = [] } = maths;
-    const r = Number(round);
+  const list = document.createElement("ul");
+  list.className = "jemima-list mono";
+  list.style.cssText = `
+    margin: 0;
+    padding: 0;
+  `;
+  box.appendChild(list);
 
-    if (mode === "maths") {
-      const parts = [];
-      parts.push(`<b>Location:</b> ${location || "somewhere"}`);
-      for (let i = 0; i < questions.length; i += 1) {
-        const q = questions[i] || "";
-        parts.push(`Q${i + 1}: ${q}`);
-      }
-      core.innerHTML = parts.join("<br>");
-    } else {
-      const beatIndex = beats.length ? (r - 1) % beats.length : 0;
-      const beat = beats[beatIndex] || "";
-      core.innerHTML = `<b>Jemima’s Maths:</b> ${beat}`;
+  const setListItems = (items) => {
+    list.innerHTML = "";
+
+    if (!items.length) {
+      const empty = document.createElement("li");
+      empty.style.cssText = `
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      `;
+      const span = document.createElement("span");
+      span.style.cssText = `
+        display: block;
+        opacity: 0.75;
+        font-style: italic;
+      `;
+      span.textContent = "Jemima is thinking about her sums…";
+      empty.appendChild(span);
+      list.appendChild(empty);
+      return;
     }
-  }
 
-  box.appendChild(core);
-
-  const snippetWrap = document.createElement("div");
-  snippetWrap.style.cssText = `
-    margin-top: 16px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.35);
-    background: rgba(255,255,255,0.1);
-    display: none;
-  `;
-  const snippetList = document.createElement("div");
-  snippetList.style.cssText = "display:flex;flex-direction:column;gap:10px;";
-  snippetWrap.appendChild(snippetList);
-  box.appendChild(snippetWrap);
-  const createSnippetBlock = (roundNum, text, highlight = false) => {
-    const block = document.createElement("div");
-    block.style.cssText = `
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      padding: 10px 12px;
-      border-radius:8px;
-      background:${highlight ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.08)"};
-    `;
-    const heading = document.createElement("div");
-    heading.className = "mono";
-    heading.style.cssText = "font-weight:700;";
-    const label = Number(roundNum);
-    const roundLabel = Number.isFinite(label) ? label : roundNum;
-    heading.textContent = `Jemima’s Shopping Snippet #${roundLabel}`;
-    const body = document.createElement("div");
-    body.className = "mono";
-    body.style.cssText = "white-space:pre-wrap;";
-    body.textContent = text;
-    block.appendChild(heading);
-    block.appendChild(body);
-    return block;
+    items.forEach(({ text, highlight }, index) => {
+      if (!text) return;
+      const li = document.createElement("li");
+      li.style.cssText = `
+        margin: 0;
+        padding: 0;
+        list-style-type: disc;
+        list-style-position: inside;
+      `;
+      if (index !== items.length - 1) {
+        li.style.marginBottom = "10px";
+      }
+      const span = document.createElement("span");
+      span.style.cssText = `
+        display: block;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: ${highlight ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.1)"};
+        white-space: pre-wrap;
+        line-height: 1.45;
+      `;
+      span.textContent = text;
+      span.style.fontWeight = highlight ? "700" : "400";
+      li.appendChild(span);
+      list.appendChild(li);
+    });
   };
 
   container.appendChild(box);
 
+  const hasMaths = Boolean(maths);
+  const baseMathsItems = [];
+  let baseCurrentSnippet = "";
+
+  if (hasMaths) {
+    const { location, beats = [], questions = [] } = maths;
+    const r = Number(round);
+    if (mode === "maths") {
+      const locationText = location ? `Location: ${location}` : "";
+      if (locationText) baseMathsItems.push(locationText);
+      questions.forEach((q, idx) => {
+        const text = (q || "").toString().trim();
+        if (!text) return;
+        baseMathsItems.push(`Q${idx + 1}: ${text}`);
+      });
+    } else {
+      const beatIndex = beats.length ? (r - 1) % beats.length : 0;
+      baseCurrentSnippet = (beats[beatIndex] || "").toString().trim();
+    }
+  }
+
+  const refreshList = (overrideCurrentText = null, extraSnippets = []) => {
+    if (!hasMaths) {
+      setListItems([]);
+      return;
+    }
+
+    const items = [];
+    if (mode === "maths") {
+      baseMathsItems.forEach((text) => {
+        const trimmed = (text || "").toString().trim();
+        if (!trimmed) return;
+        items.push({ text: trimmed, highlight: false });
+      });
+    } else {
+      const chosen = ((overrideCurrentText || "").toString().trim()) || baseCurrentSnippet;
+      if (chosen) {
+        items.push({ text: chosen, highlight: true });
+      }
+    }
+
+    extraSnippets.forEach((text) => {
+      const trimmed = (text || "").toString().trim();
+      if (!trimmed) return;
+      items.push({ text: trimmed, highlight: false });
+    });
+
+    setListItems(items);
+  };
+
+  refreshList();
+
   if (!roomCode || !userUid) {
-    snippetWrap.style.display = "none";
     return;
   }
 
@@ -191,38 +246,30 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
     const map = dataMap instanceof Map
       ? dataMap
       : new Map(Object.entries(dataMap || {}));
-    const blocks = [];
-    const infoCurrent = map.get(round) || {};
-    const currentSnippet = ((infoCurrent && infoCurrent.snippet) || "").toString().trim();
-    if (currentSnippet) {
-      blocks.push(createSnippetBlock(round, currentSnippet, true));
+
+    let currentOverride = null;
+    if (mode !== "maths") {
+      const infoCurrent = map.get(round) || {};
+      currentOverride = ((infoCurrent && infoCurrent.snippet) || "").toString().trim() || null;
     }
 
+    const extraSnippets = [];
     const entries = Array.from(map.entries())
       .filter(([r]) => Number(r) !== Number(round))
       .filter(([, info]) => info && info.snippet && (info.tie || info.winnerUid === userUid))
       .sort((a, b) => Number(b[0]) - Number(a[0]));
 
-    entries.forEach(([roundNum, info]) => {
+    entries.forEach(([, info]) => {
       const snippetText = (info?.snippet || "").toString().trim();
       if (!snippetText) return;
-      blocks.push(createSnippetBlock(roundNum, snippetText, false));
+      extraSnippets.push(snippetText);
     });
 
-    if (!blocks.length) {
-      snippetList.innerHTML = "";
-      snippetWrap.style.display = "none";
-      return;
-    }
-
-    snippetList.innerHTML = "";
-    blocks.forEach((block) => snippetList.appendChild(block));
-    snippetWrap.style.display = "block";
+    refreshList(currentOverride, extraSnippets);
   };
 
   const store = ensureSnippetStore(roomCode);
   if (!store) {
-    snippetWrap.style.display = "none";
     return;
   }
 
