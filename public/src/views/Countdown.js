@@ -199,9 +199,11 @@ export default {
         if (myRole === "host") {
           try {
             console.log(`[flow] countdown -> questions | code=${code} round=${round} role=${myRole}`);
+            const now = Date.now();
             await updateDoc(rRef, {
               state: "questions",
               "countdown.startAt": null,
+              "roundTimer.startAt": now,
               "timestamps.updatedAt": serverTimestamp()
             });
           } catch (err) {

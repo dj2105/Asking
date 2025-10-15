@@ -259,6 +259,7 @@ export default {
             tx.update(rRef, {
               state: "maths",
               "countdown.startAt": null,
+              "roundTimer.startAt": null,
               "timestamps.updatedAt": serverTimestamp(),
             });
           } else {
@@ -269,6 +270,7 @@ export default {
               state: "countdown",
               round: nextRound,
               "countdown.startAt": nextStart,
+              "roundTimer.startAt": null,
               "timestamps.updatedAt": serverTimestamp(),
             });
           }

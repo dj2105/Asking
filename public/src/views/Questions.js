@@ -120,6 +120,7 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const oppName = myRole === "host" ? "Jaime" : "Daniel";
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -247,6 +248,7 @@ export default {
           const stamp = Date.now();
           recordQuestionTiming(stamp);
         }
+        showWaitingState(`You finished first, waiting for ${oppName}…`);
         publishAnswers();
       } else {
         renderIndex();
@@ -304,6 +306,19 @@ export default {
       }
 
       // Host monitors opponent completion to flip state (idempotent)
+      if (published) {
+        const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
+        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
+        waitMsg.style.display = "";
+        if (myDone && !oppDone) {
+          waitMsg.textContent = `You finished first, waiting for ${oppName}…`;
+        } else if (myDone && oppDone) {
+          waitMsg.textContent = "Both finished. Preparing marking…";
+        } else {
+          waitMsg.textContent = "Waiting for opponent…";
+        }
+      }
+
       if (myRole === "host" && data.state === "questions") {
         const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
         const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);

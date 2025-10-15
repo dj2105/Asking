@@ -48,6 +48,7 @@ const VIEW_MAP = {
   countdown: () => import("./views/Countdown.js"),
   questions: () => import("./views/Questions.js"),
   marking:   () => import("./views/Marking.js"),
+  stopwait:  () => import("./views/StopWait.js"),
   award:     () => import("./views/Award.js"),
   maths:     () => import("./views/Maths.js"),
   final:     () => import("./views/Final.js"),
