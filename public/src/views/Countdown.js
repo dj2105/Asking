@@ -23,6 +23,7 @@ import {
   onSnapshot,
   updateDoc,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import {
   clampCode,
@@ -199,11 +200,19 @@ export default {
         if (myRole === "host") {
           try {
             console.log(`[flow] countdown -> questions | code=${code} round=${round} role=${myRole}`);
+            const questionsStart = Date.now();
             await updateDoc(rRef, {
               state: "questions",
               "countdown.startAt": null,
+              "questions.startAt": questionsStart,
               "timestamps.updatedAt": serverTimestamp()
             });
+            try {
+              const roundDocRef = doc(roundsCol, String(round));
+              await setDoc(roundDocRef, { questionsStartAt: questionsStart }, { merge: true });
+            } catch (err) {
+              console.warn("[countdown] failed to mirror questions start:", err);
+            }
           } catch (err) {
             console.warn("[countdown] failed to flip to questions:", err);
             hasFlipped = false; // allow retry

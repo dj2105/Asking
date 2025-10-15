@@ -130,7 +130,7 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    let roundStartAt = Number((room0.countdown || {}).startAt || 0) || 0;
+    let roundStartAt = Number((room0.questions || {}).startAt || 0) || 0;
     let qDoneMsLocal = null;
 
     const setButtonsEnabled = (enabled) => {
@@ -165,6 +165,10 @@ export default {
     if (!alive) return;
 
     const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
+
+    if (!Number(roundStartAt) && Number(rd.questionsStartAt)) {
+      roundStartAt = Number(rd.questionsStartAt);
+    }
 
     const tier = roundTier(round);
     const triplet = [0, 1, 2].map((i) => {
@@ -227,10 +231,16 @@ export default {
       if (!ms) return;
       qDoneMsLocal = ms;
       const roundTimingPatch = { timings: { [me.uid]: { qDoneMs: ms, role: myRole } } };
+      if (Number(roundStartAt)) {
+        roundTimingPatch.timings[me.uid].roundStartAt = roundStartAt;
+      }
       setDoc(rdRef, roundTimingPatch, { merge: true }).catch((err) => {
         console.warn("[questions] failed to write round timing:", err);
       });
       const playerTimingPatch = { rounds: { [round]: { timings: { qDoneMs: ms, role: myRole } } } };
+      if (Number(roundStartAt)) {
+        playerTimingPatch.rounds[round].timings.roundStartAt = roundStartAt;
+      }
       setDoc(playerRef, playerTimingPatch, { merge: true }).catch((err) => {
         console.warn("[questions] failed to mirror player timing:", err);
       });
@@ -276,11 +286,24 @@ export default {
       renderIndex();
     }
 
+    const NAME_BY_ROLE = { host: "Daniel", guest: "Jaime" };
+
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
 
-      if (Number((data.countdown || {}).startAt)) {
-        roundStartAt = Number(data.countdown.startAt);
+      if (Number((data.questions || {}).startAt)) {
+        roundStartAt = Number(data.questions.startAt);
+      }
+
+      const oppName = NAME_BY_ROLE[oppRole] || "opponent";
+
+      if (published) {
+        const oppSubmitted = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
+        if (!oppSubmitted) {
+          waitMsg.textContent = `You finished first, waiting for ${oppName}…`;
+        } else {
+          waitMsg.textContent = "All done. Waiting for marking to open…";
+        }
       }
 
       if (data.state === "marking") {
