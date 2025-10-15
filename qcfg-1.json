@@ -19,6 +19,24 @@ Questions 2
     "round_progression": ["pub", "enthusiast", "specialist"],
     "wrong_option_selection_policy": "At serve-time, one distractor is randomly chosen by runtime code."
   },
+  "calibration_overrides": {
+    "effective_from": "2025-05-15",
+    "context": "May 2025 playtest refresh for sustainability, quantum, and identity subjects.",
+    "round_pacing_targets_seconds": {
+      "pub": 20,
+      "enthusiast": 32,
+      "specialist": 45
+    },
+    "distractor_weighting": {
+      "pub": { "easy": 0.6, "medium": 0.3, "hard": 0.1 },
+      "enthusiast": { "easy": 0.2, "medium": 0.5, "hard": 0.3 },
+      "specialist": { "easy": 0.1, "medium": 0.3, "hard": 0.6 }
+    },
+    "specialist_briefing_hooks": [
+      "Remind players that NMC denotes nickel:manganese:cobalt cathodes before Specialist round 1.",
+      "Add a passkey explainer slide (FIDO = Fast IDentity Online) prior to Specialist authentication items."
+    ]
+  },
   "selection_rules": {
     "max_questions_per_subject_per_game": 2,
     "min_unique_subjects_per_game": 6,

@@ -1,0 +1,118 @@
+{
+  "version": "jemima-test-pack-2025-05",
+  "meta": {
+    "description": "Nine-question evaluation set for refreshed subject focus (May 2025).",
+    "createdAt": "2025-05-15T00:00:00Z",
+    "notes": "Three items per tier; aligned with refreshed sustainability, technology governance, and advanced systems subjects."
+  },
+  "items": [
+    {
+      "id": "pub-01",
+      "subject": "Renewable Energy Systems",
+      "difficulty_tier": "pub",
+      "question": "Which technology converts sunlight directly into electricity using photovoltaic cells?",
+      "correct_answer": "Solar panels",
+      "distractors": {
+        "easy": "Wind turbines",
+        "medium": "Solar thermal mirrors",
+        "hard": "Concentrated solar towers"
+      }
+    },
+    {
+      "id": "pub-02",
+      "subject": "Modern Spaceflight",
+      "difficulty_tier": "pub",
+      "question": "Which company manufactures the Crew Dragon spacecraft that ferries NASA astronauts to the ISS?",
+      "correct_answer": "SpaceX",
+      "distractors": {
+        "easy": "Blue Origin",
+        "medium": "Boeing",
+        "hard": "Sierra Space"
+      }
+    },
+    {
+      "id": "pub-03",
+      "subject": "Digital Privacy Regulation",
+      "difficulty_tier": "pub",
+      "question": "Which regulation has governed general data protection in the European Union since 2018?",
+      "correct_answer": "GDPR",
+      "distractors": {
+        "easy": "HIPAA",
+        "medium": "CCPA",
+        "hard": "NIS2 Directive"
+      }
+    },
+    {
+      "id": "enth-01",
+      "subject": "Climate Policy",
+      "difficulty_tier": "enthusiast",
+      "question": "What temperature limit does the Paris Agreement urge countries to pursue relative to pre-industrial levels?",
+      "correct_answer": "1.5°C",
+      "distractors": {
+        "easy": "5°C",
+        "medium": "2.5°C",
+        "hard": "2°C"
+      }
+    },
+    {
+      "id": "enth-02",
+      "subject": "Quantum Computing",
+      "difficulty_tier": "enthusiast",
+      "question": "Which quantum property allows a qubit to occupy multiple classical states simultaneously?",
+      "correct_answer": "Superposition",
+      "distractors": {
+        "easy": "Polarisation",
+        "medium": "Entanglement",
+        "hard": "Decoherence"
+      }
+    },
+    {
+      "id": "enth-03",
+      "subject": "Marine Conservation Governance",
+      "difficulty_tier": "enthusiast",
+      "question": "Which authority manages the Great Barrier Reef Marine Park on behalf of Australia?",
+      "correct_answer": "Great Barrier Reef Marine Park Authority",
+      "distractors": {
+        "easy": "Queensland Tourism Board",
+        "medium": "Australian Fisheries Management Authority",
+        "hard": "Department of Climate Change, Energy, the Environment and Water"
+      }
+    },
+    {
+      "id": "spec-01",
+      "subject": "Battery Chemistry",
+      "difficulty_tier": "specialist",
+      "question": "In NMC811 lithium-ion cells, which transition metal makes up 80% of the cathode mix?",
+      "correct_answer": "Nickel",
+      "distractors": {
+        "easy": "Lithium",
+        "medium": "Manganese",
+        "hard": "Cobalt"
+      }
+    },
+    {
+      "id": "spec-02",
+      "subject": "Earth Observation Missions",
+      "difficulty_tier": "specialist",
+      "question": "Which satellite mission launched in 2020 continues the Jason sea-level altimetry record for ESA and NASA?",
+      "correct_answer": "Sentinel-6 Michael Freilich",
+      "distractors": {
+        "easy": "Sentinel-2A",
+        "medium": "Jason-2",
+        "hard": "CryoSat-2"
+      }
+    },
+    {
+      "id": "spec-03",
+      "subject": "Web Authentication Standards",
+      "difficulty_tier": "specialist",
+      "question": "Which W3C standard defines the browser API used for passwordless public-key sign-ins known as passkeys?",
+      "correct_answer": "WebAuthn",
+      "distractors": {
+        "easy": "OAuth 2.0",
+        "medium": "SAML 2.0",
+        "hard": "FIDO U2F"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+timestamp,respondentRole,questionId,difficultyTier,answerChoice,confidence,timeTakenSeconds,correct
+2025-05-15T10:00:12Z,host,pub-01,pub,Solar panels,4,18,correct
+2025-05-15T10:01:05Z,guest,pub-02,pub,SpaceX,5,15,correct
+2025-05-15T10:01:54Z,host,pub-03,pub,NIS2 Directive,3,22,incorrect
+2025-05-15T10:03:21Z,host,enth-01,enthusiast,1.5°C,3,28,correct
+2025-05-15T10:04:11Z,guest,enth-02,enthusiast,Entanglement,2,34,incorrect
+2025-05-15T10:05:02Z,host,enth-03,enthusiast,Great Barrier Reef Marine Park Authority,4,32,correct
+2025-05-15T10:06:47Z,guest,spec-01,specialist,Cobalt,3,45,incorrect
+2025-05-15T10:08:12Z,host,spec-02,specialist,Sentinel-6 Michael Freilich,4,52,correct
+2025-05-15T10:09:33Z,guest,spec-03,specialist,FIDO U2F,2,41,incorrect
+2025-05-15T10:10:48Z,observer,spec-03,specialist,WebAuthn,4,38,correct

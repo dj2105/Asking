@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Refreshed Pack Playtest Log</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Courier New", Courier, monospace;
+        margin: 2rem auto;
+        max-width: 480px;
+        line-height: 1.4;
+      }
+      h1 {
+        text-align: center;
+        font-size: 1.6rem;
+      }
+      label {
+        display: block;
+        font-weight: 700;
+        margin-top: 1rem;
+      }
+      select,
+      input[type="text"],
+      input[type="number"] {
+        width: 100%;
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px solid #333;
+        font-family: inherit;
+      }
+      .timer {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+      }
+      button {
+        margin-top: 1.5rem;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border-radius: 999px;
+        border: none;
+        background: #222;
+        color: #fff;
+        cursor: pointer;
+      }
+      button:active {
+        transform: scale(0.98);
+      }
+      .note {
+        margin-top: 2rem;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Refreshed Pack Playtest Log</h1>
+    <form id="playtest-form" autocomplete="off">
+      <label for="respondent-role">Respondent role</label>
+      <select id="respondent-role" name="respondentRole" required>
+        <option value="">Select role</option>
+        <option value="host">Host (Daniel)</option>
+        <option value="guest">Guest (Jaime)</option>
+        <option value="observer">Observer (facilitator)</option>
+      </select>
+
+      <label for="question-id">Question ID</label>
+      <input
+        id="question-id"
+        name="questionId"
+        list="question-options"
+        placeholder="e.g. pub-01"
+        required
+      />
+      <datalist id="question-options">
+        <option value="pub-01"></option>
+        <option value="pub-02"></option>
+        <option value="pub-03"></option>
+        <option value="enth-01"></option>
+        <option value="enth-02"></option>
+        <option value="enth-03"></option>
+        <option value="spec-01"></option>
+        <option value="spec-02"></option>
+        <option value="spec-03"></option>
+      </datalist>
+
+      <label for="difficulty-tier">Difficulty tier</label>
+      <select id="difficulty-tier" name="difficultyTier" required>
+        <option value="">Select tier</option>
+        <option value="pub">Pub</option>
+        <option value="enthusiast">Enthusiast</option>
+        <option value="specialist">Specialist</option>
+      </select>
+
+      <label for="answer-choice">Answer choice (type exact text)</label>
+      <input id="answer-choice" name="answerChoice" required />
+
+      <label for="confidence">Confidence (1 = guessing, 5 = rock solid)</label>
+      <select id="confidence" name="confidence" required>
+        <option value="">Select a value</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+
+      <label for="time-taken">Time taken (seconds)</label>
+      <input
+        id="time-taken"
+        name="timeTakenSeconds"
+        type="number"
+        min="1"
+        step="1"
+        required
+      />
+
+      <div class="timer">
+        <strong>Timer helper:</strong>
+        <span id="timer-display">00:00</span>
+        <button type="button" id="timer-toggle">Start</button>
+        <button type="button" id="timer-reset">Reset</button>
+      </div>
+
+      <label for="correctness">Outcome</label>
+      <select id="correctness" name="correct" required>
+        <option value="">Select outcome</option>
+        <option value="correct">Correct</option>
+        <option value="incorrect">Incorrect</option>
+      </select>
+
+      <button type="submit">Copy entry to clipboard</button>
+    </form>
+
+    <p class="note">
+      Paste the copied row into the shared responses sheet. The form stores nothing locally to keep
+      the workflow lightweight.
+    </p>
+
+    <script type="module">
+      const form = document.getElementById('playtest-form');
+      const timerToggle = document.getElementById('timer-toggle');
+      const timerReset = document.getElementById('timer-reset');
+      const timerDisplay = document.getElementById('timer-display');
+      let startTime = null;
+      let elapsed = 0;
+      let timerId = null;
+
+      const updateDisplay = () => {
+        const total = Math.floor(elapsed / 1000);
+        const minutes = String(Math.floor(total / 60)).padStart(2, '0');
+        const seconds = String(total % 60).padStart(2, '0');
+        timerDisplay.textContent = `${minutes}:${seconds}`;
+      };
+
+      const stopTimer = () => {
+        if (timerId) {
+          clearInterval(timerId);
+          timerId = null;
+        }
+        if (startTime) {
+          elapsed += performance.now() - startTime;
+          startTime = null;
+        }
+        updateDisplay();
+      };
+
+      timerToggle.addEventListener('click', () => {
+        if (timerId) {
+          stopTimer();
+          timerToggle.textContent = 'Start';
+        } else {
+          startTime = performance.now();
+          timerId = setInterval(() => {
+            const total = Math.floor((elapsed + performance.now() - startTime) / 1000);
+            const minutes = String(Math.floor(total / 60)).padStart(2, '0');
+            const seconds = String(total % 60).padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+          }, 200);
+          timerToggle.textContent = 'Pause';
+        }
+      });
+
+      timerReset.addEventListener('click', () => {
+        stopTimer();
+        elapsed = 0;
+        updateDisplay();
+        timerToggle.textContent = 'Start';
+      });
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        stopTimer();
+        const formData = new FormData(form);
+        const row = [
+          new Date().toISOString(),
+          formData.get('respondentRole'),
+          formData.get('questionId'),
+          formData.get('difficultyTier'),
+          formData.get('answerChoice'),
+          formData.get('confidence'),
+          formData.get('timeTakenSeconds'),
+          formData.get('correct')
+        ];
+        navigator.clipboard
+          .writeText(row.join(','))
+          .then(() => {
+            alert('Entry copied. Paste into the shared sheet.');
+            form.reset();
+            elapsed = 0;
+            updateDisplay();
+            timerToggle.textContent = 'Start';
+          })
+          .catch(() => {
+            alert('Clipboard copy failed. Please copy manually.');
+          });
+      });
+
+      updateDisplay();
+    </script>
+  </body>
+</html>
