@@ -122,6 +122,7 @@ export default {
               state: "countdown",
               round,
               "countdown.startAt": startAt,
+              "questions.startAt": null,
               "meta.guestUid": data.meta?.guestUid || DEFAULT_GUEST_UID,
               "links.guestReady": true,
               "timestamps.updatedAt": serverTimestamp(),

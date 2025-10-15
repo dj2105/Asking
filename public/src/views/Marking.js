@@ -77,7 +77,7 @@ export default {
     const timerDisplay = el("div", {
       class: "mono",
       style: "font-weight:700;font-size:24px;min-width:120px;text-align:center;"
-    }, "0.000");
+    }, "0");
     const doneBtn = el("button", {
       class: "btn primary",
       style: "font-weight:700;letter-spacing:0.6px;padding-left:28px;padding-right:28px;",
@@ -126,7 +126,7 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
 
-    let roundStartAt = Number((roomData0.countdown || {}).startAt || 0) || 0;
+    let questionsStartAt = Number((roomData0.questions || {}).startAt || 0) || 0;
     const markingEnterAt = Date.now();
     let published = false;
     let submitting = false;
@@ -136,10 +136,13 @@ export default {
     let finalizeInFlight = false;
     let latestTotalForMe = null;
     let latestRoundTimings = {};
+    let qDoneMsKnown = null;
+    let baseElapsedBeforeMarking = 0;
     let timerInterval = null;
     let timerFrozen = false;
     let timerFrozenMs = null;
     let snippetOutcome = { winnerUid: null, tie: false };
+    let waitNavScheduled = false;
 
     const uniqueList = (arr = []) => Array.from(new Set(arr.filter((v) => Boolean(v))));
     const resolveTimingForRole = (timings = {}, roleName, fallbackIds = []) => {
@@ -166,9 +169,21 @@ export default {
       return null;
     };
 
+    const recomputeBaseElapsed = () => {
+      if (Number.isFinite(qDoneMsKnown) && Number.isFinite(questionsStartAt) && questionsStartAt > 0) {
+        baseElapsedBeforeMarking = Math.max(0, qDoneMsKnown - questionsStartAt);
+      }
+    };
+
+    const adoptQDoneMs = (ms) => {
+      if (!Number.isFinite(ms) || ms <= 0) return;
+      qDoneMsKnown = ms;
+      recomputeBaseElapsed();
+    };
+
     const formatSeconds = (ms) => {
-      if (!Number.isFinite(ms) || ms < 0) return "0.000";
-      return (ms / 1000).toFixed(3);
+      if (!Number.isFinite(ms) || ms < 0) return "0";
+      return String(Math.max(0, Math.floor(ms / 1000)));
     };
 
     const updateTimerDisplay = () => {
@@ -176,8 +191,9 @@ export default {
         timerDisplay.textContent = formatSeconds(timerFrozenMs);
         return;
       }
-      const base = Number(roundStartAt) ? Math.max(0, Date.now() - Number(roundStartAt)) : Math.max(0, Date.now() - markingEnterAt);
-      timerDisplay.textContent = formatSeconds(base);
+      const base = Number.isFinite(baseElapsedBeforeMarking) ? Math.max(0, baseElapsedBeforeMarking) : 0;
+      const running = Math.max(0, Date.now() - markingEnterAt);
+      timerDisplay.textContent = formatSeconds(base + running);
     };
 
     const freezeTimer = (ms) => {
@@ -205,8 +221,23 @@ export default {
     const rdSnap = await getDoc(rdRef);
     const rd = rdSnap.data() || {};
     latestRoundTimings = rd.timings || {};
+    const myInitialTiming = latestRoundTimings[me.uid] || {};
+    if (Number(myInitialTiming.qDoneMs)) {
+      adoptQDoneMs(Number(myInitialTiming.qDoneMs));
+    }
     const oppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
     const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
+
+    if (!Number.isFinite(qDoneMsKnown)) {
+      try {
+        const playerSnap0 = await getDoc(playerRef);
+        const playerData0 = playerSnap0.data() || {};
+        const candidate = (((playerData0.rounds || {})[round] || {}).timings || {}).qDoneMs;
+        if (Number(candidate)) adoptQDoneMs(Number(candidate));
+      } catch (err) {
+        console.warn("[marking] failed to load player timing:", err);
+      }
+    }
 
     let marks = [null, null, null];
     const disableFns = [];
@@ -373,6 +404,12 @@ export default {
       disableFns.forEach((fn) => { try { fn(); } catch {} });
       latestTotalForMe = Number((latestRoundTimings[me.uid] || {}).totalMs) || null;
       showPostSubmit(latestTotalForMe);
+      if (!waitNavScheduled) {
+        waitNavScheduled = true;
+        setTimeout(() => {
+          location.hash = `#/marking-wait?code=${code}&round=${round}`;
+        }, 120);
+      }
     }
 
     updateDoneState();
@@ -400,7 +437,10 @@ export default {
         const latestData = latest.data() || {};
         latestRoundTimings = latestData.timings || {};
         const candidate = (latestRoundTimings[me.uid] || {}).qDoneMs;
-        if (Number(candidate)) qDoneMs = Number(candidate);
+        if (Number(candidate)) {
+          qDoneMs = Number(candidate);
+          adoptQDoneMs(qDoneMs);
+        }
       } catch (err) {
         console.warn("[marking] failed to read round timings:", err);
       }
@@ -413,15 +453,24 @@ export default {
           if (Number(candidate)) {
             qDoneMs = Number(candidate);
             await setDoc(rdRef, { timings: { [me.uid]: { qDoneMs } } }, { merge: true });
+            adoptQDoneMs(qDoneMs);
           }
         } catch (err) {
           console.warn("[marking] qDone fallback failed:", err);
         }
       }
 
-      const qSeg = (Number.isFinite(qDoneMs) && qDoneMs && roundStartAt)
-        ? Math.max(0, qDoneMs - roundStartAt)
-        : 0;
+      if (!qDoneMs && Number.isFinite(qDoneMsKnown)) {
+        qDoneMs = qDoneMsKnown;
+      }
+
+      if (Number.isFinite(qDoneMs)) {
+        adoptQDoneMs(qDoneMs);
+      }
+
+      const qSeg = (Number.isFinite(qDoneMs) && qDoneMs && questionsStartAt)
+        ? Math.max(0, qDoneMs - questionsStartAt)
+        : Math.max(0, baseElapsedBeforeMarking);
       const mSeg = Math.max(0, markDoneMs - markingEnterAt);
       const totalMs = Math.max(0, qSeg + mSeg);
       latestTotalForMe = totalMs;
@@ -455,6 +504,12 @@ export default {
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         showPostSubmit(totalMs);
         updateDoneState();
+        if (!waitNavScheduled) {
+          waitNavScheduled = true;
+          setTimeout(() => {
+            location.hash = `#/marking-wait?code=${code}&round=${round}`;
+          }, 150);
+        }
       } catch (err) {
         console.warn("[marking] publish failed:", err);
         submitting = false;
@@ -515,21 +570,15 @@ export default {
           const nextGuest = Number(baseScores.guest || 0) + roundGuestScore;
 
           const currentRound = Number(roomData.round) || round;
-          const maxRounds = 5;
-          const isFinalRound = currentRound >= maxRounds;
-          const nextRound = isFinalRound ? currentRound : currentRound + 1;
-          const nextStart = isFinalRound ? null : Date.now() + 5000;
 
           tx.update(rRef, {
-            state: isFinalRound ? "maths" : "countdown",
-            round: nextRound,
+            state: "award",
+            round: currentRound,
             "scores.questions.host": nextHost,
             "scores.questions.guest": nextGuest,
             "marking.startAt": null,
+            "countdown.startAt": null,
             "timestamps.updatedAt": serverTimestamp(),
-            ...(isFinalRound
-              ? { "countdown.startAt": null }
-              : { "countdown.startAt": nextStart })
           });
 
           tx.set(rdRef, { snippetWinnerUid: winnerUid || null, snippetTie: tie }, { merge: true });
@@ -565,8 +614,9 @@ export default {
 
     stopRoomWatch = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
-      if (Number((data.countdown || {}).startAt)) {
-        roundStartAt = Number(data.countdown.startAt);
+      if (Number((data.questions || {}).startAt)) {
+        questionsStartAt = Number(data.questions.startAt);
+        recomputeBaseElapsed();
         if (!timerFrozen) updateTimerDisplay();
       }
 
@@ -584,6 +634,13 @@ export default {
         return;
       }
 
+      if (data.state === "award") {
+        setTimeout(() => {
+          location.hash = `#/award?code=${code}&round=${round}`;
+        }, 80);
+        return;
+      }
+
       if (data.state === "maths") {
         setTimeout(() => { location.hash = `#/maths?code=${code}`; }, 80);
       }
@@ -594,6 +651,11 @@ export default {
     stopRoundWatch = onSnapshot(rdRef, (snap) => {
       const data = snap.data() || {};
       latestRoundTimings = data.timings || {};
+      const myTiming = latestRoundTimings[me.uid] || {};
+      if (Number(myTiming.qDoneMs)) {
+        adoptQDoneMs(Number(myTiming.qDoneMs));
+        if (!timerFrozen) updateTimerDisplay();
+      }
 
       if (published && !latestTotalForMe) {
         const myTiming = latestRoundTimings[me.uid] || {};

@@ -111,6 +111,7 @@ export default {
           const patch = {
             state: nextState,
             round: nextRound,
+            "questions.startAt": null,
             "timestamps.updatedAt": serverTimestamp()
           };
           // Remove any leftover countdown.startAt

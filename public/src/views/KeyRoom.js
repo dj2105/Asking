@@ -770,6 +770,7 @@ export default {
         await updateDoc(roomRef(code), {
           state: "coderoom",
           "countdown.startAt": null,
+          "questions.startAt": null,
           "links.guestReady": false,
           "timestamps.updatedAt": serverTimestamp(),
         });

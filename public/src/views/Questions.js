@@ -120,6 +120,8 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const nameForRole = (role) => (role === "host" ? "Daniel" : "Jaime");
+    const oppName = nameForRole(oppRole);
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -130,7 +132,7 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    let roundStartAt = Number((room0.countdown || {}).startAt || 0) || 0;
+    let questionsStartAt = Number((room0.questions || {}).startAt || 0) || 0;
     let qDoneMsLocal = null;
 
     const setButtonsEnabled = (enabled) => {
@@ -279,8 +281,28 @@ export default {
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
 
-      if (Number((data.countdown || {}).startAt)) {
-        roundStartAt = Number(data.countdown.startAt);
+      if (Number((data.questions || {}).startAt)) {
+        questionsStartAt = Number(data.questions.startAt);
+      }
+
+      const answersByRole = data.answers || {};
+      const submittedByRole = data.submitted || {};
+      const answersForRole = (role) => {
+        const raw = ((answersByRole[role] || {})[round]) || [];
+        return Array.isArray(raw) ? raw : [];
+      };
+      const submittedForRole = (role) => Boolean(((submittedByRole[role] || {})[round]));
+      const myAnswersArr = answersForRole(myRole);
+      const oppAnswersArr = answersForRole(oppRole);
+      const myDone = submittedForRole(myRole) || myAnswersArr.length === 3;
+      const oppDone = submittedForRole(oppRole) || oppAnswersArr.length === 3;
+
+      if (published) {
+        if (!oppDone) {
+          showWaitingState(`You finished first, waiting for ${oppName}.`);
+        } else {
+          showWaitingState("Both players finished. Hang tight…");
+        }
       }
 
       if (data.state === "marking") {
@@ -305,8 +327,6 @@ export default {
 
       // Host monitors opponent completion to flip state (idempotent)
       if (myRole === "host" && data.state === "questions") {
-        const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
-        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
         if (myDone && oppDone) {
           try {
             console.log(`[flow] questions -> marking | code=${code} round=${round} role=${myRole}`);
