@@ -15,11 +15,11 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
-  runTransaction,
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { finalizeMarkingRace } from "../lib/markingFinalizer.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -40,10 +40,6 @@ function el(tag, attrs = {}, kids = []) {
     node.appendChild(typeof child === "string" ? document.createTextNode(child) : child)
   );
   return node;
-}
-
-function same(a, b) {
-  return String(a || "").trim() === String(b || "").trim();
 }
 
 const roomRef = (code) => doc(db, "rooms", code);
@@ -77,7 +73,7 @@ export default {
     const timerDisplay = el("div", {
       class: "mono",
       style: "font-weight:700;font-size:24px;min-width:120px;text-align:center;"
-    }, "0.000");
+    }, "0");
     const doneBtn = el("button", {
       class: "btn primary",
       style: "font-weight:700;letter-spacing:0.6px;padding-left:28px;padding-right:28px;",
@@ -140,6 +136,8 @@ export default {
     let timerFrozen = false;
     let timerFrozenMs = null;
     let snippetOutcome = { winnerUid: null, tie: false };
+    let questionElapsedMs = null;
+    let redirectScheduled = false;
 
     const uniqueList = (arr = []) => Array.from(new Set(arr.filter((v) => Boolean(v))));
     const resolveTimingForRole = (timings = {}, roleName, fallbackIds = []) => {
@@ -166,9 +164,20 @@ export default {
       return null;
     };
 
+    const refreshQuestionSegment = () => {
+      const entry = resolveTimingForRole(latestRoundTimings, myRole, [me.uid]);
+      const candidate = Number(entry?.info?.qDoneMs);
+      if (Number.isFinite(candidate) && Number(roundStartAt)) {
+        const seg = Math.max(0, candidate - Number(roundStartAt));
+        if (Number.isFinite(seg)) {
+          questionElapsedMs = seg;
+        }
+      }
+    };
+
     const formatSeconds = (ms) => {
-      if (!Number.isFinite(ms) || ms < 0) return "0.000";
-      return (ms / 1000).toFixed(3);
+      if (!Number.isFinite(ms) || ms < 0) return "0";
+      return String(Math.floor(ms / 1000));
     };
 
     const updateTimerDisplay = () => {
@@ -176,8 +185,10 @@ export default {
         timerDisplay.textContent = formatSeconds(timerFrozenMs);
         return;
       }
-      const base = Number(roundStartAt) ? Math.max(0, Date.now() - Number(roundStartAt)) : Math.max(0, Date.now() - markingEnterAt);
-      timerDisplay.textContent = formatSeconds(base);
+      const markingElapsed = Math.max(0, Date.now() - markingEnterAt);
+      const base = Number.isFinite(questionElapsedMs) ? questionElapsedMs : 0;
+      const total = base + markingElapsed;
+      timerDisplay.textContent = formatSeconds(total);
     };
 
     const freezeTimer = (ms) => {
@@ -191,7 +202,15 @@ export default {
       updateTimerDisplay();
     };
 
-    timerInterval = setInterval(updateTimerDisplay, 60);
+    const scheduleRedirectToStop = () => {
+      if (redirectScheduled) return;
+      redirectScheduled = true;
+      setTimeout(() => {
+        location.hash = `#/stop?code=${code}&round=${round}`;
+      }, 120);
+    };
+
+    timerInterval = setInterval(updateTimerDisplay, 200);
     updateTimerDisplay();
 
     try {
@@ -205,6 +224,8 @@ export default {
     const rdSnap = await getDoc(rdRef);
     const rd = rdSnap.data() || {};
     latestRoundTimings = rd.timings || {};
+    refreshQuestionSegment();
+    updateTimerDisplay();
     const oppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
     const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
 
@@ -254,6 +275,7 @@ export default {
       doneBtn.classList.remove("throb");
       doneBtn.style.pointerEvents = "none";
       updateOutcomeDisplay();
+      scheduleRedirectToStop();
     };
 
     const updateDoneState = () => {
@@ -399,6 +421,8 @@ export default {
         const latest = await getDoc(rdRef);
         const latestData = latest.data() || {};
         latestRoundTimings = latestData.timings || {};
+        refreshQuestionSegment();
+        updateTimerDisplay();
         const candidate = (latestRoundTimings[me.uid] || {}).qDoneMs;
         if (Number(candidate)) qDoneMs = Number(candidate);
       } catch (err) {
@@ -425,6 +449,10 @@ export default {
       const mSeg = Math.max(0, markDoneMs - markingEnterAt);
       const totalMs = Math.max(0, qSeg + mSeg);
       latestTotalForMe = totalMs;
+      if (Number.isFinite(qSeg)) {
+        questionElapsedMs = qSeg;
+        updateTimerDisplay();
+      }
 
       const patch = {};
       patch[`marking.${myRole}.${round}`] = safeMarks;
@@ -468,91 +496,12 @@ export default {
       if (snippetResolved || finalizeInFlight) return;
       finalizeInFlight = true;
       try {
-        await runTransaction(db, async (tx) => {
-          const roomSnapCur = await tx.get(rRef);
-          if (!roomSnapCur.exists()) return;
-          const roomData = roomSnapCur.data() || {};
-          if ((roomData.state || "").toLowerCase() !== "marking") return;
-
-          const meta = roomData.meta || {};
-          const hostId = meta.hostUid || hostUid || "";
-          const guestId = meta.guestUid || guestUid || "";
-          const ackHost = Boolean(((roomData.markingAck || {}).host || {})[round]);
-          const ackGuest = Boolean(((roomData.markingAck || {}).guest || {})[round]);
-          if (!(ackHost && ackGuest)) return;
-
-          const roundSnapCur = await tx.get(rdRef);
-          if (!roundSnapCur.exists()) return;
-          const roundData = roundSnapCur.data() || {};
-          const timings = roundData.timings || {};
-          const hostEntry = resolveTimingForRole(timings, "host", [meta.hostUid, hostUid]);
-          const guestEntry = resolveTimingForRole(timings, "guest", [meta.guestUid, guestUid]);
-          if (!hostEntry || !guestEntry) return;
-
-          const hostTotalRaw = hostEntry.info?.totalMs;
-          const guestTotalRaw = guestEntry.info?.totalMs;
-          if (!Number.isFinite(hostTotalRaw) || !Number.isFinite(guestTotalRaw)) return;
-          const hostTotal = Number(hostTotalRaw);
-          const guestTotal = Number(guestTotalRaw);
-
-          const diff = Math.abs(hostTotal - guestTotal);
-          const tie = diff <= 1;
-
-          let winnerUid = null;
-          if (!tie) {
-            if (hostTotal < guestTotal) winnerUid = hostEntry.uid;
-            else if (guestTotal < hostTotal) winnerUid = guestEntry.uid;
-          }
-
-          const answersHost = (((roomData.answers || {}).host || {})[round] || []);
-          const answersGuest = (((roomData.answers || {}).guest || {})[round] || []);
-          const countCorrect = (arr) => arr.reduce((acc, ans) =>
-            acc + (same(ans?.chosen, ans?.correct) ? 1 : 0), 0);
-          const roundHostScore = countCorrect(answersHost);
-          const roundGuestScore = countCorrect(answersGuest);
-          const baseScores = ((roomData.scores || {}).questions) || {};
-          const nextHost = Number(baseScores.host || 0) + roundHostScore;
-          const nextGuest = Number(baseScores.guest || 0) + roundGuestScore;
-
-          const currentRound = Number(roomData.round) || round;
-          const maxRounds = 5;
-          const isFinalRound = currentRound >= maxRounds;
-          const nextRound = isFinalRound ? currentRound : currentRound + 1;
-          const nextStart = isFinalRound ? null : Date.now() + 5000;
-
-          tx.update(rRef, {
-            state: isFinalRound ? "maths" : "countdown",
-            round: nextRound,
-            "scores.questions.host": nextHost,
-            "scores.questions.guest": nextGuest,
-            "marking.startAt": null,
-            "timestamps.updatedAt": serverTimestamp(),
-            ...(isFinalRound
-              ? { "countdown.startAt": null }
-              : { "countdown.startAt": nextStart })
-          });
-
-          tx.set(rdRef, { snippetWinnerUid: winnerUid || null, snippetTie: tie }, { merge: true });
-
-          const hostWon = tie || (winnerUid && winnerUid === hostEntry.uid);
-          const guestWon = tie || (winnerUid && winnerUid === guestEntry.uid);
-          const hostDocIds = uniqueList([hostEntry.uid, hostId, meta.hostUid]);
-          const guestDocIds = uniqueList([guestEntry.uid, guestId, meta.guestUid]);
-
-          hostDocIds.forEach((id) => {
-            if (!id) return;
-            const patchHost = { retainedSnippets: {} };
-            patchHost.retainedSnippets[round] = hostWon;
-            tx.set(doc(rRef, "players", id), patchHost, { merge: true });
-          });
-          guestDocIds.forEach((id) => {
-            if (!id) return;
-            const patchGuest = { retainedSnippets: {} };
-            patchGuest.retainedSnippets[round] = guestWon;
-            tx.set(doc(rRef, "players", id), patchGuest, { merge: true });
-          });
-        });
-        snippetResolved = true;
+        const resolved = await finalizeMarkingRace({ code, round });
+        if (resolved) {
+          snippetResolved = true;
+        } else if (attempt < 2) {
+          setTimeout(() => finalizeSnippet(attempt + 1), 400 * (attempt + 1));
+        }
       } catch (err) {
         console.warn("[marking] finalize failed:", err);
         if (attempt < 2) {
@@ -586,6 +535,11 @@ export default {
 
       if (data.state === "maths") {
         setTimeout(() => { location.hash = `#/maths?code=${code}`; }, 80);
+        return;
+      }
+
+      if (data.state === "award") {
+        setTimeout(() => { location.hash = `#/award?code=${code}&round=${round}`; }, 80);
       }
     }, (err) => {
       console.warn("[marking] room snapshot error:", err);
@@ -594,7 +548,9 @@ export default {
     stopRoundWatch = onSnapshot(rdRef, (snap) => {
       const data = snap.data() || {};
       latestRoundTimings = data.timings || {};
-
+      refreshQuestionSegment();
+      updateTimerDisplay();
+      
       if (published && !latestTotalForMe) {
         const myTiming = latestRoundTimings[me.uid] || {};
         if (Number(myTiming.totalMs)) {

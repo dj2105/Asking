@@ -120,6 +120,7 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const roleName = (role) => (role === "host" ? "Daniel" : "Jaime");
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -196,6 +197,23 @@ export default {
       setButtonsEnabled(false);
     };
 
+    const updateWaitingCopy = (roomData = {}) => {
+      if (!published) return;
+      const submittedData = roomData.submitted || {};
+      const answersData = roomData.answers || {};
+      const mySubmitted = Boolean((submittedData[myRole] || {})[round])
+        || (Array.isArray((answersData[myRole] || {})[round]) && ((answersData[myRole] || {})[round] || []).length === 3);
+      if (!mySubmitted) return;
+      const oppSubmitted = Boolean((submittedData[oppRole] || {})[round])
+        || (Array.isArray((answersData[oppRole] || {})[round]) && ((answersData[oppRole] || {})[round] || []).length === 3);
+      const oppName = roleName(oppRole);
+      if (!oppSubmitted) {
+        showWaitingState(`You finished first, waiting for ${oppName}.`);
+      } else {
+        showWaitingState(`Waiting for ${oppName}…`);
+      }
+    };
+
     async function publishAnswers() {
       if (submitting || published) return;
       submitting = true;
@@ -215,7 +233,16 @@ export default {
         console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
         await updateDoc(rRef, patch);
         published = true;
-        showWaitingState();
+        const stub = {
+          submitted: {
+            ...(room0.submitted || {}),
+            [myRole]: {
+              ...((room0.submitted || {})[myRole] || {}),
+              [round]: true
+            }
+          }
+        };
+        updateWaitingCopy({ ...room0, ...stub });
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
@@ -266,7 +293,7 @@ export default {
       waitMsg.style.display = "";
     } else if (existingAns.length === 3) {
       published = true;
-      showWaitingState("Submitted. Waiting for opponent…");
+      updateWaitingCopy(room0);
       counter.textContent = "3 / 3";
       qText.textContent = triplet[2]?.question || "";
     } else {
@@ -301,6 +328,10 @@ export default {
         setTimeout(() => {
           location.hash = `#/award?code=${code}&round=${round}`;
         }, 80);
+      }
+
+      if (published) {
+        updateWaitingCopy(data);
       }
 
       // Host monitors opponent completion to flip state (idempotent)
