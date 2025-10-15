@@ -120,6 +120,7 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const oppName = oppRole === "host" ? "Daniel" : "Jaime";
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -301,6 +302,14 @@ export default {
         setTimeout(() => {
           location.hash = `#/award?code=${code}&round=${round}`;
         }, 80);
+      }
+
+      if (published && alive) {
+        const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
+        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
+        if (myDone && !oppDone) {
+          showWaitingState(`You finished first. Waiting for ${oppName}…`);
+        }
       }
 
       // Host monitors opponent completion to flip state (idempotent)

@@ -23,6 +23,7 @@ import {
   onSnapshot,
   updateDoc,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import {
   clampCode,
@@ -199,11 +200,16 @@ export default {
         if (myRole === "host") {
           try {
             console.log(`[flow] countdown -> questions | code=${code} round=${round} role=${myRole}`);
-            await updateDoc(rRef, {
-              state: "questions",
-              "countdown.startAt": null,
-              "timestamps.updatedAt": serverTimestamp()
-            });
+            const now = Date.now();
+            const roundDocRef = doc(roundsCol, String(round));
+            await Promise.all([
+              updateDoc(rRef, {
+                state: "questions",
+                "countdown.startAt": null,
+                "timestamps.updatedAt": serverTimestamp()
+              }),
+              setDoc(roundDocRef, { timingsMeta: { questionsStartAt: now } }, { merge: true })
+            ]);
           } catch (err) {
             console.warn("[countdown] failed to flip to questions:", err);
             hasFlipped = false; // allow retry
