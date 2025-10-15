@@ -63,12 +63,8 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-countdown" });
-    const title = el("h1", { class: "title" }, `Round ${round}`);
-    root.appendChild(title);
 
     const card = el("div", { class: "card" });
-    const tag = el("div", { class: "mono", style: "text-align:center;margin-bottom:8px;" }, `Room ${code}`);
-    card.appendChild(tag);
 
     const msg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-bottom:12px;" }, "Get ready…");
     card.appendChild(msg);
@@ -103,7 +99,6 @@ export default {
     // Allow round label to follow doc updates (e.g., if host armed next round before guest arrived)
     if (Number(room0.round)) {
       round = Number(room0.round);
-      title.textContent = `Round ${round}`;
     }
 
     const updateSubMessage = () => {
@@ -140,7 +135,6 @@ export default {
 
       if (Number(data.round) && Number(data.round) !== round) {
         round = Number(data.round);
-        title.textContent = `Round ${round}`;
         roundReady = false;
         watchRoundDoc(round);
       }
