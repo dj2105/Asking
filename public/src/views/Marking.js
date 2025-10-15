@@ -2,7 +2,7 @@
 //
 // Marking phase — judge opponent answers, record timings, and await the snippet verdict.
 // • Shows exactly three rows (opponent questions + their chosen answers).
-// • Verdict buttons: ✓ (definitely right) / ✕ (absolutely wrong). No "unknown" option.
+// • Verdict buttons: ✓ (definitely right) / ✕ (absolutely wrong) / I DUNNO (no score).
 // • Submission writes marking.{role}.{round}, markingAck.{role}.{round} = true, and timing metadata for snippet race.
 // • Host waits for both totals, computes the snippet winner, mirrors retained flags, and advances to award.
 
@@ -26,7 +26,8 @@ const mountMathsPane =
    typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
    null);
 
-const VERDICT = { RIGHT: "right", WRONG: "wrong" };
+const VERDICT = { RIGHT: "right", WRONG: "wrong", DUNNO: "dunno" };
+const VERDICT_VALUES = Object.freeze(Object.values(VERDICT));
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -209,6 +210,7 @@ export default {
     const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
 
     let marks = [null, null, null];
+    const reflectFns = [];
     const disableFns = [];
 
     const updateOutcomeDisplay = () => {
@@ -262,7 +264,7 @@ export default {
         doneBtn.classList.remove("throb");
         return;
       }
-      const ready = marks.every((v) => v === VERDICT.RIGHT || v === VERDICT.WRONG);
+      const ready = marks.every((v) => VERDICT_VALUES.includes(v));
       doneBtn.disabled = !(ready && !submitting);
       doneBtn.classList.toggle("throb", ready && !submitting);
     };
@@ -273,12 +275,25 @@ export default {
       row.appendChild(el("div", { class: "a mono" }, chosen || "(no answer recorded)"));
 
       const pair = el("div", { class: "verdict-row" });
-      const btnRight = el("button", { class: "btn outline choice-tick" }, "✓ He's right");
-      const btnWrong = el("button", { class: "btn outline choice-cross" }, "✕ Totally wrong");
+      const btnRight = el("button", {
+        class: "btn outline choice-btn choice-tick",
+        type: "button",
+        "aria-label": "Mark correct"
+      }, "✓");
+      const btnWrong = el("button", {
+        class: "btn outline choice-btn choice-cross",
+        type: "button",
+        "aria-label": "Mark incorrect"
+      }, "✕");
+      const btnDunno = el("button", {
+        class: "btn outline choice-btn choice-dunno",
+        type: "button"
+      }, "I DUNNO");
 
       const reflect = () => {
         btnRight.classList.toggle("active", marks[idx] === VERDICT.RIGHT);
         btnWrong.classList.toggle("active", marks[idx] === VERDICT.WRONG);
+        btnDunno.classList.toggle("active", marks[idx] === VERDICT.DUNNO);
       };
 
       btnRight.addEventListener("click", () => {
@@ -293,17 +308,29 @@ export default {
         reflect();
         updateDoneState();
       });
+      btnDunno.addEventListener("click", () => {
+        if (published || submitting) return;
+        marks[idx] = VERDICT.DUNNO;
+        reflect();
+        updateDoneState();
+      });
 
       pair.appendChild(btnRight);
       pair.appendChild(btnWrong);
+      pair.appendChild(btnDunno);
       row.appendChild(pair);
 
       disableFns.push(() => {
         btnRight.disabled = true;
         btnWrong.disabled = true;
+        btnDunno.disabled = true;
         btnRight.classList.remove("throb");
         btnWrong.classList.remove("throb");
+        btnDunno.classList.remove("throb");
       });
+
+      reflectFns.push(reflect);
+      reflect();
 
       return row;
     };
@@ -317,24 +344,40 @@ export default {
 
     const existingMarks = (((roomData0.marking || {})[myRole] || {})[round] || []);
     if (Array.isArray(existingMarks) && existingMarks.length === 3) {
-      marks = existingMarks.map((v) => (v === VERDICT.RIGHT ? VERDICT.RIGHT : VERDICT.WRONG));
+      marks = existingMarks.map((v) =>
+        v === VERDICT.RIGHT
+          ? VERDICT.RIGHT
+          : v === VERDICT.WRONG
+            ? VERDICT.WRONG
+            : VERDICT.DUNNO
+      );
       published = true;
       disableFns.forEach((fn) => { try { fn(); } catch {} });
       latestTotalForMe = Number((latestRoundTimings[me.uid] || {}).totalMs) || null;
       showPostSubmit(latestTotalForMe);
     }
 
+    reflectFns.forEach((fn) => {
+      try { fn(); } catch {}
+    });
+
     updateDoneState();
 
     const publish = async () => {
       if (published || submitting) return;
-      const ready = marks.every((v) => v === VERDICT.RIGHT || v === VERDICT.WRONG);
+      const ready = marks.every((v) => VERDICT_VALUES.includes(v));
       if (!ready) return;
 
       submitting = true;
       updateDoneState();
 
-      const safeMarks = marks.map((v) => (v === VERDICT.RIGHT ? VERDICT.RIGHT : VERDICT.WRONG));
+      const safeMarks = marks.map((v) =>
+        v === VERDICT.RIGHT
+          ? VERDICT.RIGHT
+          : v === VERDICT.WRONG
+            ? VERDICT.WRONG
+            : VERDICT.DUNNO
+      );
       const markDoneMs = Date.now();
 
       let qDoneMs = null;
