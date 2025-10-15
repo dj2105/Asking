@@ -63,14 +63,16 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-questions" });
-    const title = el("h1", { class: "title" }, `Round ${round || "—"}`);
-    root.appendChild(title);
 
     const card = el("div", { class: "card" });
-    const topRow = el("div", { class: "mono", style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;" });
-    const roomTag = el("div", {}, `Room ${code}`);
+    const topRow = el(
+      "div",
+      {
+        class: "mono",
+        style: "display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px;",
+      }
+    );
     const counter = el("div", { class: "mono" }, "1 / 3");
-    topRow.appendChild(roomTag);
     topRow.appendChild(counter);
     card.appendChild(topRow);
 
@@ -109,8 +111,6 @@ export default {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
     }
-    title.textContent = `Round ${round}`;
-    roomTag.textContent = `Room ${code}`;
 
     const rdRef = doc(roundSubColRef(code), String(round));
     const playerRef = doc(roomRef(code), "players", me.uid);
@@ -243,6 +243,7 @@ export default {
       idx += 1;
       if (idx >= 3) {
         counter.textContent = "3 / 3";
+        qText.textContent = "All answers submitted.";
         setButtonsEnabled(false);
         if (!qDoneMsLocal) {
           const stamp = Date.now();
@@ -269,7 +270,7 @@ export default {
       published = true;
       showWaitingState("Submitted. Waiting for opponent…");
       counter.textContent = "3 / 3";
-      qText.textContent = triplet[2]?.question || "";
+      qText.textContent = "All answers submitted.";
     } else {
       btnWrap.style.display = "flex";
       waitMsg.style.display = "none";
