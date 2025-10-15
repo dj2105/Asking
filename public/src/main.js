@@ -20,6 +20,7 @@
 //   #/countdown?code=ABC&round=N
 //   #/questions?code=ABC&round=N
 //   #/marking?code=ABC&round=N
+//   #/stop?code=ABC&round=N
 //   #/award?code=ABC&round=N
 //   #/maths?code=ABC
 //   #/final?code=ABC
@@ -48,6 +49,7 @@ const VIEW_MAP = {
   countdown: () => import("./views/Countdown.js"),
   questions: () => import("./views/Questions.js"),
   marking:   () => import("./views/Marking.js"),
+  stop:      () => import("./views/Stop.js"),
   award:     () => import("./views/Award.js"),
   maths:     () => import("./views/Maths.js"),
   final:     () => import("./views/Final.js"),

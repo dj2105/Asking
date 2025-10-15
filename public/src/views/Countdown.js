@@ -202,6 +202,7 @@ export default {
             await updateDoc(rRef, {
               state: "questions",
               "countdown.startAt": null,
+              "questions.startAt": Date.now(),
               "timestamps.updatedAt": serverTimestamp()
             });
           } catch (err) {

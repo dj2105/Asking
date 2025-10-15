@@ -120,6 +120,7 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const oppName = oppRole === "host" ? "Daniel" : "Jaime";
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -130,8 +131,8 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    let roundStartAt = Number((room0.countdown || {}).startAt || 0) || 0;
     let qDoneMsLocal = null;
+    let latestRoomData = room0 || {};
 
     const setButtonsEnabled = (enabled) => {
       btn1.disabled = !enabled;
@@ -189,9 +190,29 @@ export default {
       btn2.textContent = cur?.options?.[1] || "";
     }
 
-    const showWaitingState = (text = "Waiting for opponent…") => {
-      btnWrap.style.display = "none";
+    const computeOppFinished = (data = {}) => {
+      const submitted = Boolean((((data.submitted || {})[oppRole] || {})[round]));
+      const answers = (((data.answers || {})[oppRole] || {})[round] || []);
+      return submitted || (Array.isArray(answers) && answers.length === 3);
+    };
+
+    const updateWaitingCopy = () => {
+      if (!published) return;
+      const oppDone = computeOppFinished(latestRoomData);
+      const text = oppDone
+        ? "All answers in. Preparing marking…"
+        : `You finished first, waiting for ${oppName}.`;
       waitMsg.textContent = text;
+      waitMsg.style.display = "";
+    };
+
+    const showWaitingState = (text = null) => {
+      btnWrap.style.display = "none";
+      if (text) {
+        waitMsg.textContent = text;
+      } else {
+        updateWaitingCopy();
+      }
       waitMsg.style.display = "";
       setButtonsEnabled(false);
     };
@@ -215,7 +236,7 @@ export default {
         console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
         await updateDoc(rRef, patch);
         published = true;
-        showWaitingState();
+        updateWaitingCopy();
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
@@ -243,6 +264,11 @@ export default {
       if (idx >= 3) {
         counter.textContent = "3 / 3";
         setButtonsEnabled(false);
+        const oppDoneNow = computeOppFinished(latestRoomData);
+        const initialText = oppDoneNow
+          ? "All answers in. Preparing marking…"
+          : `You finished first, waiting for ${oppName}.`;
+        showWaitingState(initialText);
         if (!qDoneMsLocal) {
           const stamp = Date.now();
           recordQuestionTiming(stamp);
@@ -278,10 +304,9 @@ export default {
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
+      latestRoomData = data;
 
-      if (Number((data.countdown || {}).startAt)) {
-        roundStartAt = Number(data.countdown.startAt);
-      }
+      if (published) updateWaitingCopy();
 
       if (data.state === "marking") {
         setTimeout(() => {
@@ -306,13 +331,12 @@ export default {
       // Host monitors opponent completion to flip state (idempotent)
       if (myRole === "host" && data.state === "questions") {
         const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
-        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
+        const oppDone = computeOppFinished(data);
         if (myDone && oppDone) {
           try {
             console.log(`[flow] questions -> marking | code=${code} round=${round} role=${myRole}`);
             await updateDoc(rRef, {
               state: "marking",
-              "marking.startAt": Date.now(),
               "timestamps.updatedAt": serverTimestamp()
             });
           } catch (err) {
