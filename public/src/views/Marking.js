@@ -62,11 +62,9 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-marking" });
-    root.appendChild(el("h1", { class: "title" }, `Round ${round}`));
+    root.appendChild(el("h1", { class: "title" }, "Mark their answers"));
 
     const card = el("div", { class: "card" });
-    const tag = el("div", { class: "mono", style: "text-align:center;margin-bottom:8px;" }, `Room ${code}`);
-    card.appendChild(tag);
 
     const list = el("div", { class: "qa-list" });
     card.appendChild(list);
@@ -332,7 +330,17 @@ export default {
     const buildRow = (idx, question, chosen) => {
       const row = el("div", { class: "mark-row" });
       row.appendChild(el("div", { class: "q mono" }, `${idx + 1}. ${question || "(missing question)"}`));
-      row.appendChild(el("div", { class: "a mono" }, chosen || "(no answer recorded)"));
+
+      const answerWrap = el("div", { class: "mark-answer-wrap" });
+      answerWrap.appendChild(el("div", { class: "mark-answer-label mono" }, "They answered:"));
+      answerWrap.appendChild(
+        el(
+          "div",
+          { class: "mark-answer mono" },
+          chosen ? `“${chosen}”` : "(no answer recorded)"
+        )
+      );
+      row.appendChild(answerWrap);
 
       const pair = el("div", { class: "verdict-row" });
       const btnRight = el(

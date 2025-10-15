@@ -124,12 +124,9 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
-    const title = el("h1", { class: "title" }, `Round ${round}`);
-    root.appendChild(title);
+    root.appendChild(el("h1", { class: "title" }, "Round results"));
 
     const card = el("div", { class: "card" });
-    const tag = el("div", { class: "mono", style: "text-align:center;margin-bottom:8px;" }, `Room ${code}`);
-    card.appendChild(tag);
 
     const scoreHeadline = el("div", {
       class: "mono",
@@ -137,11 +134,31 @@ export default {
     }, "Daniel 0 — 0 Jaime");
     card.appendChild(scoreHeadline);
 
-    const snippetChip = el("div", {
-      class: "mono",
-      style: "text-align:center;margin-bottom:12px;padding:6px 16px;border-radius:999px;border:1px solid currentColor;display:inline-block;align-self:center;"
-    }, "Snippet Winner: — (tie)");
-    card.appendChild(snippetChip);
+    const snippetWrap = el("div", { class: "snippet-summary" });
+    const snippetHeading = el("div", { class: "snippet-heading mono" }, "Snippet Winner");
+    const snippetWinner = el("div", { class: "snippet-winner" }, "—");
+    const snippetNote = el("div", { class: "snippet-note mono" }, "Awaiting results…");
+
+    const buildTimeRow = (label) => {
+      const row = el("div", { class: "snippet-time-row mono" });
+      const name = el("span", { class: "snippet-time-label" }, label);
+      const value = el("span", { class: "snippet-time-value" }, "—");
+      row.appendChild(name);
+      row.appendChild(value);
+      return { row, value };
+    };
+
+    const snippetTimes = el("div", { class: "snippet-times" });
+    const hostTimeRow = buildTimeRow("Daniel");
+    const guestTimeRow = buildTimeRow("Jaime");
+    snippetTimes.appendChild(hostTimeRow.row);
+    snippetTimes.appendChild(guestTimeRow.row);
+
+    snippetWrap.appendChild(snippetHeading);
+    snippetWrap.appendChild(snippetWinner);
+    snippetWrap.appendChild(snippetNote);
+    snippetWrap.appendChild(snippetTimes);
+    card.appendChild(snippetWrap);
 
     const reviewWrap = el("div", { style: "display:flex;flex-direction:column;gap:16px;" });
     card.appendChild(reviewWrap);
@@ -297,22 +314,62 @@ export default {
       }
     });
 
-    const nameForUid = (uid) => {
-      if (!uid) return "Snippet Winner: — (tie)";
-      if (uid === hostUid) return "Snippet Winner: Daniel";
-      if (uid === guestUid) return "Snippet Winner: Jaime";
-      return "Snippet Winner: —";
+    const resolveTimingForRole = (timings = {}, roleName, fallbackUid) => {
+      if (!timings || typeof timings !== "object") return null;
+      if (fallbackUid && timings[fallbackUid]) return timings[fallbackUid] || null;
+      const want = String(roleName || "").toLowerCase();
+      if (!want) return null;
+      for (const [, infoRaw] of Object.entries(timings)) {
+        const info = infoRaw || {};
+        const role = String(info.role || "").toLowerCase();
+        if (role === want) return info;
+      }
+      return null;
     };
 
-    const updateSnippetChip = (uid) => {
-      snippetChip.textContent = nameForUid(uid);
+    const formatSeconds = (ms) => {
+      if (!Number.isFinite(ms) || ms <= 0) return "—";
+      return `${Math.round(ms / 1000)}s`;
     };
 
-    updateSnippetChip(rd.snippetWinnerUid || null);
+    const updateSnippetSummary = (data = {}) => {
+      const winnerUid = data.winnerUid || null;
+      const tie = Boolean(data.tie);
+      const timings = data.timings || {};
+
+      if (tie) {
+        snippetWinner.textContent = "Tie";
+        snippetNote.textContent = "Both players finished in the same time.";
+      } else if (winnerUid === hostUid) {
+        snippetWinner.textContent = "Daniel";
+        snippetNote.textContent = "Fastest to finish the round.";
+      } else if (winnerUid === guestUid) {
+        snippetWinner.textContent = "Jaime";
+        snippetNote.textContent = "Fastest to finish the round.";
+      } else {
+        snippetWinner.textContent = "—";
+        snippetNote.textContent = "Awaiting snippet result…";
+      }
+
+      const hostTiming = resolveTimingForRole(timings, "host", hostUid) || {};
+      const guestTiming = resolveTimingForRole(timings, "guest", guestUid) || {};
+      hostTimeRow.value.textContent = formatSeconds(Number(hostTiming.totalMs));
+      guestTimeRow.value.textContent = formatSeconds(Number(guestTiming.totalMs));
+    };
+
+    updateSnippetSummary({
+      winnerUid: rd.snippetWinnerUid || null,
+      tie: Boolean(rd.snippetTie),
+      timings: rd.timings || {},
+    });
 
     const stopRoundDoc = onSnapshot(rdRef, (snap) => {
       const data = snap.data() || {};
-      updateSnippetChip(data.snippetWinnerUid || null);
+      updateSnippetSummary({
+        winnerUid: data.snippetWinnerUid || null,
+        tie: Boolean(data.snippetTie),
+        timings: data.timings || {},
+      });
     }, (err) => {
       console.warn("[award] round snippet watch error:", err);
     });
@@ -322,7 +379,6 @@ export default {
 
       if (Number(data.round) && Number(data.round) !== round) {
         round = Number(data.round);
-        title.textContent = `Round ${round}`;
       }
 
       updateScoresDisplay(((data.scores || {}).questions) || {});

@@ -71,9 +71,6 @@ export default {
 
     const card = el("div", { class:"card" });
 
-    const tag = el("div", { class:"mono", style:"text-align:center;margin-bottom:8px;" }, `Room ${code}`);
-    card.appendChild(tag);
-
     const form = el("div", {});
     const row1 = el("div", { class:"mono", style:"margin-top:6px;" });
     const row2 = el("div", { class:"mono", style:"margin-top:10px;" });

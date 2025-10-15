@@ -128,6 +128,43 @@ input[type="text"], input[type="number"], .input {
 .mark-row:last-child { border-bottom: none; }
 .q { font-weight: 600; }
 .a { font-weight: 700; margin-top: 6px; }
+.mark-answer-wrap { margin-top: 8px; }
+.mark-answer-label { text-transform: uppercase; letter-spacing: .06em; font-size: .9rem; opacity: .72; }
+.mark-answer {
+  margin-top: 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 2px solid var(--ink);
+  font-weight: 700;
+  font-size: 1.15rem;
+  display: inline-block;
+  background: rgba(0,0,0,.05);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.4);
+}
+
+.snippet-summary {
+  margin: 18px 0 20px;
+  padding: 16px 18px;
+  border: 1px solid currentColor;
+  border-radius: 18px;
+  text-align: center;
+  background: rgba(0,0,0,.03);
+}
+.snippet-heading { text-transform: uppercase; letter-spacing: .08em; font-weight: 700; font-size: .92rem; opacity: .75; }
+.snippet-winner { font-size: 2.2rem; font-weight: 700; margin-top: 6px; line-height: 1.05; }
+.snippet-note { margin-top: 4px; opacity: .75; }
+.snippet-times { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.snippet-time-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.05);
+  font-weight: 700;
+}
+.snippet-time-label { text-transform: uppercase; letter-spacing: .06em; }
+.snippet-time-value { font-variant-numeric: tabular-nums; font-size: 1.05rem; }
 
 /* ===========================
    Score strip (global bar)
