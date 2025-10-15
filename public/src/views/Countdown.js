@@ -21,6 +21,7 @@ import {
   collection,
   getDoc,
   onSnapshot,
+  setDoc,
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
@@ -198,12 +199,19 @@ export default {
         hasFlipped = true;
         if (myRole === "host") {
           try {
+            const startAt = Date.now();
             console.log(`[flow] countdown -> questions | code=${code} round=${round} role=${myRole}`);
-            await updateDoc(rRef, {
-              state: "questions",
-              "countdown.startAt": null,
-              "timestamps.updatedAt": serverTimestamp()
-            });
+            await Promise.all([
+              updateDoc(rRef, {
+                state: "questions",
+                "countdown.startAt": null,
+                "marking.questionStartAt": startAt,
+                "timestamps.updatedAt": serverTimestamp(),
+              }),
+              setDoc(doc(roundsCol, String(round)), {
+                timingsShared: { questionStartAt: startAt }
+              }, { merge: true })
+            ]);
           } catch (err) {
             console.warn("[countdown] failed to flip to questions:", err);
             hasFlipped = false; // allow retry

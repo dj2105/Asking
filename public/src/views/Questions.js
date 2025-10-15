@@ -120,6 +120,8 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const roleName = (role) => (role === "host" ? "Daniel" : "Jaime");
+    const oppName = roleName(oppRole);
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -130,7 +132,6 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    let roundStartAt = Number((room0.countdown || {}).startAt || 0) || 0;
     let qDoneMsLocal = null;
 
     const setButtonsEnabled = (enabled) => {
@@ -196,6 +197,18 @@ export default {
       setButtonsEnabled(false);
     };
 
+    const updateWaitingCopy = (roomData = {}) => {
+      if (!published) return;
+      const submittedOpp = Boolean(((roomData.submitted || {})[oppRole] || {})[round])
+        || (Array.isArray(((roomData.answers || {})[oppRole] || {})[round])
+          && (((roomData.answers || {})[oppRole] || {})[round]).length === 3);
+      if (!submittedOpp) {
+        waitMsg.textContent = `You finished first, waiting for ${oppName}…`;
+      } else {
+        waitMsg.textContent = "Waiting for opponent…";
+      }
+    };
+
     async function publishAnswers() {
       if (submitting || published) return;
       submitting = true;
@@ -216,6 +229,7 @@ export default {
         await updateDoc(rRef, patch);
         published = true;
         showWaitingState();
+        updateWaitingCopy(room0);
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
@@ -279,10 +293,6 @@ export default {
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
 
-      if (Number((data.countdown || {}).startAt)) {
-        roundStartAt = Number(data.countdown.startAt);
-      }
-
       if (data.state === "marking") {
         setTimeout(() => {
           location.hash = `#/marking?code=${code}&round=${round}`;
@@ -302,6 +312,8 @@ export default {
           location.hash = `#/award?code=${code}&round=${round}`;
         }, 80);
       }
+
+      updateWaitingCopy(data);
 
       // Host monitors opponent completion to flip state (idempotent)
       if (myRole === "host" && data.state === "questions") {

@@ -2,7 +2,7 @@
 //
 // Marking phase — judge opponent answers, record timings, and await the snippet verdict.
 // • Shows exactly three rows (opponent questions + their chosen answers).
-// • Verdict buttons: ✓ (definitely right) / ✕ (absolutely wrong). No "unknown" option.
+// • Verdict buttons: ✓ (definitely right) / ✕ (absolutely wrong) / I DUNNO (no score).
 // • Submission writes marking.{role}.{round}, markingAck.{role}.{round} = true, and timing metadata for snippet race.
 // • Host waits for both totals, computes the snippet winner, mirrors retained flags, and advances to award.
 
@@ -26,7 +26,8 @@ const mountMathsPane =
    typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
    null);
 
-const VERDICT = { RIGHT: "right", WRONG: "wrong" };
+const VERDICT = { RIGHT: "right", WRONG: "wrong", DUNNO: "dunno" };
+const VERDICT_VALUES = Object.freeze(Object.values(VERDICT));
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -71,16 +72,10 @@ export default {
     const list = el("div", { class: "qa-list" });
     card.appendChild(list);
 
-    const timerRow = el("div", {
-      style: "display:flex;justify-content:center;align-items:center;gap:12px;margin-top:16px;"
-    });
-    const timerDisplay = el("div", {
-      class: "mono",
-      style: "font-weight:700;font-size:24px;min-width:120px;text-align:center;"
-    }, "0.000");
+    const timerRow = el("div", { class: "timer-row" });
+    const timerDisplay = el("div", { class: "mono timer-display" }, "0");
     const doneBtn = el("button", {
-      class: "btn primary",
-      style: "font-weight:700;letter-spacing:0.6px;padding-left:28px;padding-right:28px;",
+      class: "btn primary stop-btn",
       disabled: ""
     }, "STOP");
     timerRow.appendChild(timerDisplay);
@@ -126,7 +121,10 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
 
-    let roundStartAt = Number((roomData0.countdown || {}).startAt || 0) || 0;
+    let questionStartAt = 0;
+    if (Number(((roomData0.marking || {}).questionStartAt))) {
+      questionStartAt = Number((roomData0.marking || {}).questionStartAt);
+    }
     const markingEnterAt = Date.now();
     let published = false;
     let submitting = false;
@@ -167,8 +165,20 @@ export default {
     };
 
     const formatSeconds = (ms) => {
-      if (!Number.isFinite(ms) || ms < 0) return "0.000";
-      return (ms / 1000).toFixed(3);
+      if (!Number.isFinite(ms) || ms <= 0) return "0";
+      return String(Math.floor(ms / 1000));
+    };
+
+    const questionElapsedBeforeMarking = () => {
+      const myTiming = latestRoundTimings[me.uid] || {};
+      const qDone = Number(myTiming.qDoneMs);
+      if (Number(questionStartAt) && Number(qDone)) {
+        return Math.max(0, qDone - questionStartAt);
+      }
+      if (Number(questionStartAt)) {
+        return Math.max(0, markingEnterAt - questionStartAt);
+      }
+      return 0;
     };
 
     const updateTimerDisplay = () => {
@@ -176,8 +186,8 @@ export default {
         timerDisplay.textContent = formatSeconds(timerFrozenMs);
         return;
       }
-      const base = Number(roundStartAt) ? Math.max(0, Date.now() - Number(roundStartAt)) : Math.max(0, Date.now() - markingEnterAt);
-      timerDisplay.textContent = formatSeconds(base);
+      const elapsed = questionElapsedBeforeMarking() + Math.max(0, Date.now() - markingEnterAt);
+      timerDisplay.textContent = formatSeconds(elapsed);
     };
 
     const freezeTimer = (ms) => {
@@ -191,7 +201,7 @@ export default {
       updateTimerDisplay();
     };
 
-    timerInterval = setInterval(updateTimerDisplay, 60);
+    timerInterval = setInterval(updateTimerDisplay, 250);
     updateTimerDisplay();
 
     try {
@@ -204,11 +214,15 @@ export default {
 
     const rdSnap = await getDoc(rdRef);
     const rd = rdSnap.data() || {};
+    if (Number(((rd.timingsShared || {}).questionStartAt))) {
+      questionStartAt = Number((rd.timingsShared || {}).questionStartAt);
+    }
     latestRoundTimings = rd.timings || {};
     const oppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
     const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
 
     let marks = [null, null, null];
+    const reflectFns = [];
     const disableFns = [];
 
     const updateOutcomeDisplay = () => {
@@ -262,7 +276,7 @@ export default {
         doneBtn.classList.remove("throb");
         return;
       }
-      const ready = marks.every((v) => v === VERDICT.RIGHT || v === VERDICT.WRONG);
+      const ready = marks.every((v) => VERDICT_VALUES.includes(v));
       doneBtn.disabled = !(ready && !submitting);
       doneBtn.classList.toggle("throb", ready && !submitting);
     };
@@ -273,12 +287,25 @@ export default {
       row.appendChild(el("div", { class: "a mono" }, chosen || "(no answer recorded)"));
 
       const pair = el("div", { class: "verdict-row" });
-      const btnRight = el("button", { class: "btn outline choice-tick" }, "✓ He's right");
-      const btnWrong = el("button", { class: "btn outline choice-cross" }, "✕ Totally wrong");
+      const btnRight = el("button", {
+        class: "btn outline choice-btn choice-tick",
+        type: "button",
+        "aria-label": "Mark correct"
+      }, "✓");
+      const btnWrong = el("button", {
+        class: "btn outline choice-btn choice-cross",
+        type: "button",
+        "aria-label": "Mark incorrect"
+      }, "✕");
+      const btnDunno = el("button", {
+        class: "btn outline choice-btn choice-dunno",
+        type: "button"
+      }, "I DUNNO");
 
       const reflect = () => {
         btnRight.classList.toggle("active", marks[idx] === VERDICT.RIGHT);
         btnWrong.classList.toggle("active", marks[idx] === VERDICT.WRONG);
+        btnDunno.classList.toggle("active", marks[idx] === VERDICT.DUNNO);
       };
 
       btnRight.addEventListener("click", () => {
@@ -293,17 +320,29 @@ export default {
         reflect();
         updateDoneState();
       });
+      btnDunno.addEventListener("click", () => {
+        if (published || submitting) return;
+        marks[idx] = VERDICT.DUNNO;
+        reflect();
+        updateDoneState();
+      });
 
       pair.appendChild(btnRight);
       pair.appendChild(btnWrong);
+      pair.appendChild(btnDunno);
       row.appendChild(pair);
 
       disableFns.push(() => {
         btnRight.disabled = true;
         btnWrong.disabled = true;
+        btnDunno.disabled = true;
         btnRight.classList.remove("throb");
         btnWrong.classList.remove("throb");
+        btnDunno.classList.remove("throb");
       });
+
+      reflectFns.push(reflect);
+      reflect();
 
       return row;
     };
@@ -317,24 +356,43 @@ export default {
 
     const existingMarks = (((roomData0.marking || {})[myRole] || {})[round] || []);
     if (Array.isArray(existingMarks) && existingMarks.length === 3) {
-      marks = existingMarks.map((v) => (v === VERDICT.RIGHT ? VERDICT.RIGHT : VERDICT.WRONG));
+      marks = existingMarks.map((v) =>
+        v === VERDICT.RIGHT
+          ? VERDICT.RIGHT
+          : v === VERDICT.WRONG
+            ? VERDICT.WRONG
+            : VERDICT.DUNNO
+      );
       published = true;
       disableFns.forEach((fn) => { try { fn(); } catch {} });
       latestTotalForMe = Number((latestRoundTimings[me.uid] || {}).totalMs) || null;
       showPostSubmit(latestTotalForMe);
+      setTimeout(() => {
+        location.hash = `#/stopwait?code=${code}&round=${round}`;
+      }, 120);
     }
+
+    reflectFns.forEach((fn) => {
+      try { fn(); } catch {}
+    });
 
     updateDoneState();
 
     const publish = async () => {
       if (published || submitting) return;
-      const ready = marks.every((v) => v === VERDICT.RIGHT || v === VERDICT.WRONG);
+      const ready = marks.every((v) => VERDICT_VALUES.includes(v));
       if (!ready) return;
 
       submitting = true;
       updateDoneState();
 
-      const safeMarks = marks.map((v) => (v === VERDICT.RIGHT ? VERDICT.RIGHT : VERDICT.WRONG));
+      const safeMarks = marks.map((v) =>
+        v === VERDICT.RIGHT
+          ? VERDICT.RIGHT
+          : v === VERDICT.WRONG
+            ? VERDICT.WRONG
+            : VERDICT.DUNNO
+      );
       const markDoneMs = Date.now();
 
       let qDoneMs = null;
@@ -362,9 +420,12 @@ export default {
         }
       }
 
-      const qSeg = (Number.isFinite(qDoneMs) && qDoneMs && roundStartAt)
-        ? Math.max(0, qDoneMs - roundStartAt)
-        : 0;
+      let qSeg = 0;
+      if (Number.isFinite(qDoneMs) && Number(questionStartAt)) {
+        qSeg = Math.max(0, qDoneMs - questionStartAt);
+      } else if (Number(questionStartAt)) {
+        qSeg = Math.max(0, markingEnterAt - questionStartAt);
+      }
       const mSeg = Math.max(0, markDoneMs - markingEnterAt);
       const totalMs = Math.max(0, qSeg + mSeg);
       latestTotalForMe = totalMs;
@@ -398,6 +459,9 @@ export default {
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         showPostSubmit(totalMs);
         updateDoneState();
+        setTimeout(() => {
+          location.hash = `#/stopwait?code=${code}&round=${round}`;
+        }, 120);
       } catch (err) {
         console.warn("[marking] publish failed:", err);
         submitting = false;
@@ -458,21 +522,15 @@ export default {
           const nextGuest = Number(baseScores.guest || 0) + roundGuestScore;
 
           const currentRound = Number(roomData.round) || round;
-          const maxRounds = 5;
-          const isFinalRound = currentRound >= maxRounds;
-          const nextRound = isFinalRound ? currentRound : currentRound + 1;
-          const nextStart = isFinalRound ? null : Date.now() + 5000;
 
           tx.update(rRef, {
-            state: isFinalRound ? "maths" : "countdown",
-            round: nextRound,
+            state: "award",
+            round: currentRound,
             "scores.questions.host": nextHost,
             "scores.questions.guest": nextGuest,
             "marking.startAt": null,
+            "countdown.startAt": null,
             "timestamps.updatedAt": serverTimestamp(),
-            ...(isFinalRound
-              ? { "countdown.startAt": null }
-              : { "countdown.startAt": nextStart })
           });
 
           tx.set(rdRef, { snippetWinnerUid: winnerUid || null, snippetTie: tie }, { merge: true });
@@ -508,8 +566,8 @@ export default {
 
     stopRoomWatch = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
-      if (Number((data.countdown || {}).startAt)) {
-        roundStartAt = Number(data.countdown.startAt);
+      if (Number(((data.marking || {}).questionStartAt))) {
+        questionStartAt = Number((data.marking || {}).questionStartAt);
         if (!timerFrozen) updateTimerDisplay();
       }
 
@@ -537,6 +595,9 @@ export default {
     stopRoundWatch = onSnapshot(rdRef, (snap) => {
       const data = snap.data() || {};
       latestRoundTimings = data.timings || {};
+      if (Number(((data.timingsShared || {}).questionStartAt))) {
+        questionStartAt = Number((data.timingsShared || {}).questionStartAt);
+      }
 
       if (published && !latestTotalForMe) {
         const myTiming = latestRoundTimings[me.uid] || {};
@@ -545,6 +606,8 @@ export default {
           showPostSubmit(latestTotalForMe);
         }
       }
+
+      if (!timerFrozen) updateTimerDisplay();
 
       const hostTimingEntry = resolveTimingForRole(latestRoundTimings, "host", [hostUid]);
       const guestTimingEntry = resolveTimingForRole(latestRoundTimings, "guest", [guestUid]);
