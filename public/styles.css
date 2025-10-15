@@ -203,25 +203,60 @@ input[type="text"], input[type="number"], .input {
    =========================== */
 .verdict-row {
   display: flex;
-  justify-content: center; /* center the pair */
+  justify-content: center;
   gap: 14px;
-  margin-top: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
 }
-.verdict-row .btn {
-  min-width: 110px;
-  padding: 12px 14px;
-  border-radius: 12px;
+.verdict-row .verdict-btn {
+  min-width: 58px;
+  min-height: 58px;
+  padding: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  background: transparent;
+  color: #7a7a7a;
   font-weight: 700;
+  font-size: 28px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.2s ease;
 }
-.verdict-row .btn.choice-tick.outline.active {
-  background: var(--ok);
-  color: var(--paper);
-  border-color: var(--ok);
+.verdict-row .verdict-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
-.verdict-row .btn.choice-cross.outline.active {
-  background: var(--bad);
-  color: var(--paper);
-  border-color: var(--bad);
+.verdict-row .verdict-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+.verdict-row .verdict-btn.verdict-idk {
+  min-width: 128px;
+  border-radius: 999px;
+  font-size: 16px;
+  padding: 12px 20px;
+  letter-spacing: 1px;
+}
+.verdict-row .verdict-btn.active.verdict-tick {
+  background: rgba(60, 184, 120, 0.18);
+  border-color: rgba(49, 161, 103, 0.85);
+  color: #1e7f45;
+}
+.verdict-row .verdict-btn.active.verdict-cross {
+  background: rgba(220, 90, 86, 0.18);
+  border-color: rgba(210, 77, 87, 0.85);
+  color: #a3262d;
+}
+.verdict-row .verdict-btn.active.verdict-idk {
+  background: rgba(10, 132, 255, 0.18);
+  border-color: rgba(10, 132, 255, 0.85);
+  color: #0a69d6;
 }
 
 /* ===========================
