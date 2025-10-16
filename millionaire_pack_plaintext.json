@@ -38,7 +38,8 @@
             "easy": "Prince Philip",
             "medium": "Prince George of Cambridge",
             "hard": "Prince Ernest Augustus"
-          }
+          },
+          "difficulty": "£100"
         },
         {
           "subject": "Cats",
@@ -49,7 +50,8 @@
             "easy": "Persian",
             "medium": "Russian Blue",
             "hard": "Peterbald"
-          }
+          },
+          "difficulty": "£200"
         },
         {
           "subject": "American TV Sitcoms",
@@ -60,7 +62,8 @@
             "easy": "Monk's Café",
             "medium": "MacLaren's Pub",
             "hard": "The Max"
-          }
+          },
+          "difficulty": "£300"
         }
       ],
       "guestItems": [
@@ -73,7 +76,8 @@
             "easy": "The Amazon",
             "medium": "The Tigris",
             "hard": "The Zambezi"
-          }
+          },
+          "difficulty": "£100"
         },
         {
           "subject": "Geography — Mountains",
@@ -84,7 +88,8 @@
             "easy": "Matterhorn",
             "medium": "Dufourspitze",
             "hard": "Weisshorn"
-          }
+          },
+          "difficulty": "£200"
         },
         {
           "subject": "Folklore — Irish",
@@ -95,7 +100,8 @@
             "easy": "Cú Chulainn",
             "medium": "Oisín",
             "hard": "Diarmuid Ua Duibhne"
-          }
+          },
+          "difficulty": "£300"
         }
       ]
     },
@@ -111,7 +117,8 @@
             "easy": "Éamon de Valera",
             "medium": "James Connolly",
             "hard": "Thomas MacDonagh"
-          }
+          },
+          "difficulty": "£500"
         },
         {
           "subject": "'90s Pop",
@@ -122,7 +129,8 @@
             "easy": "U2",
             "medium": "The Corrs",
             "hard": "The Frames"
-          }
+          },
+          "difficulty": "£1,000"
         },
         {
           "subject": "World Capitals",
@@ -133,7 +141,8 @@
             "easy": "Auckland",
             "medium": "Christchurch",
             "hard": "Dunedin"
-          }
+          },
+          "difficulty": "£2,000"
         }
       ],
       "guestItems": [
@@ -146,7 +155,8 @@
             "easy": "Adjective",
             "medium": "Gerund",
             "hard": "Participle"
-          }
+          },
+          "difficulty": "£500"
         },
         {
           "subject": "Language — Punctuation",
@@ -157,7 +167,8 @@
             "easy": "Comma",
             "medium": "Em dash",
             "hard": "Colon"
-          }
+          },
+          "difficulty": "£1,000"
         },
         {
           "subject": "Printing & Type",
@@ -168,7 +179,8 @@
             "easy": "Stanley Morison",
             "medium": "Neville Brody",
             "hard": "Matthew Carter"
-          }
+          },
+          "difficulty": "£2,000"
         }
       ]
     },
@@ -184,7 +196,8 @@
             "easy": "Plato",
             "medium": "Socrates",
             "hard": "Zeno of Citium"
-          }
+          },
+          "difficulty": "£4,000"
         },
         {
           "subject": "Roman Empire",
@@ -195,7 +208,8 @@
             "easy": "Nero",
             "medium": "Domitian",
             "hard": "Hadrian"
-          }
+          },
+          "difficulty": "£8,000"
         },
         {
           "subject": "Medieval Europe",
@@ -206,7 +220,8 @@
             "easy": "Treaty of Paris",
             "medium": "Treaty of Utrecht",
             "hard": "Treaty of Meerssen"
-          }
+          },
+          "difficulty": "£16,000"
         }
       ],
       "guestItems": [
@@ -219,7 +234,8 @@
             "easy": "Asterix",
             "medium": "Lucky Luke",
             "hard": "Spirou et Fantasio"
-          }
+          },
+          "difficulty": "£4,000"
         },
         {
           "subject": "Anime",
@@ -230,7 +246,8 @@
             "easy": "Isao Takahata",
             "medium": "Mamoru Hosoda",
             "hard": "Makoto Shinkai"
-          }
+          },
+          "difficulty": "£8,000"
         },
         {
           "subject": "TV — British",
@@ -241,7 +258,8 @@
             "easy": "Cold-case murders",
             "medium": "Counter-terrorism plots",
             "hard": "Border smuggling"
-          }
+          },
+          "difficulty": "£16,000"
         }
       ]
     },
@@ -257,7 +275,8 @@
             "easy": "Leonardo da Vinci",
             "medium": "Titian",
             "hard": "Piero di Cosimo"
-          }
+          },
+          "difficulty": "£32,000"
         },
         {
           "subject": "Baroque Music",
@@ -268,7 +287,8 @@
             "easy": "Johann Sebastian Bach",
             "medium": "George Frideric Handel",
             "hard": "Arcangelo Corelli"
-          }
+          },
+          "difficulty": "£64,000"
         },
         {
           "subject": "Classical Mythology",
@@ -279,7 +299,8 @@
             "easy": "Perseus",
             "medium": "Theseus",
             "hard": "Bellerophon"
-          }
+          },
+          "difficulty": "£125,000"
         }
       ],
       "guestItems": [
@@ -292,7 +313,8 @@
             "easy": "Bryan Cranston",
             "medium": "Jonathan Banks",
             "hard": "Michael McKean"
-          }
+          },
+          "difficulty": "£32,000"
         },
         {
           "subject": "Sitcom — British",
@@ -303,7 +325,8 @@
             "easy": "Lieutenant",
             "medium": "Major",
             "hard": "Colonel"
-          }
+          },
+          "difficulty": "£64,000"
         },
         {
           "subject": "Pop Culture — Memes",
@@ -314,7 +337,8 @@
             "easy": "Metal Gear",
             "medium": "Contra",
             "hard": "R-Type"
-          }
+          },
+          "difficulty": "£125,000"
         }
       ]
     },
@@ -330,7 +354,8 @@
             "easy": "Fenrir",
             "medium": "Jörmungandr",
             "hard": "Fáfnir"
-          }
+          },
+          "difficulty": "£250,000"
         },
         {
           "subject": "World War I",
@@ -341,7 +366,8 @@
             "easy": "Battle of Verdun",
             "medium": "Battle of Passchendaele",
             "hard": "Battle of Cambrai"
-          }
+          },
+          "difficulty": "£500,000"
         },
         {
           "subject": "Modern Politics",
@@ -352,7 +378,8 @@
             "easy": "Nicola Sturgeon",
             "medium": "Henry McLeish",
             "hard": "Jack McConnell"
-          }
+          },
+          "difficulty": "£1,000,000"
         }
       ],
       "guestItems": [
@@ -365,7 +392,8 @@
             "easy": "Madonna",
             "medium": "Annie Lennox",
             "hard": "Sinéad O'Connor"
-          }
+          },
+          "difficulty": "£250,000"
         },
         {
           "subject": "'00s Pop",
@@ -376,7 +404,8 @@
             "easy": "Rihanna",
             "medium": "Alicia Keys",
             "hard": "Natasha Bedingfield"
-          }
+          },
+          "difficulty": "£500,000"
         },
         {
           "subject": "Gameshow Lore",
@@ -387,7 +416,8 @@
             "easy": "Double Dip",
             "medium": "Switch the Question",
             "hard": "Phone the Studio"
-          }
+          },
+          "difficulty": "£1,000,000"
         }
       ]
     }
