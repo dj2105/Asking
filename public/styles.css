@@ -211,11 +211,16 @@ input[type="text"], input[type="number"], .input {
   background: rgba(0, 0, 0, 0.04);
   text-align: center;
 }
-.snippet-winner {
+.snippet-label {
   font-weight: 700;
   font-size: 1.1rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.snippet-fastest {
+  font-weight: 700;
+  font-size: 1.25rem;
   margin-bottom: 8px;
 }
 .snippet-times {
@@ -227,6 +232,11 @@ input[type="text"], input[type="number"], .input {
 .snippet-time {
   font-weight: 600;
   letter-spacing: 0.05em;
+}
+.snippet-outcome {
+  margin-top: 10px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 /* ===========================

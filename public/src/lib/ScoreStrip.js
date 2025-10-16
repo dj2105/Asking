@@ -1,11 +1,10 @@
 // /src/lib/ScoreStrip.js
 //
 // Full-width score strip shown across the game (not in lobby/keyroom/seeding/final).
-// Scoring model (per your spec):
-//   • Players MUST answer all 3 questions in Questions (handled elsewhere).
-//   • In Marking, the marker earns: +1 if their verdict matches truth of opponent's answer,
-//     -1 if it contradicts truth, 0 if left unmarked when timer expires.
-// Running totals are the sum of those marking points across completed/ongoing rounds.
+// Scoring model (per latest spec):
+//   • Players earn +1 for each question they answered correctly in their own question round.
+//   • Marking verdicts do not influence the score strip.
+// Running totals are the cumulative question points across completed rounds.
 //
 // API:
 //   import ScoreStrip from "../lib/ScoreStrip.js";
@@ -38,47 +37,40 @@ const state = {
 function text(s){ return (s ?? "").toString(); }
 function same(a,b){ return String(a||"").trim() === String(b||"").trim(); }
 
+function resolveCorrect(answer = {}, fallbackItem = {}) {
+  if (answer.correct) return answer.correct;
+  if (fallbackItem.correct_answer) return fallbackItem.correct_answer;
+  return "";
+}
+
+function countCorrectAnswers(answerList = [], items = []) {
+  let total = 0;
+  for (let i = 0; i < answerList.length; i += 1) {
+    const answer = answerList[i] || {};
+    const chosen = answer.chosen;
+    if (!chosen) continue;
+    const correct = resolveCorrect(answer, items[i] || {});
+    if (correct && same(chosen, correct)) total += 1;
+  }
+  return total;
+}
+
 function computeScores(roomData, roundDocs) {
   let hostScore = 0; // Daniel
   let guestScore = 0; // Jaime
 
   const answers = roomData?.answers || {};
-  const marking = roomData?.marking || {};
 
   for (let r = 1; r <= 5; r++) {
-    const rd = roundDocs[r];
-    if (!rd) continue;
-
+    const rd = roundDocs[r] || {};
     const hostItems  = rd.hostItems || [];
     const guestItems = rd.guestItems || [];
 
-    const hostAns = ((answers.host || {})[r] || []).map(a => a?.chosen || "");
-    const guestAns = ((answers.guest || {})[r] || []).map(a => a?.chosen || "");
+    const hostAnswers = ((answers.host || {})[r] || []);
+    const guestAnswers = ((answers.guest || {})[r] || []);
 
-    const hostMarks  = ((marking.host  || {})[r] || []); // host marked guest’s answers
-    const guestMarks = ((marking.guest || {})[r] || []); // guest marked host’s answers
-
-    // Host marks guest answers:
-    for (let i = 0; i < 3; i++) {
-      const chosen = guestAns[i];
-      const correct = guestItems[i]?.correct_answer;
-      const truth = chosen && correct ? same(chosen, correct) : false;
-      const verdict = hostMarks[i]; // "right" | "wrong" | "unknown" | undefined
-      if (verdict === "right") hostScore += truth ? 1 : -1;
-      else if (verdict === "wrong") hostScore += truth ? -1 : 1;
-      else hostScore += 0; // unmarked/unknown
-    }
-
-    // Guest marks host answers:
-    for (let i = 0; i < 3; i++) {
-      const chosen = hostAns[i];
-      const correct = hostItems[i]?.correct_answer;
-      const truth = chosen && correct ? same(chosen, correct) : false;
-      const verdict = guestMarks[i];
-      if (verdict === "right") guestScore += truth ? 1 : -1;
-      else if (verdict === "wrong") guestScore += truth ? -1 : 1;
-      else guestScore += 0;
-    }
+    hostScore += countCorrectAnswers(hostAnswers, hostItems);
+    guestScore += countCorrectAnswers(guestAnswers, guestItems);
   }
 
   return { hostScore, guestScore };
