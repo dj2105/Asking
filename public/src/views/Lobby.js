@@ -1,5 +1,5 @@
 // /src/views/Lobby.js
-// Guest-only join screen (clean carded layout).
+// Guest-only prologue stage (dramatic lobby redesign).
 // - NEVER creates rooms, NEVER routes to KeyRoom.
 // - If code doesn’t exist → inline “Room not found” (stay here).
 // - If room exists → (optionally) claim guest slot if free, then ALWAYS route to `#/watcher?code=XYZ`.
@@ -41,12 +41,55 @@ export default {
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-lobby" });
-    const card = el("div", { class: "card lobby-card" });
-    view.appendChild(card);
     container.appendChild(view);
 
-    card.appendChild(el("h1", { class: "lobby-title" }, "Jemima’s Asking"));
-    card.appendChild(el("p", { class: "lobby-prompt" }, "What’s the code?"));
+    const hero = el("section", { class: "card lobby-hero" });
+    hero.appendChild(el("span", { class: "lobby-hero__badge" }, "Scene Zero"));
+    hero.appendChild(el("h1", { class: "lobby-hero__title" }, "Jemima’s Asking"));
+    hero.appendChild(
+      el("p", { class: "lobby-hero__subtitle" }, "A two-player quiz duel told in ten scenes."),
+    );
+    hero.appendChild(
+      el(
+        "p",
+        { class: "lobby-hero__note" },
+        "Daniel primes the stage with a sealed pack. Jaime listens for the code and slips through the curtain.",
+      ),
+    );
+
+    const phases = [
+      ["Lobby", "Claim your invitation"],
+      ["Key Room", "Daniel arms the pack"],
+      ["Countdown", "Five breathless beats"],
+      ["Questions", "Three choices apiece"],
+      ["Interlude", "Strange tales if you finish early"],
+      ["Marking", "Judge each selection"],
+      ["Award", "Scores bloom once"],
+      ["Maths", "Two numbers decide the echo"],
+      ["Final", "Curtain call"],
+    ];
+
+    const phaseMap = el("ol", { class: "phase-map" });
+    phases.forEach(([title, note], index) => {
+      const chip = el("li", { class: "phase-chip" });
+      chip.appendChild(el("span", { class: "phase-chip__step" }, String(index + 1).padStart(2, "0")));
+      chip.appendChild(el("span", { class: "phase-chip__title" }, title));
+      chip.appendChild(el("span", { class: "phase-chip__note" }, note));
+      phaseMap.appendChild(chip);
+    });
+    hero.appendChild(phaseMap);
+
+    view.appendChild(hero);
+
+    const stage = el("section", { class: "card lobby-stage" });
+    stage.appendChild(el("h2", { class: "lobby-stage__title" }, "Claim your invitation"));
+    stage.appendChild(
+      el(
+        "p",
+        { class: "lobby-stage__lede" },
+        "Enter the room code Daniel announced to join the duel on Jaime’s side.",
+      ),
+    );
 
     const params = new URLSearchParams((location.hash.split("?")[1] || ""));
     const initialCode = clampCode(params.get("code") || "");
@@ -64,33 +107,74 @@ export default {
       onkeydown: (e) => { if (e.key === "Enter") join(); }
     });
 
-    const inputWrap = el("div", { class: "lobby-input-wrap" }, input);
-    card.appendChild(inputWrap);
+    const inputWrap = el("label", { class: "lobby-code-field" }, [
+      el("span", { class: "lobby-code-field__label" }, "Room code"),
+      el("div", { class: "lobby-input-wrap" }, input),
+    ]);
+    stage.appendChild(inputWrap);
 
     const startBtn = el("button", {
       class: "btn lobby-start-btn",
       type: "button",
       onclick: join,
       disabled: true,
-    }, "START");
-    card.appendChild(startBtn);
+    }, "Step into Scene One");
+
+    const actions = el("div", { class: "lobby-actions" });
+    actions.appendChild(startBtn);
+    stage.appendChild(actions);
 
     const status = el("div", { class: "lobby-status" }, "");
-    card.appendChild(status);
+    stage.appendChild(status);
+
+    const roleSplit = el("div", { class: "lobby-role-split" });
+    const guestCard = el("div", { class: "lobby-role-card lobby-role-card--guest" });
+    guestCard.appendChild(el("h3", { class: "lobby-role-card__title" }, "Jaime joins here"));
+    guestCard.appendChild(
+      el(
+        "p",
+        { class: "lobby-role-card__note" },
+        "Once you’re through, the watcher keeps you aligned with Daniel’s timing.",
+      ),
+    );
+    roleSplit.appendChild(guestCard);
+
+    const hostCard = el("div", { class: "lobby-role-card lobby-role-card--host" });
+    hostCard.appendChild(el("h3", { class: "lobby-role-card__title" }, "Daniel sets the key room"));
+    hostCard.appendChild(
+      el(
+        "p",
+        { class: "lobby-role-card__note" },
+        "Upload the sealed pack, verify the integrity, and light the countdown.",
+      ),
+    );
+    const hostLink = el(
+      "a",
+      {
+        href: "#/keyroom",
+        class: "btn btn--ghost lobby-role-card__cta",
+      },
+      "Daniel’s entrance",
+    );
+    hostCard.appendChild(hostLink);
+    roleSplit.appendChild(hostCard);
+
+    stage.appendChild(roleSplit);
 
     const rejoinHref = recentCode ? `#/rejoin?code=${recentCode}` : "#/rejoin";
     const linksRow = el("div", { class: "lobby-links-row" });
-    const rejoinLink = el("a", {
-      href: rejoinHref,
-      class: "lobby-link lobby-link--left",
-    }, "Rejoin Game");
-    const hostLink = el("a", {
-      href: "#/keyroom",
-      class: "lobby-link lobby-link--right"
-    }, "Daniel’s Entrance");
+    const rejoinLink = el(
+      "a",
+      {
+        href: rejoinHref,
+        class: "lobby-link",
+      },
+      "Rejoin an interrupted game",
+    );
     linksRow.appendChild(rejoinLink);
-    linksRow.appendChild(hostLink);
-    card.appendChild(linksRow);
+    stage.appendChild(linksRow);
+
+    view.appendChild(stage);
 
     function setStatus(msg) { status.textContent = msg || ""; }
 
