@@ -8,7 +8,7 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
-import { clampCode as clampCodeShared, setStoredRole } from "../lib/util.js";
+import { clampCode as clampCodeShared, setStoredRole, getLastRoomCode } from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -50,6 +50,7 @@ export default {
 
     const params = new URLSearchParams((location.hash.split("?")[1] || ""));
     const initialCode = clampCode(params.get("code") || "");
+    const recentCode = getLastRoomCode();
 
     const input = el("input", {
       type: "text",
@@ -82,6 +83,14 @@ export default {
       class: "lobby-host-link"
     }, "Daniel’s entrance");
     card.appendChild(hostLink);
+
+    const rejoinHref = recentCode ? `#/rejoin?code=${recentCode}` : "#/rejoin";
+    const rejoinLink = el("a", {
+      href: rejoinHref,
+      class: "lobby-host-link",
+      style: "margin-top:8px;display:inline-block;"
+    }, "Rejoin a room");
+    card.appendChild(rejoinLink);
 
     function setStatus(msg) { status.textContent = msg || ""; }
 

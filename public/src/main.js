@@ -1,10 +1,51 @@
 // ensure hash router lands on lobby by default
 (function ensureDefaultHash() {
-  const h = (location.hash || "").trim();
-  if (!h || h === "#/" || h === "#") {
-    const qs = location.search || ""; // preserve ?emu=1 etc.
-    location.replace(`${location.pathname}${qs}#/lobby`);
+  const hash = (location.hash || "").trim();
+  if (hash && hash !== "#/" && hash !== "#") return;
+
+  const rawPath = (location.pathname || "/").replace(/\/+/g, "/");
+  const cleanedPath = rawPath.replace(/^\/+|\/+$|^$/g, "");
+  const segment = cleanedPath.split("/")[0].toLowerCase();
+  const knownDirect = new Set([
+    "lobby",
+    "keyroom",
+    "coderoom",
+    "seeding",
+    "countdown",
+    "questions",
+    "marking",
+    "award",
+    "maths",
+    "final",
+    "watcher",
+    "rejoin",
+    "interlude",
+  ]);
+
+  const url = new URL(window.location.href);
+  const searchParams = new URLSearchParams(url.search || "");
+  url.pathname = "/";
+  url.search = "";
+
+  if (segment && segment !== "index.html" && knownDirect.has(segment)) {
+    if (segment === "questions" || segment === "marking" || segment === "award") {
+      const rejoinParams = new URLSearchParams(searchParams);
+      rejoinParams.set("step", segment);
+      rejoinParams.set("auto", "1");
+      url.hash = `#/rejoin?${rejoinParams.toString()}`;
+      location.replace(url.toString());
+      return;
+    }
+
+    const query = searchParams.toString();
+    url.hash = query ? `#/${segment}?${query}` : `#/${segment}`;
+    location.replace(url.toString());
+    return;
   }
+
+  const query = searchParams.toString();
+  url.hash = query ? `#/lobby?${query}` : "#/lobby";
+  location.replace(url.toString());
 })();
 // /src/main.js
 //
@@ -37,7 +78,7 @@ const app = document.getElementById("app");
 let current = { route: "", mod: null, unmount: null };
 
 // Routes that should NOT show the score strip
-const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher"]);
+const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
 
 // Map route -> dynamic import path
 const VIEW_MAP = {
@@ -52,6 +93,8 @@ const VIEW_MAP = {
   maths:     () => import("./views/Maths.js"),
   final:     () => import("./views/Final.js"),
   watcher:   () => import("./roomWatcher.js"),
+  rejoin:    () => import("./views/Rejoin.js"),
+  interlude: () => import("./views/Interlude.js"),
 };
 
 function parseHash() {

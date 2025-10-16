@@ -182,7 +182,7 @@ export default {
     const waitMsg = el("div", {
       class: "mono small",
       style: "text-align:center;margin-top:14px;display:none;opacity:.8;"
-    }, "Waiting for opponent…");
+    }, "");
 
     const continueBtn = el("button", { class: "btn primary", style: "margin-top:12px;" }, "Continue");
     card.appendChild(continueBtn);
@@ -206,6 +206,9 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    const waitForOpp = `Waiting for ${oppName}…`;
+    waitMsg.textContent = waitForOpp;
 
     let reviewData = {
       hostItems: [],
@@ -285,7 +288,7 @@ export default {
         if (ackOpp) {
           waitMsg.style.display = "none";
         } else {
-          waitMsg.textContent = "Waiting for opponent…";
+          waitMsg.textContent = waitForOpp;
           waitMsg.style.display = "";
         }
       } else {
@@ -342,7 +345,7 @@ export default {
     continueBtn.addEventListener("click", async () => {
       if (ackMine) return;
       ackMine = true;
-      waitMsg.textContent = "Waiting for opponent…";
+      waitMsg.textContent = waitForOpp;
       updateAckUI();
       try {
         await updateDoc(rRef, {

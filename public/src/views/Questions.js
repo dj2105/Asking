@@ -86,7 +86,8 @@ export default {
     btnWrap.appendChild(btn2);
     card.appendChild(btnWrap);
 
-    const waitMsg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-top:12px;display:none;" }, "Waiting for opponent…");
+    let waitMessageDefault = "Waiting…";
+    const waitMsg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-top:12px;display:none;" }, waitMessageDefault);
     card.appendChild(waitMsg);
 
     root.appendChild(card);
@@ -121,6 +122,8 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    waitMessageDefault = `Waiting for ${oppName}…`;
+    waitMsg.textContent = waitMessageDefault;
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -190,9 +193,9 @@ export default {
       btn2.textContent = cur?.options?.[1] || "";
     }
 
-    const showWaitingState = (text = "Waiting for opponent…") => {
+    const showWaitingState = (text) => {
       btnWrap.style.display = "none";
-      waitMsg.textContent = text;
+      waitMsg.textContent = text || waitMessageDefault;
       waitMsg.style.display = "";
       setButtonsEnabled(false);
     };
@@ -268,7 +271,7 @@ export default {
       waitMsg.style.display = "";
     } else if (existingAns.length === 3) {
       published = true;
-      showWaitingState("Submitted. Waiting for opponent…");
+      showWaitingState(`Submitted. Waiting for ${oppName}…`);
       counter.textContent = "3 / 3";
       qText.textContent = "All answers submitted.";
     } else {
