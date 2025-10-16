@@ -1,9 +1,43 @@
-// ensure hash router lands on lobby by default
+// ensure hash router lands on lobby by default and map path segments → hash routes
 (function ensureDefaultHash() {
+  const rawPath = (location.pathname || "/").toLowerCase();
+  const trimmed = rawPath.replace(/^\/+/, "").replace(/\/+$/, "");
+  const segment = trimmed.split("/")[0] || "";
+  const qs = location.search || ""; // preserve ?emu=1 etc.
+  const base = location.origin;
+
+  const autoRejoinTargets = new Set(["questions", "marking", "award"]);
+  const knownRoutes = new Set([
+    "lobby",
+    "keyroom",
+    "coderoom",
+    "seeding",
+    "countdown",
+    "questions",
+    "marking",
+    "award",
+    "maths",
+    "final",
+    "watcher",
+    "rejoin",
+  ]);
+
+  if (segment && segment !== "index.html") {
+    if (autoRejoinTargets.has(segment)) {
+      location.replace(`${base}/${qs}#/rejoin?auto=${segment}`);
+      return;
+    }
+    if (knownRoutes.has(segment)) {
+      location.replace(`${base}/${qs}#/${segment}`);
+      return;
+    }
+    location.replace(`${base}/${qs}#/lobby`);
+    return;
+  }
+
   const h = (location.hash || "").trim();
   if (!h || h === "#/" || h === "#") {
-    const qs = location.search || ""; // preserve ?emu=1 etc.
-    location.replace(`${location.pathname}${qs}#/lobby`);
+    location.replace(`${base}/${qs}#/lobby`);
   }
 })();
 // /src/main.js
@@ -37,7 +71,7 @@ const app = document.getElementById("app");
 let current = { route: "", mod: null, unmount: null };
 
 // Routes that should NOT show the score strip
-const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher"]);
+const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
 
 // Map route -> dynamic import path
 const VIEW_MAP = {
@@ -52,6 +86,7 @@ const VIEW_MAP = {
   maths:     () => import("./views/Maths.js"),
   final:     () => import("./views/Final.js"),
   watcher:   () => import("./roomWatcher.js"),
+  rejoin:    () => import("./views/Rejoin.js"),
 };
 
 function parseHash() {

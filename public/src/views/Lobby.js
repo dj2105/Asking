@@ -83,6 +83,12 @@ export default {
     }, "Daniel’s entrance");
     card.appendChild(hostLink);
 
+    const rejoinLink = el("a", {
+      href: "#/rejoin",
+      class: "lobby-rejoin-link"
+    }, "Rejoin a game");
+    card.appendChild(rejoinLink);
+
     function setStatus(msg) { status.textContent = msg || ""; }
 
     function reflect() {

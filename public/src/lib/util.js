@@ -3,6 +3,8 @@
 
 const CODE_REGEX = /[^A-Z0-9]/g;
 const ROLE_STORAGE_PREFIX = "jemimaRole:";
+const LAST_ROOM_KEY = "jemimaLastRoom";
+const LAST_ROLE_KEY = "jemimaLastRole";
 
 export function clampCode(input) {
   return String(input || "")
@@ -90,11 +92,32 @@ export function downloadBlob(filename, blob) {
 }
 
 export function setStoredRole(code, role) {
-  try { localStorage.setItem(`${ROLE_STORAGE_PREFIX}${clampCode(code)}`, role); } catch {}
+  try {
+    const safeCode = clampCode(code);
+    if (safeCode) {
+      localStorage.setItem(`${ROLE_STORAGE_PREFIX}${safeCode}`, role);
+      try { localStorage.setItem(LAST_ROOM_KEY, safeCode); } catch {}
+    }
+    if (role) {
+      localStorage.setItem(LAST_ROLE_KEY, role);
+    }
+  } catch {}
 }
 
 export function getStoredRole(code) {
   try { return localStorage.getItem(`${ROLE_STORAGE_PREFIX}${clampCode(code)}`) || ""; } catch (err) {
+    return "";
+  }
+}
+
+export function getLastRoomCode() {
+  try { return localStorage.getItem(LAST_ROOM_KEY) || ""; } catch (err) {
+    return "";
+  }
+}
+
+export function getLastRole() {
+  try { return localStorage.getItem(LAST_ROLE_KEY) || ""; } catch (err) {
     return "";
   }
 }
@@ -109,4 +132,6 @@ export default {
   downloadBlob,
   setStoredRole,
   getStoredRole,
+  getLastRoomCode,
+  getLastRole,
 };

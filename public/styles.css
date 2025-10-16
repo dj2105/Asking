@@ -404,6 +404,13 @@ input[type="text"], input[type="number"], .input {
   font-size: .95rem;
 }
 
+.lobby-rejoin-link {
+  display: block;
+  text-align: center;
+  margin-top: 4px;
+  font-size: .9rem;
+}
+
 /* Other helpers */
 .status { opacity: .8; }
 pre.log {
@@ -422,3 +429,55 @@ pre.log {
 a, .link { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; }
 a:hover, .link:hover { text-decoration: none; }
 h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
+
+.view-rejoin .rejoin-card {
+  padding-bottom: 20px;
+}
+
+.view-rejoin .rejoin-code-input {
+  text-transform: uppercase;
+  letter-spacing: .28em;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.view-rejoin .rejoin-join-btn {
+  width: 100%;
+  margin-top: 6px;
+  letter-spacing: .18em;
+  font-weight: 700;
+}
+
+.view-rejoin .rejoin-status {
+  min-height: 22px;
+  text-align: center;
+  margin-top: 12px;
+  opacity: .8;
+}
+
+.view-rejoin .rejoin-divider {
+  margin: 18px 0 16px;
+  border: none;
+  border-top: 1px solid rgba(0,0,0,.16);
+}
+
+.view-rejoin .rejoin-role-wrap {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.view-rejoin .rejoin-role input {
+  margin-right: 6px;
+}
+
+.view-rejoin .rejoin-round,
+.view-rejoin .rejoin-phase {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.view-rejoin .rejoin-manual-btn {
+  width: 100%;
+  margin-top: 16px;
+}
