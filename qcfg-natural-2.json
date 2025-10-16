@@ -1,0 +1,863 @@
+{
+  "version": "qcfg-natural-2",
+  "extends": "qcfg-natural-1",
+  "meta": {
+    "title": "Jemima’s Asking — Natural Style Question Config (Progressive Ramp)",
+    "language": "en-GB",
+    "locale_variants": [
+      "en-GB",
+      "en-IE"
+    ],
+    "tone": "Bright, witty, lightly camp; precise when academic.",
+    "goals": [
+      "Maintain short/medium/long cadence per side in each round while lengthening across the game.",
+      "Guarantee exactly one certainly correct answer and three certainly wrong distractors (all retained even if not served).",
+      "Keep voice natural first with verification-grade clarity and explicit scope markers."
+    ]
+  },
+  "rounds": {
+    "count": 5,
+    "per_round_items": {
+      "host": 3,
+      "guest": 3
+    },
+    "ordering": [
+      "short",
+      "medium",
+      "long"
+    ],
+    "round_plan": [
+      {
+        "round": 1,
+        "question_difficulty": "easy",
+        "distractor_to_serve": "medium",
+        "length_band_chars": {
+          "min": 50,
+          "max": 120
+        },
+        "notes": "Keep openings breezy with everyday hooks; single-step recall, zero specialist jargon."
+      },
+      {
+        "round": 2,
+        "question_difficulty": "medium",
+        "distractor_to_serve": "easy",
+        "length_band_chars": {
+          "min": 80,
+          "max": 160
+        },
+        "notes": "Layer one extra clue (date, place, mechanism) while keeping language accessible."
+      },
+      {
+        "round": 3,
+        "question_difficulty": "medium",
+        "distractor_to_serve": "hard",
+        "length_band_chars": {
+          "min": 110,
+          "max": 190
+        },
+        "notes": "Introduce comparative phrasing or cause-and-effect; assume engaged enthusiast knowledge."
+      },
+      {
+        "round": 4,
+        "question_difficulty": "hard",
+        "distractor_to_serve": "easy",
+        "length_band_chars": {
+          "min": 150,
+          "max": 220
+        },
+        "notes": "Expect niche terminology with definitions in-line; highlight why each option differs subtly."
+      },
+      {
+        "round": 5,
+        "question_difficulty": "hard",
+        "distractor_to_serve": "medium",
+        "length_band_chars": {
+          "min": 180,
+          "max": 270
+        },
+        "notes": "Use layered clues tying era, location, and consequence together; ensure fairness via concrete data."
+      }
+    ],
+    "length_rules": {
+      "short": {
+        "max_chars": 120
+      },
+      "medium": {
+        "min_chars": 121,
+        "max_chars": 190
+      },
+      "long": {
+        "min_chars": 191,
+        "max_chars": 270
+      }
+    },
+    "length_policy": {
+      "naturalness_override": {
+        "enabled": true,
+        "slack_chars": 6,
+        "apply_to": [
+          "medium",
+          "long"
+        ]
+      },
+      "penalise_if_outside_band": true
+    },
+    "personality_nudges": {
+      "single_topic_round_probability": 0.3,
+      "single_topic_seeds": [
+        "British monarchy through the ages",
+        "One colour only (e.g., green) across arts/science/history",
+        "Numbers & neat maths (mental arithmetic, ratios, quick proofs)",
+        "Clever geography (capitals, borders, curious place facts)",
+        "Literature lightning (openings, forms, devices)",
+        "Everyday science (kitchen chemistry, materials, health)"
+      ],
+      "quirks": [
+        "Occasional dry aside in parentheses (short!).",
+        "Playful metaphor no more than once per round.",
+        "Exactly one gentle brain-teaser per round."
+      ]
+    },
+    "diversity_rules": {
+      "no_subject_repeat_across_rounds": true,
+      "allow_repeat_only_if_single_topic_round": true,
+      "avoid_same_question_verb_openers": true
+    }
+  },
+  "content_guidance": {
+    "style": {
+      "voice": "active",
+      "register": "clear, compact, readable aloud",
+      "ban_phrases": [
+        "evaluate the statement",
+        "choose the option that correctly",
+        "the following is true/false",
+        "(clarify)",
+        "(choose one)",
+        "select the statement",
+        "primarily",
+        "in terms of",
+        "in the context of this question"
+      ],
+      "do": [
+        "Ask plainly: Who/What/Which/When/Where/Why/How…",
+        "Prefer concrete nouns and strong verbs",
+        "Use British spellings and metric units (metre, litre, kilogram, £/€ by context)",
+        "Disambiguate time/place if needed (add year/country to make truth unique)"
+      ],
+      "readability": {
+        "max_flesch_kincaid_grade": 11
+      }
+    },
+    "truth_rules": {
+      "exactly_one_true": true,
+      "distractors_must_be_plausible": true,
+      "forbid_ambiguous_true_distractors": true,
+      "no_opinion_questions": true,
+      "scope_clarifiers": {
+        "allow_years": true,
+        "allow_regions": true
+      }
+    },
+    "topic_mix": {
+      "difficulty_tiers": [
+        "pub",
+        "enthusiast",
+        "specialist"
+      ],
+      "tier_by_position": {
+        "short": "pub",
+        "medium": "enthusiast",
+        "long": "specialist"
+      },
+      "maths_hook_probability": 0.2,
+      "maths_hook": {
+        "answer_type": "integer_or_decimal",
+        "require_units_if_measured": true,
+        "units_whitelist": [
+          "°C",
+          "m",
+          "km",
+          "g",
+          "kg",
+          "ml",
+          "l",
+          "€",
+          "£",
+          "s",
+          "min"
+        ],
+        "distractor_strategy": "near_miss_numbers (±5–20%), wrong_units, swapped_order_of_ops"
+      }
+    }
+  },
+  "distractor_strategy": {
+    "types": [
+      "near_miss_fact",
+      "outdated_truth",
+      "scope_confusion",
+      "false_friend",
+      "popular_misconception"
+    ],
+    "per_item_require_distinct_types": true,
+    "ban_words_in_distractors": [
+      "always",
+      "never",
+      "all",
+      "none"
+    ],
+    "numeric_spacing_min_percent": 5,
+    "round_bias": {
+      "1": "Serve medium distractor; easy and hard stored for audits only.",
+      "2": "Serve easy distractor; medium/hard retained.",
+      "3": "Serve hard distractor; easy/medium retained.",
+      "4": "Serve easy distractor despite hard question to give recovery window.",
+      "5": "Serve medium distractor for balanced finale."
+    }
+  },
+  "answer_types": {
+    "allowed": [
+      "string",
+      "number",
+      "year",
+      "unit_value"
+    ],
+    "year_range": [
+      1200,
+      2025
+    ],
+    "unit_value_shape": {
+      "pattern": "^[0-9]+(\\.[0-9]+)?\\s?(°C|m|km|g|kg|ml|l|€|£|s|min)$"
+    }
+  },
+  "topic_catalogue": [
+    "Everyday Science",
+    "British & Irish Landmarks",
+    "World Capitals",
+    "Famous Inventions",
+    "Languages of the World",
+    "Weather & Climate",
+    "Space & Astronomy",
+    "Human Body",
+    "Numbers & Measures",
+    "The Internet & Technology",
+    "Ancient Civilisations",
+    "British Monarchs",
+    "Irish History",
+    "World Wars",
+    "The Tudors",
+    "20th-Century Milestones",
+    "Rebellions & Revolutions",
+    "Famous Explorers",
+    "Great Inventions of the Industrial Age",
+    "Modern Politics",
+    "European Cities",
+    "Mountains & Rivers",
+    "National Flags",
+    "Islands & Archipelagos",
+    "UNESCO Sites",
+    "Deserts & Oceans",
+    "Airports & Airlines",
+    "Trains & Journeys",
+    "Countries by Cuisine",
+    "Odd Place Names",
+    "Classical Art",
+    "Modern Art Movements",
+    "Architecture & Design",
+    "Ballet & Theatre",
+    "Opera & Musicals",
+    "Mythology & Legends",
+    "Paintings Everyone Knows",
+    "Writers & Poets",
+    "Shakespeare’s Works",
+    "Famous Sculptures",
+    "Oscar Winners",
+    "British Comedy",
+    "Classic Hollywood",
+    "Animation Studios",
+    "Disney & Pixar",
+    "1990s Cinema",
+    "Movie Soundtracks",
+    "Famous Directors",
+    "TV Game Shows",
+    "Netflix Originals",
+    "The Beatles Era",
+    "1980s Pop",
+    "Eurovision",
+    "Classical Composers",
+    "Film Scores",
+    "Irish Folk Music",
+    "Rock Anthems",
+    "Girl Groups & Boy Bands",
+    "Lyrics Finish-the-Line",
+    "Musical Instruments",
+    "Children’s Classics",
+    "Book Openings & Quotes",
+    "Detective Fiction",
+    "Literary Awards",
+    "Harry Potter & Fantasy Worlds",
+    "Spelling Traps",
+    "Proverbs & Sayings",
+    "Words of Foreign Origin",
+    "Famous First Lines",
+    "Authors’ Pen Names",
+    "British Baking",
+    "Cheese & Dairy",
+    "Wine & Spirits",
+    "Coffee & Tea",
+    "Herbs & Spices",
+    "Chocolate & Desserts",
+    "International Dishes",
+    "Famous Restaurants",
+    "Fruit & Vegetables",
+    "Kitchen Science",
+    "Cats & Cat Breeds",
+    "Dogs & Their Jobs",
+    "Birds of Europe",
+    "Sea Creatures",
+    "Endangered Species",
+    "Trees & Flowers",
+    "Animal Oddities",
+    "Famous Animal Stories",
+    "Nature Sounds & Habitats",
+    "Wildlife Conservation",
+    "The Olympics",
+    "Football World Cups",
+    "Tennis & Wimbledon",
+    "Board Games & Puzzles",
+    "Formula 1 & Motorsports",
+    "Golf, Cricket & Rugby",
+    "Video Games",
+    "Famous Athletes",
+    "Sporting Records",
+    "Pub Quiz Pot Luck"
+  ],
+  "output_format": {
+    "type": "object",
+    "required": [
+      "rounds"
+    ],
+    "properties": {
+      "rounds": {
+        "type": "array",
+        "length": 5,
+        "items": {
+          "type": "object",
+          "required": [
+            "round",
+            "interlude",
+            "hostItems",
+            "guestItems"
+          ],
+          "properties": {
+            "round": {
+              "type": "integer",
+              "enum": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "interlude": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "hostItems": {
+              "type": "array",
+              "length": 3,
+              "items_shape": "questionItem(short, medium, long in that order)"
+            },
+            "guestItems": {
+              "type": "array",
+              "length": 3,
+              "items_shape": "questionItem(short, medium, long in that order)"
+            }
+          }
+        }
+      }
+    },
+    "questionItem": {
+      "type": "object",
+      "required": [
+        "subject",
+        "difficulty_tier",
+        "length_class",
+        "question",
+        "correct_answer",
+        "distractors",
+        "provenance_hint"
+      ],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "difficulty_tier": {
+          "type": "string",
+          "enum": [
+            "pub",
+            "enthusiast",
+            "specialist"
+          ]
+        },
+        "length_class": {
+          "type": "string",
+          "enum": [
+            "short",
+            "medium",
+            "long"
+          ]
+        },
+        "question": {
+          "type": "string"
+        },
+        "correct_answer": {
+          "type": "string"
+        },
+        "distractors": {
+          "type": "object",
+          "required": [
+            "easy",
+            "medium",
+            "hard"
+          ],
+          "properties": {
+            "easy": {
+              "type": "string"
+            },
+            "medium": {
+              "type": "string"
+            },
+            "hard": {
+              "type": "string"
+            }
+          }
+        },
+        "provenance_hint": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Tiny non-spoiler anchor (e.g., 'Pont du Gard aqueduct, Roman France'); not shown to players."
+        }
+      }
+    }
+  },
+  "pipeline": {
+    "generate": {
+      "n_candidates_per_slot": 5,
+      "temperature": 0.82,
+      "avoid_repeating_surface_forms": true,
+      "prompt_addendum": [
+        "Respect round_plan length bands to achieve progressive lengthening.",
+        "Do not reuse or paraphrase any sample question provided in this config."
+      ]
+    },
+    "verify": {
+      "checks": [
+        "One true option only",
+        "Length bands (with naturalness slack)",
+        "No banned phrases; voice natural",
+        "Plausible yet false distractors with distinct error types",
+        "Locale spellings and units",
+        "Disambiguation present where needed"
+      ],
+      "scoring_weights": {
+        "uniqueness": 0.35,
+        "clarity": 0.3,
+        "plausibility": 0.2,
+        "style": 0.15
+      },
+      "min_accept_score": 0.8
+    },
+    "regenerate": {
+      "on_fail": "regenerate_failed_only",
+      "max_attempts_per_item": 2,
+      "preserve_passes": true
+    },
+    "postprocess": {
+      "trim_hedges": true,
+      "shorten_overlong_clauses": true,
+      "ban_regex": "(?i)\\b(evaluate the (statement|claim)|choose the option|the following is true/false)\\b",
+      "enforce_round_plan": true
+    }
+  },
+  "safety": {
+    "banned_topics": [
+      "graphic violence",
+      "hate content",
+      "medical/financial advice framed as instructions"
+    ],
+    "copyright": {
+      "no_lyrics_over_10_words": true,
+      "quote_fragment_limit_words": 25
+    }
+  },
+  "sample_questions_policy": {
+    "usage": "Examples exist solely to brief generators and reviewers.",
+    "ban_on_reuse": "Never surface or paraphrase these examples in live packs or drafts.",
+    "enforcement": "Automated duplication check runs on stem, answer, and named entities."
+  },
+  "sample_questions": [
+    {
+      "subject": "Everyday Science",
+      "difficulty_tier": "pub",
+      "length_class": "short",
+      "question": "Which kitchen acid makes bicarbonate of soda release carbon dioxide bubbles in a quick bread batter?",
+      "correct_answer": "Buttermilk",
+      "distractors": {
+        "easy": "Olive oil",
+        "medium": "Caster sugar",
+        "hard": "Cream of coconut"
+      }
+    },
+    {
+      "subject": "British & Irish Landmarks",
+      "difficulty_tier": "pub",
+      "length_class": "short",
+      "question": "Which Irish city’s River Corrib is spanned by the Salmon Weir Bridge built in 1818?",
+      "correct_answer": "Galway",
+      "distractors": {
+        "easy": "Limerick",
+        "medium": "Sligo",
+        "hard": "Kilkenny"
+      }
+    },
+    {
+      "subject": "World Capitals",
+      "difficulty_tier": "pub",
+      "length_class": "short",
+      "question": "Which country moved its capital from Alma-Ata to a purpose-built city renamed Astana in 1998?",
+      "correct_answer": "Kazakhstan",
+      "distractors": {
+        "easy": "Uzbekistan",
+        "medium": "Kyrgyzstan",
+        "hard": "Turkmenistan"
+      }
+    },
+    {
+      "subject": "Famous Inventions",
+      "difficulty_tier": "pub",
+      "length_class": "short",
+      "question": "Which inventor patented the folding safety razor in the United States in 1904?",
+      "correct_answer": "King Camp Gillette",
+      "distractors": {
+        "easy": "Elijah McCoy",
+        "medium": "William Painter",
+        "hard": "George Eastman"
+      }
+    },
+    {
+      "subject": "Space & Astronomy",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which 17th-century astronomer logged the 1610 Jovian moons and later served as chief mathematician to the Medici court in Florence?",
+      "correct_answer": "Galileo Galilei",
+      "distractors": {
+        "easy": "Christiaan Huygens",
+        "medium": "Johannes Hevelius",
+        "hard": "Giovanni Cassini"
+      }
+    },
+    {
+      "subject": "Human Body",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which cranial nerve controls most facial expressions and carries taste from the anterior two-thirds of the tongue?",
+      "correct_answer": "Facial nerve (VII)",
+      "distractors": {
+        "easy": "Trigeminal nerve",
+        "medium": "Glossopharyngeal nerve",
+        "hard": "Accessory nerve"
+      }
+    },
+    {
+      "subject": "The Internet & Technology",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which protocol introduced in 2003 lets email servers verify domain ownership by comparing public DNS keys before accepting messages?",
+      "correct_answer": "DomainKeys Identified Mail",
+      "distractors": {
+        "easy": "Secure Shell",
+        "medium": "Simple Mail Transfer Protocol",
+        "hard": "Pretty Good Privacy"
+      }
+    },
+    {
+      "subject": "Ancient Civilisations",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which Bronze Age civilisation built the palace complex at Phaistos on Crete with a disk inscribed in a spiral script?",
+      "correct_answer": "Minoan",
+      "distractors": {
+        "easy": "Mycenaean",
+        "medium": "Cycladic",
+        "hard": "Phoenician"
+      }
+    },
+    {
+      "subject": "British Monarchs",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which monarch issued the 1707 Act of Union joining the Kingdoms of England and Scotland into Great Britain?",
+      "correct_answer": "Queen Anne",
+      "distractors": {
+        "easy": "William III",
+        "medium": "George I",
+        "hard": "James II"
+      }
+    },
+    {
+      "subject": "Irish History",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which 1913 dispute over Dublin tramway workers led to the formation of the Irish Citizen Army?",
+      "correct_answer": "Dublin Lockout",
+      "distractors": {
+        "easy": "Easter Rising",
+        "medium": "Land War",
+        "hard": "War of Independence"
+      }
+    },
+    {
+      "subject": "World Wars",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which 1941 conference set Allied grand strategy by coordinating British and Soviet forces on the Eastern Front?",
+      "correct_answer": "Moscow Conference",
+      "distractors": {
+        "easy": "Casablanca Conference",
+        "medium": "Tehran Conference",
+        "hard": "Quebec Conference"
+      }
+    },
+    {
+      "subject": "The Tudors",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which 1536 act dissolved smaller English monasteries to bolster Henry VIII’s finances after the Pilgrimage of Grace?",
+      "correct_answer": "Suppression of Religious Houses Act",
+      "distractors": {
+        "easy": "Act of Supremacy",
+        "medium": "Act of Six Articles",
+        "hard": "Act of Uniformity"
+      }
+    },
+    {
+      "subject": "20th-Century Milestones",
+      "difficulty_tier": "specialist",
+      "length_class": "long",
+      "question": "Which treaty signed in 1957 founded the European Economic Community by committing six nations to a common market and customs union?",
+      "correct_answer": "Treaty of Rome",
+      "distractors": {
+        "easy": "Treaty of Maastricht",
+        "medium": "Single European Act",
+        "hard": "Treaty of Paris"
+      }
+    },
+    {
+      "subject": "Rebellions & Revolutions",
+      "difficulty_tier": "specialist",
+      "length_class": "long",
+      "question": "Which 1831 uprising led by Nat Turner in Southampton County, Virginia, prompted stricter slave codes across the American South?",
+      "correct_answer": "Nat Turner’s Rebellion",
+      "distractors": {
+        "easy": "Stono Rebellion",
+        "medium": "German Coast Uprising",
+        "hard": "Denmark Vesey plot"
+      }
+    },
+    {
+      "subject": "Famous Explorers",
+      "difficulty_tier": "specialist",
+      "length_class": "long",
+      "question": "Which Norwegian explorer completed the first successful expedition through the Northwest Passage aboard the Gjøa between 1903 and 1906?",
+      "correct_answer": "Roald Amundsen",
+      "distractors": {
+        "easy": "Fridtjof Nansen",
+        "medium": "Robert Peary",
+        "hard": "Henry Larsen"
+      }
+    },
+    {
+      "subject": "Great Inventions of the Industrial Age",
+      "difficulty_tier": "specialist",
+      "length_class": "long",
+      "question": "Which engineer’s 1804 locomotive named Pen-y-Darren hauled iron on plateways in South Wales and demonstrated steam traction’s freight potential?",
+      "correct_answer": "Richard Trevithick",
+      "distractors": {
+        "easy": "George Stephenson",
+        "medium": "Matthew Murray",
+        "hard": "William Hedley"
+      }
+    },
+    {
+      "subject": "Modern Politics",
+      "difficulty_tier": "specialist",
+      "length_class": "long",
+      "question": "Which 1998 accord established the Northern Ireland Assembly, cross-border institutions, and consent principle for constitutional change?",
+      "correct_answer": "Belfast/Good Friday Agreement",
+      "distractors": {
+        "easy": "St Andrews Agreement",
+        "medium": "Anglo-Irish Agreement",
+        "hard": "Downing Street Declaration"
+      }
+    },
+    {
+      "subject": "European Cities",
+      "difficulty_tier": "pub",
+      "length_class": "short",
+      "question": "Which Belgian city hosts the Ghent Altarpiece inside Saint Bavo’s Cathedral?",
+      "correct_answer": "Ghent",
+      "distractors": {
+        "easy": "Bruges",
+        "medium": "Antwerp",
+        "hard": "Leuven"
+      }
+    },
+    {
+      "subject": "Mountains & Rivers",
+      "difficulty_tier": "pub",
+      "length_class": "short",
+      "question": "Which river carves the Iron Gate gorge between Serbia and Romania as part of its Danube course?",
+      "correct_answer": "Danube",
+      "distractors": {
+        "easy": "Rhine",
+        "medium": "Sava",
+        "hard": "Tisza"
+      }
+    },
+    {
+      "subject": "National Flags",
+      "difficulty_tier": "pub",
+      "length_class": "short",
+      "question": "Which East African country adopted a flag in 1962 featuring a grey crowned crane within a white disc?",
+      "correct_answer": "Uganda",
+      "distractors": {
+        "easy": "Kenya",
+        "medium": "Rwanda",
+        "hard": "Tanzania"
+      }
+    },
+    {
+      "subject": "Islands & Archipelagos",
+      "difficulty_tier": "pub",
+      "length_class": "short",
+      "question": "Which archipelago includes Pico Island crowned by Portugal’s highest volcanic peak?",
+      "correct_answer": "Azores",
+      "distractors": {
+        "easy": "Madeira",
+        "medium": "Canaries",
+        "hard": "Baleares"
+      }
+    },
+    {
+      "subject": "UNESCO Sites",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which Turkish site preserving Hittite capital remains was inscribed as a World Heritage Site in 1986?",
+      "correct_answer": "Hattusha",
+      "distractors": {
+        "easy": "Göbekli Tepe",
+        "medium": "Çatalhöyük",
+        "hard": "Pergamon"
+      }
+    },
+    {
+      "subject": "Deserts & Oceans",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which coastal desert stretching along Namibia and Angola is sustained by fog from the Benguela Current?",
+      "correct_answer": "Namib Desert",
+      "distractors": {
+        "easy": "Sahara Desert",
+        "medium": "Kalahari Desert",
+        "hard": "Atacama Desert"
+      }
+    },
+    {
+      "subject": "Airports & Airlines",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which airport opened in 1998 on Chek Lap Kok island to replace Kai Tak as Hong Kong’s main international hub?",
+      "correct_answer": "Hong Kong International Airport",
+      "distractors": {
+        "easy": "Singapore Changi Airport",
+        "medium": "Kansai International Airport",
+        "hard": "Incheon International Airport"
+      }
+    },
+    {
+      "subject": "Trains & Journeys",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which luxury service launched in 1883 connected Paris to Constantinople via the Simplon Tunnel variant after 1919?",
+      "correct_answer": "Orient Express",
+      "distractors": {
+        "easy": "Flying Scotsman",
+        "medium": "Blue Train",
+        "hard": "Trans-Europe Express"
+      }
+    },
+    {
+      "subject": "Countries by Cuisine",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which nation’s cuisine features injera flatbread made from teff and served with wats like doro wat?",
+      "correct_answer": "Ethiopia",
+      "distractors": {
+        "easy": "Morocco",
+        "medium": "Eritrea",
+        "hard": "Somalia"
+      }
+    },
+    {
+      "subject": "Odd Place Names",
+      "difficulty_tier": "enthusiast",
+      "length_class": "medium",
+      "question": "Which English village in Dorset shares its name with a prehistoric earthwork, giving rise to ‘Cerne Abbas Giant’?",
+      "correct_answer": "Cerne Abbas",
+      "distractors": {
+        "easy": "Avebury",
+        "medium": "Uffington",
+        "hard": "Maiden Castle"
+      }
+    },
+    {
+      "subject": "Classical Art",
+      "difficulty_tier": "specialist",
+      "length_class": "long",
+      "question": "Which sculptor carved the Parian marble statue of Hermes carrying infant Dionysus discovered at Olympia in 1877?",
+      "correct_answer": "Praxiteles",
+      "distractors": {
+        "easy": "Phidias",
+        "medium": "Polykleitos",
+        "hard": "Skopas"
+      }
+    },
+    {
+      "subject": "Modern Art Movements",
+      "difficulty_tier": "specialist",
+      "length_class": "long",
+      "question": "Which manifesto published in Milan in 1909 by Filippo Tommaso Marinetti launched Futurism’s celebration of speed and machines?",
+      "correct_answer": "The Futurist Manifesto",
+      "distractors": {
+        "easy": "The Bauhaus Manifesto",
+        "medium": "Der Blaue Reiter Almanac",
+        "hard": "Vorticist Manifesto"
+      }
+    },
+    {
+      "subject": "Architecture & Design",
+      "difficulty_tier": "specialist",
+      "length_class": "long",
+      "question": "Which Japanese architect designed the Sendai Mediatheque with tubular steel lattice columns inspired by seaweed forms?",
+      "correct_answer": "Toyō Itō",
+      "distractors": {
+        "easy": "Tadao Ando",
+        "medium": "Kengo Kuma",
+        "hard": "Kazuyo Sejima"
+      }
+    }
+  ]
+}

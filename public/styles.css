@@ -422,3 +422,135 @@ pre.log {
 a, .link { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; }
 a:hover, .link:hover { text-decoration: none; }
 h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
+/* Pack review layout */
+.review-shell {
+  max-width: 520px;
+  margin: 0 auto 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.review-header,
+.round,
+.score-panel {
+  background: #fff;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 18px 16px 22px;
+  box-shadow: var(--shadow);
+}
+
+.review-header .intro {
+  margin: 12px 0 10px;
+  line-height: 1.45;
+}
+
+.legend {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.4;
+}
+
+.round h2 {
+  margin: 0 0 16px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.question-card {
+  border-top: 1px dashed rgba(0, 0, 0, 0.16);
+  padding-top: 16px;
+  margin-top: 16px;
+}
+
+.round .question-card:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.question-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: baseline;
+}
+
+.question-meta {
+  margin: 0;
+  font-weight: 700;
+}
+
+.question-difficulty {
+  margin: 0;
+  opacity: 0.75;
+  font-weight: 600;
+}
+
+.question-text {
+  margin: 10px 0 14px;
+  line-height: 1.45;
+}
+
+.option-set,
+.knowledge-set {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.option-set legend,
+.knowledge-set legend {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.option,
+.knowledge-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.option input,
+.knowledge-option input {
+  flex: none;
+}
+
+.knowledge-set {
+  margin-top: 14px;
+}
+
+.comment-label {
+  display: block;
+  margin: 14px 0 6px;
+  font-weight: 600;
+}
+
+.question-card textarea,
+.summary-output {
+  width: 100%;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.summary-output {
+  min-height: 200px;
+  margin-top: 10px;
+}
+
+.score-panel h2 {
+  margin-top: 0;
+}
+
+.score-line {
+  margin: 12px 0;
+  font-weight: 700;
+}
+
