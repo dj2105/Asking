@@ -36,7 +36,7 @@ body {
 }
 
 #app {
-  padding: 48px 18px 64px;
+  padding: 0 18px 64px;
   min-height: 100vh;
   width: 100%;
   display: flex;
@@ -44,6 +44,8 @@ body {
   align-items: center;
   background: linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.72) 26%, rgba(255,255,255,0.42) 100%), var(--paper);
 }
+
+#app > .view:first-child { margin-top: 48px; }
 
 /* View layout */
 .view {
@@ -54,6 +56,57 @@ body {
   flex-direction: column;
   gap: 24px;
   position: relative;
+}
+
+.stage-center {
+  position: relative;
+  min-height: calc(100vh - 140px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 40px 0;
+}
+
+.stage-center.stage-center--solo {
+  min-height: calc(100vh - 120px);
+  padding: 0;
+  gap: 0;
+}
+
+.stage-center .card {
+  width: 100%;
+  max-width: 480px;
+}
+
+.stage-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  padding: 24px;
+}
+
+.stage-overlay:not(.stage-overlay--hidden) {
+  display: flex;
+}
+
+.stage-overlay__title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stage-overlay__note {
+  font-size: 1rem;
+  opacity: 0.75;
 }
 
 .view-stack { display: flex; flex-direction: column; gap: 18px; }
@@ -213,17 +266,28 @@ input[type="text"], input[type="number"], .input {
 }
 
 /* Countdown */
-.countdown-card { align-items: center; text-align: center; }
 .countdown-big {
   font-weight: 700;
   letter-spacing: 4px;
-  font-size: 4rem;
+  font-size: 6rem;
   line-height: 1;
 }
 .countdown-note { font-size: .95rem; opacity: .85; }
 
 /* QA lists (Marking) */
 .qa-list { margin-top: 6px; }
+.mark-card {
+  align-items: stretch;
+  text-align: left;
+  gap: 24px;
+}
+.marking-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+}
 .mark-row { padding: 16px 0; border-bottom: 1px dashed rgba(0,0,0,.12); }
 .mark-row:last-child { border-bottom: none; }
 .q { font-weight: 600; line-height: 1.45; white-space: pre-wrap; }
@@ -251,11 +315,24 @@ input[type="text"], input[type="number"], .input {
   letter-spacing: 0.04em;
 }
 
+.question-card {
+  gap: 24px;
+}
+
+.question-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .question-card__prompt {
   font-weight: 600;
   line-height: 1.5;
-  min-height: 64px;
+  min-height: 72px;
   white-space: pre-wrap;
+  text-align: center;
+  font-size: 1.1rem;
 }
 
 .choice-row {
@@ -366,42 +443,130 @@ input[type="text"], input[type="number"], .input {
   width: 22px;
 }
 
-/* Award snippet summary */
-.snippet-summary {
-  margin-bottom: 18px;
-  padding: 18px 20px 20px;
-  border-radius: 18px;
-  border: 1px dashed var(--soft-line);
-  background: rgba(255,255,255,0.86);
-  text-align: center;
-  box-shadow: 0 16px 28px rgba(0,0,0,0.08);
-}
-.snippet-label {
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.snippet-fastest {
-  font-weight: 700;
-  font-size: 1.25rem;
-  margin-bottom: 8px;
-}
-.snippet-times {
+/* Award review */
+.award-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.award-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.award-review {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.award-box {
+  border: 1px solid var(--soft-line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 18px 32px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.award-box__title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.award-fastest {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.award-fastest__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.05rem;
+}
+
+.award-fastest__row--lead {
+  font-weight: 800;
+}
+
+.award-fastest__outcome {
+  font-size: 0.95rem;
+  opacity: 0.78;
+}
+
+.award-box--questions {
+  gap: 16px;
+}
+
+.award-question {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  border-top: 1px dashed rgba(0,0,0,0.12);
+  padding-top: 16px;
+}
+
+.award-question:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.award-question__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.award-question__prompt {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.award-answer-line {
+  font-size: 0.95rem;
+}
+
+.award-answer-line--correct {
+  color: var(--ok);
+}
+
+.award-answer-line--wrong,
+.award-answer-line--missed {
+  color: var(--bad);
+}
+
+.award-answer-line--missed {
+  opacity: 0.8;
+}
+
+.award-question__status {
+  width: 52px;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 700;
 }
-.snippet-time {
-  font-weight: 600;
-  letter-spacing: 0.05em;
+
+.award-question__status--right {
+  color: var(--ok);
 }
-.snippet-outcome {
-  margin-top: 10px;
-  font-weight: 600;
-  line-height: 1.4;
+
+.award-question__status--wrong {
+  color: var(--bad);
 }
 
 /* ===========================
@@ -483,46 +648,6 @@ input[type="text"], input[type="number"], .input {
   color: #0a69d6;
 }
 
-.award-card__score {
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.4rem;
-}
-
-.award-review { display: flex; flex-direction: column; gap: 16px; }
-
-.award-block {
-  border: 1px solid var(--soft-line);
-  border-radius: 16px;
-  padding: 18px 20px;
-  background: rgba(255,255,255,0.88);
-  box-shadow: var(--shadow-soft);
-}
-
-.award-block__title {
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 12px;
-}
-
-.award-answer-list { display: flex; flex-direction: column; gap: 12px; }
-
-.award-answer-line { display: flex; flex-direction: column; gap: 6px; }
-
-.award-answer-line .q { margin-bottom: 4px; }
-
-.award-correct, .award-choice {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  font-weight: 700;
-}
-
-.award-correct { color: var(--ok); }
-.award-choice--missed { opacity: .7; }
-.award-choice--wrong { color: var(--bad); }
-.award-choice--right { color: var(--ok); }
 
 /* ===========================
    Jemima Maths (pinned slot)
