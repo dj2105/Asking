@@ -54,6 +54,44 @@ body {
   flex-direction: column;
   gap: 24px;
   position: relative;
+  flex: 1;
+}
+
+.view-stage {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.view-stage--center { text-align: center; }
+
+.hidden { display: none !important; }
+
+.center-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 40vh;
+  padding: 24px;
+  text-align: center;
+}
+
+.overlay-title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.overlay-sub {
+  font-size: 1.05rem;
+  opacity: 0.76;
 }
 
 .view-stack { display: flex; flex-direction: column; gap: 18px; }
@@ -75,6 +113,11 @@ body {
 .card--tight { padding: 22px 26px; }
 .card--soft { box-shadow: var(--shadow-soft); }
 .card--center { align-items: center; text-align: center; }
+.marking-card { align-items: stretch; text-align: left; gap: 28px; }
+.marking-card h2 { text-align: center; }
+.marking-card .timer-row { justify-content: center; }
+.award-card { align-items: stretch; text-align: left; gap: 28px; }
+.award-card h2 { text-align: center; }
 
 .mono { font-family: inherit; }
 .mono.small { font-size: .92rem; }
@@ -224,6 +267,11 @@ input[type="text"], input[type="number"], .input {
 
 /* QA lists (Marking) */
 .qa-list { margin-top: 6px; }
+.marking-card .qa-list { width: 100%; display: flex; flex-direction: column; gap: 18px; }
+.marking-card .mark-row { padding: 0; border-bottom: none; }
+.marking-card .mark-row + .mark-row { border-top: 1px dashed rgba(0,0,0,.12); padding-top: 18px; }
+.marking-card .mark-row:first-child { padding-top: 0; border-top: none; }
+.marking-card .mark-row:last-child { padding-bottom: 0; }
 .mark-row { padding: 16px 0; border-bottom: 1px dashed rgba(0,0,0,.12); }
 .mark-row:last-child { border-bottom: none; }
 .q { font-weight: 600; line-height: 1.45; white-space: pre-wrap; }
@@ -266,6 +314,8 @@ input[type="text"], input[type="number"], .input {
   flex-wrap: wrap;
 }
 
+.choice-row--center { justify-content: center; }
+
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
 
 .timer-row {
@@ -289,6 +339,12 @@ input[type="text"], input[type="number"], .input {
   letter-spacing: 0.08em;
   padding-left: 28px;
   padding-right: 28px;
+}
+
+.countdown-big--solo {
+  font-size: clamp(4rem, 18vw, 10rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
 }
 
 .result-panel {
@@ -323,7 +379,7 @@ input[type="text"], input[type="number"], .input {
   background: linear-gradient(90deg, rgba(10,12,18,0.92) 0%, rgba(10,12,18,0.75) 60%, rgba(10,12,18,0.92) 100%);
   color: #f9fbff;
   padding: 10px 16px;
-  margin: 0 calc(50% - 50vw) 18px;
+  margin: -48px calc(50% - 50vw) 18px;
   width: 100vw;
   position: sticky;
   top: 0;               /* sticks to the top on scroll */
@@ -366,43 +422,101 @@ input[type="text"], input[type="number"], .input {
   width: 22px;
 }
 
-/* Award snippet summary */
-.snippet-summary {
-  margin-bottom: 18px;
-  padding: 18px 20px 20px;
-  border-radius: 18px;
-  border: 1px dashed var(--soft-line);
-  background: rgba(255,255,255,0.86);
-  text-align: center;
-  box-shadow: 0 16px 28px rgba(0,0,0,0.08);
-}
-.snippet-label {
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.snippet-fastest {
-  font-weight: 700;
-  font-size: 1.25rem;
-  margin-bottom: 8px;
-}
-.snippet-times {
+/* Award summary layout */
+.award-boxes {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 20px;
+  width: 100%;
+}
+
+.award-box {
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius);
+  padding: 22px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.award-box__title {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.fastest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fastest-entry { opacity: 0.78; }
+.fastest-entry--lead { opacity: 1; font-weight: 900; }
+
+.fastest-outcome {
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.award-boxes__questions {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.award-box--questions {
+  align-items: stretch;
+  gap: 16px;
+}
+
+.award-question-row {
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
   align-items: center;
+  text-align: left;
 }
-.snippet-time {
-  font-weight: 600;
-  letter-spacing: 0.05em;
+
+.award-question-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.snippet-outcome {
-  margin-top: 10px;
-  font-weight: 600;
+
+.award-question-row__prompt {
+  font-weight: 700;
   line-height: 1.4;
 }
+
+.award-answer-line {
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.award-answer-line--correct { color: #1a7a3f; }
+.award-answer-line--right { color: #1a7a3f; }
+.award-answer-line--wrong { color: #b42a2a; }
+
+.award-question-row__status {
+  font-size: 2rem;
+  font-weight: 700;
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.award-question-row__status.status-right { color: #1a7a3f; }
+.award-question-row__status.status-wrong { color: #b42a2a; }
+
+.award-score { margin-bottom: 4px; }
 
 /* ===========================
    Timer badge (top-right in card)

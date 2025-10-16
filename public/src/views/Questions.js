@@ -63,18 +63,16 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-questions" });
+    const stage = el("div", { class: "view-stage view-stage--center" });
 
-    const card = el("div", { class: "card card--soft" });
-    const heading = el("h2", { class: "view-heading" }, "Questions");
-    const counterChip = el("span", { class: "meta-chip" }, "1 / 3");
-    const counterStrip = el("div", { class: "meta-strip" }, counterChip);
+    const card = el("div", { class: "card card--soft card--center question-card" });
+    const heading = el("h2", { class: "view-heading question-title" }, "QUESTION 1/3");
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
     card.appendChild(heading);
-    card.appendChild(counterStrip);
     card.appendChild(qText);
 
-    const btnWrap = el("div", { class: "choice-row" });
+    const btnWrap = el("div", { class: "choice-row choice-row--center" });
     const btn1 = el("button", { class: "btn big outline" }, "");
     const btn2 = el("button", { class: "btn big outline" }, "");
     btnWrap.appendChild(btn1);
@@ -86,11 +84,17 @@ export default {
     waitMsg.style.display = "none";
     card.appendChild(waitMsg);
 
-    root.appendChild(card);
-
     const mathsMount = el("div", { class: "jemima-maths-pinned" });
-    root.appendChild(mathsMount);
 
+    const overlayTitle = el("div", { class: "overlay-title" }, "");
+    const overlaySub = el("div", { class: "overlay-sub" }, "Round timer paused.");
+    const waitingOverlay = el("div", { class: "center-overlay hidden" }, [overlayTitle, overlaySub]);
+
+    stage.appendChild(card);
+    stage.appendChild(mathsMount);
+    stage.appendChild(waitingOverlay);
+
+    root.appendChild(stage);
     container.appendChild(root);
 
     let stopWatcher = null;
@@ -119,7 +123,7 @@ export default {
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
     const readableName = myRole === "host" ? "Daniel" : "Jaime";
-    heading.textContent = `${readableName}'s Questions`;
+    heading.textContent = "QUESTION 1/3";
     waitMessageDefault = `Waiting for ${oppName}…`;
     waitMsg.textContent = waitMessageDefault;
 
@@ -185,13 +189,29 @@ export default {
 
     function renderIndex() {
       const cur = triplet[idx];
-      counterChip.textContent = `${Math.min(idx + 1, 3)} / 3`;
+      heading.textContent = `QUESTION ${Math.min(idx + 1, 3)}/3`;
       qText.textContent = cur?.question || "";
       btn1.textContent = cur?.options?.[0] || "";
       btn2.textContent = cur?.options?.[1] || "";
     }
 
+    const showWaitingOverlay = (opponent) => {
+      overlayTitle.textContent = `Waiting for ${opponent}`;
+      overlaySub.textContent = "Round timer paused.";
+      waitingOverlay.classList.remove("hidden");
+      card.style.display = "none";
+      mathsMount.style.display = "none";
+      waitMsg.style.display = "none";
+    };
+
+    const hideWaitingOverlay = () => {
+      waitingOverlay.classList.add("hidden");
+      card.style.display = "";
+      mathsMount.style.display = "";
+    };
+
     const showWaitingState = (text) => {
+      hideWaitingOverlay();
       btnWrap.style.display = "none";
       waitMsg.textContent = text || waitMessageDefault;
       waitMsg.style.display = "";
@@ -217,7 +237,6 @@ export default {
         console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
         await updateDoc(rRef, patch);
         published = true;
-        showWaitingState();
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
@@ -243,14 +262,15 @@ export default {
       chosen[idx] = text;
       idx += 1;
       if (idx >= 3) {
-        counterChip.textContent = "3 / 3";
-        qText.textContent = "All answers submitted.";
+        heading.textContent = "QUESTION 3/3";
+        qText.textContent = "";
         setButtonsEnabled(false);
         if (!qDoneMsLocal) {
           const stamp = Date.now();
           recordQuestionTiming(stamp);
         }
         publishAnswers();
+        showWaitingOverlay(oppName);
       } else {
         renderIndex();
       }
@@ -269,9 +289,9 @@ export default {
       waitMsg.style.display = "";
     } else if (existingAns.length === 3) {
       published = true;
-      showWaitingState(`Submitted. Waiting for ${oppName}…`);
-      counterChip.textContent = "3 / 3";
-      qText.textContent = "All answers submitted.";
+      heading.textContent = "QUESTION 3/3";
+      qText.textContent = "";
+      showWaitingOverlay(oppName);
     } else {
       btnWrap.style.display = "flex";
       waitMsg.style.display = "none";
@@ -310,7 +330,7 @@ export default {
         const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
         const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
         if (myDone && !oppDone) {
-          showWaitingState(`You finished first. Waiting for ${oppName}…`);
+          showWaitingOverlay(oppName);
         }
       }
 

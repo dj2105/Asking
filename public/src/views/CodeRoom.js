@@ -78,13 +78,6 @@ export default {
     );
     card.appendChild(status);
 
-    const guestBadge = el(
-      "div",
-      { class: "mono small", style: "margin-top:6px;text-align:center;opacity:0.8;" },
-      "Jaime hasn’t entered yet."
-    );
-    card.appendChild(guestBadge);
-
     const backBtn = el(
       "button",
       {
@@ -146,13 +139,10 @@ export default {
 
         if (currentState === "coderoom") {
           status.textContent = guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime…";
-          guestBadge.textContent = guestPresent ? "Guest connected." : "Jaime hasn’t entered yet.";
         } else if (currentState === "keyroom") {
           status.textContent = "Back in the Key Room.";
-          guestBadge.textContent = guestPresent ? "Guest already linked." : "";
         } else {
           status.textContent = `State: ${currentState}`;
-          guestBadge.textContent = guestPresent ? "Guest connected." : "";
         }
 
         if (currentState && currentState !== "coderoom" && currentState !== "keyroom") {
