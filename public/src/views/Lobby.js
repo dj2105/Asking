@@ -8,7 +8,7 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
-import { clampCode as clampCodeShared, setStoredRole } from "../lib/util.js";
+import { clampCode as clampCodeShared, setStoredRole, setLastSession } from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -83,6 +83,12 @@ export default {
     }, "Daniel’s entrance");
     card.appendChild(hostLink);
 
+    const rejoinLink = el("a", {
+      href: "#/rejoin",
+      class: "lobby-host-link"
+    }, "Rejoin a game");
+    card.appendChild(rejoinLink);
+
     function setStatus(msg) { status.textContent = msg || ""; }
 
     function reflect() {
@@ -115,6 +121,10 @@ export default {
         const state = String(data.state || "").toLowerCase();
         const round = Number(data.round) || 1;
 
+        if (state) {
+          setLastSession({ code, role: "guest", state, round });
+        }
+
         if (state === "coderoom") {
           const startAt = Date.now() + 7_000;
           try {
@@ -132,11 +142,13 @@ export default {
             setStatus("Couldn’t start the countdown. Try again.");
             return;
           }
+          setLastSession({ code, role: "guest", state: "countdown", round });
           location.hash = `#/countdown?code=${code}&round=${round}`;
           return;
         }
 
         if (state === "countdown" || state === "questions" || state === "marking" || state === "award" || state === "maths" || state === "final") {
+          setLastSession({ code, role: "guest", state, round });
           const target = `#/watcher?code=${code}`;
           if (location.hash !== target) {
             location.hash = target;
@@ -147,6 +159,7 @@ export default {
         }
 
         setStatus("Daniel hasn’t opened the code room yet.");
+        setLastSession({ code, role: "guest", state: "lobby", round });
         return;
       } catch (e) {
         console.error("[lobby] join failed:", e);

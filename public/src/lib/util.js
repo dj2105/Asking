@@ -3,6 +3,7 @@
 
 const CODE_REGEX = /[^A-Z0-9]/g;
 const ROLE_STORAGE_PREFIX = "jemimaRole:";
+const LAST_SESSION_KEY = "jemimaLastSession";
 
 export function clampCode(input) {
   return String(input || "")
@@ -99,6 +100,50 @@ export function getStoredRole(code) {
   }
 }
 
+export function getLastSession() {
+  try {
+    const raw = localStorage.getItem(LAST_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (parsed.code) parsed.code = clampCode(parsed.code);
+    return parsed;
+  } catch (err) {
+    return null;
+  }
+}
+
+export function setLastSession(update = {}) {
+  if (!update || typeof update !== "object") return;
+  try {
+    const prev = getLastSession() || {};
+    const next = { ...prev };
+
+    if (update.code) {
+      const code = clampCode(update.code);
+      if (code) next.code = code;
+    }
+
+    if (typeof update.state === "string" && update.state.trim()) {
+      next.state = update.state.trim().toLowerCase();
+    }
+
+    if (Number.isFinite(update.round) && update.round > 0) {
+      next.round = Math.floor(update.round);
+    }
+
+    if (update.role === "host" || update.role === "guest") {
+      next.role = update.role;
+    }
+
+    next.updatedAt = Date.now();
+
+    localStorage.setItem(LAST_SESSION_KEY, JSON.stringify(next));
+  } catch (err) {
+    console.warn("[util] setLastSession failed", err);
+  }
+}
+
 export default {
   clampCode,
   getHashParams,
@@ -109,4 +154,6 @@ export default {
   downloadBlob,
   setStoredRole,
   getStoredRole,
+  getLastSession,
+  setLastSession,
 };

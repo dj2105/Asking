@@ -30,6 +30,7 @@ import {
   getHashParams,
   timeUntil,
   getStoredRole,
+  setLastSession,
 } from "../lib/util.js";
 
 function el(tag, attrs = {}, kids = []) {
@@ -101,6 +102,8 @@ export default {
       round = Number(room0.round);
     }
 
+    setLastSession({ code, role: myRole, state: "countdown", round });
+
     const updateSubMessage = () => {
       if (!countdownStartAt) {
         sub.textContent = myRole === "host"
@@ -137,6 +140,7 @@ export default {
         round = Number(data.round);
         roundReady = false;
         watchRoundDoc(round);
+        setLastSession({ code, role: myRole, state: "countdown", round });
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
@@ -151,6 +155,7 @@ export default {
       updateSubMessage();
 
       if (data.state === "questions") {
+        setLastSession({ code, role: myRole, state: "questions", round });
         setTimeout(() => {
           location.hash = `#/questions?code=${code}&round=${round}`;
         }, 80);
@@ -165,6 +170,7 @@ export default {
         else if (data.state === "maths") target = `#/maths?code=${code}`;
         else if (data.state === "final") target = `#/final?code=${code}`;
         if (target) {
+          setLastSession({ code, role: myRole, state: data.state, round });
           setTimeout(() => { location.hash = target; }, 80);
         }
         return;

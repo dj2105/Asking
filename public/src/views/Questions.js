@@ -19,7 +19,7 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { clampCode, getHashParams, getStoredRole, setLastSession } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -86,7 +86,7 @@ export default {
     btnWrap.appendChild(btn2);
     card.appendChild(btnWrap);
 
-    const waitMsg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-top:12px;display:none;" }, "Waiting for opponent…");
+    const waitMsg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-top:12px;display:none;" }, "");
     card.appendChild(waitMsg);
 
     root.appendChild(card);
@@ -121,6 +121,10 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+
+    waitMsg.textContent = `Waiting for ${oppName}…`;
+
+    setLastSession({ code, role: myRole, state: "questions", round });
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -190,7 +194,7 @@ export default {
       btn2.textContent = cur?.options?.[1] || "";
     }
 
-    const showWaitingState = (text = "Waiting for opponent…") => {
+    const showWaitingState = (text = `Waiting for ${oppName}…`) => {
       btnWrap.style.display = "none";
       waitMsg.textContent = text;
       waitMsg.style.display = "";
@@ -268,7 +272,7 @@ export default {
       waitMsg.style.display = "";
     } else if (existingAns.length === 3) {
       published = true;
-      showWaitingState("Submitted. Waiting for opponent…");
+      showWaitingState(`Submitted. Waiting for ${oppName}…`);
       counter.textContent = "3 / 3";
       qText.textContent = "All answers submitted.";
     } else {

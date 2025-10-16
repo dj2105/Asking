@@ -17,7 +17,7 @@ import {
   DEMO_PACK_PASSWORD,
   PACK_VERSION_FULL,
 } from "../lib/seedUnsealer.js";
-import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import { clampCode, copyToClipboard, getHashParams, setStoredRole, setLastSession } from "../lib/util.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -452,6 +452,9 @@ export default {
     function reflectStartState() {
       const code = clampCode(codeInput.value);
       const ready = code.length >= 3;
+      if (ready) {
+        setLastSession({ code, role: "host", state: "keyroom", round: 1 });
+      }
       startBtn.disabled = !ready;
       startBtn.classList.toggle("throb", ready);
       if (!ready) {
@@ -774,6 +777,7 @@ export default {
           "timestamps.updatedAt": serverTimestamp(),
         });
         setStoredRole(code, "host");
+        setLastSession({ code, role: "host", state: "coderoom", round: 1 });
         log(`room ${code} prepared; waiting in code room.`);
         location.hash = `#/coderoom?code=${code}`;
       } catch (err) {
