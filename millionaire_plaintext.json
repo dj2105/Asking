@@ -2,7 +2,7 @@
   "version": "jemima-pack-1",
   "meta": {
     "roomCode": "LAD",
-    "generatedAt": "2025-10-16T21:00:00Z",
+    "generatedAt": "2025-01-15T12:00:00Z",
     "hostUid": "demo-host",
     "guestUid": "demo-guest"
   },
@@ -13,18 +13,18 @@
         {
           "subject": "British Monarchy",
           "prize": "£100",
-          "question": "Which monarch created the Order of the Garter in the 14th century?",
+          "question": "Which English monarch founded the Order of the Garter in 1348?",
           "correct_answer": "Edward III",
           "distractors": {
             "easy": "Henry VIII",
-            "medium": "Richard II",
-            "hard": "Edward II"
+            "medium": "Edward I",
+            "hard": "Richard II"
           }
         },
         {
           "subject": "Cats",
           "prize": "£200",
-          "question": "Which breed is famed for its folded ears due to a natural cartilage mutation?",
+          "question": "Which cat breed is famous for its naturally folded ears?",
           "correct_answer": "Scottish Fold",
           "distractors": {
             "easy": "Siamese",
@@ -35,47 +35,47 @@
         {
           "subject": "American TV Sitcoms",
           "prize": "£300",
-          "question": "In 'Parks and Recreation', what is the name of Leslie Knope's hometown city government?",
-          "correct_answer": "Pawnee Department of Parks and Recreation",
+          "question": "In 'Friends', which character does Ross marry at a London ceremony in season four?",
+          "correct_answer": "Emily Waltham",
           "distractors": {
-            "easy": "Eagleton Parks Bureau",
-            "medium": "Pawnee Municipal Council",
-            "hard": "Indiana Parks Authority"
+            "easy": "Janice Litman",
+            "medium": "Carol Willick",
+            "hard": "Bonnie"
           }
         }
       ],
       "guestItems": [
         {
-          "subject": "World Capitals",
+          "subject": "Irish History",
           "prize": "£100",
-          "question": "Which Asian capital city is built around the Chao Phraya River delta?",
-          "correct_answer": "Bangkok",
+          "question": "During the Easter Rising, the Proclamation was first read outside which Dublin building?",
+          "correct_answer": "General Post Office",
           "distractors": {
-            "easy": "Hanoi",
-            "medium": "Manila",
-            "hard": "Phnom Penh"
+            "easy": "Leinster House",
+            "medium": "Kilmainham Gaol",
+            "hard": "Dublin Castle"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "prize": "£200",
+          "question": "What is the capital city of Mongolia?",
+          "correct_answer": "Ulaanbaatar",
+          "distractors": {
+            "easy": "Kathmandu",
+            "medium": "Astana",
+            "hard": "Ulan-Ude"
           }
         },
         {
           "subject": "Ancient Greece",
-          "prize": "£200",
-          "question": "Which philosopher founded the Lyceum in Athens?",
-          "correct_answer": "Aristotle",
-          "distractors": {
-            "easy": "Socrates",
-            "medium": "Plato",
-            "hard": "Democritus"
-          }
-        },
-        {
-          "subject": "Roman Empire",
           "prize": "£300",
-          "question": "Which Roman road connected Rome to Brindisi across southern Italy?",
-          "correct_answer": "Via Appia",
+          "question": "Which Athenian statesman is credited with creating the Council of Five Hundred reforms?",
+          "correct_answer": "Cleisthenes",
           "distractors": {
-            "easy": "Via Flaminia",
-            "medium": "Via Aurelia",
-            "hard": "Via Claudia"
+            "easy": "Pericles",
+            "medium": "Draco",
+            "hard": "Solon"
           }
         }
       ]
@@ -84,71 +84,71 @@
       "round": 2,
       "hostItems": [
         {
-          "subject": "Irish History",
+          "subject": "Roman Empire",
           "prize": "£500",
-          "question": "Which treaty ended the Irish War of Independence in 1921?",
-          "correct_answer": "Anglo-Irish Treaty",
+          "question": "Which emperor ordered the construction of the defensive wall across northern Britain now bearing his name?",
+          "correct_answer": "Hadrian",
           "distractors": {
-            "easy": "Treaty of Versailles",
-            "medium": "Treaty of Limerick",
-            "hard": "Sunningdale Agreement"
+            "easy": "Augustus",
+            "medium": "Trajan",
+            "hard": "Antoninus Pius"
           }
         },
         {
-          "subject": "'90s Pop",
+          "subject": "Medieval Europe",
           "prize": "£1,000",
-          "question": "Which singer's 1998 single 'Ray of Light' won a Grammy for Best Dance Recording?",
-          "correct_answer": "Madonna",
+          "question": "The Hanseatic League primarily linked trading cities bordering which sea?",
+          "correct_answer": "The Baltic Sea",
           "distractors": {
-            "easy": "Cher",
-            "medium": "Janet Jackson",
-            "hard": "Kylie Minogue"
+            "easy": "The Mediterranean Sea",
+            "medium": "The North Sea",
+            "hard": "The Black Sea"
           }
         },
         {
-          "subject": "Geography — Rivers",
+          "subject": "Renaissance Art",
           "prize": "£2,000",
-          "question": "Which river flows through Baghdad before joining the Euphrates?",
-          "correct_answer": "Tigris",
+          "question": "Which Florentine sculptor created the bronze 'David' long before Michelangelo's marble version?",
+          "correct_answer": "Donatello",
           "distractors": {
-            "easy": "Jordan",
-            "medium": "Indus",
-            "hard": "Orontes"
+            "easy": "Raphael",
+            "medium": "Ghiberti",
+            "hard": "Verrocchio"
           }
         }
       ],
       "guestItems": [
         {
-          "subject": "Medieval Europe",
+          "subject": "Language — Grammar",
           "prize": "£500",
-          "question": "Which 14th-century Italian author wrote 'The Decameron'?",
-          "correct_answer": "Giovanni Boccaccio",
+          "question": "What term describes a verb that requires a direct object to complete its meaning?",
+          "correct_answer": "Transitive verb",
           "distractors": {
-            "easy": "Dante Alighieri",
-            "medium": "Francesco Petrarch",
-            "hard": "Geoffrey Chaucer"
+            "easy": "Gerund",
+            "medium": "Linking verb",
+            "hard": "Auxiliary verb"
           }
         },
         {
-          "subject": "Renaissance Art",
+          "subject": "Language — Punctuation",
           "prize": "£1,000",
-          "question": "Which Venetian painter created 'The Feast in the House of Levi'?",
-          "correct_answer": "Paolo Veronese",
+          "question": "Which punctuation mark is used to introduce a list after an independent clause?",
+          "correct_answer": "Colon",
           "distractors": {
-            "easy": "Titian",
-            "medium": "Tintoretto",
-            "hard": "Giorgione"
+            "easy": "Comma",
+            "medium": "Semicolon",
+            "hard": "Dash"
           }
         },
         {
-          "subject": "Baroque Music",
+          "subject": "Printing & Type",
           "prize": "£2,000",
-          "question": "Which composer premiered the oratorio 'Messiah' in Dublin in 1742?",
-          "correct_answer": "George Frideric Handel",
+          "question": "Which typographer created the 18th-century typeface 'Baskerville'?",
+          "correct_answer": "John Baskerville",
           "distractors": {
-            "easy": "Antonio Vivaldi",
-            "medium": "Johann Sebastian Bach",
-            "hard": "Georg Philipp Telemann"
+            "easy": "William Caslon",
+            "medium": "Giambattista Bodoni",
+            "hard": "Claude Garamond"
           }
         }
       ]
@@ -157,71 +157,71 @@
       "round": 3,
       "hostItems": [
         {
-          "subject": "World War I",
+          "subject": "Baroque Music",
           "prize": "£4,000",
-          "question": "Which battle marked the first use of tanks by the British Army in 1916?",
-          "correct_answer": "Battle of the Somme",
+          "question": "Which composer premiered the oratorio 'Messiah' in Dublin in 1742?",
+          "correct_answer": "George Frideric Handel",
           "distractors": {
-            "easy": "Battle of Ypres",
-            "medium": "Battle of Cambrai",
-            "hard": "Battle of Arras"
+            "easy": "Antonio Vivaldi",
+            "medium": "Johann Pachelbel",
+            "hard": "Henry Purcell"
           }
         },
         {
-          "subject": "World War II",
+          "subject": "Classical Mythology",
           "prize": "£8,000",
-          "question": "Which conference in 1945 saw Churchill, Roosevelt, and Stalin plan the final defeat of Germany?",
-          "correct_answer": "Yalta Conference",
+          "question": "Which hero completed the Twelve Labours as penance for killing his family?",
+          "correct_answer": "Heracles",
           "distractors": {
-            "easy": "Potsdam Conference",
-            "medium": "Tehran Conference",
-            "hard": "Casablanca Conference"
+            "easy": "Perseus",
+            "medium": "Theseus",
+            "hard": "Bellerophon"
           }
         },
         {
-          "subject": "Modern Politics",
+          "subject": "Norse Myth",
           "prize": "£16,000",
-          "question": "Which UK Prime Minister announced the 'Big Society' initiative in 2010?",
-          "correct_answer": "David Cameron",
+          "question": "In Norse mythology, which trickster god engineered Baldr's death?",
+          "correct_answer": "Loki",
           "distractors": {
-            "easy": "Gordon Brown",
-            "medium": "Theresa May",
-            "hard": "John Major"
+            "easy": "Thor",
+            "medium": "Heimdall",
+            "hard": "Höðr"
           }
         }
       ],
       "guestItems": [
         {
-          "subject": "Classical Mythology",
+          "subject": "Comics",
           "prize": "£4,000",
-          "question": "Which hero slew the Chimera with the help of the winged horse Pegasus?",
-          "correct_answer": "Bellerophon",
+          "question": "Which comics writer created the dystopian series 'V for Vendetta'?",
+          "correct_answer": "Alan Moore",
           "distractors": {
-            "easy": "Perseus",
-            "medium": "Theseus",
-            "hard": "Jason"
+            "easy": "Stan Lee",
+            "medium": "Frank Miller",
+            "hard": "Grant Morrison"
           }
         },
         {
-          "subject": "Norse Myth",
+          "subject": "Anime",
           "prize": "£8,000",
-          "question": "What is the name of the bridge connecting Midgard to Asgard in Norse mythology?",
-          "correct_answer": "Bifröst",
+          "question": "Studio Gainax produced which 1995 series featuring the EVA-01 mecha?",
+          "correct_answer": "Neon Genesis Evangelion",
           "distractors": {
-            "easy": "Gjallarbrú",
-            "medium": "Skíðblaðnir",
-            "hard": "Níðavellir"
+            "easy": "Mobile Suit Gundam",
+            "medium": "Trigun",
+            "hard": "RahXephon"
           }
         },
         {
-          "subject": "Folklore — Irish",
+          "subject": "TV — British",
           "prize": "£16,000",
-          "question": "Which hero is famed for defending Ulster single-handedly in the Táin Bó Cúailnge?",
-          "correct_answer": "Cú Chulainn",
+          "question": "Which long-running British sci-fi series introduced the character River Song in 2008?",
+          "correct_answer": "Doctor Who",
           "distractors": {
-            "easy": "Fionn mac Cumhaill",
-            "medium": "Diarmuid Ua Duibhne",
-            "hard": "Conall Cernach"
+            "easy": "Red Dwarf",
+            "medium": "Torchwood",
+            "hard": "The Sarah Jane Adventures"
           }
         }
       ]
@@ -230,71 +230,71 @@
       "round": 4,
       "hostItems": [
         {
-          "subject": "Geography — Mountains",
+          "subject": "World War I",
           "prize": "£32,000",
-          "question": "Which mountain is the highest peak in the Caucasus range?",
-          "correct_answer": "Mount Elbrus",
+          "question": "Which 1916 battle on the Western Front began with one of history's longest artillery barrages?",
+          "correct_answer": "Battle of the Somme",
           "distractors": {
-            "easy": "Mount Ararat",
-            "medium": "Kazbek",
-            "hard": "Dykh-Tau"
+            "easy": "Battle of Jutland",
+            "medium": "Battle of Verdun",
+            "hard": "Battle of Passchendaele"
           }
         },
         {
-          "subject": "World Literature",
+          "subject": "World War II",
           "prize": "£64,000",
-          "question": "Which Nigerian author wrote the novel 'Half of a Yellow Sun'?",
-          "correct_answer": "Chimamanda Ngozi Adichie",
+          "question": "Operation Market Garden aimed primarily to seize bridges in which occupied country?",
+          "correct_answer": "The Netherlands",
           "distractors": {
-            "easy": "Chinua Achebe",
-            "medium": "Buchi Emecheta",
-            "hard": "Ben Okri"
+            "easy": "Belgium",
+            "medium": "France",
+            "hard": "Germany"
           }
         },
         {
-          "subject": "Science — Astronomy",
+          "subject": "Modern Politics",
           "prize": "£125,000",
-          "question": "Which space probe entered interstellar space in 2012 after launching in 1977?",
-          "correct_answer": "Voyager 1",
+          "question": "Which Jordanian diplomat succeeded Navi Pillay as United Nations High Commissioner for Human Rights in 2014?",
+          "correct_answer": "Zeid Ra'ad Al Hussein",
           "distractors": {
-            "easy": "Pioneer 10",
-            "medium": "Voyager 2",
-            "hard": "New Horizons"
+            "easy": "Ban Ki-moon",
+            "medium": "Louise Arbour",
+            "hard": "Michelle Bachelet"
           }
         }
       ],
       "guestItems": [
         {
-          "subject": "Folklore — British",
+          "subject": "TV — American Drama",
           "prize": "£32,000",
-          "question": "Which Cornish giant is said to have battled Jack the Giant Killer at St Michael's Mount?",
-          "correct_answer": "Cormoran",
+          "question": "Which Baltimore newspaper does Gus Haynes edit in the fifth season of 'The Wire'?",
+          "correct_answer": "The Baltimore Sun",
           "distractors": {
-            "easy": "Gogmagog",
-            "medium": "Blunderbore",
-            "hard": "Ysbaddaden"
+            "easy": "The Washington Post",
+            "medium": "The Baltimore Beacon-Light",
+            "hard": "The Baltimore Star"
           }
         },
         {
-          "subject": "Language — Grammar",
+          "subject": "Sitcom — British",
           "prize": "£64,000",
-          "question": "What grammatical mood expresses wishes or hypotheticals, as in 'If I were king'?",
-          "correct_answer": "Subjunctive",
+          "question": "Which sitcom follows Mark Corrigan and Jeremy Usborne through a POV-style camera technique?",
+          "correct_answer": "Peep Show",
           "distractors": {
-            "easy": "Imperative",
-            "medium": "Conditional",
-            "hard": "Gerundive"
+            "easy": "The IT Crowd",
+            "medium": "Spaced",
+            "hard": "Fresh Meat"
           }
         },
         {
-          "subject": "Language — Punctuation",
+          "subject": "Pop Culture — Memes",
           "prize": "£125,000",
-          "question": "Which punctuation mark is used to join two independent clauses without a conjunction?",
-          "correct_answer": "Semicolon",
+          "question": "'All your base are belong to us' originated from the mistranslation of which 1989 video game?",
+          "correct_answer": "Zero Wing",
           "distractors": {
-            "easy": "Comma",
-            "medium": "Colon",
-            "hard": "Em dash"
+            "easy": "Street Fighter",
+            "medium": "Gradius",
+            "hard": "R-Type"
           }
         }
       ]
@@ -303,71 +303,71 @@
       "round": 5,
       "hostItems": [
         {
-          "subject": "Printing & Type",
+          "subject": "Geography — Rivers",
           "prize": "£250,000",
-          "question": "Which designer created the typeface Helvetica in 1957?",
-          "correct_answer": "Max Miedinger",
+          "question": "Which Asian river forms much of the border between Laos and Thailand?",
+          "correct_answer": "Mekong",
           "distractors": {
-            "easy": "Adrian Frutiger",
-            "medium": "Paul Renner",
-            "hard": "Jan Tschichold"
+            "easy": "Ganges",
+            "medium": "Salween",
+            "hard": "Chao Phraya"
           }
         },
         {
-          "subject": "Comics",
+          "subject": "Geography — Mountains",
           "prize": "£500,000",
-          "question": "Which graphic novel introduced the character Rorschach?",
-          "correct_answer": "Watchmen",
+          "question": "Mount Elbrus is located within which Russian mountain range?",
+          "correct_answer": "Caucasus Mountains",
           "distractors": {
-            "easy": "The Dark Knight Returns",
-            "medium": "V for Vendetta",
-            "hard": "Kingdom Come"
+            "easy": "Ural Mountains",
+            "medium": "Altai Mountains",
+            "hard": "Sayan Mountains"
           }
         },
         {
-          "subject": "TV — British",
+          "subject": "Folklore — British",
           "prize": "£1,000,000",
-          "question": "Which long-running quiz show is presented by Jeremy Paxman from 1994 to 2023?",
-          "correct_answer": "University Challenge",
+          "question": "In Cornish legend, which giant is said to have been slain by Jack atop St Michael's Mount?",
+          "correct_answer": "Cormoran",
           "distractors": {
-            "easy": "Mastermind",
-            "medium": "Countdown",
-            "hard": "Fifteen to One"
+            "easy": "Gogmagog",
+            "medium": "Blunderbore",
+            "hard": "Ysbaddaden"
           }
         }
       ],
       "guestItems": [
         {
-          "subject": "Anime",
+          "subject": "’80s Pop",
           "prize": "£250,000",
-          "question": "Which director created the 1995 psychological film 'Ghost in the Shell'?",
-          "correct_answer": "Mamoru Oshii",
+          "question": "Which 1985 Tears for Fears single opens with the line 'Welcome to your life'?",
+          "correct_answer": "Everybody Wants to Rule the World",
           "distractors": {
-            "easy": "Hayao Miyazaki",
-            "medium": "Hideaki Anno",
-            "hard": "Satoshi Kon"
+            "easy": "Shout",
+            "medium": "Head Over Heels",
+            "hard": "Mad World"
           }
         },
         {
-          "subject": "TV — American Drama",
+          "subject": "’00s Pop",
           "prize": "£500,000",
-          "question": "Which actor portrayed attorney Annalise Keating in 'How to Get Away with Murder'?",
-          "correct_answer": "Viola Davis",
+          "question": "'Toxic' earned Britney Spears a Grammy in which category in 2005?",
+          "correct_answer": "Best Dance Recording",
           "distractors": {
-            "easy": "Taraji P. Henson",
-            "medium": "Kerry Washington",
-            "hard": "Angela Bassett"
+            "easy": "Record of the Year",
+            "medium": "Best Female Pop Vocal Performance",
+            "hard": "Best Dance/Electronic Album"
           }
         },
         {
-          "subject": "Gameshow Lore",
+          "subject": "’10s Pop",
           "prize": "£1,000,000",
-          "question": "Which lifeline was introduced to 'Who Wants to Be a Millionaire?' in the UK in 2010 to replace Phone-a-Friend?",
-          "correct_answer": "Switch the Question",
+          "question": "Which artist's 2016 album 'Lemonade' featured the track 'Formation'?",
+          "correct_answer": "Beyoncé",
           "distractors": {
-            "easy": "Double Dip",
-            "medium": "Ask the Expert",
-            "hard": "Ask the Audience"
+            "easy": "Rihanna",
+            "medium": "Solange",
+            "hard": "Janelle Monáe"
           }
         }
       ]
