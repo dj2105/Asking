@@ -833,3 +833,125 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   box-shadow: var(--shadow);
   text-align: center;
 }
+
+/* Final view */
+.final-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.final-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.final-winner {
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.final-scoreline {
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.final-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+}
+
+.final-breakdown__line {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.final-sublabel {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.final-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.final-table th,
+.final-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--soft-line);
+}
+
+.final-table th {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  font-weight: 700;
+}
+
+.final-table td {
+  font-weight: 700;
+}
+
+.final-table th:first-child,
+.final-table td:first-child {
+  text-align: left;
+}
+
+.final-table th:not(:first-child),
+.final-table td:not(:first-child) {
+  text-align: center;
+}
+
+.final-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.final-table--maths td:first-child {
+  max-width: 260px;
+}
+
+.final-highlight {
+  margin: 6px 0 0;
+  opacity: 0.85;
+}
+
+.final-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.final-highlight-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.final-question {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.final-good {
+  color: var(--ok);
+}
+
+.final-bad {
+  color: var(--bad);
+}
+
