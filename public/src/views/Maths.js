@@ -67,32 +67,40 @@ export default {
     // Skeleton
     container.innerHTML = "";
     const root = el("div", { class:"view view-maths" });
-    root.appendChild(el("h1", { class:"title" }, "Jemima’s Maths"));
 
-    const card = el("div", { class:"card" });
+    const card = el("div", { class:"card maths-card" });
 
-    const form = el("div", {});
-    const row1 = el("div", { class:"mono", style:"margin-top:6px;" });
-    const row2 = el("div", { class:"mono", style:"margin-top:10px;" });
+    const eyebrow = el("div", { class:"card-eyebrow mono" }, "Final maths");
+    card.appendChild(eyebrow);
 
-    const q1 = el("div", { class:"mono", style:"font-weight:600; white-space:pre-wrap;" }, "");
-    const i1 = el("input", { type:"number", class:"input", placeholder:"Answer 1 (integer)" });
+    const title = el("div", { class:"card-title maths-title" }, "Jemima’s Maths");
+    card.appendChild(title);
+
+    const namePill = el("div", { class:"name-pill maths-name" }, "Daniel");
+    card.appendChild(namePill);
+
+    const form = el("div", { class:"card-section maths-inputs" });
+
+    const row1 = el("div", { class:"maths-row" });
+    const q1 = el("div", { class:"maths-question mono" }, "");
+    const i1 = el("input", { type:"number", class:"input maths-input", placeholder:"Answer 1 (integer)" });
     row1.appendChild(q1);
     row1.appendChild(i1);
 
-    const q2 = el("div", { class:"mono", style:"font-weight:600; white-space:pre-wrap; margin-top:10px;" }, "");
-    const i2 = el("input", { type:"number", class:"input", placeholder:"Answer 2 (integer)" });
+    const row2 = el("div", { class:"maths-row" });
+    const q2 = el("div", { class:"maths-question mono" }, "");
+    const i2 = el("input", { type:"number", class:"input maths-input", placeholder:"Answer 2 (integer)" });
     row2.appendChild(q2);
     row2.appendChild(i2);
 
     form.appendChild(row1);
     form.appendChild(row2);
 
-    const done = el("button", { class:"btn", style:"width:100%;margin-top:12px;", disabled:"" }, "DONE");
+    const done = el("button", { class:"btn primary maths-submit", disabled:"" }, "Submit" );
     card.appendChild(form);
     card.appendChild(done);
 
-    const waitMsg = el("div", { class:"mono", style:"text-align:center;opacity:.8;margin-top:10px;display:none;" }, "");
+    const waitMsg = el("div", { class:"status-line maths-status mono", style:"display:none;" }, "");
     card.appendChild(waitMsg);
 
     root.appendChild(card);
@@ -114,6 +122,8 @@ export default {
       : (hostUid === me.uid) ? "host" : (guestUid === me.uid) ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    const myName = myRole === "host" ? "Daniel" : "Jaime";
+    namePill.textContent = `${myName} · maths`;
     waitMsg.textContent = `Waiting for ${oppName}…`;
 
     // Mount maths pane in "maths" mode; it shows location + both questions

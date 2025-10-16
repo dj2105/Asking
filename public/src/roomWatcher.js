@@ -157,18 +157,20 @@ export default {
 
     const code = getQueryCode();
     container.innerHTML = "";
-    const card = el("div", { class: "card" }, [
-      el("h1", { class: "title" }, "Linking up…"),
-      el("div", { class: "mono" }, code ? `Room ${code}` : "Room unknown"),
-      el("div", { class: "mono", id: "wstatus" }, "Waiting for room state…")
+    const wrapper = el("div", { class: "view view-watcher" });
+    const card = el("div", { class: "card seeding-card" }, [
+      el("div", { class: "card-eyebrow mono" }, "Watching for Daniel"),
+      el("div", { class: "card-title" }, code ? `Room ${code}` : "Room unknown"),
+      el("div", { class: "status-line mono", id: "wstatus" }, "Waiting for room state…")
     ]);
-    container.appendChild(card);
+    wrapper.appendChild(card);
+    container.appendChild(wrapper);
 
     const statusEl = card.querySelector("#wstatus");
     this._stop = startRoomWatcher(code, {
       onState: ({ state, round, exists }) => {
         if (state && state.toLowerCase() === "seeding") {
-          statusEl.textContent = "Waiting for host…";
+          statusEl.textContent = "Waiting for Daniel…";
           return;
         }
         if (!exists) {

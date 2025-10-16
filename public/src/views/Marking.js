@@ -63,41 +63,31 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-marking" });
 
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card marking-card" });
 
-    const list = el("div", { class: "qa-list" });
+    const eyebrow = el("div", { class: "card-eyebrow mono" }, "Mark quickly");
+    card.appendChild(eyebrow);
+
+    const namePill = el("div", { class: "name-pill marking-name" }, "Daniel");
+    card.appendChild(namePill);
+
+    const title = el("div", { class: "card-title marking-title" }, "Check Jaime’s answers");
+    card.appendChild(title);
+
+    const list = el("div", { class: "qa-list card-section" });
     card.appendChild(list);
 
-    const timerRow = el("div", {
-      style: "display:flex;justify-content:center;align-items:center;gap:12px;margin-top:16px;"
-    });
-    const timerDisplay = el("div", {
-      class: "mono",
-      style: "font-weight:700;font-size:24px;min-width:120px;text-align:center;"
-    }, "0");
-    const doneBtn = el("button", {
-      class: "btn primary",
-      style: "font-weight:700;letter-spacing:0.6px;padding-left:28px;padding-right:28px;",
-      disabled: ""
-    }, "STOP");
+    const timerRow = el("div", { class: "card-actions marking-timer-row" });
+    const timerDisplay = el("div", { class: "mono marking-timer" }, "0");
+    const doneBtn = el("button", { class: "btn primary", disabled: "" }, "Stop");
     timerRow.appendChild(timerDisplay);
     timerRow.appendChild(doneBtn);
     card.appendChild(timerRow);
 
-    const resultWrap = el("div", {
-      style: "text-align:center;margin-top:18px;display:none;"
-    });
-    const freezeLine = el("div", {
-      class: "mono",
-      style: "font-weight:700;font-size:20px;margin-bottom:10px;"
-    }, "");
-    const winnerLine = el("div", {
-      style: "display:none;font-size:34px;font-weight:700;line-height:1.05;text-transform:uppercase;white-space:pre-line;font-family:Impact,Haettenschweiler,'Arial Black','Arial Narrow Bold',sans-serif;color:#c8f7c5;"
-    }, "");
-    const waitingLine = el("div", {
-      class: "mono",
-      style: "opacity:0.78;margin-top:6px;"
-    }, "");
+    const resultWrap = el("div", { class: "card-section marking-result", style: "display:none;" });
+    const freezeLine = el("div", { class: "mono marking-freeze" }, "");
+    const winnerLine = el("div", { class: "marking-winner" }, "");
+    const waitingLine = el("div", { class: "mono marking-wait" }, "");
     resultWrap.appendChild(freezeLine);
     resultWrap.appendChild(winnerLine);
     resultWrap.appendChild(waitingLine);
@@ -123,6 +113,9 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    const myName = myRole === "host" ? "Daniel" : "Jaime";
+    namePill.textContent = `${myName} · marking`;
+    title.textContent = `Check ${oppName}'s answers`;
     waitingLine.textContent = `Linking to ${oppName}…`;
 
     const fallbackStartAt = Number((roomData0.countdown || {}).startAt || 0) || null;

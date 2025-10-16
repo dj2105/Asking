@@ -38,23 +38,30 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-seeding" });
-    root.appendChild(el("h1", { class: "title" }, "Linking Jemima…"));
 
-    const card = el("div", { class: "card" });
-    const heading = el("div", { class: "mono", style: "text-align:center;margin-bottom:8px;" },
-      code ? `Room ${code}` : "Room unknown");
+    const card = el("div", { class: "card seeding-card" });
+    const eyebrow = el("div", { class: "card-eyebrow mono" }, "Waiting for Daniel" );
+    card.appendChild(eyebrow);
+
+    const heading = el("div", { class: "card-title" }, code ? `Room ${code}` : "Room unknown");
     card.appendChild(heading);
 
-    const status = el("div", { class: "mono", style: "min-height:18px;" }, "Waiting for host upload…");
+    const status = el("div", { class: "status-line mono" }, "Waiting for Daniel to upload Jemima’s pack…");
     card.appendChild(status);
 
     const logEl = el("pre", {
-      class: "mono small", style: "margin-top:12px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:200px;overflow:auto;"
+      class: "mono small seeding-log"
     });
     card.appendChild(logEl);
 
     root.appendChild(card);
     container.appendChild(root);
+
+    const personalize = (text) => {
+      return String(text || "")
+        .replace(/host/gi, "Daniel")
+        .replace(/guest/gi, "Jaime");
+    };
 
     const log = (line) => {
       const stamp = new Date().toISOString().split("T")[1].replace(/Z$/, "");
@@ -63,7 +70,7 @@ export default {
     };
 
     if (!code) {
-      status.textContent = "No code provided.";
+      status.textContent = personalize("No code provided.");
       return;
     }
 
@@ -71,7 +78,7 @@ export default {
 
     this._stop = onSnapshot(roomRef(code), (snap) => {
       if (!snap.exists()) {
-        status.textContent = "Room not found yet.";
+        status.textContent = personalize("Room not found yet.");
         return;
       }
 
@@ -79,7 +86,8 @@ export default {
       const seeds = data.seeds || {};
       const message = seeds.message || "Pack pending…";
       const progress = typeof seeds.progress === "number" ? `${Math.round(seeds.progress)}%` : "";
-      status.textContent = progress ? `${message} (${progress})` : message;
+      const text = progress ? `${message} (${progress})` : message;
+      status.textContent = personalize(text);
 
       if (data.countdown?.startAt) {
         const ms = timeUntil(data.countdown.startAt);

@@ -87,11 +87,17 @@ export default {
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-rejoin" });
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card rejoin-card" });
     view.appendChild(card);
     container.appendChild(view);
 
-    card.appendChild(el("h1", { class: "title" }, "Rejoin a Room"));
+    const eyebrow = el("div", { class: "card-eyebrow mono" }, "Back into play");
+    card.appendChild(eyebrow);
+
+    const title = el("div", { class: "card-title" }, "Rejoin a Room");
+    card.appendChild(title);
+
+    const formSection = el("div", { class: "card-section rejoin-form" });
 
     const codeInput = el("input", {
       type: "text",
@@ -105,21 +111,22 @@ export default {
         e.target.value = clampCode(e.target.value);
       },
     });
-    card.appendChild(codeInput);
+    formSection.appendChild(codeInput);
 
-    const joinBtn = el("button", { class: "btn primary", type: "button" }, "Join");
-    card.appendChild(joinBtn);
+    const joinActions = el("div", { class: "card-actions" });
+    const joinBtn = el("button", { class: "btn primary", type: "button" }, "Join" );
+    joinActions.appendChild(joinBtn);
+    formSection.appendChild(joinActions);
 
-    const statusLine = el("div", { class: "mono small", style: "margin-top:10px;min-height:18px;" }, "");
-    card.appendChild(statusLine);
+    const statusLine = el("div", { class: "status-line mono small" }, "");
+    formSection.appendChild(statusLine);
 
-    card.appendChild(el("div", {
-      style: "margin:18px 0 12px 0;border-top:1px solid rgba(0,0,0,0.18);",
-    }));
+    card.appendChild(formSection);
 
-    card.appendChild(el("div", { class: "mono", style: "font-weight:700;margin-bottom:6px;" }, "Manual Rejoin"));
+    const manualSection = el("div", { class: "card-section card-section--divider rejoin-manual" });
+    manualSection.appendChild(el("div", { class: "mono rejoin-manual-title" }, "Manual rejoin"));
 
-    const roleWrap = el("div", { class: "mono", style: "display:flex;gap:14px;margin-bottom:10px;" });
+    const roleWrap = el("div", { class: "mono rejoin-role-wrap" });
     const roleOptions = [
       { value: "host", label: "Daniel" },
       { value: "guest", label: "Jaime" },
@@ -141,12 +148,12 @@ export default {
         },
       });
       if (currentRole === value) radio.checked = true;
-      const wrap = el("label", { class: "mono", for: id, style: "display:flex;align-items:center;gap:6px;" }, [radio, label]);
+      const wrap = el("label", { class: "mono rejoin-role-option", for: id }, [radio, label]);
       roleWrap.appendChild(wrap);
     });
-    card.appendChild(roleWrap);
+    manualSection.appendChild(roleWrap);
 
-    const roundSelect = el("select", { class: "input", style: "margin-bottom:10px;" });
+    const roundSelect = el("select", { class: "input rejoin-select" });
     for (let r = 1; r <= 5; r += 1) {
       const opt = el("option", { value: String(r) }, `Round ${r}`);
       roundSelect.appendChild(opt);
@@ -154,9 +161,9 @@ export default {
     if (Number.isFinite(requestedRound) && requestedRound >= 1 && requestedRound <= 5) {
       roundSelect.value = String(requestedRound);
     }
-    card.appendChild(roundSelect);
+    manualSection.appendChild(roundSelect);
 
-    const phaseSelect = el("select", { class: "input", style: "margin-bottom:12px;" });
+    const phaseSelect = el("select", { class: "input rejoin-select" });
     [
       { value: "questions", label: "Questions" },
       { value: "marking", label: "Marking" },
@@ -168,10 +175,14 @@ export default {
     if (requestedStep === "questions" || requestedStep === "marking" || requestedStep === "award") {
       phaseSelect.value = requestedStep;
     }
-    card.appendChild(phaseSelect);
+    manualSection.appendChild(phaseSelect);
 
-    const manualBtn = el("button", { class: "btn", type: "button" }, "Manual enter");
-    card.appendChild(manualBtn);
+    const manualActions = el("div", { class: "card-actions" });
+    const manualBtn = el("button", { class: "btn outline", type: "button" }, "Manual enter");
+    manualActions.appendChild(manualBtn);
+    manualSection.appendChild(manualActions);
+
+    card.appendChild(manualSection);
 
     let joinInFlight = false;
 

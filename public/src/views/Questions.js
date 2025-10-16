@@ -64,22 +64,23 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-questions" });
 
-    const card = el("div", { class: "card" });
-    const topRow = el(
-      "div",
-      {
-        class: "mono",
-        style: "display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px;",
-      }
-    );
-    const counter = el("div", { class: "mono" }, "1 / 3");
-    topRow.appendChild(counter);
-    card.appendChild(topRow);
+    const card = el("div", { class: "card questions-card" });
+    const eyebrow = el("div", { class: "card-eyebrow mono question-eyebrow" }, "Answer time");
+    card.appendChild(eyebrow);
 
-    const qText = el("div", { class: "mono", style: "font-weight:600; white-space:pre-wrap; min-height:56px;" }, "");
+    const namePill = el("div", { class: "name-pill question-name" }, "Daniel");
+    card.appendChild(namePill);
+
+    const title = el("div", { class: "card-title question-title" }, "Three quick choices");
+    card.appendChild(title);
+
+    const counter = el("div", { class: "question-counter mono" }, "1 / 3");
+    card.appendChild(counter);
+
+    const qText = el("div", { class: "question-text mono" }, "");
     card.appendChild(qText);
 
-    const btnWrap = el("div", { style: "display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap;" });
+    const btnWrap = el("div", { class: "button-tray question-options" });
     const btn1 = el("button", { class: "btn big outline" }, "");
     const btn2 = el("button", { class: "btn big outline" }, "");
     btnWrap.appendChild(btn1);
@@ -87,7 +88,11 @@ export default {
     card.appendChild(btnWrap);
 
     let waitMessageDefault = "Waiting…";
-    const waitMsg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-top:12px;display:none;" }, waitMessageDefault);
+    const waitMsg = el(
+      "div",
+      { class: "status-line question-status mono", style: "display:none;" },
+      waitMessageDefault
+    );
     card.appendChild(waitMsg);
 
     root.appendChild(card);
@@ -124,6 +129,9 @@ export default {
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
     waitMessageDefault = `Waiting for ${oppName}…`;
     waitMsg.textContent = waitMessageDefault;
+    const myName = myRole === "host" ? "Daniel" : "Jaime";
+    namePill.textContent = `${myName} · answers`;
+    eyebrow.textContent = `${myName}'s round`;
 
     try {
       if (mountMathsPane && room0.maths) {

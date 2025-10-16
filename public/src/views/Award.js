@@ -155,13 +155,16 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
 
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card award-card" });
 
-    const scoreHeadline = el("div", {
-      class: "mono",
-      style: "text-align:center;font-weight:700;font-size:24px;margin-bottom:12px;"
-    }, "Daniel 0 — 0 Jaime");
+    const eyebrow = el("div", { class: "card-eyebrow mono" }, "Round wrapped");
+    card.appendChild(eyebrow);
+
+    const scoreHeadline = el("div", { class: "card-title award-score" }, "Daniel 0 — 0 Jaime");
     card.appendChild(scoreHeadline);
+
+    const snippetIntro = el("div", { class: "card-subtitle award-subtitle" }, "Jemima’s snippet verdict");
+    card.appendChild(snippetIntro);
 
     const snippetSummary = el("div", { class: "snippet-summary" });
     const snippetFastestLabel = el("div", { class: "mono snippet-label" }, "FASTEST PLAYER");
@@ -178,16 +181,15 @@ export default {
     snippetSummary.appendChild(snippetOutcomeLine);
     card.appendChild(snippetSummary);
 
-    const reviewWrap = el("div", { style: "display:flex;flex-direction:column;gap:16px;" });
+    const reviewWrap = el("div", { class: "card-section award-review" });
     card.appendChild(reviewWrap);
 
-    const waitMsg = el("div", {
-      class: "mono small",
-      style: "text-align:center;margin-top:14px;display:none;opacity:.8;"
-    }, "");
+    const waitMsg = el("div", { class: "status-line award-status mono small", style: "display:none;" }, "");
 
-    const continueBtn = el("button", { class: "btn primary", style: "margin-top:12px;" }, "Continue");
-    card.appendChild(continueBtn);
+    const actions = el("div", { class: "card-actions" });
+    const continueBtn = el("button", { class: "btn primary" }, "Continue");
+    actions.appendChild(continueBtn);
+    card.appendChild(actions);
     card.appendChild(waitMsg);
 
     root.appendChild(card);

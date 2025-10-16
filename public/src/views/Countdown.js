@@ -64,18 +64,21 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-countdown" });
 
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card card--center countdown-card" });
 
-    const msg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-bottom:12px;" }, "Get ready…");
+    const eyebrow = el("div", { class: "card-eyebrow mono" }, "Countdown");
+    card.appendChild(eyebrow);
+
+    const title = el("div", { class: "card-title" }, "Round 1");
+    card.appendChild(title);
+
+    const msg = el("div", { class: "card-subtitle mono" }, "Get ready…");
     card.appendChild(msg);
 
-    const timer = el("div", {
-      class: "mono",
-      style: "font-size:64px;line-height:1;text-align:center;font-weight:700;"
-    }, "—");
+    const timer = el("div", { class: "mono countdown-display" }, "—");
     card.appendChild(timer);
 
-    const sub = el("div", { class: "mono small", style: "text-align:center;margin-top:12px;" }, "Waiting for host…");
+    const sub = el("div", { class: "status-line mono small" }, "Waiting for Daniel to press Start…");
     card.appendChild(sub);
 
     root.appendChild(card);
@@ -100,6 +103,10 @@ export default {
     if (Number(room0.round)) {
       round = Number(room0.round);
     }
+
+    const updateRoundLabel = () => {
+      title.textContent = `Round ${round}`;
+    };
 
     const updateSubMessage = () => {
       if (!countdownStartAt) {
@@ -137,6 +144,7 @@ export default {
         round = Number(data.round);
         roundReady = false;
         watchRoundDoc(round);
+        updateRoundLabel();
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
@@ -148,7 +156,8 @@ export default {
         countdownStartAt = 0;
         hasFlipped = false;
       }
-      updateSubMessage();
+    updateRoundLabel();
+    updateSubMessage();
 
       if (data.state === "questions") {
         setTimeout(() => {

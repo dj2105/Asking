@@ -45,18 +45,20 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-coderoom" });
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card code-card" });
     root.appendChild(card);
     container.appendChild(root);
 
-    card.appendChild(el("h1", { class: "title" }, "Code Room"));
+    const eyebrow = el("div", { class: "card-eyebrow mono" }, "Share with Jaime");
+    card.appendChild(eyebrow);
 
-    const codeBlock = el("div", {
-      class: "mono",
-      style: "font-size:42px;font-weight:700;margin-top:10px;text-align:center;letter-spacing:6px;",
-    }, code);
+    const title = el("div", { class: "card-title" }, "Code Room");
+    card.appendChild(title);
+
+    const codeBlock = el("div", { class: "code-chip" }, code);
     card.appendChild(codeBlock);
 
+    const actions = el("div", { class: "card-actions" });
     const copyLink = el(
       "button",
       {
@@ -67,30 +69,31 @@ export default {
           if (ok) status.textContent = "Link copied.";
         },
       },
-      "Copy join link"
+      "Copy Jaime’s link"
     );
-    card.appendChild(el("div", { style: "text-align:center;margin-top:8px;" }, copyLink));
+    actions.appendChild(copyLink);
+    card.appendChild(actions);
 
     const status = el(
       "div",
-      { class: "mono", style: "margin-top:20px;min-height:20px;text-align:center;" },
-      "Waiting for Jaime…"
+      { class: "status-line mono" },
+      "Waiting for Jaime to connect…"
     );
     card.appendChild(status);
 
     const guestBadge = el(
       "div",
-      { class: "mono small", style: "margin-top:6px;text-align:center;opacity:0.8;" },
+      { class: "mono small code-note" },
       "Jaime hasn’t entered yet."
     );
     card.appendChild(guestBadge);
 
+    const backActions = el("div", { class: "card-actions" });
     const backBtn = el(
       "button",
       {
         class: "btn outline",
         type: "button",
-        style: "margin-top:24px;",
         onclick: async () => {
           if (currentState === "coderoom") {
             try {
@@ -106,9 +109,10 @@ export default {
           location.hash = `#/keyroom?code=${code}`;
         },
       },
-      "Back"
+      "Back to Daniel’s setup"
     );
-    card.appendChild(backBtn);
+    backActions.appendChild(backBtn);
+    card.appendChild(backActions);
 
     let stop = null;
     let currentState = "coderoom";
@@ -145,14 +149,14 @@ export default {
         const guestPresent = Boolean(data.links?.guestReady);
 
         if (currentState === "coderoom") {
-          status.textContent = guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime…";
-          guestBadge.textContent = guestPresent ? "Guest connected." : "Jaime hasn’t entered yet.";
+          status.textContent = guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime to connect…";
+          guestBadge.textContent = guestPresent ? "Jaime is with you." : "Jaime hasn’t entered yet.";
         } else if (currentState === "keyroom") {
-          status.textContent = "Back in the Key Room.";
-          guestBadge.textContent = guestPresent ? "Guest already linked." : "";
+          status.textContent = "Back with Daniel in the Key Room.";
+          guestBadge.textContent = guestPresent ? "Jaime already linked." : "";
         } else {
           status.textContent = `State: ${currentState}`;
-          guestBadge.textContent = guestPresent ? "Guest connected." : "";
+          guestBadge.textContent = guestPresent ? "Jaime is connected." : "";
         }
 
         if (currentState && currentState !== "coderoom" && currentState !== "keyroom") {

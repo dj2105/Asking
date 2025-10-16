@@ -551,14 +551,24 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-keyroom" });
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card key-card" });
     root.appendChild(card);
     container.appendChild(root);
 
-    const headerRow = el("div", {
-      style: "display:flex;justify-content:space-between;align-items:center;gap:10px;",
-    });
-    headerRow.appendChild(el("h1", { class: "title" }, "Key Room"));
+    const eyebrow = el("div", { class: "card-eyebrow mono" }, "Daniel’s setup");
+    card.appendChild(eyebrow);
+
+    const title = el("div", { class: "card-title" }, "Key Room");
+    card.appendChild(title);
+
+    const intro = el(
+      "div",
+      { class: "card-subtitle mono" },
+      "Unseal Jemima’s packs, pick a room code, and invite Jaime."
+    );
+    card.appendChild(intro);
+
+    const navRow = el("div", { class: "card-actions key-top-actions" });
     const lobbyBtn = el(
       "button",
       {
@@ -568,26 +578,17 @@ export default {
           location.hash = "#/lobby";
         },
       },
-      "Back"
+      "Back to welcome"
     );
-    headerRow.appendChild(lobbyBtn);
-    card.appendChild(headerRow);
-
-    const intro = el(
-      "div",
-      { class: "mono", style: "margin-bottom:10px;" },
-      "Upload Jemima’s sealed packs, pick a code, then press START."
-    );
-    card.appendChild(intro);
+    navRow.appendChild(lobbyBtn);
+    card.appendChild(navRow);
 
     const codeRow = el("div", {
-      class: "mono",
-      style: "display:flex;align-items:center;gap:8px;margin-bottom:12px;justify-content:center;flex-wrap:wrap;",
+      class: "card-section key-code-row",
     });
     const codeInput = el("input", {
       type: "text",
-      class: "mono",
-      style: "font-size:18px;padding:6px 10px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;width:120px;text-align:center;",
+      class: "mono chip-input key-code-input",
       maxlength: "5",
       value: hintedCode,
       oninput: (event) => {
@@ -607,7 +608,7 @@ export default {
           reflectJumpState();
         },
       },
-      "Random"
+      "Random code"
     );
     const copyLinkBtn = el(
       "button",
@@ -619,28 +620,27 @@ export default {
           if (!code) return;
           const share = `${location.origin}${location.pathname}#/lobby`;
           const ok = await copyToClipboard(`${share}?code=${code}`);
-          if (ok) status.textContent = "Link copied.";
+          if (ok) status.textContent = "Link copied for Jaime.";
         },
       },
-      "Copy link"
+      "Copy invite for Jaime"
     );
-    codeRow.appendChild(el("span", { style: "font-weight:700;" }, "Room code"));
+    codeRow.appendChild(el("span", { class: "mono key-code-label" }, "Room code"));
     codeRow.appendChild(codeInput);
     codeRow.appendChild(randomBtn);
     codeRow.appendChild(copyLinkBtn);
     card.appendChild(codeRow);
 
     const uploadGrid = el("div", {
-      class: "mono",
-      style: "display:flex;flex-direction:column;gap:10px;margin-bottom:10px;",
+      class: "card-section key-upload-grid mono",
     });
     card.appendChild(uploadGrid);
 
     const slotConfigs = {
-      full: { label: "Full Pack", initial: "Awaiting full pack." },
-      questions: { label: "All Questions (30)", initial: "Awaiting 30-question pack." },
-      host: { label: "Host (15)", initial: "Awaiting host halfpack." },
-      guest: { label: "Guest (15)", initial: "Awaiting guest halfpack." },
+      full: { label: "Complete pack", initial: "Awaiting complete pack." },
+      questions: { label: "All questions (30)", initial: "Awaiting 30-question pack." },
+      host: { label: "Daniel’s set (15)", initial: "Awaiting Daniel’s 15." },
+      guest: { label: "Jaime’s set (15)", initial: "Awaiting Jaime’s 15." },
       maths: { label: "Maths", initial: "Awaiting maths block." },
     };
 
@@ -712,14 +712,13 @@ export default {
     }
 
     const progressLine = el("div", {
-      class: "mono small",
-      style: "margin-top:4px;text-align:center;min-height:18px;",
-    }, "Sources → Host: — · Guest: — · Maths: —");
+      class: "status-line mono key-progress",
+    }, "Sources → Daniel: — · Jaime: — · Maths: —");
     card.appendChild(progressLine);
 
     const metaRow = el("div", {
-      class: "mono small",
-      style: "margin-top:6px;display:none;justify-content:center;align-items:center;gap:6px;",
+      class: "mono small key-meta",
+      style: "display:none;",
     });
     const generatedLabel = el("span", {}, "");
     metaRow.appendChild(generatedLabel);
@@ -727,29 +726,24 @@ export default {
 
     const status = el(
       "div",
-      { class: "mono small", style: "margin-top:10px;min-height:18px;" },
-      hintedCode ? `Enter ${hintedCode} or pick a new code.` : "Choose a room code to get started."
+      { class: "status-line mono", style: "min-height:18px;" },
+      hintedCode ? `Enter ${hintedCode} or pick a new code.` : "Choose a room code for Daniel."
     );
     card.appendChild(status);
 
-    const startRow = el("div", {
-      class: "mono",
-      style: "margin-top:16px;display:flex;justify-content:center;",
-    });
-    const startBtn = el("button", { class: "btn primary", disabled: "" }, "Start");
+    const startRow = el("div", { class: "card-actions" });
+    const startBtn = el("button", { class: "btn primary", disabled: "" }, "Start countdown");
     startRow.appendChild(startBtn);
     card.appendChild(startRow);
 
     const jumpSection = el("div", {
-      class: "mono",
-      style:
-        "margin-top:18px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;gap:10px;",
+      class: "card-section card-section--divider key-jump mono",
     });
-    jumpSection.appendChild(el("div", { style: "font-weight:700;text-align:center;" }, "Jump to stage"));
+    jumpSection.appendChild(el("div", { class: "key-jump-title" }, "Jump to a stage"));
     const stageRow = el("div", {
-      style: "display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;",
+      class: "key-stage-row",
     });
-    stageRow.appendChild(el("span", { style: "font-weight:600;" }, "Stage"));
+    stageRow.appendChild(el("span", { class: "mono key-stage-label" }, "Stage"));
     const jumpStageSelect = el("select", {
       class: "mono",
       style: "padding:6px 10px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;",
@@ -770,9 +764,9 @@ export default {
     jumpSection.appendChild(stageRow);
 
     const roundRow = el("div", {
-      style: "display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;",
+      class: "key-stage-row",
     });
-    roundRow.appendChild(el("span", { style: "font-weight:600;" }, "Round"));
+    roundRow.appendChild(el("span", { class: "mono key-stage-label" }, "Round"));
     const jumpRoundInput = el("input", {
       type: "number",
       min: "1",
@@ -789,18 +783,17 @@ export default {
       { class: "btn primary", type: "button", disabled: "" },
       "Jump & prepare"
     );
-    jumpSection.appendChild(el("div", { style: "display:flex;justify-content:center;" }, jumpBtn));
+    jumpSection.appendChild(el("div", { class: "card-actions" }, jumpBtn));
 
     const goHostBtn = el(
       "button",
       { class: "btn outline", type: "button", disabled: "", style: "width:100%;" },
-      "Go as Daniel"
+      "Open Daniel’s view"
     );
-    jumpSection.appendChild(el("div", { style: "display:flex;" }, goHostBtn));
+    jumpSection.appendChild(el("div", { class: "card-actions" }, goHostBtn));
 
     const guestRow = el("div", {
-      style:
-        "display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;",
+      class: "key-guest-row",
     });
     const guestLinkInput = el("input", {
       type: "text",
@@ -812,7 +805,7 @@ export default {
     const guestCopyBtn = el(
       "button",
       { class: "btn outline", type: "button", disabled: "" },
-      "Copy guest link"
+      "Copy Jaime’s link"
     );
     guestRow.appendChild(guestLinkInput);
     guestRow.appendChild(guestCopyBtn);
@@ -826,10 +819,7 @@ export default {
 
     card.appendChild(jumpSection);
 
-    const logEl = el("pre", {
-      class: "mono small",
-      style: "margin-top:14px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:180px;overflow:auto;",
-    });
+    const logEl = el("pre", { class: "mono small seeding-log" });
     card.appendChild(logEl);
 
     const stage = {
@@ -899,7 +889,7 @@ export default {
     guestCopyBtn.addEventListener("click", async () => {
       if (!lastGuestLink) return;
       const ok = await copyToClipboard(lastGuestLink);
-      if (ok) jumpStatus.textContent = "Guest link copied.";
+      if (ok) jumpStatus.textContent = "Jaime’s link copied.";
     });
 
     const jumpToStage = async () => {
@@ -971,25 +961,25 @@ export default {
 
     function updateProgress() {
       const hostSource = stage.hostOverride
-        ? "Host (15)"
+        ? "Daniel’s 15"
         : stage.questionsOverride
-        ? "All Questions (30)"
+        ? "All questions (30)"
         : stage.base
-        ? "Full Pack"
+        ? "Complete pack"
         : "—";
       const guestSource = stage.guestOverride
-        ? "Guest (15)"
+        ? "Jaime’s 15"
         : stage.questionsOverride
-        ? "All Questions (30)"
+        ? "All questions (30)"
         : stage.base
-        ? "Full Pack"
+        ? "Complete pack"
         : "—";
       const mathsSource = stage.mathsOverride
-        ? "Maths Pack"
+        ? "Maths pack"
         : stage.base?.maths
-        ? "Full Pack"
+        ? "Complete pack"
         : "—";
-      progressLine.textContent = `Sources → Host: ${hostSource} · Guest: ${guestSource} · Maths: ${mathsSource}`;
+      progressLine.textContent = `Sources → Daniel: ${hostSource} · Jaime: ${guestSource} · Maths: ${mathsSource}`;
     }
 
     function log(message) {
@@ -1106,7 +1096,7 @@ export default {
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
-      status.textContent = "Host & guest questions now come from the 30-question pack.";
+      status.textContent = "Daniel and Jaime now draw from the 30-question pack.";
       log("30-question pack verified.");
       updateProgress();
       reflectStartState();
@@ -1135,13 +1125,13 @@ export default {
       }
       const slot = slotMap[which];
       if (slot) {
-        slot.statusEl.textContent = which === "host" ? "Host (15) loaded." : "Guest (15) loaded.";
+        slot.statusEl.textContent = which === "host" ? "Daniel’s 15 loaded." : "Jaime’s 15 loaded.";
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
       status.textContent = which === "host"
-        ? "Host questions overriding base content."
-        : "Guest questions overriding base content.";
+        ? "Daniel’s questions now override the base content."
+        : "Jaime’s questions now override the base content.";
       log(`${which} halfpack verified.`);
       updateProgress();
       reflectStartState();
