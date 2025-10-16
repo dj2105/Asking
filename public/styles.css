@@ -228,6 +228,76 @@ input[type="text"], input[type="number"], .input {
   font-weight: 600;
   letter-spacing: 0.05em;
 }
+.snippet-winner-name {
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.snippet-outcome {
+  margin-top: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.award-block {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  padding: 12px 14px 10px;
+  background: rgba(0, 0, 0, 0.02);
+}
+.award-block__title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  margin: 2px 0 12px;
+}
+.award-answer {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.award-answer-line {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.award-answer-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+.award-answer-value {
+  flex: 1;
+  font-weight: 700;
+  text-align: right;
+}
+.award-answer-indicator {
+  min-width: 1.5ch;
+  text-align: right;
+  font-weight: 700;
+}
+.award-answer-indicator:empty {
+  display: none;
+}
+.award-answer-line--correct .award-answer-value,
+.award-answer-line--right .award-answer-value,
+.award-answer-line--right .award-answer-indicator {
+  color: var(--ok);
+}
+.award-answer-line--wrong .award-answer-value,
+.award-answer-line--wrong .award-answer-indicator {
+  color: var(--bad);
+}
+.award-answer-line--none .award-answer-value {
+  opacity: 0.6;
+}
 
 /* ===========================
    Timer badge (top-right in card)

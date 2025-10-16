@@ -36,52 +36,13 @@ const state = {
 };
 
 function text(s){ return (s ?? "").toString(); }
-function same(a,b){ return String(a||"").trim() === String(b||"").trim(); }
 
-function computeScores(roomData, roundDocs) {
-  let hostScore = 0; // Daniel
-  let guestScore = 0; // Jaime
-
-  const answers = roomData?.answers || {};
-  const marking = roomData?.marking || {};
-
-  for (let r = 1; r <= 5; r++) {
-    const rd = roundDocs[r];
-    if (!rd) continue;
-
-    const hostItems  = rd.hostItems || [];
-    const guestItems = rd.guestItems || [];
-
-    const hostAns = ((answers.host || {})[r] || []).map(a => a?.chosen || "");
-    const guestAns = ((answers.guest || {})[r] || []).map(a => a?.chosen || "");
-
-    const hostMarks  = ((marking.host  || {})[r] || []); // host marked guest’s answers
-    const guestMarks = ((marking.guest || {})[r] || []); // guest marked host’s answers
-
-    // Host marks guest answers:
-    for (let i = 0; i < 3; i++) {
-      const chosen = guestAns[i];
-      const correct = guestItems[i]?.correct_answer;
-      const truth = chosen && correct ? same(chosen, correct) : false;
-      const verdict = hostMarks[i]; // "right" | "wrong" | "unknown" | undefined
-      if (verdict === "right") hostScore += truth ? 1 : -1;
-      else if (verdict === "wrong") hostScore += truth ? -1 : 1;
-      else hostScore += 0; // unmarked/unknown
-    }
-
-    // Guest marks host answers:
-    for (let i = 0; i < 3; i++) {
-      const chosen = hostAns[i];
-      const correct = hostItems[i]?.correct_answer;
-      const truth = chosen && correct ? same(chosen, correct) : false;
-      const verdict = guestMarks[i];
-      if (verdict === "right") guestScore += truth ? 1 : -1;
-      else if (verdict === "wrong") guestScore += truth ? -1 : 1;
-      else guestScore += 0;
-    }
-  }
-
-  return { hostScore, guestScore };
+function computeScores(roomData) {
+  const questionsScores = (roomData?.scores || {}).questions || {};
+  return {
+    hostScore: Number(questionsScores.host ?? 0) || 0,
+    guestScore: Number(questionsScores.guest ?? 0) || 0,
+  };
 }
 
 function render() {
@@ -89,7 +50,7 @@ function render() {
   const code  = state.code || "—";
   const round = state.roomData?.round ?? 1;
 
-  const { hostScore, guestScore } = computeScores(state.roomData || {}, state.roundDocs);
+  const { hostScore, guestScore } = computeScores(state.roomData || {});
 
   // Labels fixed by design spec
   const leftHTML  = `<span class="ss-code">${code}</span><span class="ss-round">Round ${round}</span>`;

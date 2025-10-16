@@ -39,69 +39,50 @@ function el(tag, attrs = {}, kids = []) {
   return node;
 }
 
-const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
-
 function same(a, b) {
   return String(a || "").trim() === String(b || "").trim();
 }
 
-function buildOptions(item, round) {
-  const tier = roundTier(round);
-  const correct = item?.correct_answer || "";
-  const distractors = item?.distractors || {};
-  let wrong = distractors[tier] || distractors.medium || distractors.easy || distractors.hard || "";
-  const options = [];
-  if (correct) options.push(correct);
-  if (wrong && !same(wrong, correct)) options.push(wrong);
-  if (options.length < 2) {
-    const alt = Object.values(distractors).find((d) => d && !same(d, correct) && !same(d, wrong));
-    if (alt) options.push(alt);
-  }
-  while (options.length < 2) options.push("(missing option)");
-  return options.slice(0, 2);
+function createAnswerLine(label, value, { variant = "", indicator = "" } = {}) {
+  const classes = ["award-answer-line", "mono"];
+  if (variant) classes.push(`award-answer-line--${variant}`);
+  const line = el("div", { class: classes.join(" ") });
+  line.appendChild(el("div", { class: "award-answer-label" }, label));
+  const safeValue = value === null || value === undefined || value === ""
+    ? "—"
+    : String(value);
+  line.appendChild(el("div", { class: "award-answer-value" }, safeValue));
+  line.appendChild(el("div", { class: "award-answer-indicator" }, indicator ? String(indicator) : ""));
+  return line;
 }
 
-function renderPlayerBlock(label, items, answers, round) {
+function renderQuestionReview({ title, items = [], answers = [], pickLabel }) {
   const block = el("div", { class: "award-block" });
-  block.appendChild(el("div", {
-    class: "mono",
-    style: "text-align:center;font-weight:700;margin-top:4px;margin-bottom:6px;font-size:18px;"
-  }, label));
+  block.appendChild(el("div", { class: "award-block__title mono" }, title));
 
   for (let i = 0; i < 3; i += 1) {
     const item = items[i] || {};
     const answer = answers[i] || {};
     const question = item.question || answer.question || "(missing question)";
-    const correct = answer.correct || item.correct_answer || "";
-    const chosen = answer.chosen || "";
-    const options = buildOptions(item, round);
+    const correctRaw = answer.correct || item.correct_answer || "";
+    const chosenRaw = answer.chosen || "";
+    const correct = correctRaw || "(missing correct answer)";
+    const chosen = chosenRaw || "(no answer)";
+    const isCorrect = chosenRaw && same(chosenRaw, correctRaw);
 
     const row = el("div", { class: "mark-row" });
     row.appendChild(el("div", { class: "q mono" }, `${i + 1}. ${question}`));
 
-    const list = el("div", {
-      class: "a mono",
-      style: "display:flex;flex-direction:column;gap:6px;"
-    });
+    const detail = el("div", { class: "award-answer" });
+    detail.appendChild(createAnswerLine("Correct answer", correct, { variant: "correct" }));
+    detail.appendChild(
+      createAnswerLine(pickLabel, chosen, {
+        variant: chosenRaw ? (isCorrect ? "right" : "wrong") : "none",
+        indicator: chosenRaw ? (isCorrect ? "✓" : "✕") : ""
+      })
+    );
 
-    options.forEach((opt) => {
-      const isCorrect = same(opt, correct);
-      const isChosen = same(opt, chosen);
-      const line = el("div", {
-        class: "mono",
-        style: `display:flex;justify-content:space-between;gap:10px;${isCorrect ? "color:var(--ok);" : ""}`
-      });
-      line.appendChild(el("span", {}, opt || "(missing option)"));
-      const indicator = isChosen ? (isCorrect ? "✓" : "✕") : "";
-      const badge = el("span", {
-        class: "mono",
-        style: `font-weight:700;${isCorrect ? "color:var(--ok);" : indicator ? "color:var(--bad);" : ""}`
-      }, indicator);
-      line.appendChild(badge);
-      list.appendChild(line);
-    });
-
-    row.appendChild(list);
+    row.appendChild(detail);
     block.appendChild(row);
   }
 
@@ -143,6 +124,19 @@ const formatSeconds = (ms) => {
   return `${text} s`;
 };
 
+const ordinalSuffix = (n) => {
+  const num = Number(n);
+  if (!Number.isFinite(num)) return `${n}th`;
+  const abs = Math.abs(num);
+  const mod100 = abs % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${num}th`;
+  const mod10 = abs % 10;
+  if (mod10 === 1) return `${num}st`;
+  if (mod10 === 2) return `${num}nd`;
+  if (mod10 === 3) return `${num}rd`;
+  return `${num}th`;
+};
+
 export default {
   async mount(container) {
     const me = await ensureAuth();
@@ -166,14 +160,18 @@ export default {
     card.appendChild(scoreHeadline);
 
     const snippetSummary = el("div", { class: "snippet-summary" });
-    const snippetWinnerLine = el("div", { class: "mono snippet-winner" }, "Snippet Winner: —");
+    const snippetHeading = el("div", { class: "mono snippet-winner" }, "FASTEST PLAYER");
+    const snippetWinnerLine = el("div", { class: "mono snippet-winner-name" }, "—");
     const snippetTimes = el("div", { class: "snippet-times" });
     const snippetTimeHost = el("div", { class: "mono snippet-time" }, "Daniel — s");
     const snippetTimeGuest = el("div", { class: "mono snippet-time" }, "Jaime — s");
     snippetTimes.appendChild(snippetTimeHost);
     snippetTimes.appendChild(snippetTimeGuest);
+    const snippetOutcome = el("div", { class: "mono snippet-outcome" }, `Jemima’s ${ordinalSuffix(round)} Snippet is on the line…`);
+    snippetSummary.appendChild(snippetHeading);
     snippetSummary.appendChild(snippetWinnerLine);
     snippetSummary.appendChild(snippetTimes);
+    snippetSummary.appendChild(snippetOutcome);
     card.appendChild(snippetSummary);
 
     const reviewWrap = el("div", { style: "display:flex;flex-direction:column;gap:16px;" });
@@ -227,31 +225,45 @@ export default {
     reviewData.hostAnswers = Array.isArray(answersHost0) ? answersHost0 : [];
     reviewData.guestAnswers = Array.isArray(answersGuest0) ? answersGuest0 : [];
 
-    const applySnippetSummary = (roundData = {}) => {
+    let snippetData = rd;
+
+    const applySnippetSummary = (roundData = {}, roundNumber = round) => {
+      const activeRound = Number(roundNumber) || Number(round) || 1;
+      const ordinalText = ordinalSuffix(activeRound);
       const winnerUid = roundData.snippetWinnerUid || null;
       const tie = Boolean(roundData.snippetTie);
-      if (tie) {
-        snippetWinnerLine.textContent = "Snippet Winner: Dead heat";
-      } else if (winnerUid === hostUid) {
-        snippetWinnerLine.textContent = "Snippet Winner: Daniel";
-      } else if (winnerUid === guestUid) {
-        snippetWinnerLine.textContent = "Snippet Winner: Jaime";
-      } else if (winnerUid) {
-        snippetWinnerLine.textContent = "Snippet Winner: —";
-      } else {
-        snippetWinnerLine.textContent = "Snippet Winner: —";
-      }
 
       const timings = roundData.timings || {};
       const hostEntry = resolveTimingForRole(timings, "host", [hostUid]);
       const guestEntry = resolveTimingForRole(timings, "guest", [guestUid]);
       const hostTime = formatSeconds(Number(hostEntry?.info?.totalMs));
       const guestTime = formatSeconds(Number(guestEntry?.info?.totalMs));
+
+      const hostCandidates = [hostUid, hostEntry?.uid].filter(Boolean);
+      const guestCandidates = [guestUid, guestEntry?.uid].filter(Boolean);
+
+      let fastestLabel = "—";
+      let outcomeText = `Jemima’s ${ordinalText} Snippet is on the line…`;
+
+      if (tie) {
+        fastestLabel = "Dead heat";
+        outcomeText = `Dead heat — Jemima keeps her ${ordinalText} Snippet`;
+      } else if (winnerUid && hostCandidates.includes(winnerUid)) {
+        fastestLabel = "Daniel";
+        outcomeText = `Daniel wins Jemima’s ${ordinalText} Snippet`;
+      } else if (winnerUid && guestCandidates.includes(winnerUid)) {
+        fastestLabel = "Jaime";
+        outcomeText = `Jaime wins Jemima’s ${ordinalText} Snippet`;
+      }
+
+      snippetWinnerLine.textContent = fastestLabel;
+      snippetOutcome.textContent = outcomeText;
+
       snippetTimeHost.textContent = `Daniel ${hostTime}`;
       snippetTimeGuest.textContent = `Jaime ${guestTime}`;
     };
 
-    applySnippetSummary(rd);
+    applySnippetSummary(snippetData, round);
 
     const updateScoresDisplay = (scores = {}) => {
       const hostScore = Number((scores.host ?? 0)) || 0;
@@ -261,8 +273,29 @@ export default {
 
     const refreshReviews = () => {
       reviewWrap.innerHTML = "";
-      reviewWrap.appendChild(renderPlayerBlock("Daniel", reviewData.hostItems, reviewData.hostAnswers, round));
-      reviewWrap.appendChild(renderPlayerBlock("Jaime", reviewData.guestItems, reviewData.guestAnswers, round));
+      const myItems = myRole === "host" ? reviewData.hostItems : reviewData.guestItems;
+      const myAnswers = myRole === "host" ? reviewData.hostAnswers : reviewData.guestAnswers;
+      const oppItems = myRole === "host" ? reviewData.guestItems : reviewData.hostItems;
+      const oppAnswers = myRole === "host" ? reviewData.guestAnswers : reviewData.hostAnswers;
+
+      reviewWrap.appendChild(
+        renderQuestionReview({
+          title: "YOUR QUESTIONS",
+          items: myItems,
+          answers: myAnswers,
+          pickLabel: "You picked"
+        })
+      );
+
+      const oppTitle = `${oppName.toUpperCase()}\u2019S QUESTIONS`;
+      reviewWrap.appendChild(
+        renderQuestionReview({
+          title: oppTitle,
+          items: oppItems,
+          answers: oppAnswers,
+          pickLabel: `${oppName} picked`
+        })
+      );
     };
 
     try {
@@ -360,8 +393,8 @@ export default {
     });
 
     const stopRoundDoc = onSnapshot(rdRef, (snap) => {
-      const data = snap.data() || {};
-      applySnippetSummary(data);
+      snippetData = snap.data() || {};
+      applySnippetSummary(snippetData, round);
     }, (err) => {
       console.warn("[award] round snippet watch error:", err);
     });
@@ -374,6 +407,8 @@ export default {
       }
 
       updateScoresDisplay(((data.scores || {}).questions) || {});
+
+      applySnippetSummary(snippetData, round);
 
       if ((data.state || "").toLowerCase() === "award") {
         const answersHost = (((data.answers || {}).host || {})[round] || []);
