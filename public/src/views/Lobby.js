@@ -46,7 +46,7 @@ export default {
     container.appendChild(view);
 
     card.appendChild(el("h1", { class: "lobby-title" }, "Jemima’s Asking"));
-    card.appendChild(el("p", { class: "lobby-prompt" }, "Jaime, what’s the code?"));
+    card.appendChild(el("p", { class: "lobby-prompt" }, "What’s the code?"));
 
     const params = new URLSearchParams((location.hash.split("?")[1] || ""));
     const initialCode = clampCode(params.get("code") || "");
@@ -57,7 +57,7 @@ export default {
       autocomplete: "off",
       autocapitalize: "characters",
       maxlength: "5",
-      placeholder: "C A T 9",
+      placeholder: "CAT",
       class: "lobby-code-input",
       value: initialCode,
       oninput: (e) => { e.target.value = clampCode(e.target.value); reflect(); },
@@ -78,19 +78,19 @@ export default {
     const status = el("div", { class: "lobby-status" }, "");
     card.appendChild(status);
 
-    const hostLink = el("a", {
-      href: "#/keyroom",
-      class: "lobby-host-link"
-    }, "Daniel’s entrance");
-    card.appendChild(hostLink);
-
     const rejoinHref = recentCode ? `#/rejoin?code=${recentCode}` : "#/rejoin";
+    const linksRow = el("div", { class: "lobby-links-row" });
     const rejoinLink = el("a", {
       href: rejoinHref,
-      class: "lobby-host-link",
-      style: "margin-top:8px;display:inline-block;"
-    }, "Rejoin a room");
-    card.appendChild(rejoinLink);
+      class: "lobby-link lobby-link--left",
+    }, "Rejoin Game");
+    const hostLink = el("a", {
+      href: "#/keyroom",
+      class: "lobby-link lobby-link--right"
+    }, "Daniel’s Entrance");
+    linksRow.appendChild(rejoinLink);
+    linksRow.appendChild(hostLink);
+    card.appendChild(linksRow);
 
     function setStatus(msg) { status.textContent = msg || ""; }
 
