@@ -64,43 +64,38 @@ export default {
     const root = el("div", { class: "view view-marking" });
 
     const card = el("div", { class: "card" });
+    const heading = el("h2", { class: "view-heading" }, "Marking");
+    const metaStrip = el("div", { class: "meta-strip" });
+    const roomChip = el("span", { class: "meta-chip" }, code || "Room");
+    const roundChip = el("span", { class: "meta-chip" }, `Round ${round}`);
+    metaStrip.appendChild(roomChip);
+    metaStrip.appendChild(roundChip);
+    const introNote = el("div", { class: "view-note" }, "Decide whether each answer earns the point.");
 
     const list = el("div", { class: "qa-list" });
-    card.appendChild(list);
 
-    const timerRow = el("div", {
-      style: "display:flex;justify-content:center;align-items:center;gap:12px;margin-top:16px;"
-    });
-    const timerDisplay = el("div", {
-      class: "mono",
-      style: "font-weight:700;font-size:24px;min-width:120px;text-align:center;"
-    }, "0");
+    const timerRow = el("div", { class: "timer-row" });
+    const timerDisplay = el("div", { class: "mono timer-display" }, "0");
     const doneBtn = el("button", {
-      class: "btn primary",
-      style: "font-weight:700;letter-spacing:0.6px;padding-left:28px;padding-right:28px;",
+      class: "btn outline timer-button",
       disabled: ""
-    }, "STOP");
+    }, "Share verdict");
     timerRow.appendChild(timerDisplay);
     timerRow.appendChild(doneBtn);
-    card.appendChild(timerRow);
 
-    const resultWrap = el("div", {
-      style: "text-align:center;margin-top:18px;display:none;"
-    });
-    const freezeLine = el("div", {
-      class: "mono",
-      style: "font-weight:700;font-size:20px;margin-bottom:10px;"
-    }, "");
-    const winnerLine = el("div", {
-      style: "display:none;font-size:34px;font-weight:700;line-height:1.05;text-transform:uppercase;white-space:pre-line;font-family:Impact,Haettenschweiler,'Arial Black','Arial Narrow Bold',sans-serif;color:#c8f7c5;"
-    }, "");
-    const waitingLine = el("div", {
-      class: "mono",
-      style: "opacity:0.78;margin-top:6px;"
-    }, "");
+    const resultWrap = el("div", { class: "result-panel" });
+    const freezeLine = el("div", { class: "mono result-heading" }, "");
+    const winnerLine = el("div", { class: "result-winner" }, "");
+    const waitingLine = el("div", { class: "mono small muted" }, "");
     resultWrap.appendChild(freezeLine);
     resultWrap.appendChild(winnerLine);
     resultWrap.appendChild(waitingLine);
+
+    card.appendChild(heading);
+    card.appendChild(metaStrip);
+    card.appendChild(introNote);
+    card.appendChild(list);
+    card.appendChild(timerRow);
     card.appendChild(resultWrap);
 
     root.appendChild(card);
@@ -123,6 +118,11 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    const readableName = myRole === "host" ? "Daniel" : "Jaime";
+    heading.textContent = `${readableName} marks ${oppName}`;
+    introNote.textContent = `Call Jemima’s verdict on ${oppName}’s answers.`;
+    doneBtn.textContent = `Send to ${oppName}`;
+    roomChip.textContent = code || "Room";
     waitingLine.textContent = `Linking to ${oppName}…`;
 
     const fallbackStartAt = Number((roomData0.countdown || {}).startAt || 0) || null;
@@ -264,15 +264,19 @@ export default {
 
     const updateOutcomeDisplay = () => {
       if (!published) {
-        resultWrap.style.display = "none";
+        resultWrap.classList.remove("active");
+        list.style.display = "";
+        timerRow.style.opacity = "";
+        freezeLine.textContent = "";
+        winnerLine.textContent = "";
+        waitingLine.textContent = `Linking to ${oppName}…`;
         return;
       }
       const secsLine = Number.isFinite(latestTotalForMe)
-        ? `ROUND COMPLETED IN ${formatSeconds(latestTotalForMe)} SECONDS`
-        : "ROUND COMPLETED IN — SECONDS";
+        ? `Round wrapped in ${formatSeconds(latestTotalForMe)}s`
+        : "Round wrapped — timing pending";
       freezeLine.textContent = secsLine;
-      freezeLine.style.display = "block";
-      resultWrap.style.display = "block";
+      resultWrap.classList.add("active");
       list.style.display = "none";
       timerRow.style.opacity = "0.85";
 
@@ -281,26 +285,29 @@ export default {
       const oppDone = Boolean(oppEntry && Number.isFinite(Number(oppEntry.info?.totalMs)));
 
       if (!oppDone) {
-        winnerLine.style.display = "none";
+        winnerLine.textContent = "";
         waitingLine.textContent = `Waiting for ${oppName}…`;
         return;
       }
 
       const { winnerUid, tie } = snippetOutcome || {};
-      const isWinner = tie || (winnerUid && winnerUid === me.uid);
-      if (isWinner) {
-        winnerLine.textContent = "YOU’RE\nA\nWINNER!";
-        winnerLine.style.display = "block";
-        waitingLine.textContent = tie
-          ? "Dead heat! Snippet unlocked for both."
-          : "Connected. Snippet secured.";
-      } else if (winnerUid) {
-        winnerLine.style.display = "none";
-        waitingLine.textContent = "Link complete. Await the next round…";
-      } else {
-        winnerLine.style.display = "none";
-        waitingLine.textContent = `Linking to ${oppName}…`;
+      if (tie) {
+        winnerLine.textContent = "Snippet shared";
+        waitingLine.textContent = "Dead heat — Daniel and Jaime both keep it.";
+        return;
       }
+      if (winnerUid && winnerUid === me.uid) {
+        winnerLine.textContent = `${readableName} keeps Jemima’s snippet`;
+        waitingLine.textContent = "Connected. Preparing the award.";
+        return;
+      }
+      if (winnerUid) {
+        winnerLine.textContent = `${oppName} keeps Jemima’s snippet`;
+        waitingLine.textContent = "Link complete. Await the next round…";
+        return;
+      }
+      winnerLine.textContent = "";
+      waitingLine.textContent = `Linking to ${oppName}…`;
     };
 
     const showPostSubmit = (totalMs) => {

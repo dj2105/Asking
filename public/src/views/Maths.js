@@ -67,20 +67,23 @@ export default {
     // Skeleton
     container.innerHTML = "";
     const root = el("div", { class:"view view-maths" });
-    root.appendChild(el("h1", { class:"title" }, "Jemima’s Maths"));
 
     const card = el("div", { class:"card" });
+    const heading = el("h2", { class:"view-heading" }, "Jemima’s Maths");
+    const metaStrip = el("div", { class:"meta-strip" });
+    const roomChip = el("span", { class:"meta-chip" }, code || "Room" );
+    metaStrip.appendChild(roomChip);
+    const introNote = el("div", { class:"view-note" }, "Solve both beats, then send them to Jemima." );
 
-    const form = el("div", {});
-    const row1 = el("div", { class:"mono", style:"margin-top:6px;" });
-    const row2 = el("div", { class:"mono", style:"margin-top:10px;" });
-
-    const q1 = el("div", { class:"mono", style:"font-weight:600; white-space:pre-wrap;" }, "");
+    const form = el("div", { class:"maths-form" });
+    const row1 = el("div", { class:"maths-question" });
+    const q1 = el("div", { class:"mono maths-question__prompt" }, "");
     const i1 = el("input", { type:"number", class:"input", placeholder:"Answer 1 (integer)" });
     row1.appendChild(q1);
     row1.appendChild(i1);
 
-    const q2 = el("div", { class:"mono", style:"font-weight:600; white-space:pre-wrap; margin-top:10px;" }, "");
+    const row2 = el("div", { class:"maths-question" });
+    const q2 = el("div", { class:"mono maths-question__prompt" }, "");
     const i2 = el("input", { type:"number", class:"input", placeholder:"Answer 2 (integer)" });
     row2.appendChild(q2);
     row2.appendChild(i2);
@@ -88,11 +91,15 @@ export default {
     form.appendChild(row1);
     form.appendChild(row2);
 
-    const done = el("button", { class:"btn", style:"width:100%;margin-top:12px;", disabled:"" }, "DONE");
+    const done = el("button", { class:"btn maths-submit", disabled:"" }, "Send to Jemima");
+    const waitMsg = el("div", { class:"mono small wait-note" }, "");
+    waitMsg.style.display = "none";
+
+    card.appendChild(heading);
+    card.appendChild(metaStrip);
+    card.appendChild(introNote);
     card.appendChild(form);
     card.appendChild(done);
-
-    const waitMsg = el("div", { class:"mono", style:"text-align:center;opacity:.8;margin-top:10px;display:none;" }, "");
     card.appendChild(waitMsg);
 
     root.appendChild(card);
@@ -114,6 +121,11 @@ export default {
       : (hostUid === me.uid) ? "host" : (guestUid === me.uid) ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    const readableName = myRole === "host" ? "Daniel" : "Jaime";
+    heading.textContent = `${readableName} — Jemima’s Maths`;
+    introNote.textContent = `Finish both answers so ${oppName} can compare.`;
+    done.textContent = "Send to Jemima";
+    roomChip.textContent = code || "Room";
     waitMsg.textContent = `Waiting for ${oppName}…`;
 
     // Mount maths pane in "maths" mode; it shows location + both questions

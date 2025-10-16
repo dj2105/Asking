@@ -100,38 +100,14 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
 
   const box = document.createElement("div");
   box.className = "jemima-maths-box mono";
-  box.style.cssText = `
-    background: var(--ink);
-    color: var(--paper);
-    padding: 16px 18px;
-    border-radius: 12px;
-    margin-top: 24px;
-    text-align: left;
-    font-family: Courier, monospace;
-    font-size: 0.95em;
-    line-height: 1.45;
-    max-width: 460px;
-    margin-left: auto;
-    margin-right: auto;
-  `;
 
   const heading = document.createElement("div");
-  heading.className = "mono";
-  heading.style.cssText = `
-    font-weight: 700;
-    font-size: 1.05em;
-  `;
+  heading.className = "mono maths-panel__heading";
   heading.textContent = "Jemima's List";
   box.appendChild(heading);
 
   const listEl = document.createElement("ul");
-  listEl.className = "mono";
-  listEl.style.cssText = `
-    list-style: disc;
-    list-style-position: outside;
-    margin: 12px 0 0;
-    padding-left: 22px;
-  `;
+  listEl.className = "mono maths-panel__list";
   box.appendChild(listEl);
 
   let dynamicEntries = [];
@@ -140,16 +116,10 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
     listEl.innerHTML = "";
     dynamicEntries.forEach((entry, index) => {
       const item = document.createElement("li");
+      item.className = "maths-panel__item";
+      if (entry.bold) item.classList.add("maths-panel__item--bold");
+      if (entry.subtle) item.classList.add("maths-panel__item--subtle");
       item.textContent = entry.text;
-      if (entry.bold) {
-        item.style.fontWeight = "700";
-      }
-      if (entry.subtle) {
-        item.style.opacity = "0.85";
-      }
-      if (index > 0) {
-        item.style.marginTop = "6px";
-      }
       listEl.appendChild(item);
     });
   };

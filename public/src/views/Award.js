@@ -60,10 +60,7 @@ function resolveCorrectAnswer(answer = {}, fallbackItem = {}) {
 
 function renderQuestionSection({ heading, items, answers, choiceLabel }) {
   const block = el("div", { class: "award-block" });
-  block.appendChild(el("div", {
-    class: "mono",
-    style: "text-align:center;font-weight:700;margin-top:4px;margin-bottom:6px;font-size:18px;"
-  }, heading));
+  block.appendChild(el("div", { class: "mono award-block__title" }, heading));
 
   for (let i = 0; i < 3; i += 1) {
     const item = items[i] || {};
@@ -75,31 +72,23 @@ function renderQuestionSection({ heading, items, answers, choiceLabel }) {
     const wasAnswered = Boolean(chosen);
     const wasCorrect = wasAnswered && same(chosen, correct);
 
-    const row = el("div", { class: "mark-row" });
+    const row = el("div", { class: "award-answer-line" });
     row.appendChild(el("div", { class: "q mono" }, `${i + 1}. ${question}`));
 
-    const list = el("div", {
-      class: "a mono",
-      style: "display:flex;flex-direction:column;gap:6px;align-items:flex-start;"
-    });
-
-    const correctLine = el("div", {
-      class: "mono",
-      style: "font-weight:700;color:var(--ok);display:flex;gap:6px;align-items:center;"
-    });
+    const correctLine = el("div", { class: "mono award-correct" });
     correctLine.appendChild(el("span", {}, "✓"));
     correctLine.appendChild(el("span", {}, `Correct: ${correct}`));
-    list.appendChild(correctLine);
+    row.appendChild(correctLine);
 
-    const chosenLine = el("div", {
-      class: "mono",
-      style: `font-weight:700;display:flex;gap:6px;align-items:center;${wasAnswered ? (wasCorrect ? "color:var(--ok);" : "color:var(--bad);") : "opacity:.7;"}`
-    });
+    const choiceClasses = ["mono", "award-choice"];
+    if (!wasAnswered) choiceClasses.push("award-choice--missed");
+    else if (wasCorrect) choiceClasses.push("award-choice--right");
+    else choiceClasses.push("award-choice--wrong");
+    const chosenLine = el("div", { class: choiceClasses.join(" ") });
     chosenLine.appendChild(el("span", {}, wasAnswered ? (wasCorrect ? "✓" : "✕") : "—"));
     chosenLine.appendChild(el("span", {}, `${choiceLabel}: ${wasAnswered ? chosen : "No answer"}`));
-    list.appendChild(chosenLine);
+    row.appendChild(chosenLine);
 
-    row.appendChild(list);
     block.appendChild(row);
   }
 
@@ -156,12 +145,18 @@ export default {
     const root = el("div", { class: "view view-award" });
 
     const card = el("div", { class: "card" });
-
-    const scoreHeadline = el("div", {
-      class: "mono",
-      style: "text-align:center;font-weight:700;font-size:24px;margin-bottom:12px;"
-    }, "Daniel 0 — 0 Jaime");
+    const heading = el("h2", { class: "view-heading" }, "Award");
+    const metaStrip = el("div", { class: "meta-strip" });
+    const roomChip = el("span", { class: "meta-chip" }, code || "Room" );
+    const roundChip = el("span", { class: "meta-chip" }, `Round ${round}`);
+    metaStrip.appendChild(roomChip);
+    metaStrip.appendChild(roundChip);
+    const scoreHeadline = el("div", { class: "mono award-card__score" }, "Daniel 0 — 0 Jaime");
+    const introNote = el("div", { class: "view-note" }, "Scores lock in now. Review every question together.");
+    card.appendChild(heading);
+    card.appendChild(metaStrip);
     card.appendChild(scoreHeadline);
+    card.appendChild(introNote);
 
     const snippetSummary = el("div", { class: "snippet-summary" });
     const snippetFastestLabel = el("div", { class: "mono snippet-label" }, "FASTEST PLAYER");
@@ -178,15 +173,13 @@ export default {
     snippetSummary.appendChild(snippetOutcomeLine);
     card.appendChild(snippetSummary);
 
-    const reviewWrap = el("div", { style: "display:flex;flex-direction:column;gap:16px;" });
+    const reviewWrap = el("div", { class: "award-review" });
     card.appendChild(reviewWrap);
 
-    const waitMsg = el("div", {
-      class: "mono small",
-      style: "text-align:center;margin-top:14px;display:none;opacity:.8;"
-    }, "");
+    const waitMsg = el("div", { class: "mono small wait-note" }, "");
+    waitMsg.style.display = "none";
 
-    const continueBtn = el("button", { class: "btn primary", style: "margin-top:12px;" }, "Continue");
+    const continueBtn = el("button", { class: "btn" }, "Continue");
     card.appendChild(continueBtn);
     card.appendChild(waitMsg);
 
@@ -209,6 +202,12 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    const readableName = myRole === "host" ? "Daniel" : "Jaime";
+    heading.textContent = `${readableName} & ${oppName}`;
+    introNote.textContent = `Walk through Jemima’s verdicts with ${oppName}.`;
+    continueBtn.textContent = round >= 5 ? "Go to Maths" : "Continue";
+    roomChip.textContent = code || "Room";
+    roundChip.textContent = `Round ${round}`;
     const waitForOpp = `Waiting for ${oppName}…`;
     waitMsg.textContent = waitForOpp;
 
@@ -421,6 +420,8 @@ export default {
       const dataRound = Number(data.round);
       if (stateName === "award" && dataRound && dataRound !== round) {
         round = dataRound;
+        roundChip.textContent = `Round ${round}`;
+        continueBtn.textContent = round >= 5 ? "Go to Maths" : "Continue";
       }
 
       if (stateName === "award") {
