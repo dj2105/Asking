@@ -1,0 +1,376 @@
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "LAD",
+    "generatedAt": "2025-10-16T21:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "prize": "£100",
+          "question": "Which monarch created the Order of the Garter in the 14th century?",
+          "correct_answer": "Edward III",
+          "distractors": {
+            "easy": "Henry VIII",
+            "medium": "Richard II",
+            "hard": "Edward II"
+          }
+        },
+        {
+          "subject": "Cats",
+          "prize": "£200",
+          "question": "Which breed is famed for its folded ears due to a natural cartilage mutation?",
+          "correct_answer": "Scottish Fold",
+          "distractors": {
+            "easy": "Siamese",
+            "medium": "British Shorthair",
+            "hard": "American Curl"
+          }
+        },
+        {
+          "subject": "American TV Sitcoms",
+          "prize": "£300",
+          "question": "In 'Parks and Recreation', what is the name of Leslie Knope's hometown city government?",
+          "correct_answer": "Pawnee Department of Parks and Recreation",
+          "distractors": {
+            "easy": "Eagleton Parks Bureau",
+            "medium": "Pawnee Municipal Council",
+            "hard": "Indiana Parks Authority"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "World Capitals",
+          "prize": "£100",
+          "question": "Which Asian capital city is built around the Chao Phraya River delta?",
+          "correct_answer": "Bangkok",
+          "distractors": {
+            "easy": "Hanoi",
+            "medium": "Manila",
+            "hard": "Phnom Penh"
+          }
+        },
+        {
+          "subject": "Ancient Greece",
+          "prize": "£200",
+          "question": "Which philosopher founded the Lyceum in Athens?",
+          "correct_answer": "Aristotle",
+          "distractors": {
+            "easy": "Socrates",
+            "medium": "Plato",
+            "hard": "Democritus"
+          }
+        },
+        {
+          "subject": "Roman Empire",
+          "prize": "£300",
+          "question": "Which Roman road connected Rome to Brindisi across southern Italy?",
+          "correct_answer": "Via Appia",
+          "distractors": {
+            "easy": "Via Flaminia",
+            "medium": "Via Aurelia",
+            "hard": "Via Claudia"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Irish History",
+          "prize": "£500",
+          "question": "Which treaty ended the Irish War of Independence in 1921?",
+          "correct_answer": "Anglo-Irish Treaty",
+          "distractors": {
+            "easy": "Treaty of Versailles",
+            "medium": "Treaty of Limerick",
+            "hard": "Sunningdale Agreement"
+          }
+        },
+        {
+          "subject": "'90s Pop",
+          "prize": "£1,000",
+          "question": "Which singer's 1998 single 'Ray of Light' won a Grammy for Best Dance Recording?",
+          "correct_answer": "Madonna",
+          "distractors": {
+            "easy": "Cher",
+            "medium": "Janet Jackson",
+            "hard": "Kylie Minogue"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "prize": "£2,000",
+          "question": "Which river flows through Baghdad before joining the Euphrates?",
+          "correct_answer": "Tigris",
+          "distractors": {
+            "easy": "Jordan",
+            "medium": "Indus",
+            "hard": "Orontes"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Medieval Europe",
+          "prize": "£500",
+          "question": "Which 14th-century Italian author wrote 'The Decameron'?",
+          "correct_answer": "Giovanni Boccaccio",
+          "distractors": {
+            "easy": "Dante Alighieri",
+            "medium": "Francesco Petrarch",
+            "hard": "Geoffrey Chaucer"
+          }
+        },
+        {
+          "subject": "Renaissance Art",
+          "prize": "£1,000",
+          "question": "Which Venetian painter created 'The Feast in the House of Levi'?",
+          "correct_answer": "Paolo Veronese",
+          "distractors": {
+            "easy": "Titian",
+            "medium": "Tintoretto",
+            "hard": "Giorgione"
+          }
+        },
+        {
+          "subject": "Baroque Music",
+          "prize": "£2,000",
+          "question": "Which composer premiered the oratorio 'Messiah' in Dublin in 1742?",
+          "correct_answer": "George Frideric Handel",
+          "distractors": {
+            "easy": "Antonio Vivaldi",
+            "medium": "Johann Sebastian Bach",
+            "hard": "Georg Philipp Telemann"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "World War I",
+          "prize": "£4,000",
+          "question": "Which battle marked the first use of tanks by the British Army in 1916?",
+          "correct_answer": "Battle of the Somme",
+          "distractors": {
+            "easy": "Battle of Ypres",
+            "medium": "Battle of Cambrai",
+            "hard": "Battle of Arras"
+          }
+        },
+        {
+          "subject": "World War II",
+          "prize": "£8,000",
+          "question": "Which conference in 1945 saw Churchill, Roosevelt, and Stalin plan the final defeat of Germany?",
+          "correct_answer": "Yalta Conference",
+          "distractors": {
+            "easy": "Potsdam Conference",
+            "medium": "Tehran Conference",
+            "hard": "Casablanca Conference"
+          }
+        },
+        {
+          "subject": "Modern Politics",
+          "prize": "£16,000",
+          "question": "Which UK Prime Minister announced the 'Big Society' initiative in 2010?",
+          "correct_answer": "David Cameron",
+          "distractors": {
+            "easy": "Gordon Brown",
+            "medium": "Theresa May",
+            "hard": "John Major"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Classical Mythology",
+          "prize": "£4,000",
+          "question": "Which hero slew the Chimera with the help of the winged horse Pegasus?",
+          "correct_answer": "Bellerophon",
+          "distractors": {
+            "easy": "Perseus",
+            "medium": "Theseus",
+            "hard": "Jason"
+          }
+        },
+        {
+          "subject": "Norse Myth",
+          "prize": "£8,000",
+          "question": "What is the name of the bridge connecting Midgard to Asgard in Norse mythology?",
+          "correct_answer": "Bifröst",
+          "distractors": {
+            "easy": "Gjallarbrú",
+            "medium": "Skíðblaðnir",
+            "hard": "Níðavellir"
+          }
+        },
+        {
+          "subject": "Folklore — Irish",
+          "prize": "£16,000",
+          "question": "Which hero is famed for defending Ulster single-handedly in the Táin Bó Cúailnge?",
+          "correct_answer": "Cú Chulainn",
+          "distractors": {
+            "easy": "Fionn mac Cumhaill",
+            "medium": "Diarmuid Ua Duibhne",
+            "hard": "Conall Cernach"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "Geography — Mountains",
+          "prize": "£32,000",
+          "question": "Which mountain is the highest peak in the Caucasus range?",
+          "correct_answer": "Mount Elbrus",
+          "distractors": {
+            "easy": "Mount Ararat",
+            "medium": "Kazbek",
+            "hard": "Dykh-Tau"
+          }
+        },
+        {
+          "subject": "World Literature",
+          "prize": "£64,000",
+          "question": "Which Nigerian author wrote the novel 'Half of a Yellow Sun'?",
+          "correct_answer": "Chimamanda Ngozi Adichie",
+          "distractors": {
+            "easy": "Chinua Achebe",
+            "medium": "Buchi Emecheta",
+            "hard": "Ben Okri"
+          }
+        },
+        {
+          "subject": "Science — Astronomy",
+          "prize": "£125,000",
+          "question": "Which space probe entered interstellar space in 2012 after launching in 1977?",
+          "correct_answer": "Voyager 1",
+          "distractors": {
+            "easy": "Pioneer 10",
+            "medium": "Voyager 2",
+            "hard": "New Horizons"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Folklore — British",
+          "prize": "£32,000",
+          "question": "Which Cornish giant is said to have battled Jack the Giant Killer at St Michael's Mount?",
+          "correct_answer": "Cormoran",
+          "distractors": {
+            "easy": "Gogmagog",
+            "medium": "Blunderbore",
+            "hard": "Ysbaddaden"
+          }
+        },
+        {
+          "subject": "Language — Grammar",
+          "prize": "£64,000",
+          "question": "What grammatical mood expresses wishes or hypotheticals, as in 'If I were king'?",
+          "correct_answer": "Subjunctive",
+          "distractors": {
+            "easy": "Imperative",
+            "medium": "Conditional",
+            "hard": "Gerundive"
+          }
+        },
+        {
+          "subject": "Language — Punctuation",
+          "prize": "£125,000",
+          "question": "Which punctuation mark is used to join two independent clauses without a conjunction?",
+          "correct_answer": "Semicolon",
+          "distractors": {
+            "easy": "Comma",
+            "medium": "Colon",
+            "hard": "Em dash"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "Printing & Type",
+          "prize": "£250,000",
+          "question": "Which designer created the typeface Helvetica in 1957?",
+          "correct_answer": "Max Miedinger",
+          "distractors": {
+            "easy": "Adrian Frutiger",
+            "medium": "Paul Renner",
+            "hard": "Jan Tschichold"
+          }
+        },
+        {
+          "subject": "Comics",
+          "prize": "£500,000",
+          "question": "Which graphic novel introduced the character Rorschach?",
+          "correct_answer": "Watchmen",
+          "distractors": {
+            "easy": "The Dark Knight Returns",
+            "medium": "V for Vendetta",
+            "hard": "Kingdom Come"
+          }
+        },
+        {
+          "subject": "TV — British",
+          "prize": "£1,000,000",
+          "question": "Which long-running quiz show is presented by Jeremy Paxman from 1994 to 2023?",
+          "correct_answer": "University Challenge",
+          "distractors": {
+            "easy": "Mastermind",
+            "medium": "Countdown",
+            "hard": "Fifteen to One"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Anime",
+          "prize": "£250,000",
+          "question": "Which director created the 1995 psychological film 'Ghost in the Shell'?",
+          "correct_answer": "Mamoru Oshii",
+          "distractors": {
+            "easy": "Hayao Miyazaki",
+            "medium": "Hideaki Anno",
+            "hard": "Satoshi Kon"
+          }
+        },
+        {
+          "subject": "TV — American Drama",
+          "prize": "£500,000",
+          "question": "Which actor portrayed attorney Annalise Keating in 'How to Get Away with Murder'?",
+          "correct_answer": "Viola Davis",
+          "distractors": {
+            "easy": "Taraji P. Henson",
+            "medium": "Kerry Washington",
+            "hard": "Angela Bassett"
+          }
+        },
+        {
+          "subject": "Gameshow Lore",
+          "prize": "£1,000,000",
+          "question": "Which lifeline was introduced to 'Who Wants to Be a Millionaire?' in the UK in 2010 to replace Phone-a-Friend?",
+          "correct_answer": "Switch the Question",
+          "distractors": {
+            "easy": "Double Dip",
+            "medium": "Ask the Expert",
+            "hard": "Ask the Audience"
+          }
+        }
+      ]
+    }
+  ]
+}
