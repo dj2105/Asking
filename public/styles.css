@@ -228,6 +228,11 @@ input[type="text"], input[type="number"], .input {
   font-weight: 600;
   letter-spacing: 0.05em;
 }
+.snippet-result {
+  margin-top: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
 
 /* ===========================
    Timer badge (top-right in card)
