@@ -58,7 +58,21 @@ function resolveCorrectAnswer(answer = {}, fallbackItem = {}) {
   return "";
 }
 
-function renderQuestionSection({ heading, items, answers, answerLabel }) {
+const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
+
+function resolveRoundDistractor(item = {}, round) {
+  const distractors = item.distractors || {};
+  const tier = roundTier(round);
+  return (
+    distractors[tier] ||
+    distractors.medium ||
+    distractors.easy ||
+    distractors.hard ||
+    ""
+  );
+}
+
+function renderQuestionSection({ heading, items, answers, round }) {
   const block = el("div", { class: "award-box award-box--questions" });
   block.appendChild(el("div", { class: "mono award-box__title" }, heading));
 
@@ -78,25 +92,29 @@ function renderQuestionSection({ heading, items, answers, answerLabel }) {
       el("div", { class: "mono award-question__prompt" }, `${i + 1}. ${question}`)
     );
 
-    const answerClasses = ["mono", "award-answer-line"];
-    if (!wasAnswered) answerClasses.push("award-answer-line--missed");
-    else if (wasCorrect) answerClasses.push("award-answer-line--correct");
-    else answerClasses.push("award-answer-line--wrong");
+    let distractor = resolveRoundDistractor(item, round);
+    if (!distractor || same(distractor, correct)) {
+      const alt = chosen && !same(chosen, correct) ? chosen : "";
+      if (alt) distractor = alt;
+    }
+    if (!distractor || same(distractor, correct)) distractor = "(missing option)";
 
-    const playerLine = el(
-      "div",
-      { class: answerClasses.join(" ") },
-      `${answerLabel}: ${wasAnswered ? chosen : "No answer"}`
-    );
+    const choices = [
+      { text: correct || "(missing option)", isCorrect: true },
+      { text: distractor, isCorrect: false },
+    ];
 
-    const correctLine = el(
-      "div",
-      { class: "mono award-answer-line award-answer-line--correct" },
-      `Correct: ${correct}`
-    );
-
-    textCol.appendChild(playerLine);
-    textCol.appendChild(correctLine);
+    for (const choice of choices) {
+      const lineClasses = ["mono", "award-answer-line"];
+      lineClasses.push(
+        choice.isCorrect
+          ? "award-answer-line--correct"
+          : "award-answer-line--wrong"
+      );
+      textCol.appendChild(
+        el("div", { class: lineClasses.join(" ") }, choice.text)
+      );
+    }
 
     const status = el(
       "div",
@@ -307,13 +325,13 @@ export default {
         heading: "YOUR QUESTIONS",
         items: myItems,
         answers: myAnswers,
-        answerLabel: "You answered",
+        round,
       }));
       reviewWrap.appendChild(renderQuestionSection({
         heading: `${oppName.toUpperCase()}'S QUESTIONS`,
         items: oppItems,
         answers: oppAnswers,
-        answerLabel: `${oppName} answered`,
+        round,
       }));
       updateRoundScores();
     };
