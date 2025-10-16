@@ -78,6 +78,8 @@ export default {
     const auto = params.get("auto") === "1";
     const requestedStep = (params.get("step") || "").toLowerCase();
     const requestedRound = parseInt(params.get("round") || "", 10);
+    const roleParamRaw = (params.get("role") || "").toLowerCase();
+    const queryRole = roleParamRaw === "host" || roleParamRaw === "guest" ? roleParamRaw : "";
 
     const hue = Math.floor(Math.random() * 360);
     document.documentElement.style.setProperty("--ink-h", String(hue));
@@ -124,7 +126,8 @@ export default {
     ];
     let currentRole = "";
     const storedRole = initialCode ? getStoredRole(initialCode) : "";
-    if (storedRole === "host" || storedRole === "guest") currentRole = storedRole;
+    if (queryRole) currentRole = queryRole;
+    else if (storedRole === "host" || storedRole === "guest") currentRole = storedRole;
 
     roleOptions.forEach(({ value, label }) => {
       const id = `rejoin-role-${value}`;
@@ -203,7 +206,11 @@ export default {
         const room = snap.data() || {};
         const round = computeRound(room);
         const { hostUid, guestUid } = room.meta || {};
+        if (queryRole) {
+          setStoredRole(code, queryRole);
+        }
         let role = getStoredRole(code);
+        if (queryRole) role = queryRole;
         if (role !== "host" && role !== "guest") {
           if (user?.uid && hostUid && user.uid === hostUid) role = "host";
           else if (user?.uid && guestUid && user.uid === guestUid) role = "guest";
