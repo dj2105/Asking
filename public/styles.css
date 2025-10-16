@@ -833,3 +833,17 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   box-shadow: var(--shadow);
   text-align: center;
 }
+
+.final-summary { padding: 32px 36px; }
+.final-heading { font-size: 1.1rem; letter-spacing: 0.24em; margin: 0 0 10px 0; text-transform: uppercase; }
+.final-score-line { font-weight: 700; font-size: 1.35rem; letter-spacing: 0.16em; margin: 6px 0 4px; text-transform: uppercase; }
+.final-breakdown { margin-top: 18px; display: flex; gap: 22px; justify-content: center; flex-wrap: wrap; text-align: left; }
+.final-breakdown__col { min-width: 150px; display: flex; flex-direction: column; gap: 6px; }
+.final-breakdown__name { font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.95rem; }
+.final-breakdown__line { display: flex; justify-content: space-between; align-items: center; gap: 18px; font-size: 0.95rem; }
+.final-breakdown__line span { font-weight: 700; }
+.final-stats { text-align: left; }
+.final-subheading { margin: 0 0 16px 0; font-size: 1.05rem; letter-spacing: 0.18em; text-transform: uppercase; text-align: center; }
+.final-stat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.final-stat-list li { line-height: 1.5; }
+.final-stat-list strong { display: block; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
