@@ -92,7 +92,7 @@ export default {
     card.appendChild(form);
     card.appendChild(done);
 
-    const waitMsg = el("div", { class:"mono", style:"text-align:center;opacity:.8;margin-top:10px;display:none;" }, "Waiting for opponent…");
+    const waitMsg = el("div", { class:"mono", style:"text-align:center;opacity:.8;margin-top:10px;display:none;" }, "");
     card.appendChild(waitMsg);
 
     root.appendChild(card);
@@ -113,6 +113,8 @@ export default {
       ? storedRole
       : (hostUid === me.uid) ? "host" : (guestUid === me.uid) ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    waitMsg.textContent = `Waiting for ${oppName}…`;
 
     // Mount maths pane in "maths" mode; it shows location + both questions
     try {
