@@ -78,6 +78,12 @@ export default {
     const auto = params.get("auto") === "1";
     const requestedStep = (params.get("step") || "").toLowerCase();
     const requestedRound = parseInt(params.get("round") || "", 10);
+    const requestedRoleParam = (params.get("role") || "").toLowerCase();
+    const preferredRole = requestedRoleParam === "host" || requestedRoleParam === "daniel"
+      ? "host"
+      : requestedRoleParam === "guest" || requestedRoleParam === "jaime"
+        ? "guest"
+        : "";
 
     const hue = Math.floor(Math.random() * 360);
     document.documentElement.style.setProperty("--ink-h", String(hue));
@@ -125,6 +131,7 @@ export default {
     let currentRole = "";
     const storedRole = initialCode ? getStoredRole(initialCode) : "";
     if (storedRole === "host" || storedRole === "guest") currentRole = storedRole;
+    if (!currentRole && preferredRole) currentRole = preferredRole;
 
     roleOptions.forEach(({ value, label }) => {
       const id = `rejoin-role-${value}`;
@@ -195,6 +202,10 @@ export default {
       setStatus("Connecting to room…");
       try {
         setLastRoomCode(code);
+        if (preferredRole) {
+          setStoredRole(code, preferredRole);
+          currentRole = preferredRole;
+        }
         const snap = await getDoc(roomRef(code));
         if (!snap.exists()) {
           setStatus("Room not found.");
@@ -207,6 +218,9 @@ export default {
         if (role !== "host" && role !== "guest") {
           if (user?.uid && hostUid && user.uid === hostUid) role = "host";
           else if (user?.uid && guestUid && user.uid === guestUid) role = "guest";
+        }
+        if (role !== "host" && role !== "guest" && preferredRole) {
+          role = preferredRole;
         }
         if (role !== "host" && role !== "guest") {
           if (autoMode) {

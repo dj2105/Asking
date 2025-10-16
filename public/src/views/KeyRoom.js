@@ -4,10 +4,10 @@
 // - Any sealed file title can be uploaded in any order; we no longer require matching codes.
 // - Full packs provide the baseline; optional question/maths overrides replace matching sections.
 // - When START fires we build a composite pack, filling missing content with "<empty>",
-//   seed Firestore, stamp the room into "coderoom" state, then route to #/coderoom.
+//   seed Firestore, then optionally fast-forward the room to any phase.
 
 import { ensureAuth, db } from "../lib/firebase.js";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import {
   unsealFile,
   unsealHalfpack,
@@ -33,6 +33,8 @@ function el(tag, attrs = {}, kids = []) {
 }
 
 const roomRef = (code) => doc(db, "rooms", code);
+const roundDocRef = (code, round) => doc(roomRef(code), "rounds", String(round));
+const playerDocRef = (code, uid) => doc(roomRef(code), "players", uid);
 const DEFAULT_HOST_UID = "daniel-001";
 const DEFAULT_GUEST_UID = "jaime-001";
 const PLACEHOLDER = "<empty>";
@@ -206,6 +208,372 @@ async function determineSealedType(file) {
   throw new Error("Unsupported sealed version.");
 }
 
+function sameText(a, b) {
+  return String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+}
+
+function ensureString(value, fallback = PLACEHOLDER) {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function extractWrongOption(item, fallback = PLACEHOLDER) {
+  const distractors = item?.distractors || {};
+  const pool = [distractors.easy, distractors.medium, distractors.hard];
+  const correct = ensureString(item?.correct_answer, fallback);
+  for (const opt of pool) {
+    if (typeof opt === "string" && opt.trim() && !sameText(opt, correct)) {
+      return opt;
+    }
+  }
+  if (typeof item?.question === "string" && item.question.trim()) {
+    return `${item.question.trim()} — guess`;
+  }
+  if (correct && !sameText(correct, fallback)) {
+    return `${correct} (??)`;
+  }
+  return fallback;
+}
+
+function craftAnswers(items = [], pattern = [true, true, false]) {
+  const trio = Array.isArray(items) ? items.slice(0, 3) : [];
+  while (trio.length < 3) trio.push(buildEmptyItem());
+  const answers = [];
+  let correctTotal = 0;
+  for (let i = 0; i < 3; i += 1) {
+    const raw = trio[i] || {};
+    const wantCorrect = Boolean(pattern[i]);
+    const question = ensureString(raw.question);
+    const correct = ensureString(raw.correct_answer);
+    const wrong = extractWrongOption(raw, PLACEHOLDER);
+    const chosen = wantCorrect ? correct : wrong;
+    if (wantCorrect && !sameText(chosen, PLACEHOLDER) && sameText(chosen, correct)) {
+      correctTotal += 1;
+    }
+    answers.push({
+      question,
+      chosen,
+      correct,
+    });
+  }
+  return { answers, correctTotal };
+}
+
+function generateRoundSimulations(pack, { hostUid, guestUid }) {
+  const rounds = Array.isArray(pack?.rounds) ? pack.rounds : [];
+  const hostPatterns = [
+    [true, true, false],
+    [true, false, true],
+    [true, true, true],
+    [false, true, true],
+    [true, false, false],
+  ];
+  const guestPatterns = [
+    [false, true, false],
+    [true, true, false],
+    [false, true, true],
+    [true, true, true],
+    [false, false, true],
+  ];
+  const baseStart = Date.now() - 1000 * 60 * 20; // twenty minutes ago
+  const gap = 1000 * 60 * 3; // three minutes between rounds
+
+  const sims = {};
+  for (let i = 0; i < 5; i += 1) {
+    const roundNumber = i + 1;
+    const src = rounds[i] || {};
+    const hostItems = Array.isArray(src.hostItems) ? src.hostItems : [];
+    const guestItems = Array.isArray(src.guestItems) ? src.guestItems : [];
+    const startAt = baseStart + i * gap;
+
+    const hostRes = craftAnswers(hostItems, hostPatterns[i] || [true, true, false]);
+    const guestRes = craftAnswers(guestItems, guestPatterns[i] || [false, true, false]);
+
+    const hostQuestionDuration = 12000 + i * 1400 + (hostRes.correctTotal < 2 ? 1800 : 0);
+    const guestQuestionDuration = 13000 + i * 1300 + (guestRes.correctTotal < 2 ? 1600 : 0);
+    const hostMarkDuration = 8000 + i * 900;
+    const guestMarkDuration = 8600 + i * 840;
+
+    const hostQDone = startAt + hostQuestionDuration;
+    const guestQDone = startAt + guestQuestionDuration;
+    const hostMarkDone = hostQDone + hostMarkDuration;
+    const guestMarkDone = guestQDone + guestMarkDuration;
+
+    const hostTotal = hostMarkDone - startAt;
+    const guestTotal = guestMarkDone - startAt;
+    const tie = Math.abs(hostTotal - guestTotal) <= 250;
+    const winnerUid = tie ? null : hostTotal < guestTotal ? hostUid : guestUid;
+
+    sims[roundNumber] = {
+      round: roundNumber,
+      hostAnswers: hostRes.answers,
+      guestAnswers: guestRes.answers,
+      hostCorrect: hostRes.correctTotal,
+      guestCorrect: guestRes.correctTotal,
+      hostMarks: guestRes.answers.map((ans, idx) =>
+        sameText(ans?.chosen, ans?.correct) ? "right" : "wrong"
+      ),
+      guestMarks: hostRes.answers.map((ans, idx) =>
+        sameText(ans?.chosen, ans?.correct) ? "right" : "wrong"
+      ),
+      timings: {
+        [hostUid]: {
+          role: "host",
+          qDoneMs: hostQDone,
+          markDoneMs: hostMarkDone,
+          totalMs: hostTotal,
+        },
+        [guestUid]: {
+          role: "guest",
+          qDoneMs: guestQDone,
+          markDoneMs: guestMarkDone,
+          totalMs: guestTotal,
+        },
+      },
+      questionsStartAt: startAt,
+      snippetWinnerUid: winnerUid,
+      snippetTie: tie,
+    };
+  }
+  return sims;
+}
+
+function needsRoundSelection(phase) {
+  return ["countdown", "questions", "marking", "award"].includes(String(phase || "").toLowerCase());
+}
+
+function normalizeRound(phase, raw) {
+  const value = Number(raw) || 1;
+  if (String(phase || "").toLowerCase() === "maths" || String(phase || "").toLowerCase() === "final") {
+    return 5;
+  }
+  if (value < 1) return 1;
+  if (value > 5) return 5;
+  return value;
+}
+
+function computeHostRoute(code, phase, round) {
+  const safe = String(phase || "").toLowerCase();
+  if (!code) return "#/keyroom";
+  if (safe === "coderoom") return `#/coderoom?code=${code}`;
+  if (safe === "countdown") return `#/countdown?code=${code}&round=${round}`;
+  if (safe === "questions") return `#/questions?code=${code}&round=${round}`;
+  if (safe === "marking") return `#/marking?code=${code}&round=${round}`;
+  if (safe === "award") return `#/award?code=${code}&round=${round}`;
+  if (safe === "maths") return `#/maths?code=${code}`;
+  if (safe === "final") return `#/final?code=${code}`;
+  return `#/coderoom?code=${code}`;
+}
+
+function computeGuestPath(code) {
+  if (!code) return "";
+  return `#/rejoin?code=${code}&role=guest&auto=1`;
+}
+
+function determineRoundStatus(phase, targetRound, roundNumber) {
+  const safe = String(phase || "").toLowerCase();
+  if (safe === "maths" || safe === "final") return "complete";
+  if (safe === "award") {
+    if (roundNumber < targetRound) return "complete";
+    if (roundNumber === targetRound) return "award";
+    return "pending";
+  }
+  if (safe === "marking") {
+    if (roundNumber < targetRound) return "complete";
+    if (roundNumber === targetRound) return "marking";
+    return "pending";
+  }
+  if (safe === "questions") {
+    if (roundNumber < targetRound) return "complete";
+    if (roundNumber === targetRound) return "questions";
+    return "pending";
+  }
+  if (safe === "countdown") {
+    if (roundNumber < targetRound) return "complete";
+    if (roundNumber === targetRound) return "countdown";
+    return "pending";
+  }
+  if (safe === "coderoom" || safe === "keyroom" || safe === "seeding") return "pending";
+  return "pending";
+}
+
+async function applyJumpState({
+  code,
+  pack,
+  phase,
+  round,
+}) {
+  const normalizedPhase = String(phase || "").toLowerCase();
+  const targetRound = normalizeRound(phase, round);
+  const hostUid = pack?.meta?.hostUid || DEFAULT_HOST_UID;
+  const guestUid = pack?.meta?.guestUid || DEFAULT_GUEST_UID;
+  const simulations = generateRoundSimulations(pack, { hostUid, guestUid });
+
+  const answersHost = {};
+  const answersGuest = {};
+  const submittedHost = {};
+  const submittedGuest = {};
+  const markingHost = {};
+  const markingGuest = {};
+  const markingAckHost = {};
+  const markingAckGuest = {};
+  const awardAckHost = {};
+  const awardAckGuest = {};
+  const retainedHost = {};
+  const retainedGuest = {};
+  const playerRoundsHost = {};
+  const playerRoundsGuest = {};
+  const roundWrites = [];
+
+  let totalHostScore = 0;
+  let totalGuestScore = 0;
+
+  for (let r = 1; r <= 5; r += 1) {
+    const status = determineRoundStatus(normalizedPhase, targetRound, r);
+    const sim = simulations[r];
+    if (!sim) continue;
+    const roundPatch = {};
+    if (status === "complete" || status === "award" || status === "marking") {
+      answersHost[r] = sim.hostAnswers;
+      answersGuest[r] = sim.guestAnswers;
+      submittedHost[r] = true;
+      submittedGuest[r] = true;
+      roundPatch.timings = sim.timings;
+      roundPatch.timingsMeta = { questionsStartAt: sim.questionsStartAt };
+
+      playerRoundsHost[r] = { timings: { qDoneMs: sim.timings[hostUid]?.qDoneMs || null, totalMs: sim.timings[hostUid]?.totalMs || null, role: "host" } };
+      playerRoundsGuest[r] = { timings: { qDoneMs: sim.timings[guestUid]?.qDoneMs || null, totalMs: sim.timings[guestUid]?.totalMs || null, role: "guest" } };
+
+      totalHostScore += sim.hostCorrect;
+      totalGuestScore += sim.guestCorrect;
+    }
+
+    if (status === "complete" || status === "award") {
+      markingHost[r] = sim.hostMarks;
+      markingGuest[r] = sim.guestMarks;
+      markingAckHost[r] = true;
+      markingAckGuest[r] = true;
+      roundPatch.snippetWinnerUid = sim.snippetWinnerUid || null;
+      roundPatch.snippetTie = Boolean(sim.snippetTie);
+      if (sim.snippetTie || sim.snippetWinnerUid === hostUid) retainedHost[r] = true;
+      if (sim.snippetTie || sim.snippetWinnerUid === guestUid) retainedGuest[r] = true;
+      if (status === "complete") {
+        awardAckHost[r] = true;
+        awardAckGuest[r] = true;
+      } else {
+        awardAckHost[r] = false;
+        awardAckGuest[r] = false;
+      }
+    } else if (status === "marking") {
+      markingAckHost[r] = false;
+      markingAckGuest[r] = false;
+    }
+
+    if (Object.keys(roundPatch).length > 0) {
+      roundWrites.push(setDoc(roundDocRef(code, r), roundPatch, { merge: true }));
+    }
+  }
+
+  const countdownStartAt = normalizedPhase === "countdown"
+    ? Date.now() + 4000
+    : null;
+  const markingStartAt = normalizedPhase === "marking"
+    ? Date.now()
+    : null;
+
+  const mathsAnswers = {};
+  const mathsAnswersAck = {};
+  if (normalizedPhase === "final") {
+    const maths = pack?.maths || {};
+    const baseAnswers = Array.isArray(maths.answers) ? maths.answers : [];
+    const hostMaths = [
+      Number.isInteger(baseAnswers[0]) ? baseAnswers[0] : 42,
+      Number.isInteger(baseAnswers[1]) ? baseAnswers[1] : 108,
+    ];
+    const guestMaths = [
+      Number.isInteger(baseAnswers[0]) ? baseAnswers[0] : 40,
+      Number.isInteger(baseAnswers[1]) ? baseAnswers[1] + 1 : 88,
+    ];
+    mathsAnswers.host = hostMaths;
+    mathsAnswers.guest = guestMaths;
+    mathsAnswersAck.host = true;
+    mathsAnswersAck.guest = true;
+  }
+
+  const roomPatch = {
+    state: normalizedPhase === "coderoom" ? "coderoom" : normalizedPhase,
+    round: targetRound,
+    "countdown.startAt": countdownStartAt,
+    "marking.startAt": markingStartAt,
+    "links.guestReady": true,
+    "timestamps.updatedAt": serverTimestamp(),
+  };
+
+  if (Object.keys(answersHost).length > 0 || Object.keys(answersGuest).length > 0) {
+    roomPatch.answers = { host: answersHost, guest: answersGuest };
+  }
+  if (Object.keys(submittedHost).length > 0 || Object.keys(submittedGuest).length > 0) {
+    roomPatch.submitted = { host: submittedHost, guest: submittedGuest };
+  }
+  roomPatch.marking = {
+    host: markingHost,
+    guest: markingGuest,
+    startAt: markingStartAt,
+  };
+  roomPatch.markingAck = { host: markingAckHost, guest: markingAckGuest };
+  roomPatch.awardAck = { host: awardAckHost, guest: awardAckGuest };
+  roomPatch.scores = {
+    questions: {
+      host: totalHostScore,
+      guest: totalGuestScore,
+    },
+  };
+  if (normalizedPhase === "final") {
+    roomPatch.mathsAnswers = mathsAnswers;
+    roomPatch.mathsAnswersAck = mathsAnswersAck;
+  } else if (normalizedPhase === "maths") {
+    roomPatch.mathsAnswers = { host: null, guest: null };
+    roomPatch.mathsAnswersAck = { host: false, guest: false };
+  }
+
+  await updateDoc(roomRef(code), roomPatch);
+
+  if (roundWrites.length > 0) {
+    await Promise.all(roundWrites);
+  }
+
+  const playerWrites = [];
+  if (Object.keys(playerRoundsHost).length > 0 || Object.keys(retainedHost).length > 0) {
+    playerWrites.push(
+      setDoc(
+        playerDocRef(code, hostUid),
+        {
+          rounds: playerRoundsHost,
+          retainedSnippets: retainedHost,
+        },
+        { merge: true }
+      )
+    );
+  }
+  if (Object.keys(playerRoundsGuest).length > 0 || Object.keys(retainedGuest).length > 0) {
+    playerWrites.push(
+      setDoc(
+        playerDocRef(code, guestUid),
+        {
+          rounds: playerRoundsGuest,
+          retainedSnippets: retainedGuest,
+        },
+        { merge: true }
+      )
+    );
+  }
+  if (playerWrites.length > 0) await Promise.all(playerWrites);
+
+  return {
+    hostRoute: computeHostRoute(code, normalizedPhase, targetRound),
+    guestLink: `${location.origin}${location.pathname}${computeGuestPath(code)}`,
+  };
+}
+
 export default {
   async mount(container) {
     await ensureAuth();
@@ -274,6 +642,7 @@ export default {
       },
       "Random"
     );
+    let currentGuestLink = "";
     const copyLinkBtn = el(
       "button",
       {
@@ -281,19 +650,61 @@ export default {
         type: "button",
         onclick: async () => {
           const code = clampCode(codeInput.value);
-          if (!code) return;
-          const share = `${location.origin}${location.pathname}#/lobby`;
-          const ok = await copyToClipboard(`${share}?code=${code}`);
-          if (ok) status.textContent = "Link copied.";
+          if (!code || !currentGuestLink) return;
+          const ok = await copyToClipboard(currentGuestLink);
+          if (ok) status.textContent = "Jaime’s link copied.";
         },
       },
-      "Copy link"
+      "Copy Jaime link"
     );
     codeRow.appendChild(el("span", { style: "font-weight:700;" }, "Room code"));
     codeRow.appendChild(codeInput);
     codeRow.appendChild(randomBtn);
     codeRow.appendChild(copyLinkBtn);
     card.appendChild(codeRow);
+
+    const jumpWrap = el("div", {
+      class: "mono",
+      style: "display:flex;flex-direction:column;gap:8px;margin-bottom:12px;",
+    });
+    jumpWrap.appendChild(el("span", { style: "font-weight:700;" }, "Jump to phase"));
+
+    const phaseSelect = el("select", { class: "input mono" });
+    const phaseOptions = [
+      { value: "coderoom", label: "Code Room" },
+      { value: "countdown", label: "Countdown" },
+      { value: "questions", label: "Questions" },
+      { value: "marking", label: "Marking" },
+      { value: "award", label: "Award" },
+      { value: "maths", label: "Maths" },
+      { value: "final", label: "Final" },
+    ];
+    phaseOptions.forEach(({ value, label }) => {
+      phaseSelect.appendChild(el("option", { value }, label));
+    });
+
+    const roundWrap = el("div", { style: "display:flex;gap:8px;align-items:center;" });
+    const roundLabel = el("span", {}, "Round");
+    const roundSelect = el("select", { class: "input mono", style: "max-width:120px;" });
+    for (let i = 1; i <= 5; i += 1) {
+      roundSelect.appendChild(el("option", { value: String(i) }, `Round ${i}`));
+    }
+    roundWrap.appendChild(roundLabel);
+    roundWrap.appendChild(roundSelect);
+
+    jumpWrap.appendChild(phaseSelect);
+    jumpWrap.appendChild(roundWrap);
+    card.appendChild(jumpWrap);
+
+    const linkPreview = el(
+      "div",
+      {
+        class: "mono small",
+        style: "min-height:18px;text-align:center;margin-bottom:6px;opacity:0.85;word-break:break-all;",
+      },
+      "Jaime link: —"
+    );
+    card.appendChild(linkPreview);
 
     const uploadGrid = el("div", {
       class: "mono",
@@ -370,8 +781,8 @@ export default {
     }
 
     for (const [role, cfg] of Object.entries(slotConfigs)) {
-    const slot = createSlot(role, cfg.label, cfg.initial);
-    slot.label = cfg.label;
+      const slot = createSlot(role, cfg.label, cfg.initial);
+      slot.label = cfg.label;
       slotMap[role] = slot;
       uploadGrid.appendChild(slot.wrapper);
     }
@@ -419,6 +830,33 @@ export default {
       mathsOverride: null,
     };
 
+    const jumpState = {
+      phase: "coderoom",
+      round: 1,
+    };
+
+    const refreshRoundVisibility = () => {
+      const needsRound = needsRoundSelection(jumpState.phase);
+      roundWrap.style.display = needsRound ? "flex" : "none";
+      if (!needsRound) {
+        jumpState.round = normalizeRound(jumpState.phase, jumpState.round);
+        roundSelect.value = String(jumpState.round);
+      }
+    };
+
+    const updateGuestLinkPreview = () => {
+      const code = clampCode(codeInput.value);
+      if (!code) {
+        currentGuestLink = "";
+        linkPreview.textContent = "Jaime link: —";
+        copyLinkBtn.disabled = true;
+        return;
+      }
+      currentGuestLink = `${location.origin}${location.pathname}${computeGuestPath(code)}`;
+      linkPreview.textContent = `Jaime link: ${currentGuestLink}`;
+      copyLinkBtn.disabled = false;
+    };
+
     function updateProgress() {
       const hostSource = stage.hostOverride
         ? "Host (15)"
@@ -459,8 +897,11 @@ export default {
       } else if (!stage.base && !stage.questionsOverride && !stage.hostOverride && !stage.guestOverride) {
         status.textContent = "Starting without uploads. Placeholders will read <empty>.";
       } else {
-        status.textContent = "Press START when you’re ready.";
+        const phaseName = phaseOptions.find((opt) => opt.value === jumpState.phase)?.label || jumpState.phase;
+        const roundText = needsRoundSelection(jumpState.phase) ? ` (Round ${jumpState.round})` : "";
+        status.textContent = `Press START to jump to ${phaseName}${roundText}.`;
       }
+      updateGuestLinkPreview();
     }
 
     function clearSlot(key) {
@@ -755,7 +1196,22 @@ export default {
       return pack;
     }
 
-    async function startGame() {
+    phaseSelect.addEventListener("change", (event) => {
+      jumpState.phase = event.target.value;
+      jumpState.round = normalizeRound(jumpState.phase, jumpState.round);
+      roundSelect.value = String(jumpState.round);
+      refreshRoundVisibility();
+      reflectStartState();
+    });
+
+    roundSelect.addEventListener("change", (event) => {
+      const value = parseInt(event.target.value || "1", 10) || 1;
+      jumpState.round = normalizeRound(jumpState.phase, value);
+      roundSelect.value = String(jumpState.round);
+      reflectStartState();
+    });
+
+    startBtn.addEventListener("click", async () => {
       const code = clampCode(codeInput.value);
       if (code.length < 3) {
         status.textContent = "Enter a valid room code first.";
@@ -767,26 +1223,29 @@ export default {
       const pack = assemblePack(code);
       try {
         await seedFirestoreFromPack(db, pack);
-        await updateDoc(roomRef(code), {
-          state: "coderoom",
-          "countdown.startAt": null,
-          "links.guestReady": false,
-          "timestamps.updatedAt": serverTimestamp(),
-        });
+        const jump = await applyJumpState({ code, pack, phase: jumpState.phase, round: jumpState.round });
         setStoredRole(code, "host");
-        log(`room ${code} prepared; waiting in code room.`);
-        location.hash = `#/coderoom?code=${code}`;
+        log(`room ${code} prepared → ${jumpState.phase} (round ${jumpState.round}).`);
+        status.textContent = "Room ready. Navigating…";
+        if (jump?.guestLink) {
+          currentGuestLink = jump.guestLink;
+          linkPreview.textContent = `Jaime link: ${currentGuestLink}`;
+          copyLinkBtn.disabled = false;
+        }
+        const route = jump?.hostRoute || computeHostRoute(code, jumpState.phase, jumpState.round);
+        setTimeout(() => {
+          location.hash = route;
+        }, 120);
       } catch (err) {
         console.error("[keyroom] start failed", err);
         status.textContent = err?.message || "Failed to start. Please try again.";
         startBtn.disabled = false;
         reflectStartState();
       }
-    }
-
-    startBtn.addEventListener("click", startGame);
+    });
 
     updateProgress();
+    refreshRoundVisibility();
     reflectStartState();
   },
 
