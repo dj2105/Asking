@@ -31,6 +31,7 @@ import {
   timeUntil,
   getStoredRole,
 } from "../lib/util.js";
+import { recordSession, setPreferredRole } from "../lib/sessionStore.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -89,6 +90,8 @@ export default {
     const myRole = storedRole === "host" || storedRole === "guest"
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
+    setPreferredRole(myRole);
+    recordSession({ code, role: myRole, state: "countdown", round });
 
     let countdownStartAt = Number(room0?.countdown?.startAt || 0) || 0;
     let hasFlipped = false;

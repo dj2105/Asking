@@ -18,6 +18,7 @@ import {
   PACK_VERSION_FULL,
 } from "../lib/seedUnsealer.js";
 import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import { recordSession, setPreferredRole } from "../lib/sessionStore.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -774,6 +775,8 @@ export default {
           "timestamps.updatedAt": serverTimestamp(),
         });
         setStoredRole(code, "host");
+        setPreferredRole("host");
+        recordSession({ code, role: "host", state: "coderoom", round: 1 });
         log(`room ${code} prepared; waiting in code room.`);
         location.hash = `#/coderoom?code=${code}`;
       } catch (err) {

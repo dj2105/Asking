@@ -1,9 +1,40 @@
-// ensure hash router lands on lobby by default
+// ensure hash router lands on lobby by default, even when direct paths are used
+const PATH_ALIAS_MAP = {
+  "": "#/lobby",
+  "index.html": "#/lobby",
+  "lobby": "#/lobby",
+  "keyroom": "#/keyroom",
+  "coderoom": "#/coderoom",
+  "watcher": "#/watcher",
+  "rejoin": "#/rejoin",
+  "questions": () => "#/rejoin?auto=questions",
+  "marking": () => "#/rejoin?auto=marking",
+  "award": () => "#/rejoin?auto=award",
+  "countdown": () => "#/rejoin?auto=countdown",
+  "maths": () => "#/rejoin?auto=maths",
+  "final": () => "#/rejoin?auto=final",
+  "interlude": () => "#/rejoin?auto=questions",
+};
+
+function resolvePathAlias() {
+  const rawPath = String(location.pathname || "").replace(/^\/+|\/+$/g, "");
+  const key = rawPath.toLowerCase();
+  const entry = Object.prototype.hasOwnProperty.call(PATH_ALIAS_MAP, key)
+    ? PATH_ALIAS_MAP[key]
+    : null;
+  if (typeof entry === "function") {
+    try { return entry() || null; } catch (err) { return null; }
+  }
+  return typeof entry === "string" ? entry : null;
+}
+
 (function ensureDefaultHash() {
   const h = (location.hash || "").trim();
   if (!h || h === "#/" || h === "#") {
     const qs = location.search || ""; // preserve ?emu=1 etc.
-    location.replace(`${location.pathname}${qs}#/lobby`);
+    const alias = resolvePathAlias();
+    const target = alias || "#/lobby";
+    location.replace(`${location.pathname}${qs}${target}`);
   }
 })();
 // /src/main.js
@@ -37,7 +68,7 @@ const app = document.getElementById("app");
 let current = { route: "", mod: null, unmount: null };
 
 // Routes that should NOT show the score strip
-const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher"]);
+const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
 
 // Map route -> dynamic import path
 const VIEW_MAP = {
@@ -52,6 +83,7 @@ const VIEW_MAP = {
   maths:     () => import("./views/Maths.js"),
   final:     () => import("./views/Final.js"),
   watcher:   () => import("./roomWatcher.js"),
+  rejoin:    () => import("./views/Rejoin.js"),
 };
 
 function parseHash() {

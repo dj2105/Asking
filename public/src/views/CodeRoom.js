@@ -7,6 +7,7 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { clampCode, copyToClipboard, setStoredRole } from "../lib/util.js";
+import { recordSession, setPreferredRole } from "../lib/sessionStore.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -42,6 +43,8 @@ export default {
     }
 
     setStoredRole(code, "host");
+    setPreferredRole("host");
+    recordSession({ code, role: "host", state: "coderoom", round: 1 });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-coderoom" });
@@ -143,6 +146,8 @@ export default {
         currentState = data.state || "";
         const round = Number(data.round) || 1;
         const guestPresent = Boolean(data.links?.guestReady);
+
+        recordSession({ code, role: "host", state: currentState || "", round });
 
         if (currentState === "coderoom") {
           status.textContent = guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime…";

@@ -20,6 +20,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { recordSession, setPreferredRole } from "../lib/sessionStore.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -97,7 +98,7 @@ export default {
     const waitingLine = el("div", {
       class: "mono",
       style: "opacity:0.78;margin-top:6px;"
-    }, "Linking to opponent…");
+    }, "Linking…");
     resultWrap.appendChild(freezeLine);
     resultWrap.appendChild(winnerLine);
     resultWrap.appendChild(waitingLine);
@@ -123,6 +124,9 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    waitingLine.textContent = `Linking to ${oppName}…`;
+    setPreferredRole(myRole);
+    recordSession({ code, role: myRole, state: "marking", round });
 
     const fallbackStartAt = Number((roomData0.countdown || {}).startAt || 0) || null;
     const markingEnterAt = Date.now();
@@ -298,7 +302,7 @@ export default {
         waitingLine.textContent = "Link complete. Await the next round…";
       } else {
         winnerLine.style.display = "none";
-        waitingLine.textContent = "Linking to opponent…";
+        waitingLine.textContent = `Linking to ${oppName}…`;
       }
     };
 

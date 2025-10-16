@@ -31,6 +31,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { recordSession, setPreferredRole } from "../lib/sessionStore.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -92,7 +93,7 @@ export default {
     card.appendChild(form);
     card.appendChild(done);
 
-    const waitMsg = el("div", { class:"mono", style:"text-align:center;opacity:.8;margin-top:10px;display:none;" }, "Waiting for opponent…");
+    const waitMsg = el("div", { class:"mono", style:"text-align:center;opacity:.8;margin-top:10px;display:none;" }, "Waiting…");
     card.appendChild(waitMsg);
 
     root.appendChild(card);
@@ -113,6 +114,10 @@ export default {
       ? storedRole
       : (hostUid === me.uid) ? "host" : (guestUid === me.uid) ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    waitMsg.textContent = `Waiting for ${oppName}…`;
+    setPreferredRole(myRole);
+    recordSession({ code, role: myRole, state: "maths" });
 
     // Mount maths pane in "maths" mode; it shows location + both questions
     try {

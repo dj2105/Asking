@@ -9,6 +9,7 @@ import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 import { clampCode as clampCodeShared, setStoredRole } from "../lib/util.js";
+import { recordSession, setPreferredRole } from "../lib/sessionStore.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -83,6 +84,13 @@ export default {
     }, "Daniel’s entrance");
     card.appendChild(hostLink);
 
+    const rejoinLink = el("a", {
+      href: "#/rejoin",
+      class: "lobby-host-link",
+      style: "margin-top:8px;display:inline-block;"
+    }, "Rejoin a game");
+    card.appendChild(rejoinLink);
+
     function setStatus(msg) { status.textContent = msg || ""; }
 
     function reflect() {
@@ -114,6 +122,8 @@ export default {
 
         const state = String(data.state || "").toLowerCase();
         const round = Number(data.round) || 1;
+        setPreferredRole("guest");
+        recordSession({ code, role: "guest", state, round });
 
         if (state === "coderoom") {
           const startAt = Date.now() + 7_000;

@@ -17,6 +17,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { recordSession, setPreferredRole } from "../lib/sessionStore.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -182,7 +183,7 @@ export default {
     const waitMsg = el("div", {
       class: "mono small",
       style: "text-align:center;margin-top:14px;display:none;opacity:.8;"
-    }, "Waiting for opponent…");
+    }, "Waiting…");
 
     const continueBtn = el("button", { class: "btn primary", style: "margin-top:12px;" }, "Continue");
     card.appendChild(continueBtn);
@@ -206,6 +207,10 @@ export default {
       ? storedRole
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
+    const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    waitMsg.textContent = `Waiting for ${oppName}…`;
+    setPreferredRole(myRole);
+    recordSession({ code, role: myRole, state: "award", round });
 
     let reviewData = {
       hostItems: [],
@@ -285,7 +290,7 @@ export default {
         if (ackOpp) {
           waitMsg.style.display = "none";
         } else {
-          waitMsg.textContent = "Waiting for opponent…";
+          waitMsg.textContent = `Waiting for ${oppName}…`;
           waitMsg.style.display = "";
         }
       } else {
@@ -342,7 +347,7 @@ export default {
     continueBtn.addEventListener("click", async () => {
       if (ackMine) return;
       ackMine = true;
-      waitMsg.textContent = "Waiting for opponent…";
+      waitMsg.textContent = `Waiting for ${oppName}…`;
       updateAckUI();
       try {
         await updateDoc(rRef, {
