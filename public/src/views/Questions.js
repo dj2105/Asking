@@ -62,16 +62,13 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-questions" });
+    const root = el("div", { class: "view view-questions stage-center" });
 
-    const card = el("div", { class: "card card--soft" });
-    const heading = el("h2", { class: "view-heading" }, "Questions");
-    const counterChip = el("span", { class: "meta-chip" }, "1 / 3");
-    const counterStrip = el("div", { class: "meta-strip" }, counterChip);
+    const card = el("div", { class: "card card--soft card--center question-card" });
+    const heading = el("div", { class: "mono question-title" }, "QUESTION 1/3");
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
     card.appendChild(heading);
-    card.appendChild(counterStrip);
     card.appendChild(qText);
 
     const btnWrap = el("div", { class: "choice-row" });
@@ -91,7 +88,31 @@ export default {
     const mathsMount = el("div", { class: "jemima-maths-pinned" });
     root.appendChild(mathsMount);
 
+    const overlay = el("div", { class: "stage-overlay stage-overlay--hidden" });
+    const overlayTitle = el("div", { class: "mono stage-overlay__title" }, "");
+    const overlayNote = el("div", { class: "mono small stage-overlay__note" }, "");
+    overlay.appendChild(overlayTitle);
+    overlay.appendChild(overlayNote);
+    root.appendChild(overlay);
+
     container.appendChild(root);
+
+    const setStageVisible = (visible) => {
+      card.style.display = visible ? "" : "none";
+      mathsMount.style.display = visible ? "" : "none";
+    };
+
+    const showOverlay = (title, note) => {
+      overlayTitle.textContent = title || "";
+      overlayNote.textContent = note || "";
+      overlay.classList.remove("stage-overlay--hidden");
+      setStageVisible(false);
+    };
+
+    const hideOverlay = () => {
+      overlay.classList.add("stage-overlay--hidden");
+      setStageVisible(true);
+    };
 
     let stopWatcher = null;
     let alive = true;
@@ -118,10 +139,13 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    const readableName = myRole === "host" ? "Daniel" : "Jaime";
-    heading.textContent = `${readableName}'s Questions`;
     waitMessageDefault = `Waiting for ${oppName}…`;
     waitMsg.textContent = waitMessageDefault;
+
+    const overlayWaiting = () => `Waiting for ${oppName}`;
+    const showPostSubmitOverlay = () => {
+      showOverlay(overlayWaiting(), "Round timer paused");
+    };
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -185,13 +209,14 @@ export default {
 
     function renderIndex() {
       const cur = triplet[idx];
-      counterChip.textContent = `${Math.min(idx + 1, 3)} / 3`;
+      heading.textContent = `QUESTION ${Math.min(idx + 1, 3)}/3`;
       qText.textContent = cur?.question || "";
       btn1.textContent = cur?.options?.[0] || "";
       btn2.textContent = cur?.options?.[1] || "";
     }
 
     const showWaitingState = (text) => {
+      hideOverlay();
       btnWrap.style.display = "none";
       waitMsg.textContent = text || waitMessageDefault;
       waitMsg.style.display = "";
@@ -217,10 +242,13 @@ export default {
         console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
         await updateDoc(rRef, patch);
         published = true;
-        showWaitingState();
+        submitting = false;
+        showPostSubmitOverlay();
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
+        hideOverlay();
+        showWaitingState("Retrying…");
         setButtonsEnabled(true);
       }
     }
@@ -243,13 +271,13 @@ export default {
       chosen[idx] = text;
       idx += 1;
       if (idx >= 3) {
-        counterChip.textContent = "3 / 3";
-        qText.textContent = "All answers submitted.";
         setButtonsEnabled(false);
+        waitMsg.style.display = "none";
         if (!qDoneMsLocal) {
           const stamp = Date.now();
           recordQuestionTiming(stamp);
         }
+        showPostSubmitOverlay();
         publishAnswers();
       } else {
         renderIndex();
@@ -269,9 +297,10 @@ export default {
       waitMsg.style.display = "";
     } else if (existingAns.length === 3) {
       published = true;
-      showWaitingState(`Submitted. Waiting for ${oppName}…`);
-      counterChip.textContent = "3 / 3";
-      qText.textContent = "All answers submitted.";
+      idx = 3;
+      btnWrap.style.display = "none";
+      waitMsg.style.display = "none";
+      showPostSubmitOverlay();
     } else {
       btnWrap.style.display = "flex";
       waitMsg.style.display = "none";
@@ -310,7 +339,7 @@ export default {
         const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
         const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
         if (myDone && !oppDone) {
-          showWaitingState(`You finished first. Waiting for ${oppName}…`);
+          showPostSubmitOverlay();
         }
       }
 
