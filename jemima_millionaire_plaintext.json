@@ -1,0 +1,423 @@
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "LAD",
+    "generatedAt": "2025-01-05T12:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "prize": "£100",
+          "difficulty_tier": "£100",
+          "question": "Which London palace became the primary official residence of the British monarch in 1837?",
+          "correct_answer": "Buckingham Palace",
+          "distractors": {
+            "easy": "Kensington Palace",
+            "medium": "St James's Palace",
+            "hard": "Windsor Castle"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "prize": "£200",
+          "difficulty_tier": "£200",
+          "question": "Which European capital stands on the Danube and was created by the merger of Buda, Óbuda, and Pest?",
+          "correct_answer": "Budapest",
+          "distractors": {
+            "easy": "Vienna",
+            "medium": "Bratislava",
+            "hard": "Prague"
+          }
+        },
+        {
+          "subject": "Cats",
+          "prize": "£300",
+          "difficulty_tier": "£300",
+          "question": "Which domestic cat breed is known for its naturally bobbed tail originating from the Isle of Man?",
+          "correct_answer": "Manx cat",
+          "distractors": {
+            "easy": "Siamese cat",
+            "medium": "Bengal cat",
+            "hard": "Norwegian Forest cat"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "American TV Sitcoms",
+          "prize": "£100",
+          "difficulty_tier": "£100",
+          "question": "Which sitcom follows Leslie Knope and her colleagues in the Parks Department of Pawnee, Indiana?",
+          "correct_answer": "Parks and Recreation",
+          "distractors": {
+            "easy": "The Office",
+            "medium": "Brooklyn Nine-Nine",
+            "hard": "Community"
+          }
+        },
+        {
+          "subject": "’00s Pop",
+          "prize": "£200",
+          "difficulty_tier": "£200",
+          "question": "Which singer released the 2002 debut single 'Complicated'?",
+          "correct_answer": "Avril Lavigne",
+          "distractors": {
+            "easy": "Michelle Branch",
+            "medium": "Kelly Clarkson",
+            "hard": "Vanessa Carlton"
+          }
+        },
+        {
+          "subject": "Geography — Mountains",
+          "prize": "£300",
+          "difficulty_tier": "£300",
+          "question": "Mount Elbrus rises within which mountain range?",
+          "correct_answer": "Caucasus Mountains",
+          "distractors": {
+            "easy": "Alps",
+            "medium": "Ural Mountains",
+            "hard": "Carpathian Mountains"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Geography — Rivers",
+          "prize": "£500",
+          "difficulty_tier": "£500",
+          "question": "The Mekong River empties into which body of water?",
+          "correct_answer": "South China Sea",
+          "distractors": {
+            "easy": "Gulf of Thailand",
+            "medium": "Bay of Bengal",
+            "hard": "Andaman Sea"
+          }
+        },
+        {
+          "subject": "’90s Pop",
+          "prize": "£1,000",
+          "difficulty_tier": "£1,000",
+          "question": "Which Swedish duo topped charts in 1991 with the album 'Joyride'?",
+          "correct_answer": "Roxette",
+          "distractors": {
+            "easy": "Ace of Base",
+            "medium": "Aqua",
+            "hard": "The Cardigans"
+          }
+        },
+        {
+          "subject": "Classical Mythology",
+          "prize": "£2,000",
+          "difficulty_tier": "£2,000",
+          "question": "Which Titan was condemned to hold up the sky after the Olympians' victory?",
+          "correct_answer": "Atlas",
+          "distractors": {
+            "easy": "Prometheus",
+            "medium": "Hyperion",
+            "hard": "Cronus"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Irish History",
+          "prize": "£500",
+          "difficulty_tier": "£500",
+          "question": "Which agreement of 1921 established the Irish Free State?",
+          "correct_answer": "Anglo-Irish Treaty",
+          "distractors": {
+            "easy": "Belfast Agreement",
+            "medium": "Act of Union 1800",
+            "hard": "Treaty of Limerick"
+          }
+        },
+        {
+          "subject": "Anime",
+          "prize": "£1,000",
+          "difficulty_tier": "£1,000",
+          "question": "Who created the anime series 'Neon Genesis Evangelion'?",
+          "correct_answer": "Hideaki Anno",
+          "distractors": {
+            "easy": "Hayao Miyazaki",
+            "medium": "Shinichirō Watanabe",
+            "hard": "Mamoru Oshii"
+          }
+        },
+        {
+          "subject": "Language — Punctuation",
+          "prize": "£2,000",
+          "difficulty_tier": "£2,000",
+          "question": "Which punctuation mark replaces omitted letters in a contraction such as 'can't'?",
+          "correct_answer": "Apostrophe",
+          "distractors": {
+            "easy": "Hyphen",
+            "medium": "Colon",
+            "hard": "En dash"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "Ancient Greece",
+          "prize": "£4,000",
+          "difficulty_tier": "£4,000",
+          "question": "Which historian authored 'The Histories' about the Greco-Persian Wars?",
+          "correct_answer": "Herodotus",
+          "distractors": {
+            "easy": "Thucydides",
+            "medium": "Xenophon",
+            "hard": "Plutarch"
+          }
+        },
+        {
+          "subject": "Roman Empire",
+          "prize": "£8,000",
+          "difficulty_tier": "£8,000",
+          "question": "Which emperor began construction of the Flavian Amphitheatre, later known as the Colosseum?",
+          "correct_answer": "Vespasian",
+          "distractors": {
+            "easy": "Nero",
+            "medium": "Titus",
+            "hard": "Domitian"
+          }
+        },
+        {
+          "subject": "Language — Grammar",
+          "prize": "£16,000",
+          "difficulty_tier": "£16,000",
+          "question": "What term describes an -ing verb form functioning as a noun?",
+          "correct_answer": "Gerund",
+          "distractors": {
+            "easy": "Participle",
+            "medium": "Infinitive",
+            "hard": "Supine"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Medieval Europe",
+          "prize": "£4,000",
+          "difficulty_tier": "£4,000",
+          "question": "The Hanseatic League primarily united which type of settlements?",
+          "correct_answer": "Northern European trading cities",
+          "distractors": {
+            "easy": "Feudal castle garrisons",
+            "medium": "Monastic communities",
+            "hard": "Levantine crusader states"
+          }
+        },
+        {
+          "subject": "Baroque Music",
+          "prize": "£8,000",
+          "difficulty_tier": "£8,000",
+          "question": "Who composed 'Water Music' for performance on the Thames in 1717?",
+          "correct_answer": "George Frideric Handel",
+          "distractors": {
+            "easy": "Henry Purcell",
+            "medium": "Georg Philipp Telemann",
+            "hard": "Arcangelo Corelli"
+          }
+        },
+        {
+          "subject": "Comics",
+          "prize": "£16,000",
+          "difficulty_tier": "£16,000",
+          "question": "What is the civilian name of Marvel's Daredevil?",
+          "correct_answer": "Matt Murdock",
+          "distractors": {
+            "easy": "Peter Parker",
+            "medium": "Luke Cage",
+            "hard": "Danny Rand"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "World War I",
+          "prize": "£32,000",
+          "difficulty_tier": "£32,000",
+          "question": "Which 1916 battle saw the British Army deploy tanks for the first time?",
+          "correct_answer": "Battle of the Somme",
+          "distractors": {
+            "easy": "Battle of Passchendaele",
+            "medium": "Gallipoli campaign",
+            "hard": "Battle of Jutland"
+          }
+        },
+        {
+          "subject": "Renaissance Art",
+          "prize": "£64,000",
+          "difficulty_tier": "£64,000",
+          "question": "Which Florentine artist sculpted the marble 'David' between 1501 and 1504?",
+          "correct_answer": "Michelangelo",
+          "distractors": {
+            "easy": "Donatello",
+            "medium": "Gian Lorenzo Bernini",
+            "hard": "Lorenzo Ghiberti"
+          }
+        },
+        {
+          "subject": "TV — British",
+          "prize": "£125,000",
+          "difficulty_tier": "£125,000",
+          "question": "Who portrayed Minister Jim Hacker in the sitcom 'Yes Minister'?",
+          "correct_answer": "Paul Eddington",
+          "distractors": {
+            "easy": "Nigel Hawthorne",
+            "medium": "Derek Fowlds",
+            "hard": "Richard Vernon"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "World War II",
+          "prize": "£32,000",
+          "difficulty_tier": "£32,000",
+          "question": "Operation Market Garden attempted to secure bridges in which country?",
+          "correct_answer": "Netherlands",
+          "distractors": {
+            "easy": "Belgium",
+            "medium": "France",
+            "hard": "Germany"
+          }
+        },
+        {
+          "subject": "Norse Myth",
+          "prize": "£64,000",
+          "difficulty_tier": "£64,000",
+          "question": "What is the name of Odin's hall where warriors chosen by Valkyries reside?",
+          "correct_answer": "Valhalla",
+          "distractors": {
+            "easy": "Folkvangr",
+            "medium": "Helheim",
+            "hard": "Ginnungagap"
+          }
+        },
+        {
+          "subject": "TV — American Drama",
+          "prize": "£125,000",
+          "difficulty_tier": "£125,000",
+          "question": "In 'Mad Men', what is the name of the new agency founded by Don Draper in 1963?",
+          "correct_answer": "Sterling Cooper Draper Pryce",
+          "distractors": {
+            "easy": "Grey Advertising",
+            "medium": "McCann Erickson",
+            "hard": "Ogilvy & Mather"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "Modern Politics",
+          "prize": "£250,000",
+          "difficulty_tier": "£250,000",
+          "question": "Which UK Prime Minister oversaw the Welfare Reform Act 2012 introducing the so-called 'bedroom tax'?",
+          "correct_answer": "David Cameron",
+          "distractors": {
+            "easy": "Theresa May",
+            "medium": "Gordon Brown",
+            "hard": "John Major"
+          }
+        },
+        {
+          "subject": "Folklore — British",
+          "prize": "£500,000",
+          "difficulty_tier": "£500,000",
+          "question": "Which Cornish giant is slain by Jack in the tale 'Jack the Giant Killer'?",
+          "correct_answer": "Cormoran",
+          "distractors": {
+            "easy": "Gogmagog",
+            "medium": "Blunderbore",
+            "hard": "Ysbaddaden"
+          }
+        },
+        {
+          "subject": "Gameshow Lore",
+          "prize": "£1,000,000",
+          "difficulty_tier": "£1,000,000",
+          "question": "Which original US host of 'Who Wants to Be a Millionaire?' popularised the phrase 'Is that your final answer?'",
+          "correct_answer": "Regis Philbin",
+          "distractors": {
+            "easy": "Chris Tarrant",
+            "medium": "Meredith Vieira",
+            "hard": "Terry Wogan"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Printing & Type",
+          "prize": "£250,000",
+          "difficulty_tier": "£250,000",
+          "question": "Which British designer created the sans-serif typeface Gill Sans in 1928?",
+          "correct_answer": "Eric Gill",
+          "distractors": {
+            "easy": "Stanley Morison",
+            "medium": "Jan Tschichold",
+            "hard": "Paul Renner"
+          }
+        },
+        {
+          "subject": "Computing — Algorithms",
+          "prize": "£500,000",
+          "difficulty_tier": "£500,000",
+          "question": "Which 1956 algorithm uses a greedy strategy to find shortest paths from a single source in a graph with non-negative edge weights?",
+          "correct_answer": "Dijkstra's algorithm",
+          "distractors": {
+            "easy": "Prim's algorithm",
+            "medium": "Bellman-Ford algorithm",
+            "hard": "Floyd-Warshall algorithm"
+          }
+        },
+        {
+          "subject": "Explorers",
+          "prize": "£1,000,000",
+          "difficulty_tier": "£1,000,000",
+          "question": "Which Portuguese navigator led the first expedition to reach India by sea around the Cape of Good Hope?",
+          "correct_answer": "Vasco da Gama",
+          "distractors": {
+            "easy": "Ferdinand Magellan",
+            "medium": "Bartolomeu Dias",
+            "hard": "Pedro Álvares Cabral"
+          }
+        }
+      ]
+    }
+  ],
+  "maths": {
+    "location": "<empty>",
+    "beats": [
+      "<empty>",
+      "<empty>",
+      "<empty>",
+      "<empty>"
+    ],
+    "questions": [
+      "<empty>",
+      "<empty>"
+    ],
+    "answers": [
+      0,
+      0
+    ]
+  }
+}

@@ -46,6 +46,7 @@ function clone(value) {
 function buildEmptyItem() {
   return {
     subject: PLACEHOLDER,
+    prize: PLACEHOLDER,
     difficulty_tier: PLACEHOLDER,
     question: PLACEHOLDER,
     correct_answer: PLACEHOLDER,
@@ -62,12 +63,13 @@ function padItems(list = []) {
   while (items.length < 3) items.push(buildEmptyItem());
   return items.slice(0, 3).map((item) => {
     const safe = item && typeof item === "object" ? item : buildEmptyItem();
+    const hasPrize = typeof safe.prize === "string" && safe.prize.trim();
+    const hasDifficulty = typeof safe.difficulty_tier === "string" && safe.difficulty_tier.trim();
+    const prize = hasPrize ? safe.prize : hasDifficulty ? safe.difficulty_tier : PLACEHOLDER;
     return {
       subject: typeof safe.subject === "string" && safe.subject.trim() ? safe.subject : PLACEHOLDER,
-      difficulty_tier:
-        typeof safe.difficulty_tier === "string" && safe.difficulty_tier.trim()
-          ? safe.difficulty_tier
-          : PLACEHOLDER,
+      prize,
+      difficulty_tier: prize,
       question: typeof safe.question === "string" && safe.question.trim() ? safe.question : PLACEHOLDER,
       correct_answer:
         typeof safe.correct_answer === "string" && safe.correct_answer.trim()
