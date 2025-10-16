@@ -422,3 +422,23 @@ pre.log {
 a, .link { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; }
 a:hover, .link:hover { text-decoration: none; }
 h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
+/* Pack review layout */
+.round-card { margin-top: 24px; }
+.round-card + .round-card { margin-top: 28px; }
+.round-title { margin: 0 0 12px 0; font-weight: 700; text-align: center; }
+.role-heading { margin: 18px 0 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .9rem; }
+.question-block { border-top: 1px dashed rgba(0,0,0,.16); padding-top: 12px; margin-top: 12px; }
+.question-block:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.question-heading { margin: 0 0 8px 0; font-weight: 700; }
+.option-set, .knowledge-set { border: none; margin: 0; padding: 0; }
+.option-row { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; font-weight: 600; }
+.option-row input { flex: none; }
+.option-text { flex: 1; }
+.featured-note { margin: 8px 0 0; opacity: .7; }
+.knowledge-set { margin-top: 12px; }
+.knowledge-set .option-row { font-weight: 500; }
+.comment-box { margin-top: 6px; resize: vertical; min-height: 60px; }
+.summary-output { margin-top: 14px; min-height: 220px; }
+.score-card { margin: 28px 0 40px; }
+.score-output { margin-top: 12px; }
+
