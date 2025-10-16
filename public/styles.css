@@ -346,7 +346,7 @@ input[type="text"], input[type="number"], .input {
 .lobby-card {
   width: 100%;
   max-width: 420px;
-  padding: 36px 32px 40px;
+  padding: 32px 28px;
   border-radius: 20px;
   border: 1px solid rgba(0,0,0,.08);
   box-shadow: 0 28px 48px rgba(0,0,0,.14);
@@ -403,16 +403,28 @@ input[type="text"], input[type="number"], .input {
   min-height: 20px;
   text-align: center;
   font-size: .92rem;
-  margin: 22px 0 8px;
+  margin: 18px 0 0;
   opacity: .85;
 }
 
-.lobby-host-link {
-  display: block;
-  text-align: center;
-  margin-top: 6px;
-  font-size: .95rem;
+.lobby-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
 }
+
+.lobby-link {
+  flex: 1;
+  display: block;
+  font-size: .95rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.lobby-link-left { text-align: left; }
+.lobby-link-right { text-align: right; }
 
 /* Other helpers */
 .status { opacity: .8; }
