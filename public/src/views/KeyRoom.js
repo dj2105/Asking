@@ -7,7 +7,7 @@
 //   seed Firestore, stamp the room into "coderoom" state, then route to #/coderoom.
 
 import { ensureAuth, db } from "../lib/firebase.js";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import {
   unsealFile,
   unsealHalfpack,
@@ -33,9 +33,345 @@ function el(tag, attrs = {}, kids = []) {
 }
 
 const roomRef = (code) => doc(db, "rooms", code);
+const roundSubColRef = (code) => collection(roomRef(code), "rounds");
+const playerDocRef = (code, uid) => doc(db, "rooms", code, "players", uid || "unknown");
 const DEFAULT_HOST_UID = "daniel-001";
 const DEFAULT_GUEST_UID = "jaime-001";
 const PLACEHOLDER = "<empty>";
+
+const STAGE_RANK = {
+  countdown: 1,
+  questions: 2,
+  marking: 3,
+  award: 4,
+  maths: 5,
+  final: 6,
+};
+
+const HOST_PATTERNS = [
+  [true, true, false],
+  [true, false, true],
+  [true, true, true],
+  [false, true, true],
+  [true, false, false],
+];
+
+const GUEST_PATTERNS = [
+  [true, false, false],
+  [true, true, false],
+  [false, false, true],
+  [true, true, true],
+  [false, true, false],
+];
+
+function sanitizeStage(value) {
+  const key = String(value || "").toLowerCase();
+  return STAGE_RANK[key] ? key : "countdown";
+}
+
+function routeForStage(stage, code, round) {
+  const r = Math.max(1, Math.min(5, Number(round) || 1));
+  switch (sanitizeStage(stage)) {
+    case "countdown":
+      return `#/countdown?code=${code}&round=${r}`;
+    case "questions":
+      return `#/questions?code=${code}&round=${r}`;
+    case "marking":
+      return `#/marking?code=${code}&round=${r}`;
+    case "award":
+      return `#/award?code=${code}&round=${r}`;
+    case "maths":
+      return `#/maths?code=${code}`;
+    case "final":
+      return `#/final?code=${code}`;
+    default:
+      return `#/countdown?code=${code}&round=${r}`;
+  }
+}
+
+function pickWrongAnswer(item = {}) {
+  const correct = String(item.correct_answer || "").trim();
+  const candidates = [
+    item?.distractors?.easy,
+    item?.distractors?.medium,
+    item?.distractors?.hard,
+  ]
+    .map((text) => (typeof text === "string" ? text.trim() : ""))
+    .filter((text) => text && text !== correct);
+  return candidates[0] || "";
+}
+
+function buildAnswerSet(items = [], pattern = []) {
+  return items.map((item, idx) => {
+    const correct = String(item?.correct_answer || "").trim();
+    const question = String(item?.question || "").trim();
+    const shouldBeCorrect = Boolean(pattern[idx]);
+    let chosen = correct;
+    if (!shouldBeCorrect || !chosen) {
+      const wrong = pickWrongAnswer(item);
+      chosen = wrong || correct || "";
+    }
+    return {
+      question,
+      chosen,
+      correct,
+    };
+  });
+}
+
+function countCorrectAnswers(list = []) {
+  return list.reduce((total, entry) => {
+    const chosen = String(entry?.chosen || "").trim();
+    const correct = String(entry?.correct || "").trim();
+    return total + (chosen && correct && chosen === correct ? 1 : 0);
+  }, 0);
+}
+
+function verdictList(pattern = []) {
+  return pattern.map((isCorrect) => (isCorrect ? "right" : "wrong"));
+}
+
+function hasOwnData(obj = {}) {
+  return Object.keys(obj).length > 0;
+}
+
+async function applyJumpState({ code, pack, stage, round }) {
+  const normalizedCode = clampCode(code);
+  if (!normalizedCode) throw new Error("Room code missing.");
+
+  const targetStage = sanitizeStage(stage);
+  let targetRound = Math.max(1, Math.min(5, Number(round) || 1));
+  if (targetStage === "maths" || targetStage === "final") targetRound = 5;
+
+  const hostUid = pack?.meta?.hostUid || DEFAULT_HOST_UID;
+  const guestUid = pack?.meta?.guestUid || DEFAULT_GUEST_UID;
+
+  const rounds = Array.isArray(pack?.rounds) ? pack.rounds : [];
+
+  const answersHost = {};
+  const answersGuest = {};
+  const submittedHost = {};
+  const submittedGuest = {};
+  const markingHost = {};
+  const markingGuest = {};
+  const markingAckHost = {};
+  const markingAckGuest = {};
+  const awardAckHost = {};
+  const awardAckGuest = {};
+
+  const roundPayloads = {};
+  const hostPlayerRounds = {};
+  const guestPlayerRounds = {};
+  const hostRetained = {};
+  const guestRetained = {};
+
+  let hostScoreTotal = 0;
+  let guestScoreTotal = 0;
+
+  const stageRank = STAGE_RANK[targetStage];
+  const now = Date.now();
+  let timelineCursor = now - 5 * 60_000;
+
+  const stageForRound = (r) => {
+    if (stageRank >= STAGE_RANK.maths) return "completed";
+    if (r < targetRound) return "completed";
+    if (r > targetRound) return "future";
+    if (stageRank <= STAGE_RANK.countdown) return "pending";
+    if (stageRank === STAGE_RANK.questions) return "questions";
+    if (stageRank === STAGE_RANK.marking) return "marking";
+    if (stageRank === STAGE_RANK.award) return "award";
+    return "completed";
+  };
+
+  for (let i = 0; i < rounds.length; i += 1) {
+    const entry = rounds[i] || {};
+    const r = Number(entry.round) || i + 1;
+    const status = stageForRound(r);
+    const hostItems = Array.isArray(entry.hostItems) ? entry.hostItems : [];
+    const guestItems = Array.isArray(entry.guestItems) ? entry.guestItems : [];
+    const hostPattern = HOST_PATTERNS[(r - 1) % HOST_PATTERNS.length];
+    const guestPattern = GUEST_PATTERNS[(r - 1) % GUEST_PATTERNS.length];
+    const hostAnswersList = buildAnswerSet(hostItems, hostPattern);
+    const guestAnswersList = buildAnswerSet(guestItems, guestPattern);
+    const hostCorrect = countCorrectAnswers(hostAnswersList);
+    const guestCorrect = countCorrectAnswers(guestAnswersList);
+
+    const questionsStartAt = timelineCursor;
+    const hostQuestionMs = 24_000 + r * 800;
+    const guestQuestionMs = 26_000 + r * 900;
+    const hostMarkMs = 9_000 + r * 400;
+    const guestMarkMs = 11_000 + r * 350;
+    const hostQDone = questionsStartAt + hostQuestionMs;
+    const guestQDone = questionsStartAt + guestQuestionMs;
+    const hostMarkDone = hostQDone + hostMarkMs;
+    const guestMarkDone = guestQDone + guestMarkMs;
+    const hostTotalMs = hostMarkDone - questionsStartAt;
+    const guestTotalMs = guestMarkDone - questionsStartAt;
+
+    const payload = {};
+    let touched = false;
+
+    if (status === "completed" || status === "award" || status === "marking") {
+      answersHost[r] = hostAnswersList;
+      answersGuest[r] = guestAnswersList;
+      submittedHost[r] = true;
+      submittedGuest[r] = true;
+      hostScoreTotal += hostCorrect;
+      guestScoreTotal += guestCorrect;
+    }
+
+    if (status === "completed" || status === "award") {
+      const hostVerdicts = verdictList(guestPattern);
+      const guestVerdicts = verdictList(hostPattern);
+      markingHost[r] = hostVerdicts;
+      markingGuest[r] = guestVerdicts;
+      markingAckHost[r] = true;
+      markingAckGuest[r] = true;
+    } else if (status === "marking") {
+      markingHost[r] = [];
+      markingGuest[r] = [];
+    }
+
+    if (status === "completed" || stageRank >= STAGE_RANK.maths) {
+      awardAckHost[r] = true;
+      awardAckGuest[r] = true;
+    } else if (status === "award") {
+      awardAckHost[r] = false;
+      awardAckGuest[r] = false;
+    }
+
+    if (status !== "pending" && status !== "future") {
+      payload.timingsMeta = { questionsStartAt };
+      touched = true;
+    }
+
+    if (status === "completed") {
+      payload.timings = {
+        [hostUid]: { qDoneMs: hostQDone, markDoneMs: hostMarkDone, totalMs: hostTotalMs, role: "host" },
+        [guestUid]: { qDoneMs: guestQDone, markDoneMs: guestMarkDone, totalMs: guestTotalMs, role: "guest" },
+      };
+      const diff = Math.abs(hostTotalMs - guestTotalMs);
+      const tie = diff < 1_000;
+      payload.snippetTie = tie;
+      payload.snippetWinnerUid = tie
+        ? null
+        : hostTotalMs < guestTotalMs
+        ? hostUid
+        : guestUid;
+      touched = true;
+
+      hostPlayerRounds[r] = { timings: { qDoneMs: hostQDone, markDoneMs: hostMarkDone, role: "host" } };
+      guestPlayerRounds[r] = { timings: { qDoneMs: guestQDone, markDoneMs: guestMarkDone, role: "guest" } };
+      const hostWon = tie || payload.snippetWinnerUid === hostUid;
+      const guestWon = tie || payload.snippetWinnerUid === guestUid;
+      hostRetained[r] = hostWon;
+      guestRetained[r] = guestWon;
+    } else if (status === "award") {
+      payload.timings = {
+        [hostUid]: { qDoneMs: hostQDone, markDoneMs: hostMarkDone, totalMs: hostTotalMs, role: "host" },
+        [guestUid]: { qDoneMs: guestQDone, markDoneMs: guestMarkDone, totalMs: guestTotalMs, role: "guest" },
+      };
+      const diff = Math.abs(hostTotalMs - guestTotalMs);
+      const tie = diff < 1_000;
+      payload.snippetTie = tie;
+      payload.snippetWinnerUid = tie
+        ? null
+        : hostTotalMs < guestTotalMs
+        ? hostUid
+        : guestUid;
+      touched = true;
+
+      hostPlayerRounds[r] = { timings: { qDoneMs: hostQDone, markDoneMs: hostMarkDone, role: "host" } };
+      guestPlayerRounds[r] = { timings: { qDoneMs: guestQDone, markDoneMs: guestMarkDone, role: "guest" } };
+      const hostWon = tie || payload.snippetWinnerUid === hostUid;
+      const guestWon = tie || payload.snippetWinnerUid === guestUid;
+      hostRetained[r] = hostWon;
+      guestRetained[r] = guestWon;
+    } else if (status === "marking") {
+      payload.timings = {
+        [hostUid]: { qDoneMs: hostQDone, role: "host" },
+        [guestUid]: { qDoneMs: guestQDone, role: "guest" },
+      };
+      touched = true;
+      hostPlayerRounds[r] = { timings: { qDoneMs: hostQDone, role: "host" } };
+      guestPlayerRounds[r] = { timings: { qDoneMs: guestQDone, role: "guest" } };
+    }
+
+    if (touched) {
+      roundPayloads[r] = payload;
+    }
+
+    timelineCursor += 70_000;
+  }
+
+  const countdownStartAt = stageRank === STAGE_RANK.countdown ? now + 7_000 : null;
+  const markingStartAt = stageRank === STAGE_RANK.marking ? now - 5_000 : null;
+  const awardStartAt = stageRank === STAGE_RANK.award ? now - 3_000 : null;
+
+  const mathsAnswers = {};
+  const mathsAnswersAck = {};
+  if (targetStage === "final") {
+    mathsAnswers.host = [42, 17];
+    mathsAnswers.guest = [38, 17];
+    mathsAnswersAck.host = true;
+    mathsAnswersAck.guest = true;
+  }
+
+  const roomPatch = {
+    state: targetStage,
+    round: targetRound,
+    "meta.hostUid": hostUid,
+    "meta.guestUid": guestUid,
+    "countdown.startAt": countdownStartAt,
+    "marking.startAt": markingStartAt,
+    "award.startAt": awardStartAt,
+    "answers.host": answersHost,
+    "answers.guest": answersGuest,
+    "submitted.host": submittedHost,
+    "submitted.guest": submittedGuest,
+    "marking.host": markingHost,
+    "marking.guest": markingGuest,
+    "markingAck.host": markingAckHost,
+    "markingAck.guest": markingAckGuest,
+    "awardAck.host": awardAckHost,
+    "awardAck.guest": awardAckGuest,
+    "scores.questions.host": hostScoreTotal,
+    "scores.questions.guest": guestScoreTotal,
+    "links.guestReady": true,
+    mathsAnswers,
+    mathsAnswersAck,
+    "timestamps.updatedAt": serverTimestamp(),
+  };
+
+  if (targetStage !== "final") {
+    roomPatch.mathsAnswers = mathsAnswers;
+    roomPatch.mathsAnswersAck = mathsAnswersAck;
+  }
+
+  await updateDoc(roomRef(normalizedCode), roomPatch);
+
+  const roundPromises = Object.entries(roundPayloads).map(([r, payload]) => {
+    const docRef = doc(roundSubColRef(normalizedCode), String(r));
+    return setDoc(docRef, payload, { merge: true });
+  });
+
+  const hostPlayerPayload = { role: "host" };
+  if (hasOwnData(hostPlayerRounds)) hostPlayerPayload.rounds = hostPlayerRounds;
+  if (hasOwnData(hostRetained)) hostPlayerPayload.retainedSnippets = hostRetained;
+
+  const guestPlayerPayload = { role: "guest" };
+  if (hasOwnData(guestPlayerRounds)) guestPlayerPayload.rounds = guestPlayerRounds;
+  if (hasOwnData(guestRetained)) guestPlayerPayload.retainedSnippets = guestRetained;
+
+  roundPromises.push(
+    setDoc(playerDocRef(normalizedCode, hostUid), hostPlayerPayload, { merge: true })
+  );
+  roundPromises.push(
+    setDoc(playerDocRef(normalizedCode, guestUid), guestPlayerPayload, { merge: true })
+  );
+
+  await Promise.all(roundPromises);
+}
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value ?? null));
@@ -397,6 +733,21 @@ export default {
     );
     card.appendChild(status);
 
+    const stage = {
+      base: null,
+      questionsOverride: null,
+      hostOverride: null,
+      guestOverride: null,
+      mathsOverride: null,
+    };
+
+    let lastPack = null;
+    let jumpInFlight = false;
+    let jumpBtn = null;
+    let jumpStatusEl = null;
+    let stageSelectEl = null;
+    let roundSelectEl = null;
+
     const startRow = el("div", {
       class: "mono",
       style: "margin-top:16px;display:flex;justify-content:center;",
@@ -405,19 +756,66 @@ export default {
     startRow.appendChild(startBtn);
     card.appendChild(startRow);
 
+    const jumpSection = el("div", {
+      class: "mono",
+      style:
+        "margin-top:18px;padding:12px;border:1px solid rgba(0,0,0,0.18);border-radius:10px;display:flex;flex-direction:column;gap:10px;",
+    });
+    jumpSection.appendChild(el("div", { style: "font-weight:700;" }, "Fast forward"));
+
+    const stageOptions = [
+      { value: "countdown", label: "Countdown" },
+      { value: "questions", label: "Questions" },
+      { value: "marking", label: "Marking" },
+      { value: "award", label: "Award" },
+      { value: "maths", label: "Maths" },
+      { value: "final", label: "Final" },
+    ];
+
+    stageSelectEl = el("select", {
+      class: "mono",
+      style: "padding:6px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;",
+    });
+    stageOptions.forEach(({ value, label }) => {
+      stageSelectEl.appendChild(el("option", { value }, label));
+    });
+
+    const stageRow = el("label", {
+      class: "mono",
+      style: "display:flex;flex-direction:column;gap:6px;",
+    }, [el("span", { style: "font-weight:700;" }, "Phase"), stageSelectEl]);
+    jumpSection.appendChild(stageRow);
+
+    roundSelectEl = el("select", {
+      class: "mono",
+      style: "padding:6px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;",
+    });
+    for (let r = 1; r <= 5; r += 1) {
+      roundSelectEl.appendChild(el("option", { value: String(r) }, `Round ${r}`));
+    }
+    const roundRow = el("label", {
+      class: "mono",
+      style: "display:flex;flex-direction:column;gap:6px;",
+    }, [el("span", { style: "font-weight:700;" }, "Round"), roundSelectEl]);
+    jumpSection.appendChild(roundRow);
+
+    jumpBtn = el("button", { class: "btn primary", type: "button", disabled: "" }, "Jump there");
+    const jumpBtnRow = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;" }, [jumpBtn]);
+    jumpSection.appendChild(jumpBtnRow);
+    jumpBtn.addEventListener("click", () => {
+      jumpToPhase();
+    });
+
+    jumpStatusEl = el("div", { class: "mono small", style: "min-height:18px;" }, "");
+    jumpSection.appendChild(jumpStatusEl);
+
+    card.appendChild(jumpSection);
+
     const logEl = el("pre", {
       class: "mono small",
       style: "margin-top:14px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:180px;overflow:auto;",
     });
     card.appendChild(logEl);
-
-    const stage = {
-      base: null,
-      questionsOverride: null,
-      hostOverride: null,
-      guestOverride: null,
-      mathsOverride: null,
-    };
 
     function updateProgress() {
       const hostSource = stage.hostOverride
@@ -449,11 +847,40 @@ export default {
       console.log(`[keyroom] ${message}`);
     }
 
+    function updateRoundForStage() {
+      if (!stageSelectEl || !roundSelectEl) return;
+      const value = sanitizeStage(stageSelectEl.value);
+      if (value === "maths" || value === "final") {
+        roundSelectEl.value = "5";
+        roundSelectEl.disabled = true;
+      } else {
+        roundSelectEl.disabled = false;
+      }
+    }
+
+    if (stageSelectEl) {
+      stageSelectEl.addEventListener("change", () => {
+        updateRoundForStage();
+        reflectStartState();
+      });
+    }
+    if (roundSelectEl) {
+      roundSelectEl.addEventListener("change", () => {
+        reflectStartState();
+      });
+    }
+
+    updateRoundForStage();
+
     function reflectStartState() {
       const code = clampCode(codeInput.value);
       const ready = code.length >= 3;
       startBtn.disabled = !ready;
       startBtn.classList.toggle("throb", ready);
+      if (jumpBtn) {
+        jumpBtn.disabled = !ready || jumpInFlight;
+        jumpBtn.classList.toggle("throb", ready && !jumpInFlight);
+      }
       if (!ready) {
         status.textContent = "Enter a 3–5 character code to enable START.";
       } else if (!stage.base && !stage.questionsOverride && !stage.hostOverride && !stage.guestOverride) {
@@ -752,6 +1179,7 @@ export default {
         integrity: { checksum: "0".repeat(64), verified: true },
       };
 
+      lastPack = pack;
       return pack;
     }
 
@@ -780,6 +1208,61 @@ export default {
         console.error("[keyroom] start failed", err);
         status.textContent = err?.message || "Failed to start. Please try again.";
         startBtn.disabled = false;
+        reflectStartState();
+      }
+    }
+
+    async function jumpToPhase() {
+      const code = clampCode(codeInput.value);
+      if (code.length < 3) {
+        status.textContent = "Enter a valid room code first.";
+        return;
+      }
+      if (jumpInFlight) return;
+      jumpInFlight = true;
+      reflectStartState();
+
+      const stageValue = sanitizeStage(stageSelectEl ? stageSelectEl.value : "countdown");
+      const roundRaw = Number(roundSelectEl ? roundSelectEl.value : "1") || 1;
+      const roundValue = stageValue === "maths" || stageValue === "final" ? 5 : Math.max(1, Math.min(5, roundRaw));
+
+      status.textContent = "Preparing jump…";
+      if (jumpStatusEl) jumpStatusEl.textContent = "Preparing jump…";
+
+      try {
+        const pack = assemblePack(code);
+        await seedFirestoreFromPack(db, pack);
+        await applyJumpState({ code, pack, stage: stageValue, round: roundValue });
+        setStoredRole(code, "host");
+
+        const guestLink = `${location.origin}${location.pathname}#/lobby?code=${code}`;
+        let copied = false;
+        try {
+          copied = await copyToClipboard(guestLink);
+        } catch (err) {
+          console.warn("[keyroom] copy guest link failed", err);
+        }
+
+        if (jumpStatusEl) {
+          if (copied) {
+            jumpStatusEl.textContent = "Guest link copied. Launching phase…";
+          } else {
+            jumpStatusEl.textContent = `Guest link ready: ${guestLink}`;
+          }
+        }
+        status.textContent = "Launching new phase…";
+        log(`jumped to ${stageValue} round ${roundValue}`);
+
+        const target = routeForStage(stageValue, code, roundValue);
+        setTimeout(() => {
+          location.hash = target;
+        }, 250);
+      } catch (err) {
+        console.error("[keyroom] jump failed", err);
+        status.textContent = err?.message || "Jump failed. Please try again.";
+        if (jumpStatusEl) jumpStatusEl.textContent = err?.message || "Jump failed. Please try again.";
+      } finally {
+        jumpInFlight = false;
         reflectStartState();
       }
     }
