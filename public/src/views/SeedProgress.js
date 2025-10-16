@@ -45,7 +45,7 @@ export default {
       code ? `Room ${code}` : "Room unknown");
     card.appendChild(heading);
 
-    const status = el("div", { class: "mono", style: "min-height:18px;" }, "Waiting for host upload…");
+    const status = el("div", { class: "mono", style: "min-height:18px;" }, "Waiting for Daniel’s upload…");
     card.appendChild(status);
 
     const logEl = el("pre", {

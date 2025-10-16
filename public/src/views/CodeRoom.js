@@ -64,10 +64,10 @@ export default {
         type: "button",
         onclick: async () => {
           const ok = await copyToClipboard(formatShareUrl(code));
-          if (ok) status.textContent = "Link copied.";
+          if (ok) status.textContent = "Jaime’s link copied.";
         },
       },
-      "Copy join link"
+      "Copy Jaime’s link"
     );
     card.appendChild(el("div", { style: "text-align:center;margin-top:8px;" }, copyLink));
 
@@ -146,13 +146,13 @@ export default {
 
         if (currentState === "coderoom") {
           status.textContent = guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime…";
-          guestBadge.textContent = guestPresent ? "Guest connected." : "Jaime hasn’t entered yet.";
+          guestBadge.textContent = guestPresent ? "Jaime is here." : "Jaime hasn’t entered yet.";
         } else if (currentState === "keyroom") {
           status.textContent = "Back in the Key Room.";
-          guestBadge.textContent = guestPresent ? "Guest already linked." : "";
+          guestBadge.textContent = guestPresent ? "Jaime already linked." : "";
         } else {
           status.textContent = `State: ${currentState}`;
-          guestBadge.textContent = guestPresent ? "Guest connected." : "";
+          guestBadge.textContent = guestPresent ? "Jaime is here." : "";
         }
 
         if (currentState && currentState !== "coderoom" && currentState !== "keyroom") {

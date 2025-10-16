@@ -377,7 +377,7 @@ export default {
           title: "Mark as unsure",
           "aria-pressed": "false",
         },
-        "I DUNNO"
+        "Not sure"
       );
 
       const reflect = () => {

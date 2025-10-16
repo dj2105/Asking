@@ -75,7 +75,7 @@ export default {
     }, "—");
     card.appendChild(timer);
 
-    const sub = el("div", { class: "mono small", style: "text-align:center;margin-top:12px;" }, "Waiting for host…");
+    const sub = el("div", { class: "mono small", style: "text-align:center;margin-top:12px;" }, "Waiting for Daniel…");
     card.appendChild(sub);
 
     root.appendChild(card);

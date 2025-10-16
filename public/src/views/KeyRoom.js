@@ -619,10 +619,10 @@ export default {
           if (!code) return;
           const share = `${location.origin}${location.pathname}#/lobby`;
           const ok = await copyToClipboard(`${share}?code=${code}`);
-          if (ok) status.textContent = "Link copied.";
+          if (ok) status.textContent = "Jaime’s link copied.";
         },
       },
-      "Copy link"
+      "Copy Jaime’s link"
     );
     codeRow.appendChild(el("span", { style: "font-weight:700;" }, "Room code"));
     codeRow.appendChild(codeInput);
@@ -637,11 +637,11 @@ export default {
     card.appendChild(uploadGrid);
 
     const slotConfigs = {
-      full: { label: "Full Pack", initial: "Awaiting full pack." },
-      questions: { label: "All Questions (30)", initial: "Awaiting 30-question pack." },
-      host: { label: "Host (15)", initial: "Awaiting host halfpack." },
-      guest: { label: "Guest (15)", initial: "Awaiting guest halfpack." },
-      maths: { label: "Maths", initial: "Awaiting maths block." },
+      full: { label: "Full Pack", initial: "Waiting for the full pack." },
+      questions: { label: "All Questions (30)", initial: "Waiting for the 30-question pack." },
+      host: { label: "Daniel’s set (15)", initial: "Waiting for Daniel’s half pack." },
+      guest: { label: "Jaime’s set (15)", initial: "Waiting for Jaime’s half pack." },
+      maths: { label: "Maths", initial: "Waiting for the maths block." },
     };
 
     const slotMap = {};
@@ -714,7 +714,7 @@ export default {
     const progressLine = el("div", {
       class: "mono small",
       style: "margin-top:4px;text-align:center;min-height:18px;",
-    }, "Sources → Host: — · Guest: — · Maths: —");
+    }, "Sources → Daniel: — · Jaime: — · Maths: —");
     card.appendChild(progressLine);
 
     const metaRow = el("div", {
@@ -899,7 +899,7 @@ export default {
     guestCopyBtn.addEventListener("click", async () => {
       if (!lastGuestLink) return;
       const ok = await copyToClipboard(lastGuestLink);
-      if (ok) jumpStatus.textContent = "Guest link copied.";
+      if (ok) jumpStatus.textContent = "Jaime’s link copied.";
     });
 
     const jumpToStage = async () => {
@@ -971,14 +971,14 @@ export default {
 
     function updateProgress() {
       const hostSource = stage.hostOverride
-        ? "Host (15)"
+        ? "Daniel’s 15"
         : stage.questionsOverride
         ? "All Questions (30)"
         : stage.base
         ? "Full Pack"
         : "—";
       const guestSource = stage.guestOverride
-        ? "Guest (15)"
+        ? "Jaime’s 15"
         : stage.questionsOverride
         ? "All Questions (30)"
         : stage.base
@@ -989,7 +989,7 @@ export default {
         : stage.base?.maths
         ? "Full Pack"
         : "—";
-      progressLine.textContent = `Sources → Host: ${hostSource} · Guest: ${guestSource} · Maths: ${mathsSource}`;
+      progressLine.textContent = `Sources → Daniel: ${hostSource} · Jaime: ${guestSource} · Maths: ${mathsSource}`;
     }
 
     function log(message) {
@@ -1106,7 +1106,7 @@ export default {
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
-      status.textContent = "Host & guest questions now come from the 30-question pack.";
+      status.textContent = "Daniel & Jaime question sets now come from the 30-question pack.";
       log("30-question pack verified.");
       updateProgress();
       reflectStartState();
@@ -1135,13 +1135,13 @@ export default {
       }
       const slot = slotMap[which];
       if (slot) {
-        slot.statusEl.textContent = which === "host" ? "Host (15) loaded." : "Guest (15) loaded.";
+        slot.statusEl.textContent = which === "host" ? "Daniel’s 15 loaded." : "Jaime’s 15 loaded.";
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
       status.textContent = which === "host"
-        ? "Host questions overriding base content."
-        : "Guest questions overriding base content.";
+        ? "Daniel’s questions overriding the base content."
+        : "Jaime’s questions overriding the base content.";
       log(`${which} halfpack verified.`);
       updateProgress();
       reflectStartState();
