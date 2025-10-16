@@ -2,10 +2,8 @@
 //
 // Full-width score strip shown across the game (not in lobby/keyroom/seeding/final).
 // Scoring model (per your spec):
-//   • Players MUST answer all 3 questions in Questions (handled elsewhere).
-//   • In Marking, the marker earns: +1 if their verdict matches truth of opponent's answer,
-//     -1 if it contradicts truth, 0 if left unmarked when timer expires.
-// Running totals are the sum of those marking points across completed/ongoing rounds.
+//   • Question-round scores are recorded on the room doc at `scores.questions`.
+//   • Each Award phase simply shows the running total from those stored values.
 //
 // API:
 //   import ScoreStrip from "../lib/ScoreStrip.js";
@@ -14,73 +12,28 @@
 //   ScoreStrip.hide();
 //
 // Implementation notes:
-//   • Listens to the room doc and round docs (1..5) to compute scores.
+//   • Listens only to the room doc; the totals are written atomically from Marking → Award.
 //   • Assumes host == “Daniel”, guest == “Jaime” (labels only; IDs come from room.meta).
 //   • Safe if some fields are missing during seeding/early rounds.
 //
 // Visuals are defined mainly in styles.css (.score-strip); this module only renders DOM.
 
 import { db } from "./firebase.js";
-import { doc, collection, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 
 const roomRef = (code) => doc(db, "rooms", code);
-const roundSubColRef = (code) => collection(roomRef(code), "rounds");
 
 const state = {
   node: null,
   unsubRoom: null,
-  unsubRounds: [],
   code: null,
-  roundDocs: {}, // { [round]: data }
   roomData: null,
 };
 
-function text(s){ return (s ?? "").toString(); }
-function same(a,b){ return String(a||"").trim() === String(b||"").trim(); }
-
-function computeScores(roomData, roundDocs) {
-  let hostScore = 0; // Daniel
-  let guestScore = 0; // Jaime
-
-  const answers = roomData?.answers || {};
-  const marking = roomData?.marking || {};
-
-  for (let r = 1; r <= 5; r++) {
-    const rd = roundDocs[r];
-    if (!rd) continue;
-
-    const hostItems  = rd.hostItems || [];
-    const guestItems = rd.guestItems || [];
-
-    const hostAns = ((answers.host || {})[r] || []).map(a => a?.chosen || "");
-    const guestAns = ((answers.guest || {})[r] || []).map(a => a?.chosen || "");
-
-    const hostMarks  = ((marking.host  || {})[r] || []); // host marked guest’s answers
-    const guestMarks = ((marking.guest || {})[r] || []); // guest marked host’s answers
-
-    // Host marks guest answers:
-    for (let i = 0; i < 3; i++) {
-      const chosen = guestAns[i];
-      const correct = guestItems[i]?.correct_answer;
-      const truth = chosen && correct ? same(chosen, correct) : false;
-      const verdict = hostMarks[i]; // "right" | "wrong" | "unknown" | undefined
-      if (verdict === "right") hostScore += truth ? 1 : -1;
-      else if (verdict === "wrong") hostScore += truth ? -1 : 1;
-      else hostScore += 0; // unmarked/unknown
-    }
-
-    // Guest marks host answers:
-    for (let i = 0; i < 3; i++) {
-      const chosen = hostAns[i];
-      const correct = hostItems[i]?.correct_answer;
-      const truth = chosen && correct ? same(chosen, correct) : false;
-      const verdict = guestMarks[i];
-      if (verdict === "right") guestScore += truth ? 1 : -1;
-      else if (verdict === "wrong") guestScore += truth ? -1 : 1;
-      else guestScore += 0;
-    }
-  }
-
+function getQuestionScores(roomData) {
+  const base = roomData?.scores?.questions || {};
+  const hostScore = Number(base.host ?? 0) || 0;
+  const guestScore = Number(base.guest ?? 0) || 0;
   return { hostScore, guestScore };
 }
 
@@ -89,7 +42,7 @@ function render() {
   const code  = state.code || "—";
   const round = state.roomData?.round ?? 1;
 
-  const { hostScore, guestScore } = computeScores(state.roomData || {}, state.roundDocs);
+  const { hostScore, guestScore } = getQuestionScores(state.roomData || {});
 
   // Labels fixed by design spec
   const leftHTML  = `<span class="ss-code">${code}</span><span class="ss-round">Round ${round}</span>`;
@@ -105,7 +58,7 @@ function render() {
   `;
 }
 
-async function bind(code) {
+function bind(code) {
   cleanup();
 
   state.code = code;
@@ -116,32 +69,11 @@ async function bind(code) {
     state.roomData = snap.data() || {};
     render();
   });
-
-  // Preload & listen to rounds 1..5
-  for (let r = 1; r <= 5; r++) {
-    const dref = doc(roundSubColRef(code), String(r));
-    // initial fetch (best-effort)
-    try {
-      const s = await getDoc(dref);
-      if (s.exists()) state.roundDocs[r] = s.data() || {};
-    } catch {}
-    // live updates
-    const u = onSnapshot(dref, (s) => {
-      if (s.exists()) {
-        state.roundDocs[r] = s.data() || {};
-        render();
-      }
-    });
-    state.unsubRounds.push(u);
-  }
 }
 
 function cleanup() {
   try { state.unsubRoom && state.unsubRoom(); } catch {}
   state.unsubRoom = null;
-  for (const u of state.unsubRounds) { try { u(); } catch {} }
-  state.unsubRounds = [];
-  state.roundDocs = {};
   // keep node so we can reuse it between routes
 }
 
