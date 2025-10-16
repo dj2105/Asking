@@ -157,7 +157,6 @@ export default {
 
       if (remainMs <= 0 && !hasFlipped) {
         if (!roundReady) {
-          updateSubMessage();
           return;
         }
         hasFlipped = true;
