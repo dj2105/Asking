@@ -79,21 +79,122 @@ function computeScores(roomData, roundDocs) {
 function render() {
   if (!state.node) return;
   const code  = state.code || "—";
-  const round = state.roomData?.round ?? 1;
+  const round = Number(state.roomData?.round ?? 1);
+  const phase = String(state.roomData?.state || "").toLowerCase();
 
   const { hostScore, guestScore } = computeScores(state.roomData || {}, state.roundDocs);
 
-  // Labels fixed by design spec
-  const leftHTML  = `<span class="ss-code">${code}</span><span class="ss-round">Round ${round}</span>`;
-  const rightHTML = `<span class="ss-name">Daniel</span><span class="ss-score">${hostScore}</span>
-                     <span class="ss-sep"></span>
-                     <span class="ss-name">Jaime</span><span class="ss-score">${guestScore}</span>`;
+  const timeline = buildTimeline({ round, phase, roomData: state.roomData || {}, roundDocs: state.roundDocs });
+
+  const leftHTML = `
+    <div class="ss-headline">
+      <span class="ss-code">${code}</span>
+      <span class="ss-round">${labelRound(phase, round)}</span>
+    </div>
+    <div class="ss-subhead">${labelPhase(phase)}</div>
+  `;
+
+  const rightHTML = `
+    <div class="ss-ledger">
+      <div class="ss-ledger__row">
+        <span class="ss-name">Daniel</span>
+        <span class="ss-score ss-score--host">${hostScore}</span>
+      </div>
+      <div class="ss-ledger__row">
+        <span class="ss-name">Jaime</span>
+        <span class="ss-score ss-score--guest">${guestScore}</span>
+      </div>
+    </div>
+  `;
 
   state.node.innerHTML = `
     <div class="score-strip__inner">
+      <div class="score-strip__glow"></div>
       <div class="score-strip__left">${leftHTML}</div>
       <div class="score-strip__right">${rightHTML}</div>
+      <ol class="score-orbit">
+        ${timeline.map(renderOrbitItem).join("")}
+      </ol>
     </div>
+  `;
+}
+
+function labelRound(phase, round) {
+  if (phase === "final") return "Finale";
+  if (phase === "maths") return "Maths Duel";
+  if (!round || Number.isNaN(round)) return "Round —";
+  return `Round ${round}`;
+}
+
+function labelPhase(phase) {
+  if (!phase) return "Awaiting signal";
+  const map = {
+    lobby: "Waiting in the atrium",
+    coderoom: "Daniel preparing the vault",
+    seeding: "Seeding the sealed pack",
+    countdown: "Countdown to confrontation",
+    questions: "Rapid-fire questioning",
+    marking: "Cross-marking verdicts",
+    award: "Scores crystallising",
+    maths: "The maths gauntlet",
+    final: "Curtain call",
+    watcher: "Spectating",
+    interlude: "Jemima’s interlude",
+  };
+  return map[phase] || `Phase: ${phase}`;
+}
+
+const ACTIVE_PHASES = new Set(["countdown", "questions", "marking", "award", "maths"]);
+
+function buildTimeline({ round, phase, roomData, roundDocs }) {
+  const items = [];
+  for (let r = 1; r <= 5; r += 1) {
+    const rd = roundDocs[r] || {};
+    const answers = roomData?.answers || {};
+    const hostAnswers = ((answers.host || {})[r] || []);
+    const guestAnswers = ((answers.guest || {})[r] || []);
+    const hostCorrect = hostAnswers.length ? countCorrectAnswers(hostAnswers, rd.hostItems || []) : null;
+    const guestCorrect = guestAnswers.length ? countCorrectAnswers(guestAnswers, rd.guestItems || []) : null;
+
+    const status = deriveStatus({ r, round, phase, hostCorrect, guestCorrect });
+
+    items.push({
+      round: r,
+      status,
+      host: hostCorrect,
+      guest: guestCorrect,
+    });
+  }
+  return items;
+}
+
+function deriveStatus({ r, round, phase, host, guest }) {
+  const lowerPhase = (phase || "").toLowerCase();
+  const isBeyond = Number(round || 1) > r;
+  const isFuture = Number(round || 1) < r;
+  const isFinal = lowerPhase === "maths" || lowerPhase === "final";
+
+  if (isFinal && r <= Number(round || 1)) return "complete";
+  if (host != null || guest != null) return "complete";
+  if (isBeyond) return "complete";
+  if (!isFuture && ACTIVE_PHASES.has(lowerPhase)) return "active";
+  return "upcoming";
+}
+
+function renderOrbitItem(item) {
+  const host = item.host == null ? "—" : item.host;
+  const guest = item.guest == null ? "—" : item.guest;
+  return `
+    <li class="score-orbit__item score-orbit__item--${item.status}">
+      <div class="score-orbit__halo"></div>
+      <div class="score-orbit__glyph">R${item.round}</div>
+      <div class="score-orbit__totals">
+        <span class="score-orbit__label">Daniel</span>
+        <span class="score-orbit__value">${host}</span>
+        <span class="score-orbit__label">Jaime</span>
+        <span class="score-orbit__value">${guest}</span>
+      </div>
+    </li>
   `;
 }
 
