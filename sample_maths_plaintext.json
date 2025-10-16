@@ -1,0 +1,26 @@
+{
+  "version": "jemima-maths-1",
+  "meta": {
+    "roomCode": "NAT",
+    "generatedAt": "2025-10-16T20:40:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "location": "Pier",
+    "beats": [
+      "Jemima bought chips for £3.",
+      "She added tea for £2.",
+      "She walked 300 metres to the end.",
+      "She tipped a busker £1."
+    ],
+    "questions": [
+      "Total spent? ___ pounds",
+      "Distance walked? ___ metres"
+    ],
+    "answers": [
+      5,
+      300
+    ]
+  }
+}
