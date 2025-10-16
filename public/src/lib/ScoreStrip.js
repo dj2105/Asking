@@ -32,6 +32,7 @@ const state = {
   code: null,
   roundDocs: {}, // { [round]: data }
   roomData: null,
+  container: null,
 };
 
 function text(s){ return (s ?? "").toString(); }
@@ -139,6 +140,8 @@ function cleanup() {
 
 export function mount(container, { code } = {}) {
   if (!container) return;
+  state.container = container;
+  container.classList.add("has-score-strip");
   if (!state.node) {
     const n = document.createElement("div");
     n.className = "score-strip mono";
@@ -160,6 +163,12 @@ export function hide() {
   if (state.node && state.node.parentNode) {
     state.node.parentNode.removeChild(state.node);
   }
+  if (state.container) {
+    try {
+      state.container.classList.remove("has-score-strip");
+    } catch {}
+  }
+  state.container = null;
 }
 
 export default { mount, update, hide };

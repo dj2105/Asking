@@ -62,16 +62,15 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-questions" });
+    const root = el("div", { class: "view view-questions view--full-center" });
+    const stage = el("div", { class: "center-stage" });
+    const stack = el("div", { class: "center-stage__stack" });
 
-    const card = el("div", { class: "card card--soft" });
-    const heading = el("h2", { class: "view-heading" }, "Questions");
-    const counterChip = el("span", { class: "meta-chip" }, "1 / 3");
-    const counterStrip = el("div", { class: "meta-strip" }, counterChip);
+    const card = el("div", { class: "card card--soft card--center" });
+    const heading = el("h2", { class: "question-title" }, "QUESTION 1/3");
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
     card.appendChild(heading);
-    card.appendChild(counterStrip);
     card.appendChild(qText);
 
     const btnWrap = el("div", { class: "choice-row" });
@@ -81,17 +80,35 @@ export default {
     btnWrap.appendChild(btn2);
     card.appendChild(btnWrap);
 
-    let waitMessageDefault = "Waiting…";
-    const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
-    waitMsg.style.display = "none";
-    card.appendChild(waitMsg);
-
-    root.appendChild(card);
+    stack.appendChild(card);
 
     const mathsMount = el("div", { class: "jemima-maths-pinned" });
-    root.appendChild(mathsMount);
+    stack.appendChild(mathsMount);
+
+    const overlay = el("div", { class: "center-overlay" });
+    const overlayTitle = el("div", { class: "center-overlay__title" }, "");
+    const overlaySub = el("div", { class: "center-overlay__sub" }, "");
+    overlay.appendChild(overlayTitle);
+    overlay.appendChild(overlaySub);
+
+    stage.appendChild(stack);
+    stage.appendChild(overlay);
+    root.appendChild(stage);
 
     container.appendChild(root);
+
+    let waitMessageDefault = "Waiting…";
+    const showOverlay = (title, sub = "") => {
+      overlayTitle.textContent = title || "";
+      overlaySub.textContent = sub || "";
+      overlay.classList.add("active");
+      stack.style.display = "none";
+    };
+
+    const hideOverlay = () => {
+      overlay.classList.remove("active");
+      stack.style.display = "flex";
+    };
 
     let stopWatcher = null;
     let alive = true;
@@ -118,10 +135,7 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    const readableName = myRole === "host" ? "Daniel" : "Jaime";
-    heading.textContent = `${readableName}'s Questions`;
-    waitMessageDefault = `Waiting for ${oppName}…`;
-    waitMsg.textContent = waitMessageDefault;
+    waitMessageDefault = `Waiting for ${oppName}`;
 
     try {
       if (mountMathsPane && room0.maths) {
@@ -152,8 +166,7 @@ export default {
           console.warn("[questions] failed to load round doc:", err);
         }
         if (firstWait) {
-          waitMsg.textContent = "Waiting for round data…";
-          waitMsg.style.display = "";
+          showOverlay("Preparing questions…");
           btnWrap.style.display = "none";
           setButtonsEnabled(false);
           firstWait = false;
@@ -185,17 +198,16 @@ export default {
 
     function renderIndex() {
       const cur = triplet[idx];
-      counterChip.textContent = `${Math.min(idx + 1, 3)} / 3`;
+      heading.textContent = `QUESTION ${Math.min(idx + 1, 3)} / 3`;
       qText.textContent = cur?.question || "";
       btn1.textContent = cur?.options?.[0] || "";
       btn2.textContent = cur?.options?.[1] || "";
     }
 
-    const showWaitingState = (text) => {
+    const showCompletionOverlay = (titleText, subText) => {
       btnWrap.style.display = "none";
-      waitMsg.textContent = text || waitMessageDefault;
-      waitMsg.style.display = "";
       setButtonsEnabled(false);
+      showOverlay(titleText, subText);
     };
 
     async function publishAnswers() {
@@ -217,7 +229,7 @@ export default {
         console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
         await updateDoc(rRef, patch);
         published = true;
-        showWaitingState();
+        showCompletionOverlay(waitMessageDefault, "Round timer paused");
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
@@ -243,9 +255,8 @@ export default {
       chosen[idx] = text;
       idx += 1;
       if (idx >= 3) {
-        counterChip.textContent = "3 / 3";
-        qText.textContent = "All answers submitted.";
-        setButtonsEnabled(false);
+        heading.textContent = "QUESTION 3 / 3";
+        showCompletionOverlay(waitMessageDefault, "Round timer paused");
         if (!qDoneMsLocal) {
           const stamp = Date.now();
           recordQuestionTiming(stamp);
@@ -265,16 +276,14 @@ export default {
 
     if (!tripletReady) {
       btnWrap.style.display = "none";
-      waitMsg.textContent = "Preparing questions…";
-      waitMsg.style.display = "";
+      showOverlay("Preparing questions…");
     } else if (existingAns.length === 3) {
       published = true;
-      showWaitingState(`Submitted. Waiting for ${oppName}…`);
-      counterChip.textContent = "3 / 3";
-      qText.textContent = "All answers submitted.";
+      showCompletionOverlay(waitMessageDefault, "Round timer paused");
+      heading.textContent = "QUESTION 3 / 3";
     } else {
+      hideOverlay();
       btnWrap.style.display = "flex";
-      waitMsg.style.display = "none";
       setButtonsEnabled(true);
       renderIndex();
     }
@@ -310,7 +319,7 @@ export default {
         const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
         const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
         if (myDone && !oppDone) {
-          showWaitingState(`You finished first. Waiting for ${oppName}…`);
+          showCompletionOverlay(waitMessageDefault, "Round timer paused");
         }
       }
 

@@ -45,6 +45,10 @@ body {
   background: linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.72) 26%, rgba(255,255,255,0.42) 100%), var(--paper);
 }
 
+#app.has-score-strip {
+  padding-top: 0;
+}
+
 /* View layout */
 .view {
   width: 100%;
@@ -54,6 +58,53 @@ body {
   flex-direction: column;
   gap: 24px;
   position: relative;
+}
+
+.view--full-center {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
+}
+
+.center-stage {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  padding: 72px 18px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.center-stage__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: min(90vw, 520px);
+}
+
+.center-overlay {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  width: min(90vw, 520px);
+}
+
+.center-overlay.active { display: flex; }
+
+.center-overlay__title {
+  font-weight: 700;
+  font-size: 2.4rem;
+  letter-spacing: 0.08em;
+}
+
+.center-overlay__sub {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .view-stack { display: flex; flex-direction: column; gap: 18px; }
@@ -87,6 +138,14 @@ body {
   text-transform: uppercase;
   text-align: center;
   margin: 0;
+}
+
+.question-title {
+  font-size: 1.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+  text-align: center;
 }
 
 .view-subheading {
@@ -256,6 +315,7 @@ input[type="text"], input[type="number"], .input {
   line-height: 1.5;
   min-height: 64px;
   white-space: pre-wrap;
+  text-align: center;
 }
 
 .choice-row {
@@ -483,46 +543,117 @@ input[type="text"], input[type="number"], .input {
   color: #0a69d6;
 }
 
-.award-card__score {
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.4rem;
+.award-summary {
+  border: 1px solid var(--soft-line);
+  border-radius: 16px;
+  padding: 20px 22px;
+  background: rgba(255,255,255,0.9);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.award-review { display: flex; flex-direction: column; gap: 16px; }
+.award-summary__title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.16em;
+  opacity: 0.75;
+}
 
-.award-block {
+.award-summary__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.award-summary__line {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.award-summary__line--fastest {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.award-summary__outcome {
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.award-review {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.award-review-block {
   border: 1px solid var(--soft-line);
   border-radius: 16px;
   padding: 18px 20px;
-  background: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.94);
   box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.award-block__title {
+.award-review-block__title {
   text-align: center;
   font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 12px;
+  letter-spacing: 0.12em;
+  font-size: 1.02rem;
 }
 
-.award-answer-list { display: flex; flex-direction: column; gap: 12px; }
-
-.award-answer-line { display: flex; flex-direction: column; gap: 6px; }
-
-.award-answer-line .q { margin-bottom: 4px; }
-
-.award-correct, .award-choice {
+.award-question-row {
   display: flex;
+  gap: 16px;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.award-question-row__text {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  align-items: center;
+  flex: 1;
+}
+
+.award-question-row__prompt {
   font-weight: 700;
 }
 
-.award-correct { color: var(--ok); }
-.award-choice--missed { opacity: .7; }
-.award-choice--wrong { color: var(--bad); }
-.award-choice--right { color: var(--ok); }
+.award-question-row__answer {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.award-question-row__answer--correct {
+  color: var(--ok);
+}
+
+.award-question-row__answer--right {
+  color: var(--ok);
+}
+
+.award-question-row__answer--wrong {
+  color: var(--bad);
+}
+
+.award-question-row__verdict {
+  min-width: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.award-question-row__verdict--right { color: var(--ok); }
+.award-question-row__verdict--wrong { color: var(--bad); }
 
 /* ===========================
    Jemima Maths (pinned slot)

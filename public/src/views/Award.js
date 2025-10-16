@@ -59,8 +59,8 @@ function resolveCorrectAnswer(answer = {}, fallbackItem = {}) {
 }
 
 function renderQuestionSection({ heading, items, answers, choiceLabel }) {
-  const block = el("div", { class: "award-block" });
-  block.appendChild(el("div", { class: "mono award-block__title" }, heading));
+  const block = el("div", { class: "award-review-block" });
+  block.appendChild(el("div", { class: "mono award-review-block__title" }, heading));
 
   for (let i = 0; i < 3; i += 1) {
     const item = items[i] || {};
@@ -72,22 +72,29 @@ function renderQuestionSection({ heading, items, answers, choiceLabel }) {
     const wasAnswered = Boolean(chosen);
     const wasCorrect = wasAnswered && same(chosen, correct);
 
-    const row = el("div", { class: "award-answer-line" });
-    row.appendChild(el("div", { class: "q mono" }, `${i + 1}. ${question}`));
+    const row = el("div", { class: "award-question-row" });
+    const textWrap = el("div", { class: "award-question-row__text" });
+    textWrap.appendChild(el("div", { class: "mono award-question-row__prompt" }, `${i + 1}. ${question}`));
+    textWrap.appendChild(el("div", { class: "award-question-row__answer award-question-row__answer--correct" }, `Correct: ${correct}`));
 
-    const correctLine = el("div", { class: "mono award-correct" });
-    correctLine.appendChild(el("span", {}, "✓"));
-    correctLine.appendChild(el("span", {}, `Correct: ${correct}`));
-    row.appendChild(correctLine);
+    const playerClasses = ["award-question-row__answer"];
+    if (!wasAnswered || !wasCorrect) playerClasses.push("award-question-row__answer--wrong");
+    else playerClasses.push("award-question-row__answer--right");
+    const playerText = wasAnswered ? chosen : "No answer";
+    textWrap.appendChild(el("div", { class: playerClasses.join(" ") }, `${choiceLabel}: ${playerText}`));
 
-    const choiceClasses = ["mono", "award-choice"];
-    if (!wasAnswered) choiceClasses.push("award-choice--missed");
-    else if (wasCorrect) choiceClasses.push("award-choice--right");
-    else choiceClasses.push("award-choice--wrong");
-    const chosenLine = el("div", { class: choiceClasses.join(" ") });
-    chosenLine.appendChild(el("span", {}, wasAnswered ? (wasCorrect ? "✓" : "✕") : "—"));
-    chosenLine.appendChild(el("span", {}, `${choiceLabel}: ${wasAnswered ? chosen : "No answer"}`));
-    row.appendChild(chosenLine);
+    row.appendChild(textWrap);
+
+    const verdict = el(
+      "div",
+      {
+        class: wasAnswered && wasCorrect
+          ? "award-question-row__verdict award-question-row__verdict--right"
+          : "award-question-row__verdict award-question-row__verdict--wrong"
+      },
+      wasAnswered && wasCorrect ? "✓" : "✕"
+    );
+    row.appendChild(verdict);
 
     block.appendChild(row);
   }
@@ -144,44 +151,24 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
 
-    const card = el("div", { class: "card" });
-    const heading = el("h2", { class: "view-heading" }, "Award");
-    const metaStrip = el("div", { class: "meta-strip" });
-    const roomChip = el("span", { class: "meta-chip" }, code || "Room" );
-    const roundChip = el("span", { class: "meta-chip" }, `Round ${round}`);
-    metaStrip.appendChild(roomChip);
-    metaStrip.appendChild(roundChip);
-    const scoreHeadline = el("div", { class: "mono award-card__score" }, "Daniel 0 — 0 Jaime");
-    const introNote = el("div", { class: "view-note" }, "Scores lock in now. Review every question together.");
-    card.appendChild(heading);
-    card.appendChild(metaStrip);
-    card.appendChild(scoreHeadline);
-    card.appendChild(introNote);
+    const card = el("div", { class: "card card--soft" });
+    const scoreHeading = el("h2", { class: "question-title" }, "Daniel 0 — 0 Jaime");
+    card.appendChild(scoreHeading);
 
-    const snippetSummary = el("div", { class: "snippet-summary" });
-    const snippetFastestLabel = el("div", { class: "mono snippet-label" }, "FASTEST PLAYER");
-    const snippetFastestName = el("div", { class: "mono snippet-fastest" }, "—");
-    const snippetTimes = el("div", { class: "snippet-times" });
-    const snippetTimeHost = el("div", { class: "mono snippet-time" }, "Daniel — s");
-    const snippetTimeGuest = el("div", { class: "mono snippet-time" }, "Jaime — s");
-    snippetTimes.appendChild(snippetTimeHost);
-    snippetTimes.appendChild(snippetTimeGuest);
-    const snippetOutcomeLine = el("div", { class: "mono snippet-outcome" }, "");
-    snippetSummary.appendChild(snippetFastestLabel);
-    snippetSummary.appendChild(snippetFastestName);
-    snippetSummary.appendChild(snippetTimes);
-    snippetSummary.appendChild(snippetOutcomeLine);
-    card.appendChild(snippetSummary);
+    const fastestBlock = el("div", { class: "award-summary" });
+    const fastestHeading = el("div", { class: "award-summary__title mono" }, "FASTEST PLAYER");
+    const fastestLines = el("div", { class: "award-summary__lines" });
+    const fastestOutcome = el("div", { class: "award-summary__outcome mono" }, "");
+    fastestBlock.appendChild(fastestHeading);
+    fastestBlock.appendChild(fastestLines);
+    fastestBlock.appendChild(fastestOutcome);
+    card.appendChild(fastestBlock);
 
     const reviewWrap = el("div", { class: "award-review" });
     card.appendChild(reviewWrap);
 
-    const waitMsg = el("div", { class: "mono small wait-note" }, "");
-    waitMsg.style.display = "none";
-
-    const continueBtn = el("button", { class: "btn" }, "Continue");
+    const continueBtn = el("button", { class: "btn" }, "I'M READY FOR ROUND #2");
     card.appendChild(continueBtn);
-    card.appendChild(waitMsg);
 
     root.appendChild(card);
 
@@ -202,14 +189,9 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    const readableName = myRole === "host" ? "Daniel" : "Jaime";
-    heading.textContent = `${readableName} & ${oppName}`;
-    introNote.textContent = `Walk through Jemima’s verdicts with ${oppName}.`;
-    continueBtn.textContent = round >= 5 ? "Go to Maths" : "Continue";
-    roomChip.textContent = code || "Room";
-    roundChip.textContent = `Round ${round}`;
-    const waitForOpp = `Waiting for ${oppName}…`;
-    waitMsg.textContent = waitForOpp;
+    const readyLabel = () => (round >= 5 ? "I'M READY FOR MATHS" : `I'M READY FOR ROUND #${round + 1}`);
+    const waitForOpp = `WAITING FOR ${oppName.toUpperCase()}`;
+    continueBtn.textContent = readyLabel();
 
     let reviewData = {
       hostItems: [],
@@ -232,40 +214,58 @@ export default {
       const timings = roundData.timings || {};
       const hostEntry = resolveTimingForRole(timings, "host", [hostUid]);
       const guestEntry = resolveTimingForRole(timings, "guest", [guestUid]);
-      const hostTime = formatSeconds(Number(hostEntry?.info?.totalMs));
-      const guestTime = formatSeconds(Number(guestEntry?.info?.totalMs));
-      snippetTimeHost.textContent = `Daniel ${hostTime}`;
-      snippetTimeGuest.textContent = `Jaime ${guestTime}`;
+      const hostMs = Number(hostEntry?.info?.totalMs);
+      const guestMs = Number(guestEntry?.info?.totalMs);
+      const hostTime = formatSeconds(hostMs);
+      const guestTime = formatSeconds(guestMs);
+
+      const lineData = [
+        { name: "Daniel", ms: hostMs, text: `Daniel ${hostTime}` },
+        { name: "Jaime",  ms: guestMs, text: `Jaime ${guestTime}` }
+      ];
+
+      let ordered = lineData;
+      if (lineData.every((entry) => Number.isFinite(entry.ms))) {
+        ordered = [...lineData].sort((a, b) => a.ms - b.ms);
+      }
+
+      fastestLines.innerHTML = "";
+      const lineEls = [];
+      ordered.forEach((entry, idx) => {
+        const lineEl = el("div", { class: "award-summary__line" }, entry.text);
+        if (idx === 0 && Number.isFinite(entry.ms)) {
+          lineEl.classList.add("award-summary__line--fastest");
+        }
+        fastestLines.appendChild(lineEl);
+        lineEls.push(lineEl);
+      });
+      if (!ordered.length) {
+        const placeholder = el("div", { class: "award-summary__line" }, "—");
+        fastestLines.appendChild(placeholder);
+        lineEls.push(placeholder);
+      }
 
       const winnerUid = roundData.snippetWinnerUid || null;
       const tie = Boolean(roundData.snippetTie);
 
-      let fastestNameText = "—";
       let outcomeText = "";
 
       if (tie) {
-        fastestNameText = "DEAD HEAT";
         outcomeText = `Dead heat for Jemima's ${ordinal(round)} Snippet`;
+        lineEls.forEach((el) => el.classList.add("award-summary__line--fastest"));
       } else if (winnerUid && hostEntry && winnerUid === hostEntry.uid) {
-        fastestNameText = "Daniel";
         outcomeText = `Daniel wins Jemima's ${ordinal(round)} Snippet`;
       } else if (winnerUid && guestEntry && winnerUid === guestEntry.uid) {
-        fastestNameText = "Jaime";
         outcomeText = `Jaime wins Jemima's ${ordinal(round)} Snippet`;
       } else if (winnerUid === hostUid) {
-        fastestNameText = "Daniel";
         outcomeText = `Daniel wins Jemima's ${ordinal(round)} Snippet`;
       } else if (winnerUid === guestUid) {
-        fastestNameText = "Jaime";
         outcomeText = `Jaime wins Jemima's ${ordinal(round)} Snippet`;
-      } else if (!winnerUid) {
-        outcomeText = `Awaiting Jemima's ${ordinal(round)} Snippet`;
       } else {
         outcomeText = `Awaiting Jemima's ${ordinal(round)} Snippet`;
       }
 
-      snippetFastestName.textContent = fastestNameText;
-      snippetOutcomeLine.textContent = outcomeText;
+      fastestOutcome.textContent = outcomeText;
     };
 
     applySnippetSummary(rd);
@@ -285,7 +285,7 @@ export default {
     const updateRoundScores = () => {
       const hostScore = countCorrect(reviewData.hostAnswers, reviewData.hostItems);
       const guestScore = countCorrect(reviewData.guestAnswers, reviewData.guestItems);
-      scoreHeadline.textContent = `Daniel ${hostScore} — ${guestScore} Jaime`;
+      scoreHeading.textContent = `Daniel ${hostScore} — ${guestScore} Jaime`;
     };
 
     const refreshReviews = () => {
@@ -299,13 +299,13 @@ export default {
         heading: "YOUR QUESTIONS",
         items: myItems,
         answers: myAnswers,
-        choiceLabel: "You chose",
+        choiceLabel: "Your answer",
       }));
       reviewWrap.appendChild(renderQuestionSection({
         heading: `${oppName.toUpperCase()}'S QUESTIONS`,
         items: oppItems,
         answers: oppAnswers,
-        choiceLabel: `${oppName} chose`,
+        choiceLabel: `${oppName}'s answer`,
       }));
       updateRoundScores();
     };
@@ -326,20 +326,13 @@ export default {
 
     const updateAckUI = () => {
       if (ackMine) {
-        continueBtn.disabled = "";
+        continueBtn.disabled = true;
         continueBtn.classList.remove("throb");
-        continueBtn.textContent = "Waiting…";
-        if (ackOpp) {
-          waitMsg.style.display = "none";
-        } else {
-          waitMsg.textContent = waitForOpp;
-          waitMsg.style.display = "";
-        }
+        continueBtn.textContent = waitForOpp;
       } else {
-        continueBtn.disabled = null;
+        continueBtn.disabled = false;
         continueBtn.classList.add("throb");
-        continueBtn.textContent = "Continue";
-        waitMsg.style.display = "none";
+        continueBtn.textContent = readyLabel();
       }
     };
 
@@ -389,7 +382,6 @@ export default {
     continueBtn.addEventListener("click", async () => {
       if (ackMine) return;
       ackMine = true;
-      waitMsg.textContent = waitForOpp;
       updateAckUI();
       try {
         await updateDoc(rRef, {
@@ -420,8 +412,6 @@ export default {
       const dataRound = Number(data.round);
       if (stateName === "award" && dataRound && dataRound !== round) {
         round = dataRound;
-        roundChip.textContent = `Round ${round}`;
-        continueBtn.textContent = round >= 5 ? "Go to Maths" : "Continue";
       }
 
       if (stateName === "award") {

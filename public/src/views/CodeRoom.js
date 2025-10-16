@@ -81,7 +81,7 @@ export default {
     const guestBadge = el(
       "div",
       { class: "mono small", style: "margin-top:6px;text-align:center;opacity:0.8;" },
-      "Jaime hasn’t entered yet."
+      ""
     );
     card.appendChild(guestBadge);
 
@@ -146,7 +146,7 @@ export default {
 
         if (currentState === "coderoom") {
           status.textContent = guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime…";
-          guestBadge.textContent = guestPresent ? "Guest connected." : "Jaime hasn’t entered yet.";
+          guestBadge.textContent = guestPresent ? "Guest connected." : "";
         } else if (currentState === "keyroom") {
           status.textContent = "Back in the Key Room.";
           guestBadge.textContent = guestPresent ? "Guest already linked." : "";

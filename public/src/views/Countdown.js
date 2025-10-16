@@ -62,28 +62,14 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-countdown" });
-
-    const card = el("div", { class: "card countdown-card" });
-
-    const heading = el("h2", { class: "view-heading" }, "Countdown");
-    const metaStrip = el("div", { class: "meta-strip" });
-    const codeChip = el("span", { class: "meta-chip" }, code || "Room");
-    const roundChip = el("span", { class: "meta-chip" }, `Round ${round}`);
-    metaStrip.appendChild(codeChip);
-    metaStrip.appendChild(roundChip);
-
-    const msg = el("div", { class: "mono muted" }, "Get ready…");
+    const root = el("div", { class: "view view-countdown view--full-center" });
+    const stage = el("div", { class: "center-stage" });
+    const stack = el("div", { class: "center-stage__stack" });
     const timer = el("div", { class: "mono countdown-big" }, "—");
-    const sub = el("div", { class: "mono small countdown-note" }, "Waiting for Daniel to press Start…");
 
-    card.appendChild(heading);
-    card.appendChild(metaStrip);
-    card.appendChild(msg);
-    card.appendChild(timer);
-    card.appendChild(sub);
-
-    root.appendChild(card);
+    stack.appendChild(timer);
+    stage.appendChild(stack);
+    root.appendChild(stage);
     container.appendChild(root);
 
     const rRef = roomRef(code);
@@ -106,23 +92,6 @@ export default {
       round = Number(room0.round);
     }
 
-    const updateSubMessage = () => {
-      if (!countdownStartAt) {
-        sub.textContent = myRole === "host"
-          ? "Press Start in the Key Room when Jaime has joined."
-          : "Waiting for Daniel to press Start…";
-      } else if (!roundReady) {
-        sub.textContent = "Preparing questions…";
-      } else {
-        sub.textContent = "";
-      }
-    };
-
-    const updateMeta = () => {
-      roundChip.textContent = `Round ${round}`;
-      codeChip.textContent = code || "Room";
-    };
-
     const watchRoundDoc = (rNum) => {
       if (stopRoundWatch) { try { stopRoundWatch(); } catch {} }
       const docRef = doc(roundsCol, String(rNum));
@@ -131,15 +100,12 @@ export default {
         const hostItems = Array.isArray(d.hostItems) ? d.hostItems.length : 0;
         const guestItems = Array.isArray(d.guestItems) ? d.guestItems.length : 0;
         roundReady = hostItems === 3 && guestItems === 3;
-        updateSubMessage();
       }, (err) => {
         console.warn("[countdown] round snapshot error:", err);
       });
     };
 
     watchRoundDoc(round);
-    updateMeta();
-    updateSubMessage();
 
     const stop = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
@@ -148,7 +114,6 @@ export default {
         round = Number(data.round);
         roundReady = false;
         watchRoundDoc(round);
-        updateMeta();
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
@@ -160,7 +125,6 @@ export default {
         countdownStartAt = 0;
         hasFlipped = false;
       }
-      updateSubMessage();
 
       if (data.state === "questions") {
         setTimeout(() => {
@@ -189,7 +153,6 @@ export default {
     const tick = setInterval(async () => {
       if (!countdownStartAt) {
         timer.textContent = "—";
-        updateSubMessage();
         return;
       }
 
@@ -199,7 +162,6 @@ export default {
 
       if (remainMs <= 0 && !hasFlipped) {
         if (!roundReady) {
-          updateSubMessage();
           return;
         }
         hasFlipped = true;
