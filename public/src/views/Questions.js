@@ -64,22 +64,17 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-questions" });
 
-    const card = el("div", { class: "card" });
-    const topRow = el(
-      "div",
-      {
-        class: "mono",
-        style: "display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px;",
-      }
-    );
-    const counter = el("div", { class: "mono" }, "1 / 3");
-    topRow.appendChild(counter);
-    card.appendChild(topRow);
+    const card = el("div", { class: "card card--soft" });
+    const heading = el("h2", { class: "view-heading" }, "Questions");
+    const counterChip = el("span", { class: "meta-chip" }, "1 / 3");
+    const counterStrip = el("div", { class: "meta-strip" }, counterChip);
+    const qText = el("div", { class: "mono question-card__prompt" }, "");
 
-    const qText = el("div", { class: "mono", style: "font-weight:600; white-space:pre-wrap; min-height:56px;" }, "");
+    card.appendChild(heading);
+    card.appendChild(counterStrip);
     card.appendChild(qText);
 
-    const btnWrap = el("div", { style: "display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap;" });
+    const btnWrap = el("div", { class: "choice-row" });
     const btn1 = el("button", { class: "btn big outline" }, "");
     const btn2 = el("button", { class: "btn big outline" }, "");
     btnWrap.appendChild(btn1);
@@ -87,7 +82,8 @@ export default {
     card.appendChild(btnWrap);
 
     let waitMessageDefault = "Waiting…";
-    const waitMsg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-top:12px;display:none;" }, waitMessageDefault);
+    const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
+    waitMsg.style.display = "none";
     card.appendChild(waitMsg);
 
     root.appendChild(card);
@@ -122,6 +118,8 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
+    const readableName = myRole === "host" ? "Daniel" : "Jaime";
+    heading.textContent = `${readableName}'s Questions`;
     waitMessageDefault = `Waiting for ${oppName}…`;
     waitMsg.textContent = waitMessageDefault;
 
@@ -187,7 +185,7 @@ export default {
 
     function renderIndex() {
       const cur = triplet[idx];
-      counter.textContent = `${Math.min(idx + 1, 3)} / 3`;
+      counterChip.textContent = `${Math.min(idx + 1, 3)} / 3`;
       qText.textContent = cur?.question || "";
       btn1.textContent = cur?.options?.[0] || "";
       btn2.textContent = cur?.options?.[1] || "";
@@ -245,7 +243,7 @@ export default {
       chosen[idx] = text;
       idx += 1;
       if (idx >= 3) {
-        counter.textContent = "3 / 3";
+        counterChip.textContent = "3 / 3";
         qText.textContent = "All answers submitted.";
         setButtonsEnabled(false);
         if (!qDoneMsLocal) {
@@ -272,7 +270,7 @@ export default {
     } else if (existingAns.length === 3) {
       published = true;
       showWaitingState(`Submitted. Waiting for ${oppName}…`);
-      counter.textContent = "3 / 3";
+      counterChip.textContent = "3 / 3";
       qText.textContent = "All answers submitted.";
     } else {
       btnWrap.style.display = "flex";

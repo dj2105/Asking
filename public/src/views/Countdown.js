@@ -64,18 +64,23 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-countdown" });
 
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card countdown-card" });
 
-    const msg = el("div", { class: "mono", style: "text-align:center;opacity:.8;margin-bottom:12px;" }, "Get ready…");
+    const heading = el("h2", { class: "view-heading" }, "Countdown");
+    const metaStrip = el("div", { class: "meta-strip" });
+    const codeChip = el("span", { class: "meta-chip" }, code || "Room");
+    const roundChip = el("span", { class: "meta-chip" }, `Round ${round}`);
+    metaStrip.appendChild(codeChip);
+    metaStrip.appendChild(roundChip);
+
+    const msg = el("div", { class: "mono muted" }, "Get ready…");
+    const timer = el("div", { class: "mono countdown-big" }, "—");
+    const sub = el("div", { class: "mono small countdown-note" }, "Waiting for Daniel to press Start…");
+
+    card.appendChild(heading);
+    card.appendChild(metaStrip);
     card.appendChild(msg);
-
-    const timer = el("div", {
-      class: "mono",
-      style: "font-size:64px;line-height:1;text-align:center;font-weight:700;"
-    }, "—");
     card.appendChild(timer);
-
-    const sub = el("div", { class: "mono small", style: "text-align:center;margin-top:12px;" }, "Waiting for host…");
     card.appendChild(sub);
 
     root.appendChild(card);
@@ -113,6 +118,11 @@ export default {
       }
     };
 
+    const updateMeta = () => {
+      roundChip.textContent = `Round ${round}`;
+      codeChip.textContent = code || "Room";
+    };
+
     const watchRoundDoc = (rNum) => {
       if (stopRoundWatch) { try { stopRoundWatch(); } catch {} }
       const docRef = doc(roundsCol, String(rNum));
@@ -128,6 +138,7 @@ export default {
     };
 
     watchRoundDoc(round);
+    updateMeta();
     updateSubMessage();
 
     const stop = onSnapshot(rRef, (snap) => {
@@ -137,6 +148,7 @@ export default {
         round = Number(data.round);
         roundReady = false;
         watchRoundDoc(round);
+        updateMeta();
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
