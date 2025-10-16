@@ -36,7 +36,7 @@ body {
 }
 
 #app {
-  padding: 48px 18px 64px;
+  padding: 0 18px 64px;
   min-height: 100vh;
   width: 100%;
   display: flex;
@@ -53,6 +53,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  position: relative;
+}
+
+.view-questions,
+.view-marking,
+.view-award,
+.view-countdown {
+  min-height: calc(100vh - 80px);
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   position: relative;
 }
 
@@ -76,6 +87,13 @@ body {
 .card--soft { box-shadow: var(--shadow-soft); }
 .card--center { align-items: center; text-align: center; }
 
+.questions-card,
+.marking-card,
+.award-card {
+  width: min(100%, 520px);
+  gap: 18px;
+}
+
 .mono { font-family: inherit; }
 .mono.small { font-size: .92rem; }
 .muted { color: var(--muted); }
@@ -87,6 +105,17 @@ body {
   text-transform: uppercase;
   text-align: center;
   margin: 0;
+}
+
+.questions-layout,
+.marking-layout,
+.award-layout {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
 }
 
 .view-subheading {
@@ -222,6 +251,14 @@ input[type="text"], input[type="number"], .input {
 }
 .countdown-note { font-size: .95rem; opacity: .85; }
 
+.countdown-stage {
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* QA lists (Marking) */
 .qa-list { margin-top: 6px; }
 .mark-row { padding: 16px 0; border-bottom: 1px dashed rgba(0,0,0,.12); }
@@ -256,6 +293,34 @@ input[type="text"], input[type="number"], .input {
   line-height: 1.5;
   min-height: 64px;
   white-space: pre-wrap;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.questions-overlay,
+.marking-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 40px 20px;
+}
+
+.questions-overlay__title,
+.marking-overlay__title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.questions-overlay__note,
+.marking-overlay__note {
+  font-size: 1rem;
+  color: var(--muted);
 }
 
 .choice-row {
@@ -366,42 +431,142 @@ input[type="text"], input[type="number"], .input {
   width: 22px;
 }
 
-/* Award snippet summary */
-.snippet-summary {
-  margin-bottom: 18px;
-  padding: 18px 20px 20px;
-  border-radius: 18px;
-  border: 1px dashed var(--soft-line);
-  background: rgba(255,255,255,0.86);
-  text-align: center;
-  box-shadow: 0 16px 28px rgba(0,0,0,0.08);
-}
-.snippet-label {
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.snippet-fastest {
-  font-weight: 700;
-  font-size: 1.25rem;
-  margin-bottom: 8px;
-}
-.snippet-times {
+/* Award sections */
+.award-sections {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  align-items: center;
+  gap: 18px;
+  width: 100%;
 }
-.snippet-time {
-  font-weight: 600;
-  letter-spacing: 0.05em;
+
+.award-review {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
 }
-.snippet-outcome {
-  margin-top: 10px;
+
+.award-section {
+  border: 1px solid var(--soft-line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: rgba(255,255,255,0.9);
+  box-shadow: var(--shadow-soft);
+}
+
+.award-section__title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.award-fastest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
   font-weight: 600;
+}
+
+.award-fastest-line {
+  opacity: 0.82;
+}
+
+.award-fastest-line--lead {
+  opacity: 1;
+  font-weight: 700;
+  color: var(--ok);
+}
+
+.award-fastest-outcome {
+  margin-top: 12px;
+  font-weight: 700;
+  text-align: center;
   line-height: 1.4;
+}
+
+.award-question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.award-question {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  border-top: 1px dashed rgba(0,0,0,0.12);
+}
+
+.award-question:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.award-question__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.award-question__prompt {
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.award-answer {
+  font-weight: 700;
+}
+
+.award-answer--correct {
+  color: var(--ok);
+}
+
+.award-answer--chosen {
+  font-weight: 700;
+}
+
+.award-answer--right {
+  color: var(--ok);
+}
+
+.award-answer--wrong {
+  color: var(--bad);
+}
+
+.award-question__icon {
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--soft-line);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.08);
+}
+
+.award-icon--right {
+  color: var(--ok);
+}
+
+.award-icon--wrong {
+  color: var(--bad);
+}
+
+.award-continue {
+  align-self: center;
+  margin-top: 8px;
 }
 
 /* ===========================
@@ -482,47 +647,6 @@ input[type="text"], input[type="number"], .input {
   border-color: rgba(10, 132, 255, 0.85);
   color: #0a69d6;
 }
-
-.award-card__score {
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.4rem;
-}
-
-.award-review { display: flex; flex-direction: column; gap: 16px; }
-
-.award-block {
-  border: 1px solid var(--soft-line);
-  border-radius: 16px;
-  padding: 18px 20px;
-  background: rgba(255,255,255,0.88);
-  box-shadow: var(--shadow-soft);
-}
-
-.award-block__title {
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 12px;
-}
-
-.award-answer-list { display: flex; flex-direction: column; gap: 12px; }
-
-.award-answer-line { display: flex; flex-direction: column; gap: 6px; }
-
-.award-answer-line .q { margin-bottom: 4px; }
-
-.award-correct, .award-choice {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  font-weight: 700;
-}
-
-.award-correct { color: var(--ok); }
-.award-choice--missed { opacity: .7; }
-.award-choice--wrong { color: var(--bad); }
-.award-choice--right { color: var(--ok); }
 
 /* ===========================
    Jemima Maths (pinned slot)

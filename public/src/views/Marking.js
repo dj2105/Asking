@@ -63,14 +63,9 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-marking" });
 
-    const card = el("div", { class: "card" });
-    const heading = el("h2", { class: "view-heading" }, "Marking");
-    const metaStrip = el("div", { class: "meta-strip" });
-    const roomChip = el("span", { class: "meta-chip" }, code || "Room");
-    const roundChip = el("span", { class: "meta-chip" }, `Round ${round}`);
-    metaStrip.appendChild(roomChip);
-    metaStrip.appendChild(roundChip);
-    const introNote = el("div", { class: "view-note" }, "Decide whether each answer earns the point.");
+    const layout = el("div", { class: "marking-layout" });
+    const card = el("div", { class: "card card--center marking-card" });
+    const heading = el("div", { class: "view-heading marking-title" }, "MARKING");
 
     const list = el("div", { class: "qa-list" });
 
@@ -79,29 +74,26 @@ export default {
     const doneBtn = el("button", {
       class: "btn outline timer-button",
       disabled: ""
-    }, "Share verdict");
+    }, "STOP THE CLOCK!");
     timerRow.appendChild(timerDisplay);
     timerRow.appendChild(doneBtn);
 
-    const resultWrap = el("div", { class: "result-panel" });
-    const freezeLine = el("div", { class: "mono result-heading" }, "");
-    const winnerLine = el("div", { class: "result-winner" }, "");
-    const waitingLine = el("div", { class: "mono small muted" }, "");
-    resultWrap.appendChild(freezeLine);
-    resultWrap.appendChild(winnerLine);
-    resultWrap.appendChild(waitingLine);
-
     card.appendChild(heading);
-    card.appendChild(metaStrip);
-    card.appendChild(introNote);
     card.appendChild(list);
     card.appendChild(timerRow);
-    card.appendChild(resultWrap);
 
-    root.appendChild(card);
+    layout.appendChild(card);
 
     const mathsMount = el("div", { class: "jemima-maths-pinned" });
-    root.appendChild(mathsMount);
+    layout.appendChild(mathsMount);
+
+    root.appendChild(layout);
+
+    const overlayTitle = el("div", { class: "marking-overlay__title" }, "");
+    const overlayNote = el("div", { class: "marking-overlay__note" }, "");
+    const overlay = el("div", { class: "marking-overlay" }, [overlayTitle, overlayNote]);
+    overlay.style.display = "none";
+    root.appendChild(overlay);
 
     container.appendChild(root);
 
@@ -118,12 +110,6 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    const readableName = myRole === "host" ? "Daniel" : "Jaime";
-    heading.textContent = `${readableName} marks ${oppName}`;
-    introNote.textContent = `Call Jemima’s verdict on ${oppName}’s answers.`;
-    doneBtn.textContent = `Send to ${oppName}`;
-    roomChip.textContent = code || "Room";
-    waitingLine.textContent = `Linking to ${oppName}…`;
 
     const fallbackStartAt = Number((roomData0.countdown || {}).startAt || 0) || null;
     const markingEnterAt = Date.now();
@@ -142,6 +128,26 @@ export default {
     let questionStartAt = null;
     let qDoneMsLatest = null;
     let timerOffsetMs = 0;
+
+    const formatOverlaySeconds = (ms) => {
+      if (!Number.isFinite(ms) || ms < 0) return "0.0";
+      return (ms / 1000).toFixed(1);
+    };
+
+    const hideOverlay = () => {
+      overlay.style.display = "none";
+      layout.style.display = "";
+    };
+
+    const showOverlay = (target, totalMs) => {
+      overlayTitle.textContent = target ? `Waiting for ${target}` : "Waiting";
+      const secs = formatOverlaySeconds(totalMs);
+      overlayNote.textContent = `Round completed in ${secs}s`;
+      overlay.style.display = "flex";
+      layout.style.display = "none";
+    };
+
+    hideOverlay();
 
     const uniqueList = (arr = []) => Array.from(new Set(arr.filter((v) => Boolean(v))));
     const resolveTimingForRole = (timings = {}, roleName, fallbackIds = []) => {
@@ -262,54 +268,6 @@ export default {
     let marks = [null, null, null];
     const disableFns = [];
 
-    const updateOutcomeDisplay = () => {
-      if (!published) {
-        resultWrap.classList.remove("active");
-        list.style.display = "";
-        timerRow.style.opacity = "";
-        freezeLine.textContent = "";
-        winnerLine.textContent = "";
-        waitingLine.textContent = `Linking to ${oppName}…`;
-        return;
-      }
-      const secsLine = Number.isFinite(latestTotalForMe)
-        ? `Round wrapped in ${formatSeconds(latestTotalForMe)}s`
-        : "Round wrapped — timing pending";
-      freezeLine.textContent = secsLine;
-      resultWrap.classList.add("active");
-      list.style.display = "none";
-      timerRow.style.opacity = "0.85";
-
-      const oppFallback = oppRole === "host" ? [hostUid] : [guestUid];
-      const oppEntry = resolveTimingForRole(latestRoundTimings, oppRole, oppFallback);
-      const oppDone = Boolean(oppEntry && Number.isFinite(Number(oppEntry.info?.totalMs)));
-
-      if (!oppDone) {
-        winnerLine.textContent = "";
-        waitingLine.textContent = `Waiting for ${oppName}…`;
-        return;
-      }
-
-      const { winnerUid, tie } = snippetOutcome || {};
-      if (tie) {
-        winnerLine.textContent = "Snippet shared";
-        waitingLine.textContent = "Dead heat — Daniel and Jaime both keep it.";
-        return;
-      }
-      if (winnerUid && winnerUid === me.uid) {
-        winnerLine.textContent = `${readableName} keeps Jemima’s snippet`;
-        waitingLine.textContent = "Connected. Preparing the award.";
-        return;
-      }
-      if (winnerUid) {
-        winnerLine.textContent = `${oppName} keeps Jemima’s snippet`;
-        waitingLine.textContent = "Link complete. Await the next round…";
-        return;
-      }
-      winnerLine.textContent = "";
-      waitingLine.textContent = `Linking to ${oppName}…`;
-    };
-
     const showPostSubmit = (totalMs) => {
       let finalMs = Number.isFinite(totalMs) ? Math.max(0, Number(totalMs)) : liveElapsedMs();
       if (!Number.isFinite(finalMs) || finalMs < 0) finalMs = 0;
@@ -318,7 +276,7 @@ export default {
       doneBtn.disabled = true;
       doneBtn.classList.remove("throb");
       doneBtn.style.pointerEvents = "none";
-      updateOutcomeDisplay();
+      showOverlay(oppName, finalMs);
     };
 
     const updateDoneState = () => {
@@ -714,7 +672,6 @@ export default {
       const tie = Boolean(data.snippetTie);
       const winnerUid = data.snippetWinnerUid || null;
       snippetOutcome = { winnerUid, tie };
-      if (published) updateOutcomeDisplay();
     }, (err) => {
       console.warn("[marking] round snapshot error:", err);
     });
