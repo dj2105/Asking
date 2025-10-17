@@ -2,7 +2,7 @@
 //
 // Final room — celebratory scoreboard and full game recap.
 // • Shows headline scores with a reveal animation triggered by "IT'S A WINNER!".
-// • Breaks down rounds, snippets, and maths outcomes with collapsible sections.
+// • Breaks down rounds and maths outcomes with collapsible sections.
 // • Presents every round's questions, answers, and marking verdicts (one round open at a time).
 // • Ends with a return-to-lobby control.
 
@@ -142,9 +142,6 @@ function computeRoundSummary(room = {}, roundDocs = {}, hostUid = "", guestUid =
   let guestTotal = 0;
   let hostPerfect = 0;
   let guestPerfect = 0;
-  let hostSnippet = 0;
-  let guestSnippet = 0;
-  let snippetTies = 0;
   let hostRoundWins = 0;
   let guestRoundWins = 0;
 
@@ -164,10 +161,6 @@ function computeRoundSummary(room = {}, roundDocs = {}, hostUid = "", guestUid =
     if (hostCorrect > guestCorrect) hostRoundWins += 1;
     else if (guestCorrect > hostCorrect) guestRoundWins += 1;
 
-    if (roundData.snippetTie) snippetTies += 1;
-    else if (roundData.snippetWinnerUid === hostUid) hostSnippet += 1;
-    else if (roundData.snippetWinnerUid === guestUid) guestSnippet += 1;
-
     rounds.push({
       round: r,
       hostItems,
@@ -178,13 +171,6 @@ function computeRoundSummary(room = {}, roundDocs = {}, hostUid = "", guestUid =
       guestMarking: markingHost[r] || [],
       hostCorrect,
       guestCorrect,
-      snippet: roundData.snippetTie
-        ? "Tie"
-        : roundData.snippetWinnerUid === hostUid
-          ? "Daniel"
-          : roundData.snippetWinnerUid === guestUid
-            ? "Jaime"
-            : "—",
     });
   }
 
@@ -193,7 +179,6 @@ function computeRoundSummary(room = {}, roundDocs = {}, hostUid = "", guestUid =
     totals: { host: hostTotal, guest: guestTotal },
     perfect: { host: hostPerfect, guest: guestPerfect },
     roundWins: { host: hostRoundWins, guest: guestRoundWins },
-    snippets: { host: hostSnippet, guest: guestSnippet, ties: snippetTies },
   };
 }
 
@@ -230,7 +215,6 @@ function buildRoundBreakdown(rounds) {
     const item = el("li", { class: "final-timeline__item" });
     item.appendChild(el("div", { class: "final-timeline__round" }, `Round ${entry.round}`));
     item.appendChild(el("div", { class: "final-timeline__scores" }, `Daniel +${entry.hostCorrect} · Jaime +${entry.guestCorrect}`));
-    item.appendChild(el("div", { class: "final-timeline__extra" }, `Snippet: ${entry.snippet}`));
     list.appendChild(item);
   });
   return list;
@@ -495,10 +479,6 @@ export default {
       statsWrap.innerHTML = "";
       statsWrap.appendChild(formatStatLine("Rounds won", `Daniel ${summary.roundWins.host} · Jaime ${summary.roundWins.guest}`));
       statsWrap.appendChild(formatStatLine("Perfect rounds", `Daniel ${summary.perfect.host} · Jaime ${summary.perfect.guest}`));
-      statsWrap.appendChild(formatStatLine(
-        "Snippet bonuses",
-        `Daniel ${summary.snippets.host} · Jaime ${summary.snippets.guest} · Ties ${summary.snippets.ties}`
-      ));
       statsWrap.appendChild(formatStatLine(
         "Maths accuracy",
         `Daniel ${mathsSummary.hostCorrect}/2 · Jaime ${mathsSummary.guestCorrect}/2`
