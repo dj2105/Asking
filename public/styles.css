@@ -349,16 +349,28 @@ input[type="text"], input[type="number"], .input {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  margin-top: 12px;
+  gap: 12px;
   flex-wrap: wrap;
+}
+
+.timer-row--top {
+  margin: 0 0 18px;
 }
 
 .timer-display {
   font-weight: 700;
-  font-size: 1.6rem;
-  min-width: 120px;
-  text-align: center;
+  font-size: 2rem;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 4px solid var(--ink);
+  background: #0e121a;
+  color: #f4f7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
 }
 
 .timer-button {
@@ -366,6 +378,12 @@ input[type="text"], input[type="number"], .input {
   letter-spacing: 0.08em;
   padding-left: 28px;
   padding-right: 28px;
+}
+
+.mark-submit-row {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .result-panel {
