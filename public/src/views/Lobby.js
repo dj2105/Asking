@@ -31,7 +31,7 @@ const DEFAULT_GUEST_UID = "jaime-001";
 
 export default {
   async mount(container) {
-    await ensureAuth();
+    const authPromise = ensureAuth();
 
     // Theme (random ink hue)
     const hue = Math.floor(Math.random() * 360);
@@ -109,6 +109,7 @@ export default {
       if (code.length < 3) return;
 
       try {
+        await authPromise;
         const rRef = roomRef(code);
         const snap = await getDoc(rRef);
 
