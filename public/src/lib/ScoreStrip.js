@@ -89,12 +89,7 @@ function render() {
                      <span class="ss-sep"></span>
                      <span class="ss-name">Jaime</span><span class="ss-score">${guestScore}</span>`;
 
-  state.node.innerHTML = `
-    <div class="score-strip__inner">
-      <div class="score-strip__left">${leftHTML}</div>
-      <div class="score-strip__right">${rightHTML}</div>
-    </div>
-  `;
+  state.node.innerHTML = `<div class="score-strip__inner"><div class="score-strip__left">${leftHTML}</div><div class="score-strip__right">${rightHTML}</div></div>`;
 }
 
 async function bind(code) {
@@ -144,8 +139,10 @@ export function mount(container, { code } = {}) {
     n.className = "score-strip mono";
     container.prepend(n); // top of the view
     state.node = n;
+    render();
   } else if (!state.node.isConnected) {
     container.prepend(state.node);
+    render();
   }
   bind(code);
 }

@@ -12,7 +12,6 @@ import {
   doc,
   collection,
   getDoc,
-  setDoc,
   updateDoc,
   onSnapshot,
   serverTimestamp,
@@ -27,6 +26,24 @@ const mountMathsPane =
    null);
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
+
+const FALLBACK_ITEMS = [
+  {
+    question: "In the sentence “She sang happily”, which part of speech is “happily”?",
+    correct: "Adverb",
+    wrong: "Gerund",
+  },
+  {
+    question: "Which planet is nicknamed the Red Planet?",
+    correct: "Mars",
+    wrong: "Jupiter",
+  },
+  {
+    question: "What is the value of 9 × 7?",
+    correct: "63",
+    wrong: "56",
+  },
+];
 
 function el(tag, attrs = {}, kids = []) {
   const n = document.createElement(tag);
@@ -65,10 +82,14 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const heading = el("div", { class: "mono question-title" }, "QUESTION 1/3");
+    const headerRow = el("div", { class: "phase-header" });
+    const heading = el("div", { class: "mono question-title phase-header__title" }, "QUESTION 1/3");
+    const timerLabel = el("div", { class: "mono question-title phase-header__timer" }, "—");
+    headerRow.appendChild(heading);
+    headerRow.appendChild(timerLabel);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
-    card.appendChild(heading);
+    card.appendChild(headerRow);
     card.appendChild(qText);
 
     const btnWrap = el("div", { class: "choice-row" });
@@ -131,7 +152,6 @@ export default {
     }
 
     const rdRef = doc(roundSubColRef(code), String(round));
-    const playerRef = doc(roomRef(code), "players", me.uid);
     const { hostUid, guestUid } = room0.meta || {};
     const storedRole = getStoredRole(code);
     const myRole = storedRole === "host" || storedRole === "guest"
@@ -143,8 +163,8 @@ export default {
     waitMsg.textContent = waitMessageDefault;
 
     const overlayWaiting = () => `Waiting for ${oppName}`;
-    const showPostSubmitOverlay = () => {
-      showOverlay(overlayWaiting(), "Round timer paused");
+    const showWaitingOverlay = (note) => {
+      showOverlay(overlayWaiting(), note || "Waiting for opponent");
     };
 
     try {
@@ -156,8 +176,18 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    let roundStartAt = Number((room0.countdown || {}).startAt || 0) || 0;
-    let qDoneMsLocal = null;
+    const QUESTION_LIMIT_SECONDS = 10;
+    const QUESTION_LIMIT_MS = QUESTION_LIMIT_SECONDS * 1000;
+    const setTimerLabel = (value) => {
+      if (value == null || !Number.isFinite(value)) {
+        timerLabel.textContent = "—";
+        return;
+      }
+      const safe = Math.max(0, Math.floor(value));
+      timerLabel.textContent = String(safe);
+    };
+    let timerDeadline = null;
+    let timerInterval = null;
 
     const setButtonsEnabled = (enabled) => {
       btn1.disabled = !enabled;
@@ -166,14 +196,77 @@ export default {
       btn2.classList.toggle("throb", enabled);
     };
 
+    const updateTimerDisplay = () => {
+      if (!timerDeadline) return;
+      const remainingMs = timerDeadline - Date.now();
+      const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+      setTimerLabel(remainingSeconds);
+      if (remainingSeconds <= 0) {
+        stopTimer();
+        handleTimeout();
+      }
+    };
+
+    const startQuestionTimer = () => {
+      stopTimer();
+      timerDeadline = Date.now() + QUESTION_LIMIT_MS;
+      updateTimerDisplay();
+      timerInterval = setInterval(updateTimerDisplay, 200);
+    };
+
+    const stopTimer = () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timerDeadline = null;
+    };
+
+    const handleTimeout = () => {
+      if (published || submitting) return;
+      stopTimer();
+      if (idx >= triplet.length) {
+        finishRound(true);
+        return;
+      }
+      if (typeof chosen[idx] !== "string") {
+        chosen[idx] = "";
+      }
+      idx += 1;
+      if (idx >= triplet.length) {
+        finishRound(true);
+      } else {
+        presentQuestion();
+      }
+    };
+
+    const fallbackRound = () => ({
+      hostItems: FALLBACK_ITEMS.map((item) => ({
+        question: item.question,
+        correct_answer: item.correct,
+        distractors: { easy: item.wrong, medium: item.wrong, hard: item.wrong },
+      })),
+      guestItems: FALLBACK_ITEMS.map((item) => ({
+        question: item.question,
+        correct_answer: item.correct,
+        distractors: { easy: item.wrong, medium: item.wrong, hard: item.wrong },
+      })),
+    });
+
     const waitForRoundData = async () => {
       let firstWait = true;
+      let attempts = 0;
       while (alive) {
         try {
           const snap = await getDoc(rdRef);
           if (snap.exists()) return snap.data() || {};
         } catch (err) {
           console.warn("[questions] failed to load round doc:", err);
+        }
+        attempts += 1;
+        if (attempts >= 8) {
+          console.warn("[questions] using fallback questions — pack missing");
+          return fallbackRound();
         }
         if (firstWait) {
           waitMsg.textContent = "Waiting for round data…";
@@ -184,7 +277,7 @@ export default {
         }
         await new Promise((resolve) => setTimeout(resolve, 600));
       }
-      return {};
+      return fallbackRound();
     };
 
     const rd = await waitForRoundData();
@@ -195,11 +288,23 @@ export default {
     const tier = roundTier(round);
     const triplet = [0, 1, 2].map((i) => {
       const it = myItems[i] || {};
-      const correct = it.correct_answer || "";
+      const fallback = FALLBACK_ITEMS[i % FALLBACK_ITEMS.length];
+      const rawQuestion = typeof it.question === "string" ? it.question.trim() : "";
+      const rawCorrect = typeof it.correct_answer === "string" ? it.correct_answer.trim() : "";
       const distractors = it.distractors || {};
-      const wrong = distractors[tier] || distractors.medium || distractors.easy || distractors.hard || "";
+      const rawWrong = [
+        distractors[tier],
+        distractors.medium,
+        distractors.easy,
+        distractors.hard,
+      ].find((opt) => typeof opt === "string" && opt.trim()) || "";
+
+      const hasFullSet = rawQuestion && rawCorrect && rawWrong;
+      const question = hasFullSet ? rawQuestion : fallback.question;
+      const correct = hasFullSet ? rawCorrect : fallback.correct;
+      const wrong = hasFullSet ? rawWrong : fallback.wrong;
       const [optA, optB] = shuffle2(correct, wrong);
-      return { question: it.question || "", options: [optA, optB], correct };
+      return { question, options: [optA, optB], correct };
     });
 
     let idx = 0;
@@ -215,6 +320,24 @@ export default {
       btn2.textContent = cur?.options?.[1] || "";
     }
 
+    const presentQuestion = () => {
+      if (idx >= triplet.length) return;
+      btnWrap.style.display = "flex";
+      waitMsg.style.display = "none";
+      setButtonsEnabled(true);
+      renderIndex();
+      setTimerLabel(QUESTION_LIMIT_SECONDS);
+      startQuestionTimer();
+    };
+
+    const finishRound = (timedOut) => {
+      setButtonsEnabled(false);
+      waitMsg.style.display = "none";
+      setTimerLabel(0);
+      showWaitingOverlay(timedOut ? "Time's up" : undefined);
+      publishAnswers(Boolean(timedOut));
+    };
+
     const showWaitingState = (text) => {
       hideOverlay();
       btnWrap.style.display = "none";
@@ -223,7 +346,7 @@ export default {
       setButtonsEnabled(false);
     };
 
-    async function publishAnswers() {
+    async function publishAnswers(timedOut = false) {
       if (submitting || published) return;
       submitting = true;
 
@@ -243,7 +366,9 @@ export default {
         await updateDoc(rRef, patch);
         published = true;
         submitting = false;
-        showPostSubmitOverlay();
+        stopTimer();
+        const note = timedOut ? "Time's up" : "Waiting for opponent";
+        showWaitingOverlay(note);
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
@@ -253,34 +378,15 @@ export default {
       }
     }
 
-    const recordQuestionTiming = (ms) => {
-      if (!ms) return;
-      qDoneMsLocal = ms;
-      const roundTimingPatch = { timings: { [me.uid]: { qDoneMs: ms, role: myRole } } };
-      setDoc(rdRef, roundTimingPatch, { merge: true }).catch((err) => {
-        console.warn("[questions] failed to write round timing:", err);
-      });
-      const playerTimingPatch = { rounds: { [round]: { timings: { qDoneMs: ms, role: myRole } } } };
-      setDoc(playerRef, playerTimingPatch, { merge: true }).catch((err) => {
-        console.warn("[questions] failed to mirror player timing:", err);
-      });
-    };
-
     function onPick(text) {
       if (published || submitting) return;
+      stopTimer();
       chosen[idx] = text;
       idx += 1;
       if (idx >= 3) {
-        setButtonsEnabled(false);
-        waitMsg.style.display = "none";
-        if (!qDoneMsLocal) {
-          const stamp = Date.now();
-          recordQuestionTiming(stamp);
-        }
-        showPostSubmitOverlay();
-        publishAnswers();
+        finishRound(false);
       } else {
-        renderIndex();
+        presentQuestion();
       }
     }
 
@@ -292,28 +398,25 @@ export default {
     );
 
     if (!tripletReady) {
+      stopTimer();
       btnWrap.style.display = "none";
       waitMsg.textContent = "Preparing questions…";
       waitMsg.style.display = "";
+      setTimerLabel(null);
     } else if (existingAns.length === 3) {
       published = true;
       idx = 3;
       btnWrap.style.display = "none";
       waitMsg.style.display = "none";
-      showPostSubmitOverlay();
+      stopTimer();
+      setTimerLabel(null);
+      showWaitingOverlay();
     } else {
-      btnWrap.style.display = "flex";
-      waitMsg.style.display = "none";
-      setButtonsEnabled(true);
-      renderIndex();
+      presentQuestion();
     }
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
-
-      if (Number((data.countdown || {}).startAt)) {
-        roundStartAt = Number(data.countdown.startAt);
-      }
 
       if (data.state === "marking") {
         setTimeout(() => {
@@ -339,7 +442,7 @@ export default {
         const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
         const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
         if (myDone && !oppDone) {
-          showPostSubmitOverlay();
+          showWaitingOverlay();
         }
       }
 
@@ -352,7 +455,6 @@ export default {
             console.log(`[flow] questions -> marking | code=${code} round=${round} role=${myRole}`);
             await updateDoc(rRef, {
               state: "marking",
-              "marking.startAt": Date.now(),
               "timestamps.updatedAt": serverTimestamp()
             });
           } catch (err) {
@@ -367,6 +469,8 @@ export default {
     this.unmount = () => {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
+      stopTimer();
+      setTimerLabel(null);
     };
   },
 
