@@ -833,3 +833,479 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   box-shadow: var(--shadow);
   text-align: center;
 }
+
+/* ===========================
+   Final room
+   =========================== */
+.view-final {
+  align-items: center;
+  padding-bottom: 72px;
+}
+
+.final-hero {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 36px 32px 32px;
+}
+
+.final-hero__title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.final-hero__scores {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.final-hero__score {
+  flex: 1 1 180px;
+  background: rgba(255,255,255,0.92);
+  border-radius: 18px;
+  border: 1px solid var(--soft-line);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.32);
+}
+
+.final-hero__score-label {
+  font-size: .95rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.final-hero__score-value {
+  font-size: 3.2rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+}
+
+.final-hero__score--host {
+  background: rgba(46, 164, 79, 0.08);
+}
+
+.final-hero__score--guest {
+  background: rgba(10, 132, 255, 0.08);
+}
+
+.final-hero__score--pulse {
+  animation: finalPulse 0.42s ease;
+}
+
+@keyframes finalPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.final-hero__status {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.final-hero__progress {
+  font-size: .95rem;
+  opacity: .8;
+  transition: opacity .25s ease;
+}
+
+.final-hero__progress--counting {
+  opacity: 1;
+}
+
+.final-hero--animating .final-hero__score-value {
+  transition: none;
+}
+
+@keyframes finalWinnerFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+
+.final-hero--flash .final-hero__title {
+  animation: finalWinnerFlash 1.5s ease-in-out infinite;
+}
+
+.final-hero--daniel {
+  border: 2px solid rgba(46, 164, 79, 0.45);
+}
+
+.final-hero--jaime {
+  border: 2px solid rgba(10, 132, 255, 0.45);
+}
+
+.final-hero--tie {
+  border: 2px solid rgba(0,0,0,0.2);
+}
+
+.final-cta {
+  width: 100%;
+  max-width: 360px;
+  align-self: center;
+  font-size: 1.05rem;
+  letter-spacing: .18em;
+  padding: 16px 22px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.final-card {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+  gap: 20px;
+}
+
+.final-section-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.final-round-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.final-round-summary__row {
+  display: grid;
+  grid-template-columns: 1fr repeat(2, 80px) 1.1fr;
+  gap: 12px;
+  align-items: center;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.final-round-summary__row--total {
+  font-weight: 700;
+  background: rgba(0,0,0,0.08);
+}
+
+.final-round-summary__round {
+  text-align: left;
+  letter-spacing: .08em;
+}
+
+.final-round-summary__score {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.final-round-summary__score--host {
+  color: var(--ok);
+}
+
+.final-round-summary__score--guest {
+  color: #0a69d6;
+}
+
+.final-round-summary__swing {
+  text-align: right;
+  font-size: .95rem;
+  letter-spacing: .04em;
+}
+
+.final-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.final-stat {
+  background: rgba(255,255,255,0.86);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.final-stat__label {
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: .92rem;
+  margin-bottom: 4px;
+}
+
+.final-stat__value {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.final-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.final-round-block {
+  border-radius: 18px;
+  border: 1px solid var(--soft-line);
+  background: rgba(255,255,255,0.9);
+  box-shadow: var(--shadow-soft);
+}
+
+.final-round-toggle {
+  width: 100%;
+  text-align: center;
+  background: transparent;
+  border: none;
+  padding: 18px 18px 16px;
+  font-size: 1.02rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  color: inherit;
+  cursor: pointer;
+}
+
+.final-round-toggle__score {
+  font-size: .92rem;
+  opacity: .75;
+}
+
+.final-round-toggle__chevron {
+  display: inline-block;
+  transform: rotate(90deg);
+  transition: transform .25s ease;
+  font-size: 1.2rem;
+}
+
+.final-round-block--open .final-round-toggle__chevron {
+  transform: rotate(270deg);
+}
+
+.final-round-panel {
+  padding: 0 0 20px;
+}
+
+.final-round-panel[hidden] {
+  display: none;
+}
+
+.final-round-panel__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 0 24px;
+}
+
+.final-player-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.final-player-section__title {
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-size: .98rem;
+  text-align: center;
+}
+
+.final-question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.final-question {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  gap: 12px;
+  align-items: center;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.final-question__icon {
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.final-question__icon--right { color: var(--ok); }
+.final-question__icon--wrong { color: var(--bad); }
+.final-question__icon--unknown { color: #0a69d6; }
+.final-question__icon--pending { color: rgba(0,0,0,0.35); }
+
+.final-question__content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.final-question__prompt {
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.final-question__answer {
+  font-size: .92rem;
+  line-height: 1.4;
+}
+
+.final-question__answer--right .final-question__answer-value { color: var(--ok); font-weight: 700; }
+.final-question__answer--wrong .final-question__answer-value { color: var(--bad); font-weight: 700; }
+.final-question__answer--unknown .final-question__answer-value { color: #0a69d6; font-weight: 700; }
+.final-question__answer--pending .final-question__answer-value { opacity: .65; }
+.final-question__answer--correct .final-question__answer-value { font-weight: 700; }
+
+.final-question__answer-label {
+  font-weight: 600;
+}
+
+.final-question__answer-value { white-space: pre-wrap; }
+
+.final-round-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: .9rem;
+  opacity: .85;
+  text-align: center;
+}
+
+.final-round-meta__item {
+  line-height: 1.4;
+}
+
+.final-maths {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.final-maths__toggle {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--soft-line);
+  background: rgba(255,255,255,0.9);
+  padding: 16px 18px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.final-maths__panel {
+  border-radius: 18px;
+  border: 1px solid var(--soft-line);
+  background: rgba(255,255,255,0.9);
+  box-shadow: var(--shadow-soft);
+  padding: 20px 24px;
+}
+
+.final-maths__panel[hidden] { display: none; }
+
+.final-maths__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.final-maths__location {
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.final-maths__beats {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.final-maths__beat {
+  line-height: 1.4;
+}
+
+.final-maths__row {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.82);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.final-maths__prompt {
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.final-maths__correct {
+  font-size: .92rem;
+  opacity: .8;
+}
+
+.final-maths__answer {
+  font-size: .92rem;
+}
+
+.final-maths__answer--right { color: var(--ok); font-weight: 700; }
+.final-maths__answer--wrong { color: var(--bad); font-weight: 700; }
+.final-maths__answer--unknown { color: #0a69d6; font-weight: 700; }
+.final-maths__answer--pending { opacity: .65; }
+
+.final-maths__answer-label { font-weight: 600; }
+
+.final-maths__answer-value { white-space: pre-wrap; }
+
+.final-return {
+  margin-top: 20px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+@media (max-width: 540px) {
+  .final-round-summary__row {
+    grid-template-columns: 1fr 64px 64px 1fr;
+    font-size: .92rem;
+  }
+  .final-hero__score-value { font-size: 2.6rem; }
+  .final-round-panel__inner { padding: 0 16px; }
+  .final-question { grid-template-columns: 28px 1fr 28px; }
+}
