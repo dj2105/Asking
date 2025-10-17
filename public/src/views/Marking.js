@@ -81,11 +81,6 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-marking stage-center" });
 
-    const card = el("div", { class: "card card--center mark-card" });
-    const heading = el("div", { class: "mono marking-title" }, "MARKING");
-
-    const list = el("div", { class: "qa-list" });
-
     const timerRow = el("div", { class: "timer-row" });
     const timerDisplay = el("div", { class: "mono timer-display" }, String(MARKING_LIMIT_MS / 1000));
     const submitBtn = el("button", {
@@ -95,10 +90,15 @@ export default {
     timerRow.appendChild(timerDisplay);
     timerRow.appendChild(submitBtn);
 
+    const card = el("div", { class: "card card--center mark-card" });
+    const heading = el("div", { class: "mono marking-title" }, "MARKING");
+
+    const list = el("div", { class: "qa-list" });
+
     card.appendChild(heading);
     card.appendChild(list);
-    card.appendChild(timerRow);
 
+    root.appendChild(timerRow);
     root.appendChild(card);
 
     const mathsMount = el("div", { class: "jemima-maths-pinned" });

@@ -351,22 +351,29 @@ input[type="text"], input[type="number"], .input {
   align-items: center;
   gap: 16px;
   margin-top: 12px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 
 .timer-display {
   font-weight: 700;
-  font-size: 2.4rem;
-  width: 96px;
-  height: 96px;
+  font-size: 1.9rem;
+  width: 78px;
+  height: 78px;
   border-radius: 50%;
-  border: 6px solid var(--ink);
-  background: #fff;
-  color: #000;
+  border: 4px solid hsla(var(--ink-h), var(--ink-s), 52%, 0.9);
+  background: var(--ink);
+  color: #f8f9fb;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.view-marking .timer-row {
+  margin-top: 0;
+  justify-content: center;
 }
 
 .timer-button {
