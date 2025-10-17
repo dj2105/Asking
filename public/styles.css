@@ -58,7 +58,7 @@ body {
   position: relative;
 }
 
-.stage-center {
+.stage-center { 
   position: relative;
   min-height: calc(100vh - 140px);
   width: 100%;
@@ -68,6 +68,12 @@ body {
   justify-content: center;
   gap: 28px;
   padding: 40px 0;
+}
+
+.view-questions.stage-center,
+.view-marking.stage-center {
+  justify-content: flex-start;
+  padding-top: 36px;
 }
 
 .stage-center.stage-center--solo {
@@ -349,16 +355,25 @@ input[type="text"], input[type="number"], .input {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  margin-top: 12px;
+  gap: 14px;
+  margin: 0;
   flex-wrap: wrap;
 }
 
 .timer-display {
   font-weight: 700;
-  font-size: 1.6rem;
-  min-width: 120px;
-  text-align: center;
+  font-size: 2rem;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.92);
+  background: var(--ink);
+  color: #f8fbff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
 }
 
 .timer-button {
@@ -366,6 +381,12 @@ input[type="text"], input[type="number"], .input {
   letter-spacing: 0.08em;
   padding-left: 28px;
   padding-right: 28px;
+}
+
+.mark-submit-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
 }
 
 .result-panel {
