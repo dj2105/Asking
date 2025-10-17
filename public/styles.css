@@ -45,7 +45,8 @@ body {
   background: linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.72) 26%, rgba(255,255,255,0.42) 100%), var(--paper);
 }
 
-#app > .view:first-child { margin-top: 48px; }
+#app > .view:first-child { margin-top: 0; }
+.score-strip + .view { margin-top: 32px; }
 
 /* View layout */
 .view {
@@ -281,13 +282,6 @@ input[type="text"], input[type="number"], .input {
   text-align: left;
   gap: 24px;
 }
-.marking-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: center;
-}
 .mark-row { padding: 16px 0; border-bottom: 1px dashed rgba(0,0,0,.12); }
 .mark-row:last-child { border-bottom: none; }
 .q { font-weight: 600; line-height: 1.45; white-space: pre-wrap; }
@@ -315,15 +309,51 @@ input[type="text"], input[type="number"], .input {
   letter-spacing: 0.04em;
 }
 
+.mark-submit-row {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.mark-submit-btn {
+  min-width: 220px;
+  padding: 16px 20px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 .question-card {
   gap: 24px;
 }
 
-.question-title {
-  font-size: 1.8rem;
+.phase-header {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  text-align: left;
+}
+.phase-header__title {
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+.phase-header__timer {
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: right;
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
+}
+.phase-header__timer--hidden {
+  visibility: hidden;
 }
 
 .question-card__prompt {
@@ -344,29 +374,6 @@ input[type="text"], input[type="number"], .input {
 }
 
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
-
-.timer-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.timer-display {
-  font-weight: 700;
-  font-size: 1.6rem;
-  min-width: 120px;
-  text-align: center;
-}
-
-.timer-button {
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding-left: 28px;
-  padding-right: 28px;
-}
 
 .result-panel {
   text-align: center;
@@ -443,7 +450,6 @@ input[type="text"], input[type="number"], .input {
   width: 22px;
 }
 
-/* Award review */
 .award-card {
   display: flex;
   flex-direction: column;
