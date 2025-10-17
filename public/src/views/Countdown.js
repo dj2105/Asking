@@ -31,6 +31,7 @@ import {
   timeUntil,
   getStoredRole,
 } from "../lib/util.js";
+import { applySceneTheme } from "../lib/theme.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -57,9 +58,8 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    // per-view hue
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    const refreshTheme = () => applySceneTheme("countdown", { round });
+    refreshTheme();
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-countdown stage-center stage-center--solo" });
@@ -109,6 +109,7 @@ export default {
         round = Number(data.round);
         roundReady = false;
         watchRoundDoc(round);
+        refreshTheme();
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;

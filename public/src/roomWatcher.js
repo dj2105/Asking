@@ -7,6 +7,7 @@
 
 import { ensureAuth, db } from "./lib/firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
+import { applySceneTheme } from "./lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -39,6 +40,27 @@ function computeRound(room = {}) {
   const fromMeta = Number(room.meta?.round);
   if (Number.isFinite(fromMeta) && fromMeta > 0) return fromMeta;
   return 1;
+}
+
+function applyStateTheme(state, round) {
+  const key = String(state || "").toLowerCase();
+  switch (key) {
+    case "countdown":
+    case "questions":
+    case "marking":
+    case "interlude":
+    case "award":
+    case "maths":
+    case "final":
+    case "seeding":
+    case "keyroom":
+    case "coderoom":
+    case "lobby":
+      applySceneTheme(key, { round });
+      return;
+    default:
+      applySceneTheme("watcher", { round });
+  }
 }
 
 function targetForState(state, code, round) {
@@ -81,6 +103,8 @@ export function startRoomWatcher(code, { onState } = {}) {
   let unknownSince = 0;
   let lastPushed = null;
 
+  applySceneTheme("watcher");
+
   const stop = onSnapshot(
     roomRef(c),
     (snap) => {
@@ -103,6 +127,8 @@ export function startRoomWatcher(code, { onState } = {}) {
       const room = snap.data() || {};
       const state = room.state || "";
       const round = computeRound(room);
+
+      applyStateTheme(state, round);
 
       if (typeof onState === "function") {
         try { onState({ state, round, room, exists: true }); } catch {}
@@ -156,6 +182,7 @@ export default {
     await ensureAuth();
 
     const code = getQueryCode();
+    applySceneTheme("watcher");
     container.innerHTML = "";
     const card = el("div", { class: "card" }, [
       el("h1", { class: "title" }, "Linking up…"),
