@@ -171,7 +171,7 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    const computeReadyLabel = (r) => (r >= 5 ? "I'M READY FOR MATHS" : `I'M READY FOR ROUND #${r + 1}`);
+    const computeReadyLabel = (r) => (r >= 5 ? "I'M READY FOR MATHS" : `I'M READY FOR ROUND ${r + 1}`);
     let readyLabel = computeReadyLabel(round);
     let waitingLabel = `WAITING FOR ${oppName.toUpperCase()}`;
     continueBtn.textContent = readyLabel;

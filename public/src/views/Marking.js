@@ -18,7 +18,6 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
-import ScoreStrip from "../lib/ScoreStrip.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
@@ -83,11 +82,15 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const heading = el("div", { class: "mono marking-title" }, "MARKING");
+    const headerRow = el("div", { class: "phase-header" });
+    const heading = el("div", { class: "mono marking-title phase-header__title" }, "MARKING");
+    const timerLabel = el("div", { class: "mono marking-title phase-header__timer" }, "—");
+    headerRow.appendChild(heading);
+    headerRow.appendChild(timerLabel);
 
     const list = el("div", { class: "qa-list" });
 
-    card.appendChild(heading);
+    card.appendChild(headerRow);
     card.appendChild(list);
     const submitBtn = el("button", {
       class: "btn outline mark-submit-btn",
@@ -163,6 +166,15 @@ export default {
     let countdownInterval = null;
     let countdownExpired = false;
 
+    const setTimerLabel = (value) => {
+      if (value == null || !Number.isFinite(value)) {
+        timerLabel.textContent = "—";
+        return;
+      }
+      const safe = Math.max(0, Math.floor(value));
+      timerLabel.textContent = String(safe);
+    };
+
     const disableFns = [];
     const reflectFns = [];
 
@@ -170,10 +182,6 @@ export default {
     if (Number.isFinite(recordedStartAt) && recordedStartAt > 0) {
       countdownDeadline = recordedStartAt + MARKING_LIMIT_MS;
     }
-
-    const setTimerValue = (secs) => {
-      ScoreStrip.setTimerValue(Math.max(0, Math.floor(secs)));
-    };
 
     const stopCountdown = () => {
       if (countdownInterval) {
@@ -184,12 +192,12 @@ export default {
 
     const updateCountdown = () => {
       if (!countdownDeadline) {
-        setTimerValue(0);
+        setTimerLabel(0);
         return;
       }
       const remainingMs = countdownDeadline - Date.now();
       const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-      setTimerValue(remainingSeconds);
+      setTimerLabel(remainingSeconds);
       if (remainingSeconds <= 0 && !countdownExpired) {
         countdownExpired = true;
         stopCountdown();
@@ -202,7 +210,7 @@ export default {
       if (!countdownDeadline) countdownDeadline = Date.now() + MARKING_LIMIT_MS;
       countdownExpired = false;
       const remainingSeconds = Math.max(0, Math.ceil((countdownDeadline - Date.now()) / 1000));
-      ScoreStrip.showTimer({ total: MARKING_LIMIT_MS / 1000, remaining: remainingSeconds });
+      setTimerLabel(remainingSeconds);
       updateCountdown();
       countdownInterval = setInterval(updateCountdown, 200);
     };
@@ -259,7 +267,7 @@ export default {
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         submitBtn.disabled = true;
         submitBtn.classList.remove("throb");
-        setTimerValue(0);
+        setTimerLabel(0);
         showWaitingOverlay(timedOut ? "Time's up" : "Review submitted");
       } catch (err) {
         console.warn("[marking] submit failed:", err);
@@ -391,7 +399,7 @@ export default {
       published = true;
       reflectFns.forEach((fn) => { try { fn(); } catch {} });
       disableFns.forEach((fn) => { try { fn(); } catch {} });
-      setTimerValue(0);
+      setTimerLabel(0);
       showWaitingOverlay("Review submitted");
     } else {
       if (!countdownDeadline) countdownDeadline = Date.now() + MARKING_LIMIT_MS;
@@ -491,7 +499,7 @@ export default {
         reflectFns.forEach((fn) => { try { fn(); } catch {} });
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         stopCountdown();
-        setTimerValue(0);
+        setTimerLabel(0);
         showWaitingOverlay(ackOpp ? "Waiting for opponent" : "Review submitted");
         submitBtn.disabled = true;
         submitBtn.classList.remove("throb");
@@ -507,7 +515,7 @@ export default {
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       stopCountdown();
-      ScoreStrip.hideTimer();
+      setTimerLabel(null);
     };
   },
 

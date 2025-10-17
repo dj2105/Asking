@@ -32,11 +32,6 @@ const state = {
   code: null,
   roundDocs: {}, // { [round]: data }
   roomData: null,
-  timer: {
-    visible: false,
-    total: null,
-    value: null,
-  },
 };
 
 function text(s){ return (s ?? "").toString(); }
@@ -81,23 +76,6 @@ function computeScores(roomData, roundDocs) {
   return { hostScore, guestScore };
 }
 
-function formatTimerValue(value) {
-  const safe = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
-  return safe < 10 ? `0${safe}`.slice(-2) : String(safe);
-}
-
-function renderTimerValue() {
-  if (!state.node) return;
-  const valueNode = state.node.querySelector(".score-strip__timer-value");
-  if (valueNode) {
-    valueNode.textContent = formatTimerValue(state.timer.value);
-  }
-  const circle = state.node.querySelector(".score-strip__timer-circle");
-  if (circle) {
-    circle.classList.toggle("score-strip__timer-circle--warning", Number(state.timer.value) <= 3);
-  }
-}
-
 function render() {
   if (!state.node) return;
   const code  = state.code || "—";
@@ -111,14 +89,7 @@ function render() {
                      <span class="ss-sep"></span>
                      <span class="ss-name">Jaime</span><span class="ss-score">${guestScore}</span>`;
 
-  const timerVisible = Boolean(state.timer.visible);
-  const timerValue = formatTimerValue(state.timer.value);
-  const timerClass = Number(state.timer.value) <= 3 ? " score-strip__timer-circle--warning" : "";
-  const timerHTML = timerVisible
-    ? `<div class="score-strip__timer" role="timer" aria-live="off"><div class="score-strip__timer-circle${timerClass}"><span class="score-strip__timer-value">${timerValue}</span></div></div>`
-    : "";
-
-  state.node.innerHTML = `<div class="score-strip__inner"><div class="score-strip__left">${leftHTML}</div>${timerHTML}<div class="score-strip__right">${rightHTML}</div></div>`;
+  state.node.innerHTML = `<div class="score-strip__inner"><div class="score-strip__left">${leftHTML}</div><div class="score-strip__right">${rightHTML}</div></div>`;
 }
 
 async function bind(code) {
@@ -183,38 +154,9 @@ export function update({ code } = {}) {
 
 export function hide() {
   cleanup();
-  state.timer.visible = false;
-  state.timer.value = null;
-  state.timer.total = null;
   if (state.node && state.node.parentNode) {
     state.node.parentNode.removeChild(state.node);
   }
 }
 
-export function showTimer({ total, remaining } = {}) {
-  state.timer.visible = true;
-  state.timer.total = Number.isFinite(total) ? Math.max(0, Math.floor(total)) : null;
-  state.timer.value = Number.isFinite(remaining) ? Math.max(0, Math.floor(remaining)) : (state.timer.total ?? 0);
-  render();
-}
-
-export function setTimerValue(value) {
-  if (!state.timer.visible) return;
-  const safe = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
-  if (state.timer.value === safe) {
-    renderTimerValue();
-    return;
-  }
-  state.timer.value = safe;
-  renderTimerValue();
-}
-
-export function hideTimer() {
-  if (!state.timer.visible && state.timer.value == null) return;
-  state.timer.visible = false;
-  state.timer.value = null;
-  state.timer.total = null;
-  render();
-}
-
-export default { mount, update, hide, showTimer, setTimerValue, hideTimer };
+export default { mount, update, hide };

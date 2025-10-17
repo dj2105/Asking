@@ -18,7 +18,6 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
-import ScoreStrip from "../lib/ScoreStrip.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
@@ -83,10 +82,14 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const heading = el("div", { class: "mono question-title" }, "QUESTION 1/3");
+    const headerRow = el("div", { class: "phase-header" });
+    const heading = el("div", { class: "mono question-title phase-header__title" }, "QUESTION 1/3");
+    const timerLabel = el("div", { class: "mono question-title phase-header__timer" }, "—");
+    headerRow.appendChild(heading);
+    headerRow.appendChild(timerLabel);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
-    card.appendChild(heading);
+    card.appendChild(headerRow);
     card.appendChild(qText);
 
     const btnWrap = el("div", { class: "choice-row" });
@@ -175,6 +178,14 @@ export default {
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
     const QUESTION_LIMIT_SECONDS = 10;
     const QUESTION_LIMIT_MS = QUESTION_LIMIT_SECONDS * 1000;
+    const setTimerLabel = (value) => {
+      if (value == null || !Number.isFinite(value)) {
+        timerLabel.textContent = "—";
+        return;
+      }
+      const safe = Math.max(0, Math.floor(value));
+      timerLabel.textContent = String(safe);
+    };
     let timerDeadline = null;
     let timerInterval = null;
 
@@ -189,7 +200,7 @@ export default {
       if (!timerDeadline) return;
       const remainingMs = timerDeadline - Date.now();
       const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-      ScoreStrip.setTimerValue(remainingSeconds);
+      setTimerLabel(remainingSeconds);
       if (remainingSeconds <= 0) {
         stopTimer();
         handleTimeout();
@@ -229,14 +240,33 @@ export default {
       }
     };
 
+    const fallbackRound = () => ({
+      hostItems: FALLBACK_ITEMS.map((item) => ({
+        question: item.question,
+        correct_answer: item.correct,
+        distractors: { easy: item.wrong, medium: item.wrong, hard: item.wrong },
+      })),
+      guestItems: FALLBACK_ITEMS.map((item) => ({
+        question: item.question,
+        correct_answer: item.correct,
+        distractors: { easy: item.wrong, medium: item.wrong, hard: item.wrong },
+      })),
+    });
+
     const waitForRoundData = async () => {
       let firstWait = true;
+      let attempts = 0;
       while (alive) {
         try {
           const snap = await getDoc(rdRef);
           if (snap.exists()) return snap.data() || {};
         } catch (err) {
           console.warn("[questions] failed to load round doc:", err);
+        }
+        attempts += 1;
+        if (attempts >= 8) {
+          console.warn("[questions] using fallback questions — pack missing");
+          return fallbackRound();
         }
         if (firstWait) {
           waitMsg.textContent = "Waiting for round data…";
@@ -247,7 +277,7 @@ export default {
         }
         await new Promise((resolve) => setTimeout(resolve, 600));
       }
-      return {};
+      return fallbackRound();
     };
 
     const rd = await waitForRoundData();
@@ -296,14 +326,14 @@ export default {
       waitMsg.style.display = "none";
       setButtonsEnabled(true);
       renderIndex();
-      ScoreStrip.showTimer({ total: QUESTION_LIMIT_SECONDS, remaining: QUESTION_LIMIT_SECONDS });
+      setTimerLabel(QUESTION_LIMIT_SECONDS);
       startQuestionTimer();
     };
 
     const finishRound = (timedOut) => {
       setButtonsEnabled(false);
       waitMsg.style.display = "none";
-      ScoreStrip.setTimerValue(0);
+      setTimerLabel(0);
       showWaitingOverlay(timedOut ? "Time's up" : undefined);
       publishAnswers(Boolean(timedOut));
     };
@@ -372,14 +402,14 @@ export default {
       btnWrap.style.display = "none";
       waitMsg.textContent = "Preparing questions…";
       waitMsg.style.display = "";
-      ScoreStrip.hideTimer();
+      setTimerLabel(null);
     } else if (existingAns.length === 3) {
       published = true;
       idx = 3;
       btnWrap.style.display = "none";
       waitMsg.style.display = "none";
       stopTimer();
-      ScoreStrip.hideTimer();
+      setTimerLabel(null);
       showWaitingOverlay();
     } else {
       presentQuestion();
@@ -440,7 +470,7 @@ export default {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
       stopTimer();
-      ScoreStrip.hideTimer();
+      setTimerLabel(null);
     };
   },
 
