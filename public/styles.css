@@ -284,9 +284,10 @@ input[type="text"], input[type="number"], .input {
 .marking-title {
   font-size: 1.8rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  --phase-letter-spacing: 0.14em;
+  letter-spacing: var(--phase-letter-spacing);
   text-transform: uppercase;
-  text-align: center;
+  text-align: left;
 }
 .mark-row { padding: 16px 0; border-bottom: 1px dashed rgba(0,0,0,.12); }
 .mark-row:last-child { border-bottom: none; }
@@ -315,6 +316,58 @@ input[type="text"], input[type="number"], .input {
   letter-spacing: 0.04em;
 }
 
+.mark-submit-row {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.mark-submit-btn {
+  min-width: 220px;
+  padding: 16px 20px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.phase-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  align-self: stretch;
+}
+
+.phase-header__title {
+  flex: 1;
+  margin: 0;
+  letter-spacing: var(--phase-letter-spacing, 0.14em);
+}
+
+.phase-header__timer {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: var(--phase-letter-spacing, 0.14em);
+  text-transform: uppercase;
+  text-align: right;
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: 2px solid var(--ink);
+  background: rgba(12, 16, 28, 0.9);
+  color: #fdfcff;
+  min-width: 88px;
+  display: inline-flex;
+  justify-content: flex-end;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.phase-header__timer--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .question-card {
   gap: 24px;
 }
@@ -322,8 +375,10 @@ input[type="text"], input[type="number"], .input {
 .question-title {
   font-size: 1.8rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  --phase-letter-spacing: 0.16em;
+  letter-spacing: var(--phase-letter-spacing);
   text-transform: uppercase;
+  text-align: left;
 }
 
 .question-card__prompt {
@@ -344,29 +399,6 @@ input[type="text"], input[type="number"], .input {
 }
 
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
-
-.timer-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.timer-display {
-  font-weight: 700;
-  font-size: 1.6rem;
-  min-width: 120px;
-  text-align: center;
-}
-
-.timer-button {
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding-left: 28px;
-  padding-right: 28px;
-}
 
 .result-panel {
   text-align: center;
@@ -399,22 +431,24 @@ input[type="text"], input[type="number"], .input {
 .score-strip {
   background: linear-gradient(90deg, rgba(10,12,18,0.92) 0%, rgba(10,12,18,0.75) 60%, rgba(10,12,18,0.92) 100%);
   color: #f9fbff;
-  padding: 10px 16px;
+  padding: 12px 18px;
   margin: 0 calc(50% - 50vw) 18px;
   width: 100vw;
   position: sticky;
   top: 0;               /* sticks to the top on scroll */
   z-index: 50;
   border-bottom: 1px solid rgba(255,255,255,.18);
-  box-shadow: 0 16px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 18px 36px rgba(0,0,0,0.22);
+  overflow: visible;
 }
 .score-strip__inner {
   max-width: 960px;     /* keep content tidy on large screens */
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
 }
 .score-strip__left {
   display: inline-flex;
@@ -691,6 +725,10 @@ input[type="text"], input[type="number"], .input {
   align-items: center;
   justify-content: center;
   padding: 12px 0 24px;
+}
+
+#app > .view.view-lobby:first-child {
+  margin-top: 0;
 }
 
 .lobby-card {
