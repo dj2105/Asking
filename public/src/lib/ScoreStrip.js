@@ -34,7 +34,6 @@ const state = {
   roomData: null,
 };
 
-function text(s){ return (s ?? "").toString(); }
 function same(a,b){ return String(a||"").trim() === String(b||"").trim(); }
 
 function resolveCorrect(answer = {}, fallbackItem = {}) {
@@ -134,6 +133,7 @@ function cleanup() {
   for (const u of state.unsubRounds) { try { u(); } catch {} }
   state.unsubRounds = [];
   state.roundDocs = {};
+  state.roomData = null;
   // keep node so we can reuse it between routes
 }
 
@@ -144,8 +144,10 @@ export function mount(container, { code } = {}) {
     n.className = "score-strip mono";
     container.prepend(n); // top of the view
     state.node = n;
+    render();
   } else if (!state.node.isConnected) {
     container.prepend(state.node);
+    render();
   }
   bind(code);
 }
