@@ -41,12 +41,45 @@ export default {
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-lobby" });
-    const card = el("div", { class: "card lobby-card" });
-    view.appendChild(card);
+    const stack = el("div", { class: "lobby-stack" });
+    view.appendChild(stack);
     container.appendChild(view);
 
-    card.appendChild(el("h1", { class: "lobby-title" }, "Jemima’s Asking"));
-    card.appendChild(el("p", { class: "lobby-prompt" }, "What’s the code?"));
+    const storyCard = el("section", { class: "card lobby-card lobby-card--story" });
+    storyCard.appendChild(el("div", { class: "lobby-sigil" }, "ASKING"));
+    storyCard.appendChild(el("h1", { class: "lobby-title" }, "Jemima’s Asking"));
+    storyCard.appendChild(
+      el("p", { class: "lobby-intro" },
+        "A duel staged inside Jemima’s Impossible Museum. Daniel sets the vault; Jaime breaches it."
+      )
+    );
+
+    const legend = el("div", { class: "lobby-legend" });
+    const beats = [
+      { title: "Daniel", desc: "Uploads the sealed pack and sparks the countdown." },
+      { title: "Jaime", desc: "Cracks the vault code from across the hall." },
+      { title: "You", desc: "Choose a role, keep pace, and chase five shining rounds." },
+    ];
+    beats.forEach(({ title, desc }) => {
+      legend.appendChild(
+        el("div", { class: "lobby-legend__item" }, [
+          el("div", { class: "lobby-legend__title" }, title),
+          el("div", { class: "lobby-legend__desc" }, desc),
+        ])
+      );
+    });
+    storyCard.appendChild(legend);
+    storyCard.appendChild(
+      el("p", { class: "lobby-tagline" }, "Tonight’s codeword ripples through the atrium. Enter it to slip inside.")
+    );
+
+    stack.appendChild(storyCard);
+
+    const card = el("section", { class: "card lobby-card lobby-card--join" });
+    stack.appendChild(card);
+
+    card.appendChild(el("h2", { class: "lobby-prompt" }, "Enter the codeword"));
+    card.appendChild(el("p", { class: "lobby-note" }, "Three to five letters, etched on Daniel’s sealed file."));
 
     const params = new URLSearchParams((location.hash.split("?")[1] || ""));
     const initialCode = clampCode(params.get("code") || "");
