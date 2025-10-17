@@ -40,7 +40,7 @@ export default {
     document.documentElement.style.setProperty("--ink-l", "18%");
 
     container.innerHTML = "";
-    const view = el("div", { class: "view view-lobby" });
+    const view = el("div", { class: "view view-lobby stage-center stage-center--solo" });
     const card = el("div", { class: "card lobby-card" });
     view.appendChild(card);
     container.appendChild(view);

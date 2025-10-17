@@ -34,7 +34,6 @@ const state = {
   roomData: null,
 };
 
-function text(s){ return (s ?? "").toString(); }
 function same(a,b){ return String(a||"").trim() === String(b||"").trim(); }
 
 function resolveCorrect(answer = {}, fallbackItem = {}) {
