@@ -1,0 +1,26 @@
+{
+  "version": "jemima-maths-1",
+  "meta": {
+    "roomCode": "OWL",
+    "generatedAt": "2025-10-16T21:15:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "location": "Sky Lantern Fair",
+    "beats": [
+      "Jemima arrived at the fair with €20 in moonlit coins.",
+      "She bought a lantern for €6.",
+      "She donated €2 to the dragon dancers.",
+      "She skipped home with her glowing prize."
+    ],
+    "questions": [
+      "How much money remains? ___ euros",
+      "How many euros did she spend? ___ euros"
+    ],
+    "answers": [
+      12,
+      8
+    ]
+  }
+}
