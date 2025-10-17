@@ -177,3 +177,4 @@ async function mountRoute() {
 // Boot + navigation
 window.addEventListener("hashchange", mountRoute);
 window.addEventListener("load", mountRoute);
+mountRoute().catch((err) => console.error("[router] initial mount failed:", err));
