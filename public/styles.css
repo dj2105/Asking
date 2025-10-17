@@ -833,3 +833,281 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   box-shadow: var(--shadow);
   text-align: center;
 }
+
+/* ===========================
+   Final view
+   =========================== */
+.view-final { gap: 24px; }
+
+.final-scoreboard { align-items: center; text-align: center; }
+.final-scoreboard__title {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.final-scoreboard__row {
+  width: 100%;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.final-scoreboard__player {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.final-scoreboard__name {
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-size: .95rem;
+}
+.final-scoreboard__value {
+  font-size: 3.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.final-scoreboard__progress {
+  text-align: center;
+  opacity: .72;
+}
+.final-cta {
+  width: 100%;
+  margin-top: 6px;
+}
+.final-winner {
+  display: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.final-winner--visible { display: block; }
+@keyframes finalWinnerFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+.final-winner--flash { animation: finalWinnerFlash .8s linear infinite; }
+
+.final-breakdown { gap: 16px; }
+.final-breakdown__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.final-breakdown__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--soft-line);
+}
+.final-breakdown__item:last-child { border-bottom: none; }
+.final-breakdown__round {
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.final-breakdown__score { font-weight: 700; }
+.section-subtitle {
+  margin: 12px 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.final-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.final-stats__row { font-size: .9rem; }
+
+.final-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.final-round-card {
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+.final-round-card__header {
+  width: 100%;
+  padding: 20px 24px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.final-round-card__header:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.final-round-card__summary { opacity: .75; }
+.final-round-card__body {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 24px 24px;
+}
+.final-round-card--open .final-round-card__body { display: flex; }
+.final-round-card--open .final-round-card__header { background: rgba(255,255,255,1); }
+.final-round-player {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.final-round-player__title {
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.final-question {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 18px;
+  border: 1px solid var(--soft-line);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.88);
+}
+.final-question--guest { flex-direction: row; }
+.final-marker {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+.final-marker--right {
+  background: rgba(32,124,76,0.18);
+  color: var(--ok);
+}
+.final-marker--wrong {
+  background: rgba(180,42,42,0.18);
+  color: var(--bad);
+}
+.final-marker--unknown {
+  background: rgba(25,98,160,0.18);
+  color: #1d4d8c;
+}
+.final-question__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.final-question__prompt {
+  font-weight: 700;
+  white-space: pre-wrap;
+}
+.final-question__answers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.final-answer { font-size: .92rem; }
+.final-answer--correct {
+  color: var(--ok);
+  font-weight: 700;
+}
+.final-answer--wrong {
+  color: var(--bad);
+  font-weight: 700;
+}
+.final-answer--pending {
+  opacity: .7;
+  font-weight: 700;
+}
+.final-question__verdict { opacity: .75; }
+.final-question--guest .final-question__content { order: 1; }
+.final-question--guest .final-marker {
+  order: 2;
+  margin-left: 12px;
+}
+
+.final-collapsible {
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+.final-collapsible__header {
+  width: 100%;
+  border: none;
+  background: rgba(255,255,255,0.9);
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.final-collapsible__header:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.final-collapsible__summary { opacity: .75; }
+.final-maths {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 24px 24px;
+}
+.final-collapsible--open .final-maths { display: flex; }
+.final-maths__beats {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.final-maths__item {
+  border: 1px solid var(--soft-line);
+  border-radius: 14px;
+  padding: 16px;
+  background: rgba(255,255,255,0.88);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.final-maths__prompt { font-weight: 700; }
+.final-maths__correct { color: var(--muted); }
+.final-maths__players {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.final-maths__answer { font-size: .92rem; }
+.final-maths__answer--right {
+  color: var(--ok);
+  font-weight: 700;
+}
+.final-maths__answer--wrong {
+  color: var(--bad);
+  font-weight: 700;
+}
+.final-return { width: 100%; }
