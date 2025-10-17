@@ -315,6 +315,18 @@ input[type="text"], input[type="number"], .input {
   letter-spacing: 0.04em;
 }
 
+.mark-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.mark-submit {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 12px 28px;
+}
+
 .question-card {
   gap: 24px;
 }
@@ -344,29 +356,6 @@ input[type="text"], input[type="number"], .input {
 }
 
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
-
-.timer-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.timer-display {
-  font-weight: 700;
-  font-size: 1.6rem;
-  min-width: 120px;
-  text-align: center;
-}
-
-.timer-button {
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding-left: 28px;
-  padding-right: 28px;
-}
 
 .result-panel {
   text-align: center;
@@ -416,6 +405,10 @@ input[type="text"], input[type="number"], .input {
   gap: 16px;
   align-items: center;
 }
+
+.score-strip__inner--with-timer {
+  grid-template-columns: 1fr auto 1fr;
+}
 .score-strip__left {
   display: inline-flex;
   gap: 12px;
@@ -441,6 +434,85 @@ input[type="text"], input[type="number"], .input {
 .score-strip__right .ss-sep {
   display: inline-block;
   width: 22px;
+}
+
+.score-strip__center {
+  justify-self: center;
+}
+
+.score-strip__timer {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 6px solid hsla(var(--ink-h), var(--ink-s), 68%, 0.55);
+  background: rgba(8, 10, 18, 0.95);
+  color: #f7f9ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  font-weight: 700;
+  position: relative;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
+.score-strip__timer::before,
+.score-strip__timer::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 18px solid transparent;
+  border-right: 18px solid transparent;
+}
+
+.score-strip__timer::before {
+  border-top: 22px solid hsla(var(--ink-h), var(--ink-s), 68%, 0.55);
+}
+
+.score-strip__timer::after {
+  bottom: -18px;
+  border-top: 18px solid rgba(8, 10, 18, 0.95);
+}
+
+.score-strip__timer--marking {
+  border-color: hsla(var(--ink-h), var(--ink-s), 60%, 0.65);
+}
+
+.score-strip__timer--questions {
+  border-color: hsla(var(--ink-h), var(--ink-s), 68%, 0.55);
+}
+
+.score-strip__timer--hidden {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .score-strip__timer {
+    width: 72px;
+    height: 72px;
+    font-size: 2rem;
+    border-width: 5px;
+  }
+
+  .score-strip__timer::before,
+  .score-strip__timer::after {
+    border-left-width: 14px;
+    border-right-width: 14px;
+  }
+
+  .score-strip__timer::before {
+    bottom: -18px;
+    border-top-width: 18px;
+  }
+
+  .score-strip__timer::after {
+    bottom: -14px;
+    border-top-width: 14px;
+  }
 }
 
 /* Award review */
@@ -1108,4 +1180,8 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   padding: 28px 32px;
   box-shadow: var(--shadow);
   text-align: center;
+}
+.score-strip--with-timer {
+  padding-bottom: 30px;
+  margin-bottom: 32px;
 }

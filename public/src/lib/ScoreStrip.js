@@ -32,6 +32,11 @@ const state = {
   code: null,
   roundDocs: {}, // { [round]: data }
   roomData: null,
+  timer: {
+    visible: false,
+    value: "",
+    variant: "default",
+  },
 };
 
 function text(s){ return (s ?? "").toString(); }
@@ -76,6 +81,13 @@ function computeScores(roomData, roundDocs) {
   return { hostScore, guestScore };
 }
 
+function timerClass() {
+  const { visible, variant } = state.timer || {};
+  if (!visible) return "score-strip__timer score-strip__timer--hidden";
+  const v = variant && variant !== "default" ? ` score-strip__timer--${variant}` : "";
+  return `score-strip__timer${v}`;
+}
+
 function render() {
   if (!state.node) return;
   const code  = state.code || "—";
@@ -89,9 +101,23 @@ function render() {
                      <span class="ss-sep"></span>
                      <span class="ss-name">Jaime</span><span class="ss-score">${guestScore}</span>`;
 
+  const timerVisible = Boolean(state.timer?.visible);
+  const timerValue = String(state.timer?.value ?? "");
+  if (state.node && state.node.classList) {
+    state.node.classList.toggle("score-strip--with-timer", timerVisible);
+  }
+  const timerMarkup = timerVisible
+    ? `<div class="score-strip__center"><div class="${timerClass()}">${timerValue}</div></div>`
+    : "";
+
+  const innerClass = timerVisible
+    ? "score-strip__inner score-strip__inner--with-timer"
+    : "score-strip__inner";
+
   state.node.innerHTML = `
-    <div class="score-strip__inner">
+    <div class="${innerClass}">
       <div class="score-strip__left">${leftHTML}</div>
+      ${timerMarkup}
       <div class="score-strip__right">${rightHTML}</div>
     </div>
   `;
@@ -137,6 +163,30 @@ function cleanup() {
   // keep node so we can reuse it between routes
 }
 
+function showTimer({ value, variant } = {}) {
+  state.timer.visible = true;
+  state.timer.value = value ?? "";
+  state.timer.variant = variant || "default";
+  render();
+}
+
+function updateTimerValue(value) {
+  if (!state.timer.visible) {
+    showTimer({ value, variant: state.timer.variant || "default" });
+    return;
+  }
+  state.timer.value = value ?? "";
+  render();
+}
+
+function clearTimer() {
+  if (!state.timer.visible && !state.timer.value) return;
+  state.timer.visible = false;
+  state.timer.value = "";
+  state.timer.variant = "default";
+  render();
+}
+
 export function mount(container, { code } = {}) {
   if (!container) return;
   if (!state.node) {
@@ -160,6 +210,25 @@ export function hide() {
   if (state.node && state.node.parentNode) {
     state.node.parentNode.removeChild(state.node);
   }
+  clearTimer();
 }
 
-export default { mount, update, hide };
+export const Timer = {
+  show: showTimer,
+  update: updateTimerValue,
+  clear: clearTimer,
+};
+
+export function showTimerSeconds(value, variant) {
+  showTimer({ value, variant });
+}
+
+export function updateTimerSeconds(value) {
+  updateTimerValue(value);
+}
+
+export function clearTimerDisplay() {
+  clearTimer();
+}
+
+export default { mount, update, hide, Timer, showTimerSeconds, updateTimerSeconds, clearTimerDisplay };
