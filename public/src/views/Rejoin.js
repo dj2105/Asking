@@ -3,6 +3,7 @@
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc } from "firebase/firestore";
+import { applyStageTheme } from "../lib/theme.js";
 import {
   clampCode,
   getHashParams,
@@ -81,9 +82,7 @@ export default {
     const roleParamRaw = (params.get("role") || "").toLowerCase();
     const queryRole = roleParamRaw === "host" || roleParamRaw === "guest" ? roleParamRaw : "";
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "72%");
+    applyStageTheme({ stage: "rejoin" });
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-rejoin" });

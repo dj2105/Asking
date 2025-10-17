@@ -6,6 +6,7 @@
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
+import { applyStageTheme } from "../lib/theme.js";
 import { clampCode, copyToClipboard, setStoredRole } from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
@@ -32,8 +33,7 @@ export default {
   async mount(container, params = {}) {
     await ensureAuth();
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme({ stage: "coderoom" });
 
     const code = clampCode(params.code || "");
     if (!code) {

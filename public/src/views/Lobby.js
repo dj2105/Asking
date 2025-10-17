@@ -8,6 +8,7 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
+import { applyStageTheme } from "../lib/theme.js";
 import { clampCode as clampCodeShared, setStoredRole, getLastRoomCode } from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
@@ -33,11 +34,7 @@ export default {
   async mount(container) {
     await ensureAuth();
 
-    // Theme (random ink hue)
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "70%");
-    document.documentElement.style.setProperty("--ink-l", "18%");
+    applyStageTheme({ stage: "lobby" });
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-lobby stage-center stage-center--solo" });
