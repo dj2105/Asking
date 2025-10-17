@@ -41,17 +41,48 @@ export default {
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-lobby" });
+    const ambience = el("div", { class: "lobby-ambient" }, [
+      el("div", { class: "lobby-ambient__ring lobby-ambient__ring--outer" }),
+      el("div", { class: "lobby-ambient__ring lobby-ambient__ring--inner" }),
+      el("div", { class: "lobby-ambient__spark" })
+    ]);
     const card = el("div", { class: "card lobby-card" });
+    view.appendChild(ambience);
     view.appendChild(card);
     container.appendChild(view);
 
-    card.appendChild(el("h1", { class: "lobby-title" }, "Jemima’s Asking"));
-    card.appendChild(el("p", { class: "lobby-prompt" }, "What’s the code?"));
+    const hero = el("div", { class: "lobby-hero" }, [
+      el("div", { class: "lobby-hero__badge" }, "Code duel"),
+      el("h1", { class: "lobby-title" }, "Jemima’s Asking"),
+      el("p", { class: "lobby-prompt" }, "Daniel and Jaime are already circling. Choose your side and drop the code to pull gravity toward you."),
+      el("div", { class: "lobby-phase-ribbon" }, [
+        el("span", { class: "lobby-phase-ribbon__dot" }),
+        el("span", { class: "lobby-phase-ribbon__label" }, "Five rounds, maths finale, only one champion."),
+      ])
+    ]);
+    card.appendChild(hero);
+
+    const storyboard = el("ol", { class: "lobby-storyboard" }, [
+      storyBeat("Upload", "Daniel unlocks the sealed pack and arms the countdown."),
+      storyBeat("Questions", "Each player answers their private trio without seeing the other."),
+      storyBeat("Marking", "You judge your rival’s bravado in thirty seconds of courtroom chaos."),
+      storyBeat("Awards", "Scores explode once both verdicts land."),
+      storyBeat("Maths", "Final head-to-head: two numbers, infinite pride."),
+    ]);
+    card.appendChild(storyboard);
+
+    const rolesWrap = el("div", { class: "lobby-roles" }, [
+      roleTile("Daniel", "HOST", "Guards the sealed pack and kicks off every round."),
+      roleTile("Jaime", "GUEST", "Drops in with the code, keeps pace, and claims the crown."),
+    ]);
+    card.appendChild(rolesWrap);
 
     const params = new URLSearchParams((location.hash.split("?")[1] || ""));
     const initialCode = clampCode(params.get("code") || "");
     const recentCode = getLastRoomCode();
 
+    const joinBlock = el("div", { class: "lobby-join" });
+    const joinHeading = el("p", { class: "lobby-join__heading" }, "Drop the shared code to enter the arena.");
     const input = el("input", {
       type: "text",
       autocomplete: "off",
@@ -65,18 +96,19 @@ export default {
     });
 
     const inputWrap = el("div", { class: "lobby-input-wrap" }, input);
-    card.appendChild(inputWrap);
-
     const startBtn = el("button", {
       class: "btn lobby-start-btn",
       type: "button",
       onclick: join,
       disabled: true,
-    }, "START");
-    card.appendChild(startBtn);
-
+    }, "Start countdown");
     const status = el("div", { class: "lobby-status" }, "");
-    card.appendChild(status);
+
+    joinBlock.appendChild(joinHeading);
+    joinBlock.appendChild(inputWrap);
+    joinBlock.appendChild(startBtn);
+    joinBlock.appendChild(status);
+    card.appendChild(joinBlock);
 
     const rejoinHref = recentCode ? `#/rejoin?code=${recentCode}` : "#/rejoin";
     const linksRow = el("div", { class: "lobby-links-row" });
@@ -90,7 +122,11 @@ export default {
     }, "Daniel’s Entrance");
     linksRow.appendChild(rejoinLink);
     linksRow.appendChild(hostLink);
-    card.appendChild(linksRow);
+    const footer = el("div", { class: "lobby-footer" }, [
+      el("div", { class: "lobby-footer__note" }, "Already mid-duel?"),
+      linksRow,
+    ]);
+    card.appendChild(footer);
 
     function setStatus(msg) { status.textContent = msg || ""; }
 
@@ -172,3 +208,18 @@ export default {
 
   async unmount() {}
 };
+
+function storyBeat(title, desc) {
+  return el("li", { class: "lobby-storyboard__item" }, [
+    el("div", { class: "lobby-storyboard__title" }, title),
+    el("div", { class: "lobby-storyboard__desc" }, desc),
+  ]);
+}
+
+function roleTile(name, role, desc) {
+  return el("div", { class: "lobby-role" }, [
+    el("div", { class: "lobby-role__role" }, role),
+    el("div", { class: "lobby-role__name" }, name),
+    el("div", { class: "lobby-role__desc" }, desc),
+  ]);
+}
