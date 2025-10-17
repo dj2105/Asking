@@ -548,6 +548,7 @@ export default {
 
     const params = getHashParams();
     const hintedCode = clampCode(params.get("code") || "");
+    const initialCode = hintedCode || clampCode(generateRandomCode());
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-keyroom" });
@@ -589,7 +590,7 @@ export default {
       class: "mono",
       style: "font-size:18px;padding:6px 10px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;width:120px;text-align:center;",
       maxlength: "5",
-      value: hintedCode,
+      value: initialCode,
       oninput: (event) => {
         event.target.value = clampCode(event.target.value);
         reflectStartState();

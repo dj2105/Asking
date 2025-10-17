@@ -104,9 +104,12 @@ export default {
     }
 
     async function join() {
-      setStatus("");
+      setStatus("Checking room…");
       const code = clampCode(input.value);
-      if (code.length < 3) return;
+      if (code.length < 3) {
+        setStatus("");
+        return;
+      }
 
       try {
         const rRef = roomRef(code);
@@ -166,7 +169,7 @@ export default {
     // First paint
     reflect();
     if (initialCode) {
-      join();
+      setStatus(`Press START to join room ${initialCode}.`);
     }
   },
 
