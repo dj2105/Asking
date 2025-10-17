@@ -345,27 +345,18 @@ input[type="text"], input[type="number"], .input {
 
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
 
-.timer-row {
+.mark-submit-row {
   display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  flex-wrap: wrap;
+  margin-top: 22px;
 }
 
-.timer-display {
-  font-weight: 700;
-  font-size: 1.6rem;
-  min-width: 120px;
-  text-align: center;
-}
-
-.timer-button {
+.mark-submit-row .btn {
+  min-width: 220px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  padding-left: 28px;
-  padding-right: 28px;
+  padding-left: 26px;
+  padding-right: 26px;
 }
 
 .result-panel {
@@ -412,8 +403,8 @@ input[type="text"], input[type="number"], .input {
   max-width: 960px;     /* keep content tidy on large screens */
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 18px;
   align-items: center;
 }
 .score-strip__left {
@@ -421,6 +412,7 @@ input[type="text"], input[type="number"], .input {
   gap: 12px;
   align-items: baseline;
   font-weight: 700;
+  justify-self: start;
 }
 .score-strip__left .ss-code { opacity: .9; letter-spacing: .08em; }
 .score-strip__left .ss-round { font-size: 1.05rem; }
@@ -441,6 +433,33 @@ input[type="text"], input[type="number"], .input {
 .score-strip__right .ss-sep {
   display: inline-block;
   width: 22px;
+}
+
+.score-strip__timer {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  justify-self: center;
+  min-width: 76px;
+}
+
+.score-strip__timer.is-visible {
+  display: flex;
+}
+
+.score-strip__timer-badge {
+  width: 74px;
+  height: 74px;
+  border-radius: 999px;
+  background: rgba(10, 12, 18, 0.95);
+  color: #f7f9fb;
+  border: 5px solid hsla(var(--ink-h), var(--ink-s), 58%, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.1rem;
+  line-height: 1;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
 }
 
 /* Award review */
