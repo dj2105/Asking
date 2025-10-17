@@ -19,6 +19,8 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { setTimer as setStripTimer, hideTimer as hideStripTimer } from "../lib/ScoreStrip.js";
+import { getPlaceholderItems, hasUsableItems } from "../lib/placeholders.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -81,24 +83,21 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-marking stage-center" });
 
-    const timerRow = el("div", { class: "timer-row" });
-    const timerDisplay = el("div", { class: "mono timer-display" }, String(MARKING_LIMIT_MS / 1000));
-    const submitBtn = el("button", {
-      class: "btn outline timer-button",
-      disabled: "",
-    }, "SUBMIT MARKING");
-    timerRow.appendChild(timerDisplay);
-    timerRow.appendChild(submitBtn);
-
     const card = el("div", { class: "card card--center mark-card" });
     const heading = el("div", { class: "mono marking-title" }, "MARKING");
 
     const list = el("div", { class: "qa-list" });
 
+    const submitBtn = el("button", {
+      class: "btn outline timer-button",
+      disabled: "",
+    }, "SUBMIT MARKING");
+    const submitWrap = el("div", { class: "marking-submit-row" }, submitBtn);
+
     card.appendChild(heading);
     card.appendChild(list);
+    card.appendChild(submitWrap);
 
-    root.appendChild(timerRow);
     root.appendChild(card);
 
     const mathsMount = el("div", { class: "jemima-maths-pinned" });
@@ -153,8 +152,15 @@ export default {
 
     const rdSnap = await getDoc(rdRef);
     const rd = rdSnap.data() || {};
-    const oppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
-    const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
+    const rawOppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
+    const oppItems = hasUsableItems(rawOppItems)
+      ? rawOppItems
+      : getPlaceholderItems(oppRole, round);
+    const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((entry) => ({
+      question: entry?.question || "",
+      chosen: entry?.chosen || "",
+      correct: entry?.correct || "",
+    }));
 
     let marks = [null, null, null];
     let published = false;
@@ -167,7 +173,7 @@ export default {
     const reflectFns = [];
 
     const setTimerValue = (secs) => {
-      timerDisplay.textContent = String(Math.max(0, secs));
+      setStripTimer(Math.max(0, secs));
     };
 
     const stopCountdown = () => {
@@ -179,7 +185,7 @@ export default {
 
     const updateCountdown = () => {
       if (!countdownDeadline) {
-        setTimerValue(0);
+        hideStripTimer();
         return;
       }
       const remainingMs = countdownDeadline - Date.now();
@@ -196,6 +202,7 @@ export default {
       if (published || countdownInterval) return;
       if (!countdownDeadline) countdownDeadline = Date.now() + MARKING_LIMIT_MS;
       countdownExpired = false;
+      setTimerValue(MARKING_LIMIT_MS / 1000);
       updateCountdown();
       countdownInterval = setInterval(updateCountdown, 200);
     };
@@ -253,6 +260,7 @@ export default {
         submitBtn.disabled = true;
         submitBtn.classList.remove("throb");
         setTimerValue(0);
+        hideStripTimer();
         showWaitingOverlay(timedOut ? "Time's up" : "Review submitted");
       } catch (err) {
         console.warn("[marking] submit failed:", err);
@@ -373,8 +381,9 @@ export default {
 
     list.innerHTML = "";
     for (let i = 0; i < 3; i += 1) {
-      const q = oppItems[i]?.question || "";
-      const chosen = oppAnswers[i] || "";
+      const answerRecord = oppAnswers[i] || {};
+      const q = oppItems[i]?.question || answerRecord.question || "";
+      const chosen = answerRecord.chosen || "";
       list.appendChild(buildRow(i, q, chosen));
     }
 
@@ -385,6 +394,7 @@ export default {
       reflectFns.forEach((fn) => { try { fn(); } catch {} });
       disableFns.forEach((fn) => { try { fn(); } catch {} });
       setTimerValue(0);
+      hideStripTimer();
       showWaitingOverlay("Review submitted");
     } else {
       countdownDeadline = Date.now() + MARKING_LIMIT_MS;
@@ -449,6 +459,7 @@ export default {
       const stateName = (data.state || "").toLowerCase();
 
       if (stateName === "countdown") {
+        hideStripTimer();
         setTimeout(() => {
           location.hash = `#/countdown?code=${code}&round=${data.round || round}`;
         }, 80);
@@ -456,6 +467,7 @@ export default {
       }
 
       if (stateName === "questions") {
+        hideStripTimer();
         setTimeout(() => {
           location.hash = `#/questions?code=${code}&round=${data.round || round}`;
         }, 80);
@@ -463,6 +475,7 @@ export default {
       }
 
       if (stateName === "award") {
+        hideStripTimer();
         setTimeout(() => {
           location.hash = `#/award?code=${code}&round=${data.round || round}`;
         }, 80);
@@ -470,6 +483,7 @@ export default {
       }
 
       if (stateName === "maths") {
+        hideStripTimer();
         setTimeout(() => { location.hash = `#/maths?code=${code}`; }, 80);
         return;
       }
@@ -485,6 +499,7 @@ export default {
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         stopCountdown();
         setTimerValue(0);
+        hideStripTimer();
         showWaitingOverlay(ackOpp ? "Waiting for opponent" : "Review submitted");
         submitBtn.disabled = true;
         submitBtn.classList.remove("throb");
@@ -500,6 +515,7 @@ export default {
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       stopCountdown();
+      hideStripTimer();
     };
   },
 

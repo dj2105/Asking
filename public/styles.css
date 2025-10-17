@@ -345,37 +345,6 @@ input[type="text"], input[type="number"], .input {
 
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
 
-.timer-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.timer-display {
-  font-weight: 700;
-  font-size: 1.9rem;
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
-  border: 4px solid hsla(var(--ink-h), var(--ink-s), 52%, 0.9);
-  background: var(--ink);
-  color: #f8f9fb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
-}
-
-.view-marking .timer-row {
-  margin-top: 0;
-  justify-content: center;
-}
-
 .timer-button {
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -414,22 +383,23 @@ input[type="text"], input[type="number"], .input {
 .score-strip {
   background: linear-gradient(90deg, rgba(10,12,18,0.92) 0%, rgba(10,12,18,0.75) 60%, rgba(10,12,18,0.92) 100%);
   color: #f9fbff;
-  padding: 10px 16px;
-  margin: 0 calc(50% - 50vw) 18px;
+  padding: 14px 24px 42px;
+  margin: 0 calc(50% - 50vw) 36px;
   width: 100vw;
   position: sticky;
-  top: 0;               /* sticks to the top on scroll */
+  top: 0;
   z-index: 50;
   border-bottom: 1px solid rgba(255,255,255,.18);
   box-shadow: 0 16px 32px rgba(0,0,0,0.18);
 }
 .score-strip__inner {
-  max-width: 960px;     /* keep content tidy on large screens */
+  max-width: 960px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  position: relative;
+  gap: 24px;
 }
 .score-strip__left {
   display: inline-flex;
@@ -440,11 +410,55 @@ input[type="text"], input[type="number"], .input {
 .score-strip__left .ss-code { opacity: .9; letter-spacing: .08em; }
 .score-strip__left .ss-round { font-size: 1.05rem; }
 
+.score-strip__timer {
+  position: absolute;
+  left: 50%;
+  bottom: -34px;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.score-strip__timer.is-visible { display: flex; }
+
+.score-timer-badge {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: rgba(12, 16, 24, 0.95);
+  border: 6px solid hsla(var(--ink-h), 70%, 62%, 0.95);
+  box-shadow: 0 22px 42px rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f5f7ff;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+.score-timer-badge::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 26px;
+  border-radius: 999px 999px 0 0;
+  background: rgba(12, 16, 24, 0.95);
+  border: 6px solid hsla(var(--ink-h), 70%, 62%, 0.95);
+  border-bottom: none;
+}
+.score-timer-value { position: relative; z-index: 1; }
+
 .score-strip__right {
   display: inline-flex;
   gap: 18px;
   align-items: baseline;
-  justify-self: end;
+  margin-left: auto;
   font-weight: 700;
 }
 .score-strip__right .ss-name { opacity: .86; letter-spacing: .12em; text-transform: uppercase; }
@@ -456,6 +470,12 @@ input[type="text"], input[type="number"], .input {
 .score-strip__right .ss-sep {
   display: inline-block;
   width: 22px;
+}
+
+.marking-submit-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
 }
 
 /* Award review */

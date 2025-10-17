@@ -17,8 +17,11 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
+import { setTimer as setStripTimer, hideTimer as hideStripTimer } from "../lib/ScoreStrip.js";
+
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { getPlaceholderItems, hasUsableItems } from "../lib/placeholders.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -64,14 +67,9 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const timerRow = el("div", { class: "timer-row" });
-    const timerDisplay = el("div", { class: "mono timer-display" }, "10");
-    timerRow.appendChild(timerDisplay);
-    timerRow.style.display = "none";
     const heading = el("div", { class: "mono question-title" }, "QUESTION 1/3");
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
-    card.appendChild(timerRow);
     card.appendChild(heading);
     card.appendChild(qText);
 
@@ -171,15 +169,11 @@ export default {
       btn2.classList.toggle("throb", enabled);
     };
 
-    const setTimerVisible = (visible) => {
-      timerRow.style.display = visible ? "flex" : "none";
-    };
-
     const updateTimerDisplay = () => {
       if (!timerDeadline) return;
       const remainingMs = timerDeadline - Date.now();
       const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-      timerDisplay.textContent = String(remainingSeconds);
+      setStripTimer(remainingSeconds);
       if (remainingSeconds <= 0) {
         stopTimer();
         handleTimeout();
@@ -189,6 +183,7 @@ export default {
     const startQuestionTimer = () => {
       stopTimer();
       timerDeadline = Date.now() + QUESTION_LIMIT_MS;
+      setStripTimer(QUESTION_LIMIT_SECONDS);
       updateTimerDisplay();
       timerInterval = setInterval(updateTimerDisplay, 200);
     };
@@ -233,6 +228,7 @@ export default {
           waitMsg.style.display = "";
           btnWrap.style.display = "none";
           setButtonsEnabled(false);
+          hideStripTimer();
           firstWait = false;
         }
         await new Promise((resolve) => setTimeout(resolve, 600));
@@ -243,11 +239,14 @@ export default {
     const rd = await waitForRoundData();
     if (!alive) return;
 
-    const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
+    const rawItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
+    const itemPool = hasUsableItems(rawItems)
+      ? rawItems
+      : getPlaceholderItems(myRole, round);
 
     const tier = roundTier(round);
     const triplet = [0, 1, 2].map((i) => {
-      const it = myItems[i] || {};
+      const it = itemPool[i] || {};
       const correct = it.correct_answer || "";
       const distractors = it.distractors || {};
       const wrong = distractors[tier] || distractors.medium || distractors.easy || distractors.hard || "";
@@ -274,15 +273,13 @@ export default {
       waitMsg.style.display = "none";
       setButtonsEnabled(true);
       renderIndex();
-      setTimerVisible(true);
-      timerDisplay.textContent = String(QUESTION_LIMIT_SECONDS);
       startQuestionTimer();
     };
 
     const finishRound = (timedOut) => {
       setButtonsEnabled(false);
       waitMsg.style.display = "none";
-      setTimerVisible(false);
+      hideStripTimer();
       showWaitingOverlay(timedOut ? "Time's up" : undefined);
       publishAnswers(Boolean(timedOut));
     };
@@ -293,6 +290,7 @@ export default {
       waitMsg.textContent = text || waitMessageDefault;
       waitMsg.style.display = "";
       setButtonsEnabled(false);
+      hideStripTimer();
     };
 
     async function publishAnswers(timedOut = false) {
@@ -316,6 +314,7 @@ export default {
         published = true;
         submitting = false;
         stopTimer();
+        hideStripTimer();
         const note = timedOut ? "Time's up" : "Waiting for opponent";
         showWaitingOverlay(note);
       } catch (err) {
@@ -351,14 +350,14 @@ export default {
       btnWrap.style.display = "none";
       waitMsg.textContent = "Preparing questions…";
       waitMsg.style.display = "";
-      setTimerVisible(false);
+      hideStripTimer();
     } else if (existingAns.length === 3) {
       published = true;
       idx = 3;
       btnWrap.style.display = "none";
       waitMsg.style.display = "none";
       stopTimer();
-      setTimerVisible(false);
+      hideStripTimer();
       showWaitingOverlay();
     } else {
       presentQuestion();
@@ -368,6 +367,7 @@ export default {
       const data = snap.data() || {};
 
       if (data.state === "marking") {
+        hideStripTimer();
         setTimeout(() => {
           location.hash = `#/marking?code=${code}&round=${round}`;
         }, 80);
@@ -375,6 +375,7 @@ export default {
       }
 
       if (data.state === "countdown") {
+        hideStripTimer();
         setTimeout(() => {
           location.hash = `#/countdown?code=${code}&round=${data.round || round}`;
         }, 80);
@@ -382,6 +383,7 @@ export default {
       }
 
       if (data.state === "award") {
+        hideStripTimer();
         setTimeout(() => {
           location.hash = `#/award?code=${code}&round=${round}`;
         }, 80);
@@ -419,6 +421,7 @@ export default {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
       stopTimer();
+      hideStripTimer();
     };
   },
 

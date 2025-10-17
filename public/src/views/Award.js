@@ -17,6 +17,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { getPlaceholderItems, hasUsableItems } from "../lib/placeholders.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -185,8 +186,14 @@ export default {
 
     const rdSnap = await getDoc(rdRef);
     const rd = rdSnap.data() || {};
-    reviewData.hostItems = Array.isArray(rd.hostItems) ? rd.hostItems : [];
-    reviewData.guestItems = Array.isArray(rd.guestItems) ? rd.guestItems : [];
+    const rawHostItems = Array.isArray(rd.hostItems) ? rd.hostItems : [];
+    const rawGuestItems = Array.isArray(rd.guestItems) ? rd.guestItems : [];
+    reviewData.hostItems = hasUsableItems(rawHostItems)
+      ? rawHostItems
+      : getPlaceholderItems("host", round);
+    reviewData.guestItems = hasUsableItems(rawGuestItems)
+      ? rawGuestItems
+      : getPlaceholderItems("guest", round);
 
     const answersHost0 = (((roomData0.answers || {}).host || {})[round] || []);
     const answersGuest0 = (((roomData0.answers || {}).guest || {})[round] || []);
