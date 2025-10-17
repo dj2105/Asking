@@ -1,10 +1,10 @@
 // /src/views/Marking.js
 //
-// Marking phase — judge opponent answers, record timings, and await the snippet verdict.
-// • Shows exactly three rows (opponent questions + their chosen answers).
-// • Verdict buttons: ✓ (definitely right) / ✕ (absolutely wrong) / I DUNNO (unsure capture).
-// • Submission writes marking.{role}.{round}, markingAck.{role}.{round} = true, and timing metadata for snippet race.
-// • Host waits for both totals, computes the snippet winner, mirrors retained flags, and advances to award.
+// Marking phase — judge opponent answers with a single 30s countdown.
+// • Shows opponent questions + chosen answers with ✓/✕/I DUNNO toggles.
+// • Countdown submits automatically when it reaches zero (unmarked entries submit as UNKNOWN).
+// • Submission writes marking.{role}.{round}, markingAck.{role}.{round} = true.
+// • Host advances to Award once both acknowledgements are present.
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import {
@@ -12,7 +12,6 @@ import {
   collection,
   getDoc,
   onSnapshot,
-  setDoc,
   updateDoc,
   serverTimestamp,
   runTransaction,
@@ -27,6 +26,7 @@ const mountMathsPane =
    null);
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
+const MARKING_LIMIT_MS = 30_000;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -44,6 +44,24 @@ function el(tag, attrs = {}, kids = []) {
 
 function same(a, b) {
   return String(a || "").trim() === String(b || "").trim();
+}
+
+function resolveCorrectAnswer(answer = {}, fallbackItem = {}) {
+  if (answer.correct) return answer.correct;
+  if (fallbackItem.correct_answer) return fallbackItem.correct_answer;
+  return "";
+}
+
+function countCorrectAnswers(answers = [], items = []) {
+  let total = 0;
+  for (let i = 0; i < answers.length; i += 1) {
+    const answer = answers[i] || {};
+    const chosen = answer.chosen || "";
+    if (!chosen) continue;
+    const correct = resolveCorrectAnswer(answer, items[i] || {});
+    if (correct && same(chosen, correct)) total += 1;
+  }
+  return total;
 }
 
 const roomRef = (code) => doc(db, "rooms", code);
@@ -68,18 +86,21 @@ export default {
 
     const list = el("div", { class: "qa-list" });
 
-    const timerRow = el("div", { class: "timer-row" });
-    const timerDisplay = el("div", { class: "mono timer-display" }, "0");
-    const doneBtn = el("button", {
-      class: "btn outline timer-button",
-      disabled: ""
-    }, "STOP THE CLOCK!");
+    const timerRow = el("div", { class: "timer-row timer-row--top" });
+    const timerDisplay = el("div", { class: "mono timer-display" }, String(MARKING_LIMIT_MS / 1000));
     timerRow.appendChild(timerDisplay);
-    timerRow.appendChild(doneBtn);
 
+    const submitBtn = el("button", {
+      class: "btn outline timer-button",
+      disabled: "",
+    }, "SUBMIT MARKING");
+    const submitRow = el("div", { class: "mark-submit-row" });
+    submitRow.appendChild(submitBtn);
+
+    root.appendChild(timerRow);
     card.appendChild(heading);
     card.appendChild(list);
-    card.appendChild(timerRow);
+    card.appendChild(submitRow);
 
     root.appendChild(card);
 
@@ -98,6 +119,7 @@ export default {
     const setStageVisible = (visible) => {
       card.style.display = visible ? "" : "none";
       mathsMount.style.display = visible ? "" : "none";
+      timerRow.style.display = visible ? "flex" : "none";
     };
 
     const showOverlay = (title, note) => {
@@ -114,7 +136,6 @@ export default {
 
     const rRef = roomRef(code);
     const rdRef = doc(roundSubColRef(code), String(round));
-    const playerRef = doc(rRef, "players", me.uid);
 
     const roomSnap = await getDoc(rRef);
     const roomData0 = roomSnap.data() || {};
@@ -126,106 +147,6 @@ export default {
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
 
-    const fallbackStartAt = Number((roomData0.countdown || {}).startAt || 0) || null;
-    const markingEnterAt = Date.now();
-    let published = false;
-    let submitting = false;
-    let stopRoomWatch = null;
-    let stopRoundWatch = null;
-    let snippetResolved = false;
-    let finalizeInFlight = false;
-    let latestTotalForMe = null;
-    let latestRoundTimings = {};
-    let timerInterval = null;
-    let timerFrozen = false;
-    let timerFrozenMs = null;
-    let questionStartAt = null;
-    let qDoneMsLatest = null;
-    let timerOffsetMs = 0;
-
-    const uniqueList = (arr = []) => Array.from(new Set(arr.filter((v) => Boolean(v))));
-    const resolveTimingForRole = (timings = {}, roleName, fallbackIds = []) => {
-      const want = String(roleName || "").toLowerCase();
-      if (!want) return null;
-      const entries = Object.entries(timings || {});
-      for (const [uid, infoRaw] of entries) {
-        const info = infoRaw || {};
-        const got = String(info.role || "").toLowerCase();
-        if (got === want) {
-          return { uid, info };
-        }
-      }
-      const fallbacks = uniqueList(fallbackIds);
-      for (const candidate of fallbacks) {
-        if (candidate && Object.prototype.hasOwnProperty.call(timings || {}, candidate)) {
-          return { uid: candidate, info: (timings || {})[candidate] || {} };
-        }
-      }
-      if (entries.length === 1) {
-        const [uid, infoRaw] = entries[0];
-        return { uid, info: infoRaw || {} };
-      }
-      return null;
-    };
-
-    const baseQuestionStart = () => {
-      if (Number.isFinite(questionStartAt) && questionStartAt > 0) return questionStartAt;
-      if (Number.isFinite(fallbackStartAt) && fallbackStartAt > 0) return fallbackStartAt;
-      return null;
-    };
-
-    const computeQuestionSegment = (qDoneValue) => {
-      const base = baseQuestionStart();
-      if (Number.isFinite(qDoneValue) && Number.isFinite(base)) {
-        return Math.max(0, qDoneValue - base);
-      }
-      return 0;
-    };
-
-    const formatSeconds = (ms) => {
-      if (!Number.isFinite(ms) || ms < 0) return "0";
-      const secs = Math.floor(ms / 1000);
-      return String(secs);
-    };
-
-    const formatSecondsPrecise = (ms) => {
-      if (!Number.isFinite(ms) || ms < 0) return "0.0";
-      const secs = ms / 1000;
-      return secs.toFixed(1);
-    };
-
-    const liveElapsedMs = () => timerOffsetMs + Math.max(0, Date.now() - markingEnterAt);
-
-    const updateTimerDisplay = () => {
-      if (timerFrozen) {
-        const frozen = Number.isFinite(timerFrozenMs) ? timerFrozenMs : liveElapsedMs();
-        timerDisplay.textContent = formatSeconds(frozen);
-        return;
-      }
-      timerDisplay.textContent = formatSeconds(liveElapsedMs());
-    };
-
-    const refreshTimerOffset = () => {
-      const next = computeQuestionSegment(qDoneMsLatest);
-      timerOffsetMs = Number.isFinite(next) ? next : 0;
-      if (!timerFrozen) updateTimerDisplay();
-    };
-
-    const freezeTimer = (ms) => {
-      if (timerFrozen && Number.isFinite(timerFrozenMs)) return;
-      timerFrozen = true;
-      if (Number.isFinite(ms)) timerFrozenMs = Math.max(0, ms);
-      else timerFrozenMs = liveElapsedMs();
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      updateTimerDisplay();
-    };
-
-    timerInterval = setInterval(updateTimerDisplay, 250);
-    updateTimerDisplay();
-
     try {
       if (mountMathsPane && roomData0.maths) {
         mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
@@ -236,61 +157,118 @@ export default {
 
     const rdSnap = await getDoc(rdRef);
     const rd = rdSnap.data() || {};
-    latestRoundTimings = rd.timings || {};
-    const timingsMeta0 = rd.timingsMeta || {};
-    if (Number(timingsMeta0.questionsStartAt)) {
-      const candidate = Number(timingsMeta0.questionsStartAt);
-      if (Number.isFinite(candidate) && candidate > 0) {
-        questionStartAt = candidate;
-      }
-    }
-    const myTimingInit = latestRoundTimings[me.uid] || {};
-    if (Number(myTimingInit.qDoneMs)) {
-      const candidate = Number(myTimingInit.qDoneMs);
-      if (Number.isFinite(candidate) && candidate > 0) {
-        qDoneMsLatest = candidate;
-      }
-    }
-    try {
-      const playerSnap0 = await getDoc(playerRef);
-      const playerData0 = playerSnap0.data() || {};
-      const qDoneFromPlayer = Number((((playerData0.rounds || {})[round] || {}).timings || {}).qDoneMs);
-      if (!Number.isFinite(qDoneMsLatest) && Number.isFinite(qDoneFromPlayer) && qDoneFromPlayer > 0) {
-        qDoneMsLatest = qDoneFromPlayer;
-      }
-    } catch (err) {
-      console.warn("[marking] failed to read player timing:", err);
-    }
-    refreshTimerOffset();
     const oppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
     const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
 
     let marks = [null, null, null];
-    const disableFns = [];
+    let published = false;
+    let submitting = false;
+    let countdownDeadline = null;
+    let countdownInterval = null;
+    let countdownExpired = false;
 
-    const showPostSubmit = (totalMs) => {
-      let finalMs = Number.isFinite(totalMs) ? Math.max(0, Number(totalMs)) : liveElapsedMs();
-      if (!Number.isFinite(finalMs) || finalMs < 0) finalMs = 0;
-      latestTotalForMe = finalMs;
-      freezeTimer(finalMs);
-      doneBtn.disabled = true;
-      doneBtn.classList.remove("throb");
-      doneBtn.style.pointerEvents = "none";
-      const timeText = formatSecondsPrecise(finalMs);
-      showOverlay(`Waiting for ${oppName}`, `Round completed in ${timeText}s`);
+    const disableFns = [];
+    const reflectFns = [];
+
+    const setTimerValue = (secs) => {
+      timerDisplay.textContent = String(Math.max(0, secs));
+    };
+
+    const stopCountdown = () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    };
+
+    const updateCountdown = () => {
+      if (!countdownDeadline) {
+        setTimerValue(0);
+        return;
+      }
+      const remainingMs = countdownDeadline - Date.now();
+      const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+      setTimerValue(remainingSeconds);
+      if (remainingSeconds <= 0 && !countdownExpired) {
+        countdownExpired = true;
+        stopCountdown();
+        handleTimeout();
+      }
+    };
+
+    const startCountdown = () => {
+      if (published || countdownInterval) return;
+      if (!countdownDeadline) countdownDeadline = Date.now() + MARKING_LIMIT_MS;
+      countdownExpired = false;
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 200);
+    };
+
+    const markValue = (value) => {
+      if (value === VERDICT.RIGHT) return VERDICT.RIGHT;
+      if (value === VERDICT.WRONG) return VERDICT.WRONG;
+      return VERDICT.UNKNOWN;
+    };
+
+    const showWaitingOverlay = (note) => {
+      showOverlay(`Waiting for ${oppName}`, note || "Waiting for opponent");
     };
 
     const updateDoneState = () => {
       if (published) {
-        doneBtn.disabled = true;
-        doneBtn.classList.remove("throb");
+        submitBtn.disabled = true;
+        submitBtn.classList.remove("throb");
         return;
       }
       const ready = marks.every((v) =>
         v === VERDICT.RIGHT || v === VERDICT.WRONG || v === VERDICT.UNKNOWN
       );
-      doneBtn.disabled = !(ready && !submitting);
-      doneBtn.classList.toggle("throb", ready && !submitting);
+      submitBtn.disabled = !(ready && !submitting);
+      submitBtn.classList.toggle("throb", ready && !submitting);
+    };
+
+    const handleTimeout = () => {
+      if (published || submitting) return;
+      marks = marks.map((value) => markValue(value));
+      reflectFns.forEach((fn) => { try { fn(); } catch {} });
+      updateDoneState();
+      submitMarks(true);
+    };
+
+    const submitMarks = async (timedOut = false) => {
+      if (published || submitting) return;
+      submitting = true;
+      countdownExpired = true;
+      const remainingMs = countdownDeadline ? Math.max(0, countdownDeadline - Date.now()) : 0;
+      stopCountdown();
+
+      const safeMarks = marks.map((value) => markValue(value));
+      const patch = {
+        [`marking.${myRole}.${round}`]: safeMarks,
+        [`markingAck.${myRole}.${round}`]: true,
+        "timestamps.updatedAt": serverTimestamp(),
+      };
+
+      try {
+        await updateDoc(rRef, patch);
+        published = true;
+        marks = safeMarks;
+        disableFns.forEach((fn) => { try { fn(); } catch {} });
+        submitBtn.disabled = true;
+        submitBtn.classList.remove("throb");
+        setTimerValue(0);
+        showWaitingOverlay(timedOut ? "Time's up" : "Review submitted");
+      } catch (err) {
+        console.warn("[marking] submit failed:", err);
+        submitting = false;
+        if (!published) {
+          countdownDeadline = Date.now() + (remainingMs || 3_000);
+          countdownExpired = false;
+          startCountdown();
+          updateDoneState();
+          hideOverlay();
+        }
+      }
     };
 
     const buildRow = (idx, question, chosen) => {
@@ -391,6 +369,8 @@ export default {
         btnWrong.classList.remove("throb");
         btnUnknown.classList.remove("throb");
       });
+      reflectFns.push(reflect);
+      reflect();
 
       return row;
     };
@@ -404,117 +384,30 @@ export default {
 
     const existingMarks = (((roomData0.marking || {})[myRole] || {})[round] || []);
     if (Array.isArray(existingMarks) && existingMarks.length === 3) {
-      marks = existingMarks.map((v) => {
-        if (v === VERDICT.RIGHT) return VERDICT.RIGHT;
-        if (v === VERDICT.WRONG) return VERDICT.WRONG;
-        return VERDICT.UNKNOWN;
-      });
+      marks = existingMarks.map((v) => markValue(v));
       published = true;
+      reflectFns.forEach((fn) => { try { fn(); } catch {} });
       disableFns.forEach((fn) => { try { fn(); } catch {} });
-      latestTotalForMe = Number((latestRoundTimings[me.uid] || {}).totalMs) || null;
-      showPostSubmit(latestTotalForMe);
+      setTimerValue(0);
+      showWaitingOverlay("Review submitted");
+    } else {
+      countdownDeadline = Date.now() + MARKING_LIMIT_MS;
+      startCountdown();
+      hideOverlay();
     }
 
     updateDoneState();
 
-    const publish = async () => {
-      if (published || submitting) return;
-      const ready = marks.every((v) =>
-        v === VERDICT.RIGHT || v === VERDICT.WRONG || v === VERDICT.UNKNOWN
-      );
-      if (!ready) return;
+    submitBtn.addEventListener("click", () => {
+      submitMarks(false);
+    });
 
-      submitting = true;
-      updateDoneState();
+    let stopRoomWatch = null;
+    let finalizing = false;
 
-      const safeMarks = marks.map((v) => {
-        if (v === VERDICT.RIGHT) return VERDICT.RIGHT;
-        if (v === VERDICT.WRONG) return VERDICT.WRONG;
-        return VERDICT.UNKNOWN;
-      });
-      const markDoneMs = Date.now();
-
-      let qDoneMs = null;
-      try {
-        const latest = await getDoc(rdRef);
-        const latestData = latest.data() || {};
-        latestRoundTimings = latestData.timings || {};
-        const candidate = (latestRoundTimings[me.uid] || {}).qDoneMs;
-        if (Number(candidate)) {
-          qDoneMs = Number(candidate);
-          if (Number.isFinite(qDoneMs) && qDoneMs > 0) {
-            qDoneMsLatest = qDoneMs;
-          }
-        }
-      } catch (err) {
-        console.warn("[marking] failed to read round timings:", err);
-      }
-
-      if (!Number.isFinite(qDoneMs) || qDoneMs <= 0) {
-        try {
-          const playerSnap = await getDoc(playerRef);
-          const playerData = playerSnap.data() || {};
-          const candidate = (((playerData.rounds || {})[round] || {}).timings || {}).qDoneMs;
-          if (Number(candidate)) {
-            qDoneMs = Number(candidate);
-            if (Number.isFinite(qDoneMs) && qDoneMs > 0) {
-              qDoneMsLatest = qDoneMs;
-            }
-            await setDoc(rdRef, { timings: { [me.uid]: { qDoneMs } } }, { merge: true });
-          }
-        } catch (err) {
-          console.warn("[marking] qDone fallback failed:", err);
-        }
-      }
-
-      refreshTimerOffset();
-
-      const qSeg = computeQuestionSegment(qDoneMsLatest);
-      const mSeg = Math.max(0, markDoneMs - markingEnterAt);
-      const totalMs = Math.max(0, qSeg + mSeg);
-      latestTotalForMe = totalMs;
-
-      const patch = {};
-      patch[`marking.${myRole}.${round}`] = safeMarks;
-      patch[`markingAck.${myRole}.${round}`] = true;
-      patch["timestamps.updatedAt"] = serverTimestamp();
-
-      const roundTimingPayload = { timings: { [me.uid]: { markDoneMs, totalMs, role: myRole } } };
-      if (Number.isFinite(qDoneMs) && qDoneMs > 0) {
-        roundTimingPayload.timings[me.uid].qDoneMs = qDoneMs;
-      }
-
-      const playerTimingPayload = { rounds: {} };
-      playerTimingPayload.rounds[round] = { timings: { markDoneMs, role: myRole } };
-      if (Number.isFinite(qDoneMs) && qDoneMs > 0) {
-        playerTimingPayload.rounds[round].timings.qDoneMs = qDoneMs;
-      }
-
-      try {
-        console.log(`[flow] submit marking | code=${code} round=${round} role=${myRole}`);
-        await Promise.all([
-          updateDoc(rRef, patch),
-          setDoc(rdRef, roundTimingPayload, { merge: true }),
-          setDoc(playerRef, playerTimingPayload, { merge: true })
-        ]);
-        marks = safeMarks;
-        published = true;
-        submitting = false;
-        disableFns.forEach((fn) => { try { fn(); } catch {} });
-        showPostSubmit(totalMs);
-        updateDoneState();
-      } catch (err) {
-        console.warn("[marking] publish failed:", err);
-        submitting = false;
-        updateDoneState();
-      }
-    };
-
-    doneBtn.addEventListener("click", publish);
-
-    const finalizeSnippet = async (attempt = 0) => {
-      if (snippetResolved || finalizeInFlight) return;
-      finalizeInFlight = true;
+    const finalizeRound = async () => {
+      if (finalizing) return;
+      finalizing = true;
       try {
         await runTransaction(db, async (tx) => {
           const roomSnapCur = await tx.get(rRef);
@@ -522,46 +415,22 @@ export default {
           const roomData = roomSnapCur.data() || {};
           if ((roomData.state || "").toLowerCase() !== "marking") return;
 
-          const meta = roomData.meta || {};
-          const hostId = meta.hostUid || hostUid || "";
-          const guestId = meta.guestUid || guestUid || "";
           const ackHost = Boolean(((roomData.markingAck || {}).host || {})[round]);
           const ackGuest = Boolean(((roomData.markingAck || {}).guest || {})[round]);
           if (!(ackHost && ackGuest)) return;
 
           const roundSnapCur = await tx.get(rdRef);
-          if (!roundSnapCur.exists()) return;
-          const roundData = roundSnapCur.data() || {};
-          const timings = roundData.timings || {};
-          const hostEntry = resolveTimingForRole(timings, "host", [meta.hostUid, hostUid]);
-          const guestEntry = resolveTimingForRole(timings, "guest", [meta.guestUid, guestUid]);
-          if (!hostEntry || !guestEntry) return;
-
-          const hostTotalRaw = hostEntry.info?.totalMs;
-          const guestTotalRaw = guestEntry.info?.totalMs;
-          if (!Number.isFinite(hostTotalRaw) || !Number.isFinite(guestTotalRaw)) return;
-          const hostTotal = Number(hostTotalRaw);
-          const guestTotal = Number(guestTotalRaw);
-
-          const diff = Math.abs(hostTotal - guestTotal);
-          const tie = diff <= 1;
-
-          let winnerUid = null;
-          if (!tie) {
-            if (hostTotal < guestTotal) winnerUid = hostEntry.uid;
-            else if (guestTotal < hostTotal) winnerUid = guestEntry.uid;
-          }
-
+          const roundData = roundSnapCur.exists() ? (roundSnapCur.data() || {}) : {};
           const answersHost = (((roomData.answers || {}).host || {})[round] || []);
           const answersGuest = (((roomData.answers || {}).guest || {})[round] || []);
-          const countCorrect = (arr) => arr.reduce((acc, ans) =>
-            acc + (same(ans?.chosen, ans?.correct) ? 1 : 0), 0);
-          const roundHostScore = countCorrect(answersHost);
-          const roundGuestScore = countCorrect(answersGuest);
+          const hostItems = roundData.hostItems || [];
+          const guestItems = roundData.guestItems || [];
+
+          const roundHostScore = countCorrectAnswers(answersHost, hostItems);
+          const roundGuestScore = countCorrectAnswers(answersGuest, guestItems);
           const baseScores = ((roomData.scores || {}).questions) || {};
           const nextHost = Number(baseScores.host || 0) + roundHostScore;
           const nextGuest = Number(baseScores.guest || 0) + roundGuestScore;
-
           const currentRound = Number(roomData.round) || round;
 
           tx.update(rRef, {
@@ -569,119 +438,74 @@ export default {
             round: currentRound,
             "scores.questions.host": nextHost,
             "scores.questions.guest": nextGuest,
-            "marking.startAt": null,
-            "countdown.startAt": null,
             "timestamps.updatedAt": serverTimestamp(),
           });
-
-          tx.set(rdRef, { snippetWinnerUid: winnerUid || null, snippetTie: tie }, { merge: true });
-
-          const hostWon = tie || (winnerUid && winnerUid === hostEntry.uid);
-          const guestWon = tie || (winnerUid && winnerUid === guestEntry.uid);
-          const hostDocIds = uniqueList([hostEntry.uid, hostId, meta.hostUid]);
-          const guestDocIds = uniqueList([guestEntry.uid, guestId, meta.guestUid]);
-
-          hostDocIds.forEach((id) => {
-            if (!id) return;
-            const patchHost = { retainedSnippets: {} };
-            patchHost.retainedSnippets[round] = hostWon;
-            tx.set(doc(rRef, "players", id), patchHost, { merge: true });
-          });
-          guestDocIds.forEach((id) => {
-            if (!id) return;
-            const patchGuest = { retainedSnippets: {} };
-            patchGuest.retainedSnippets[round] = guestWon;
-            tx.set(doc(rRef, "players", id), patchGuest, { merge: true });
-          });
         });
-        snippetResolved = true;
       } catch (err) {
         console.warn("[marking] finalize failed:", err);
-        if (attempt < 2) {
-          setTimeout(() => finalizeSnippet(attempt + 1), 400 * (attempt + 1));
-        }
       } finally {
-        finalizeInFlight = false;
+        finalizing = false;
       }
     };
 
     stopRoomWatch = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
-      if (data.state === "countdown") {
+      const stateName = (data.state || "").toLowerCase();
+
+      if (stateName === "countdown") {
         setTimeout(() => {
           location.hash = `#/countdown?code=${code}&round=${data.round || round}`;
         }, 80);
         return;
       }
 
-      if (data.state === "questions") {
+      if (stateName === "questions") {
         setTimeout(() => {
           location.hash = `#/questions?code=${code}&round=${data.round || round}`;
         }, 80);
         return;
       }
 
-      if (data.state === "award") {
+      if (stateName === "award") {
         setTimeout(() => {
           location.hash = `#/award?code=${code}&round=${data.round || round}`;
         }, 80);
         return;
       }
 
-      if (data.state === "maths") {
+      if (stateName === "maths") {
         setTimeout(() => { location.hash = `#/maths?code=${code}`; }, 80);
+        return;
+      }
+
+      const markingAck = data.markingAck || {};
+      const ackMine = Boolean(((markingAck[myRole] || {})[round]));
+      const ackOpp = Boolean(((markingAck[oppRole] || {})[round]));
+
+      if (ackMine && !published) {
+        marks = (((data.marking || {})[myRole] || {})[round] || marks).map((v) => markValue(v));
+        published = true;
+        reflectFns.forEach((fn) => { try { fn(); } catch {} });
+        disableFns.forEach((fn) => { try { fn(); } catch {} });
+        stopCountdown();
+        setTimerValue(0);
+        showWaitingOverlay(ackOpp ? "Waiting for opponent" : "Review submitted");
+        submitBtn.disabled = true;
+        submitBtn.classList.remove("throb");
+      }
+
+      if (myRole === "host" && stateName === "marking" && ackMine && ackOpp) {
+        finalizeRound();
       }
     }, (err) => {
       console.warn("[marking] room snapshot error:", err);
     });
 
-    stopRoundWatch = onSnapshot(rdRef, (snap) => {
-      const data = snap.data() || {};
-      if (Number(data?.timingsMeta?.questionsStartAt)) {
-        const candidate = Number(data.timingsMeta.questionsStartAt);
-        if (Number.isFinite(candidate) && candidate > 0) {
-          questionStartAt = candidate;
-        }
-      }
-
-      latestRoundTimings = data.timings || {};
-      const myTiming = latestRoundTimings[me.uid] || {};
-      if (Number(myTiming.qDoneMs)) {
-        const candidate = Number(myTiming.qDoneMs);
-        if (Number.isFinite(candidate) && candidate > 0) {
-          qDoneMsLatest = candidate;
-        }
-      }
-      refreshTimerOffset();
-
-      if (published && !latestTotalForMe) {
-        const myTiming = latestRoundTimings[me.uid] || {};
-        if (Number(myTiming.totalMs)) {
-          latestTotalForMe = Number(myTiming.totalMs);
-          showPostSubmit(latestTotalForMe);
-        }
-      }
-
-      const hostTimingEntry = resolveTimingForRole(latestRoundTimings, "host", [hostUid]);
-      const guestTimingEntry = resolveTimingForRole(latestRoundTimings, "guest", [guestUid]);
-      const hostReady = Boolean(hostTimingEntry && Number.isFinite(Number(hostTimingEntry.info?.totalMs)));
-      const guestReady = Boolean(guestTimingEntry && Number.isFinite(Number(guestTimingEntry.info?.totalMs)));
-      if (hostReady && guestReady && myRole === "host" && !snippetResolved) {
-        finalizeSnippet();
-      }
-
-    }, (err) => {
-      console.warn("[marking] round snapshot error:", err);
-    });
-
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
-      try { stopRoundWatch && stopRoundWatch(); } catch {}
-      if (timerInterval) {
-        try { clearInterval(timerInterval); } catch {}
-      }
+      stopCountdown();
     };
   },
 
-  async unmount() { /* instance cleanup handled above */ }
+  async unmount() { /* instance handles cleanup */ }
 };

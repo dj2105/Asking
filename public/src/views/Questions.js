@@ -12,7 +12,6 @@ import {
   doc,
   collection,
   getDoc,
-  setDoc,
   updateDoc,
   onSnapshot,
   serverTimestamp,
@@ -65,9 +64,14 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
+    const timerRow = el("div", { class: "timer-row timer-row--top" });
+    const timerDisplay = el("div", { class: "mono timer-display" }, "10");
+    timerRow.appendChild(timerDisplay);
+    timerRow.style.display = "none";
     const heading = el("div", { class: "mono question-title" }, "QUESTION 1/3");
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
+    root.appendChild(timerRow);
     card.appendChild(heading);
     card.appendChild(qText);
 
@@ -97,9 +101,18 @@ export default {
 
     container.appendChild(root);
 
+    let stageVisible = true;
+    let timerActive = false;
+
+    const syncTimerDisplay = () => {
+      timerRow.style.display = stageVisible && timerActive ? "flex" : "none";
+    };
+
     const setStageVisible = (visible) => {
+      stageVisible = visible;
       card.style.display = visible ? "" : "none";
       mathsMount.style.display = visible ? "" : "none";
+      syncTimerDisplay();
     };
 
     const showOverlay = (title, note) => {
@@ -131,7 +144,6 @@ export default {
     }
 
     const rdRef = doc(roundSubColRef(code), String(round));
-    const playerRef = doc(roomRef(code), "players", me.uid);
     const { hostUid, guestUid } = room0.meta || {};
     const storedRole = getStoredRole(code);
     const myRole = storedRole === "host" || storedRole === "guest"
@@ -143,8 +155,8 @@ export default {
     waitMsg.textContent = waitMessageDefault;
 
     const overlayWaiting = () => `Waiting for ${oppName}`;
-    const showPostSubmitOverlay = () => {
-      showOverlay(overlayWaiting(), "Round timer paused");
+    const showWaitingOverlay = (note) => {
+      showOverlay(overlayWaiting(), note || "Waiting for opponent");
     };
 
     try {
@@ -156,14 +168,65 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    let roundStartAt = Number((room0.countdown || {}).startAt || 0) || 0;
-    let qDoneMsLocal = null;
+    const QUESTION_LIMIT_SECONDS = 10;
+    const QUESTION_LIMIT_MS = QUESTION_LIMIT_SECONDS * 1000;
+    let timerDeadline = null;
+    let timerInterval = null;
 
     const setButtonsEnabled = (enabled) => {
       btn1.disabled = !enabled;
       btn2.disabled = !enabled;
       btn1.classList.toggle("throb", enabled);
       btn2.classList.toggle("throb", enabled);
+    };
+
+    const setTimerVisible = (visible) => {
+      timerActive = visible;
+      syncTimerDisplay();
+    };
+
+    const updateTimerDisplay = () => {
+      if (!timerDeadline) return;
+      const remainingMs = timerDeadline - Date.now();
+      const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+      timerDisplay.textContent = String(remainingSeconds);
+      if (remainingSeconds <= 0) {
+        stopTimer();
+        handleTimeout();
+      }
+    };
+
+    const startQuestionTimer = () => {
+      stopTimer();
+      timerDeadline = Date.now() + QUESTION_LIMIT_MS;
+      updateTimerDisplay();
+      timerInterval = setInterval(updateTimerDisplay, 200);
+    };
+
+    const stopTimer = () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timerDeadline = null;
+    };
+
+    const handleTimeout = () => {
+      if (published || submitting) return;
+      stopTimer();
+      if (idx >= triplet.length) {
+        finishRound(true);
+        return;
+      }
+      if (typeof chosen[idx] !== "string") {
+        chosen[idx] = "";
+      }
+      idx += 1;
+      if (idx >= triplet.length) {
+        finishRound(true);
+      } else {
+        presentQuestion();
+      }
     };
 
     const waitForRoundData = async () => {
@@ -215,6 +278,25 @@ export default {
       btn2.textContent = cur?.options?.[1] || "";
     }
 
+    const presentQuestion = () => {
+      if (idx >= triplet.length) return;
+      btnWrap.style.display = "flex";
+      waitMsg.style.display = "none";
+      setButtonsEnabled(true);
+      renderIndex();
+      setTimerVisible(true);
+      timerDisplay.textContent = String(QUESTION_LIMIT_SECONDS);
+      startQuestionTimer();
+    };
+
+    const finishRound = (timedOut) => {
+      setButtonsEnabled(false);
+      waitMsg.style.display = "none";
+      setTimerVisible(false);
+      showWaitingOverlay(timedOut ? "Time's up" : undefined);
+      publishAnswers(Boolean(timedOut));
+    };
+
     const showWaitingState = (text) => {
       hideOverlay();
       btnWrap.style.display = "none";
@@ -223,7 +305,7 @@ export default {
       setButtonsEnabled(false);
     };
 
-    async function publishAnswers() {
+    async function publishAnswers(timedOut = false) {
       if (submitting || published) return;
       submitting = true;
 
@@ -243,7 +325,9 @@ export default {
         await updateDoc(rRef, patch);
         published = true;
         submitting = false;
-        showPostSubmitOverlay();
+        stopTimer();
+        const note = timedOut ? "Time's up" : "Waiting for opponent";
+        showWaitingOverlay(note);
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
@@ -253,34 +337,15 @@ export default {
       }
     }
 
-    const recordQuestionTiming = (ms) => {
-      if (!ms) return;
-      qDoneMsLocal = ms;
-      const roundTimingPatch = { timings: { [me.uid]: { qDoneMs: ms, role: myRole } } };
-      setDoc(rdRef, roundTimingPatch, { merge: true }).catch((err) => {
-        console.warn("[questions] failed to write round timing:", err);
-      });
-      const playerTimingPatch = { rounds: { [round]: { timings: { qDoneMs: ms, role: myRole } } } };
-      setDoc(playerRef, playerTimingPatch, { merge: true }).catch((err) => {
-        console.warn("[questions] failed to mirror player timing:", err);
-      });
-    };
-
     function onPick(text) {
       if (published || submitting) return;
+      stopTimer();
       chosen[idx] = text;
       idx += 1;
       if (idx >= 3) {
-        setButtonsEnabled(false);
-        waitMsg.style.display = "none";
-        if (!qDoneMsLocal) {
-          const stamp = Date.now();
-          recordQuestionTiming(stamp);
-        }
-        showPostSubmitOverlay();
-        publishAnswers();
+        finishRound(false);
       } else {
-        renderIndex();
+        presentQuestion();
       }
     }
 
@@ -292,28 +357,25 @@ export default {
     );
 
     if (!tripletReady) {
+      stopTimer();
       btnWrap.style.display = "none";
       waitMsg.textContent = "Preparing questions…";
       waitMsg.style.display = "";
+      setTimerVisible(false);
     } else if (existingAns.length === 3) {
       published = true;
       idx = 3;
       btnWrap.style.display = "none";
       waitMsg.style.display = "none";
-      showPostSubmitOverlay();
+      stopTimer();
+      setTimerVisible(false);
+      showWaitingOverlay();
     } else {
-      btnWrap.style.display = "flex";
-      waitMsg.style.display = "none";
-      setButtonsEnabled(true);
-      renderIndex();
+      presentQuestion();
     }
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
-
-      if (Number((data.countdown || {}).startAt)) {
-        roundStartAt = Number(data.countdown.startAt);
-      }
 
       if (data.state === "marking") {
         setTimeout(() => {
@@ -339,7 +401,7 @@ export default {
         const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
         const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
         if (myDone && !oppDone) {
-          showPostSubmitOverlay();
+          showWaitingOverlay();
         }
       }
 
@@ -352,7 +414,6 @@ export default {
             console.log(`[flow] questions -> marking | code=${code} round=${round} role=${myRole}`);
             await updateDoc(rRef, {
               state: "marking",
-              "marking.startAt": Date.now(),
               "timestamps.updatedAt": serverTimestamp()
             });
           } catch (err) {
@@ -367,6 +428,7 @@ export default {
     this.unmount = () => {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
+      stopTimer();
     };
   },
 
