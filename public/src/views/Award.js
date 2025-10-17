@@ -43,15 +43,6 @@ function same(a, b) {
   return String(a || "").trim() === String(b || "").trim();
 }
 
-function ordinal(nRaw) {
-  const n = Math.abs(Math.round(Number(nRaw) || 0));
-  const v = n % 100;
-  const suffix = v >= 11 && v <= 13
-    ? "th"
-    : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th");
-  return `${n}${suffix}`;
-}
-
 function resolveCorrectAnswer(answer = {}, fallbackItem = {}) {
   if (answer.correct) return answer.correct;
   if (fallbackItem.correct_answer) return fallbackItem.correct_answer;
@@ -137,38 +128,6 @@ function renderQuestionSection({ heading, items, answers, round }) {
 const roomRef = (code) => doc(db, "rooms", code);
 const roundSubColRef = (code) => collection(roomRef(code), "rounds");
 
-const resolveTimingForRole = (timings = {}, roleName, fallbacks = []) => {
-  const want = String(roleName || "").toLowerCase();
-  if (!want) return null;
-  const entries = Object.entries(timings || {});
-  for (const [uid, infoRaw] of entries) {
-    const info = infoRaw || {};
-    if (String(info.role || "").toLowerCase() === want) {
-      return { uid, info };
-    }
-  }
-  for (const candidate of fallbacks) {
-    if (!candidate) continue;
-    if (Object.prototype.hasOwnProperty.call(timings || {}, candidate)) {
-      return { uid: candidate, info: (timings || {})[candidate] || {} };
-    }
-  }
-  if (entries.length === 1) {
-    const [uid, infoRaw] = entries[0];
-    return { uid, info: infoRaw || {} };
-  }
-  return null;
-};
-
-const formatSeconds = (ms) => {
-  if (!Number.isFinite(ms) || ms < 0) return "— s";
-  const secs = ms / 1000;
-  const precision = secs >= 10 ? 1 : 2;
-  let text = secs.toFixed(precision);
-  text = text.replace(/\.0+$/, "").replace(/(\.\d)0$/, "$1");
-  return `${text} s`;
-};
-
 export default {
   async mount(container) {
     const me = await ensureAuth();
@@ -186,19 +145,6 @@ export default {
     const card = el("div", { class: "card award-card" });
     const heading = el("div", { class: "mono award-title" }, "Daniel 0 — 0 Jaime");
     card.appendChild(heading);
-
-    const fastestBox = el("div", { class: "award-box" });
-    const fastestTitle = el("div", { class: "mono award-box__title" }, "FASTEST PLAYER");
-    const fastestRows = el("div", { class: "award-fastest" });
-    const fastestHost = el("div", { class: "award-fastest__row" }, "Daniel — s");
-    const fastestGuest = el("div", { class: "award-fastest__row" }, "Jaime — s");
-    fastestRows.appendChild(fastestHost);
-    fastestRows.appendChild(fastestGuest);
-    const fastestOutcome = el("div", { class: "mono award-fastest__outcome" }, "");
-    fastestBox.appendChild(fastestTitle);
-    fastestBox.appendChild(fastestRows);
-    fastestBox.appendChild(fastestOutcome);
-    card.appendChild(fastestBox);
 
     const reviewWrap = el("div", { class: "award-review" });
     card.appendChild(reviewWrap);
@@ -246,55 +192,6 @@ export default {
     const answersGuest0 = (((roomData0.answers || {}).guest || {})[round] || []);
     reviewData.hostAnswers = Array.isArray(answersHost0) ? answersHost0 : [];
     reviewData.guestAnswers = Array.isArray(answersGuest0) ? answersGuest0 : [];
-
-    const applySnippetSummary = (roundData = {}) => {
-      const timings = roundData.timings || {};
-      const hostEntry = resolveTimingForRole(timings, "host", [hostUid]);
-      const guestEntry = resolveTimingForRole(timings, "guest", [guestUid]);
-      const hostMs = Number(hostEntry?.info?.totalMs);
-      const guestMs = Number(guestEntry?.info?.totalMs);
-
-      const hostText = Number.isFinite(hostMs) ? formatSeconds(hostMs) : "— s";
-      const guestText = Number.isFinite(guestMs) ? formatSeconds(guestMs) : "— s";
-      fastestHost.textContent = `Daniel ${hostText}`;
-      fastestGuest.textContent = `Jaime ${guestText}`;
-
-      fastestHost.classList.remove("award-fastest__row--lead");
-      fastestGuest.classList.remove("award-fastest__row--lead");
-
-      let outcomeText = `Awaiting Jemima's ${ordinal(round)} Snippet`;
-
-      if (Number.isFinite(hostMs) && Number.isFinite(guestMs)) {
-        if (Math.abs(hostMs - guestMs) <= 1) {
-          outcomeText = `Dead heat for Jemima's ${ordinal(round)} Snippet`;
-        } else if (hostMs < guestMs) {
-          fastestHost.classList.add("award-fastest__row--lead");
-          outcomeText = `Daniel wins Jemima's ${ordinal(round)} Snippet`;
-        } else {
-          fastestGuest.classList.add("award-fastest__row--lead");
-          outcomeText = `Jaime wins Jemima's ${ordinal(round)} Snippet`;
-        }
-      }
-
-      if (Boolean(roundData.snippetTie)) {
-        fastestHost.classList.add("award-fastest__row--lead");
-        fastestGuest.classList.add("award-fastest__row--lead");
-        outcomeText = `Dead heat for Jemima's ${ordinal(round)} Snippet`;
-      } else if (roundData.snippetWinnerUid) {
-        const winnerUid = roundData.snippetWinnerUid;
-        if (winnerUid === hostUid) {
-          fastestHost.classList.add("award-fastest__row--lead");
-          outcomeText = `Daniel wins Jemima's ${ordinal(round)} Snippet`;
-        } else if (winnerUid === guestUid) {
-          fastestGuest.classList.add("award-fastest__row--lead");
-          outcomeText = `Jaime wins Jemima's ${ordinal(round)} Snippet`;
-        }
-      }
-
-      fastestOutcome.textContent = outcomeText;
-    };
-
-    applySnippetSummary(rd);
 
     const countCorrect = (answers = [], items = []) => {
       let total = 0;
@@ -425,10 +322,9 @@ export default {
       const data = snap.data() || {};
       reviewData.hostItems = Array.isArray(data.hostItems) ? data.hostItems : reviewData.hostItems;
       reviewData.guestItems = Array.isArray(data.guestItems) ? data.guestItems : reviewData.guestItems;
-      applySnippetSummary(data);
       refreshReviews();
     }, (err) => {
-      console.warn("[award] round snippet watch error:", err);
+      console.warn("[award] round watch error:", err);
     });
 
     const stop = onSnapshot(rRef, (snap) => {
