@@ -345,20 +345,41 @@ input[type="text"], input[type="number"], .input {
 
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
 
+
 .timer-row {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  margin-top: 12px;
+  gap: 14px;
+  margin-top: 4px;
+  margin-bottom: 8px;
   flex-wrap: wrap;
+  width: 100%;
+}
+
+.timer-row--action {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.timer-row--action .timer-display {
+  margin-right: auto;
 }
 
 .timer-display {
   font-weight: 700;
-  font-size: 1.6rem;
-  min-width: 120px;
-  text-align: center;
+  font-size: 2rem;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 5px solid rgba(255, 255, 255, 0.85);
+  background: var(--ink);
+  color: #f5f7fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 10px 24px rgba(14, 26, 48, 0.24);
 }
 
 .timer-button {
