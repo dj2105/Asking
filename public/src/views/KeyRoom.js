@@ -240,9 +240,93 @@ function computeHostHash(stage, code, round) {
 }
 
 function buildGuestLink(code) {
-  const base = `${location.origin}${location.pathname}#/rejoin`;
+  const path = (location.pathname || "/").replace(/index\.html$/i, "");
+  const normalizedPath = path.replace(/\/$/, "");
+  const base = `${location.origin}${normalizedPath}#/rejoin`;
   return `${base}?code=${code}&auto=1&role=guest`;
 }
+
+function makeFallbackItem(subject, difficulty, question, correct, wrongEasy, wrongMedium, wrongHard) {
+  return {
+    subject,
+    difficulty_tier: difficulty,
+    question,
+    correct_answer: correct,
+    distractors: {
+      easy: wrongEasy,
+      medium: wrongMedium,
+      hard: wrongHard,
+    },
+  };
+}
+
+const FALLBACK_ROUNDS = {
+  1: {
+    interlude: "Jemima balances three teaspoons while humming a nursery rhyme.",
+    hostItems: [
+      makeFallbackItem("Astronomy", "pub", "Which planet is known as the Red Planet?", "Mars", "Venus", "Jupiter", "Mercury"),
+      makeFallbackItem("Art", "pub", "What color do you get when you mix blue and yellow?", "Green", "Purple", "Orange", "Brown"),
+      makeFallbackItem("Geography", "pub", "In which direction does the sun rise?", "East", "West", "North", "South"),
+    ],
+    guestItems: [
+      makeFallbackItem("Language", "pub", "How many letters are in the English alphabet?", "26", "25", "24", "28"),
+      makeFallbackItem("Animals", "pub", "Which animal is known as man's best friend?", "Dog", "Cat", "Horse", "Parrot"),
+      makeFallbackItem("Nature", "pub", "What do bees make?", "Honey", "Milk", "Silk", "Wax"),
+    ],
+  },
+  2: {
+    interlude: "Jemima sketches cloud animals into the condensation on the window.",
+    hostItems: [
+      makeFallbackItem("Geography", "pub", "Which ocean borders California?", "Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"),
+      makeFallbackItem("Literature", "pub", "Who wrote 'Romeo and Juliet'?", "William Shakespeare", "Charles Dickens", "Jane Austen", "Mark Twain"),
+      makeFallbackItem("Science", "pub", "What gas do plants absorb from the air?", "Carbon dioxide", "Oxygen", "Nitrogen", "Hydrogen"),
+    ],
+    guestItems: [
+      makeFallbackItem("History", "pub", "Which country gifted the Statue of Liberty to the USA?", "France", "Spain", "United Kingdom", "Canada"),
+      makeFallbackItem("Science", "pub", "What is H₂O commonly known as?", "Water", "Salt", "Oxygen", "Hydrogen peroxide"),
+      makeFallbackItem("Geography", "pub", "How many continents are there?", "Seven", "Five", "Six", "Eight"),
+    ],
+  },
+  3: {
+    interlude: "Jemima rehearses a dramatic monologue to the patiently watching houseplants.",
+    hostItems: [
+      makeFallbackItem("Music", "enthusiast", "Which instrument has keys, pedals, and strings?", "Piano", "Violin", "Flute", "Drum"),
+      makeFallbackItem("Geography", "enthusiast", "What is the capital city of Japan?", "Tokyo", "Kyoto", "Osaka", "Seoul"),
+      makeFallbackItem("Science", "enthusiast", "Which element has the chemical symbol 'Fe'?", "Iron", "Silver", "Fluorine", "Lead"),
+    ],
+    guestItems: [
+      makeFallbackItem("Art", "enthusiast", "Who painted the Mona Lisa?", "Leonardo da Vinci", "Michelangelo", "Pablo Picasso", "Claude Monet"),
+      makeFallbackItem("Space", "enthusiast", "Which planet has the most moons?", "Saturn", "Mars", "Earth", "Venus"),
+      makeFallbackItem("Biology", "enthusiast", "What part of the cell contains DNA?", "Nucleus", "Cytoplasm", "Membrane", "Ribosome"),
+    ],
+  },
+  4: {
+    interlude: "Jemima arranges pencils by height, then swaps the tallest two for luck.",
+    hostItems: [
+      makeFallbackItem("Nature", "enthusiast", "What is the largest mammal on Earth?", "Blue whale", "African elephant", "Giraffe", "Orca"),
+      makeFallbackItem("Sports", "enthusiast", "Which city hosted the 2012 Summer Olympics?", "London", "Beijing", "Rio de Janeiro", "Tokyo"),
+      makeFallbackItem("Maths", "enthusiast", "What is 9 × 7?", "63", "72", "56", "64"),
+    ],
+    guestItems: [
+      makeFallbackItem("Language", "enthusiast", "Which language has the most native speakers worldwide?", "Mandarin Chinese", "English", "Spanish", "Hindi"),
+      makeFallbackItem("Science", "enthusiast", "What is the hardest natural substance?", "Diamond", "Steel", "Quartz", "Graphite"),
+      makeFallbackItem("History", "enthusiast", "Who discovered penicillin?", "Alexander Fleming", "Marie Curie", "Louis Pasteur", "Gregor Mendel"),
+    ],
+  },
+  5: {
+    interlude: "Jemima bakes an invisible pie and offers slices to anyone passing by.",
+    hostItems: [
+      makeFallbackItem("Science", "specialist", "Which scientist proposed the three laws of motion?", "Isaac Newton", "Albert Einstein", "Galileo Galilei", "Nikola Tesla"),
+      makeFallbackItem("Maths", "specialist", "What is the smallest prime number?", "2", "1", "3", "5"),
+      makeFallbackItem("Geography", "specialist", "Which desert is the largest hot desert in the world?", "Sahara Desert", "Gobi Desert", "Kalahari Desert", "Arabian Desert"),
+    ],
+    guestItems: [
+      makeFallbackItem("Biology", "specialist", "What is the process by which plants make their food called?", "Photosynthesis", "Respiration", "Transpiration", "Fermentation"),
+      makeFallbackItem("Science", "specialist", "Which metal is liquid at room temperature?", "Mercury", "Gold", "Aluminum", "Copper"),
+      makeFallbackItem("History", "specialist", "Which ancient civilization built Machu Picchu?", "Inca", "Maya", "Aztec", "Olmec"),
+    ],
+  },
+};
 
 function sameNormalized(a, b) {
   if (typeof a !== "string" || typeof b !== "string") return false;
@@ -548,6 +632,7 @@ export default {
 
     const params = getHashParams();
     const hintedCode = clampCode(params.get("code") || "");
+    const defaultCode = hintedCode || generateRandomCode();
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-keyroom" });
@@ -589,7 +674,7 @@ export default {
       class: "mono",
       style: "font-size:18px;padding:6px 10px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;width:120px;text-align:center;",
       maxlength: "5",
-      value: hintedCode,
+      value: defaultCode,
       oninput: (event) => {
         event.target.value = clampCode(event.target.value);
         reflectStartState();
@@ -617,9 +702,9 @@ export default {
         onclick: async () => {
           const code = clampCode(codeInput.value);
           if (!code) return;
-          const share = `${location.origin}${location.pathname}#/lobby`;
-          const ok = await copyToClipboard(`${share}?code=${code}`);
-          if (ok) status.textContent = "Link copied.";
+          const link = buildGuestLink(code);
+          const ok = await copyToClipboard(link);
+          if (ok) status.textContent = "Guest link copied.";
         },
       },
       "Copy link"
@@ -725,10 +810,13 @@ export default {
     metaRow.appendChild(generatedLabel);
     card.appendChild(metaRow);
 
+    const initialStatus = hintedCode
+      ? `Enter ${hintedCode} or pick a new code.`
+      : `We picked ${defaultCode} for you. Press START or choose another code.`;
     const status = el(
       "div",
       { class: "mono small", style: "margin-top:10px;min-height:18px;" },
-      hintedCode ? `Enter ${hintedCode} or pick a new code.` : "Choose a room code to get started."
+      initialStatus
     );
     card.appendChild(status);
 
@@ -1007,7 +1095,7 @@ export default {
       if (!ready) {
         status.textContent = "Enter a 3–5 character code to enable START.";
       } else if (!stage.base && !stage.questionsOverride && !stage.hostOverride && !stage.guestOverride) {
-        status.textContent = "Starting without uploads. Placeholders will read <empty>.";
+        status.textContent = "Starting without uploads. Using placeholder questions.";
       } else {
         status.textContent = "Press START when you’re ready.";
       }
@@ -1261,14 +1349,25 @@ export default {
 
       const assembledRounds = [];
       for (let i = 1; i <= 5; i += 1) {
+        const fallback = FALLBACK_ROUNDS[i] || {};
+        const hostSource = (rounds[i].hostItems && rounds[i].hostItems.length)
+          ? rounds[i].hostItems
+          : clone(fallback.hostItems || []);
+        const guestSource = (rounds[i].guestItems && rounds[i].guestItems.length)
+          ? rounds[i].guestItems
+          : clone(fallback.guestItems || []);
+        const interludeText =
+          typeof rounds[i].interlude === "string" && rounds[i].interlude.trim()
+            ? rounds[i].interlude
+            : typeof fallback.interlude === "string" && fallback.interlude.trim()
+              ? fallback.interlude
+              : PLACEHOLDER;
+
         assembledRounds.push({
           round: i,
-          hostItems: padItems(rounds[i].hostItems),
-          guestItems: padItems(rounds[i].guestItems),
-          interlude:
-            typeof rounds[i].interlude === "string" && rounds[i].interlude.trim()
-              ? rounds[i].interlude
-              : PLACEHOLDER,
+          hostItems: padItems(hostSource),
+          guestItems: padItems(guestSource),
+          interlude: interludeText,
         });
       }
 
