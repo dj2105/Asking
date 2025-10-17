@@ -7,6 +7,7 @@
 
 import { ensureAuth, db } from "./lib/firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
+import { applyTheme } from "./lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -154,6 +155,8 @@ export function startRoomWatcher(code, { onState } = {}) {
 export default {
   async mount(container){
     await ensureAuth();
+
+    applyTheme("watcher");
 
     const code = getQueryCode();
     container.innerHTML = "";
