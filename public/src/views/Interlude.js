@@ -16,6 +16,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import * as MathsPaneMod from "../lib/MathsPane.js";
+import { applyTheme } from "../lib/theme.js";
 
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
@@ -49,9 +50,7 @@ export default {
     const code  = clampCode(qs.get("code") || "");
     const round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    // colour seed
-    const hue = Math.floor(Math.random()*360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme("interlude", { round });
 
     container.innerHTML="";
     const root = el("div",{class:"view view-interlude"});

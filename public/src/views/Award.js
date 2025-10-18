@@ -17,6 +17,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -136,8 +137,7 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme("award", { round });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
@@ -334,6 +334,7 @@ export default {
       const dataRound = Number(data.round);
       if (stateName === "award" && dataRound && dataRound !== round) {
         round = dataRound;
+        applyTheme("award", { round });
         readyLabel = computeReadyLabel(round);
         if (!ackMine) {
           continueBtn.textContent = readyLabel;

@@ -18,6 +18,7 @@ import {
   PACK_VERSION_FULL,
 } from "../lib/seedUnsealer.js";
 import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -543,8 +544,7 @@ export default {
   async mount(container) {
     await ensureAuth();
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme("keyroom");
 
     const params = getHashParams();
     const hintedCode = clampCode(params.get("code") || "");
