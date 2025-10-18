@@ -1,0 +1,25 @@
+{
+  "version": "jemima-maths-chain-1",
+  "meta": {
+    "roomCode": "SEA",
+    "generatedAt": "2025-10-18T04:15:58Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "location": "Harbour",
+    "beats": [
+      "Jemima starts with the number of degrees in a triangle.",
+      "She divides this by the number of legs on a cat.",
+      "Then she adds the number of days in a week.",
+      "She doubles her total for good luck.",
+      "Finally, she subtracts the number of letters in the word 'JEMIMA'."
+    ],
+    "question": "What number does Jemima end up with? ___",
+    "answer": 76
+  },
+  "integrity": {
+    "checksum": "will_be_filled_in_automatically",
+    "verified": true
+  }
+}
