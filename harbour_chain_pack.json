@@ -1,0 +1,25 @@
+{
+  "version": "jemima-maths-chain-1",
+  "meta": {
+    "roomCode": "HBR",
+    "generatedAt": "2025-10-18T04:16:11Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "location": "Harbour",
+    "beats": [
+      "Jemima starts with the 180 degrees tucked inside a triangle she sketches on her chart.",
+      "She divides this by the 4 legs on the ship's cat snoozing beside the helm.",
+      "Then she adds the 7 days in a week of tide notes she keeps.",
+      "She doubles her total for good luck before casting off.",
+      "Finally, she subtracts the 6 letters in the name 'JEMIMA'."
+    ],
+    "question": "What number does Jemima end up with? ___",
+    "answer": 98
+  },
+  "integrity": {
+    "checksum": "will_be_filled_in_automatically",
+    "verified": true
+  }
+}
