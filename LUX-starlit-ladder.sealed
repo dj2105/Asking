@@ -1,0 +1,402 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "roomCode": "LUX",
+    "generatedAt": "2025-10-17T20:00:00Z",
+    "hostUid": "aurora-host",
+    "guestUid": "elliot-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "difficulty_tier": "pub",
+          "question": "Which monarch's 1953 coronation became the BBC's first televised coronation?",
+          "correct_answer": "Elizabeth II",
+          "distractors": {
+            "easy": "George VI",
+            "medium": "Edward VIII",
+            "hard": "Victoria"
+          }
+        },
+        {
+          "subject": "Cats",
+          "difficulty_tier": "pub",
+          "question": "What anatomical term refers to the long tactile hairs that help cats sense narrow gaps?",
+          "correct_answer": "Vibrissae",
+          "distractors": {
+            "easy": "Guard hairs",
+            "medium": "Primaries",
+            "hard": "Furcula"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "pub",
+          "question": "Which city on the St. Lawrence River serves as the capital of the Canadian province of Quebec?",
+          "correct_answer": "Quebec City",
+          "distractors": {
+            "easy": "Toronto",
+            "medium": "Montreal",
+            "hard": "Ottawa"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "American TV Sitcoms",
+          "difficulty_tier": "pub",
+          "question": "Which American sitcom features the fictional New York news magazine \"FYI\"?",
+          "correct_answer": "Murphy Brown",
+          "distractors": {
+            "easy": "Friends",
+            "medium": "Frasier",
+            "hard": "NewsRadio"
+          }
+        },
+        {
+          "subject": "’90s Pop",
+          "difficulty_tier": "pub",
+          "question": "Which 1997 hit single by Chumbawamba begins with the lyric \"We'll be singing\"?",
+          "correct_answer": "Tubthumping",
+          "distractors": {
+            "easy": "Barbie Girl",
+            "medium": "Brimful of Asha",
+            "hard": "Sunchyme"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "difficulty_tier": "pub",
+          "question": "Which river flows through the Grand Canyon before reaching the Gulf of California?",
+          "correct_answer": "Colorado River",
+          "distractors": {
+            "easy": "Mississippi River",
+            "medium": "Rio Grande",
+            "hard": "Snake River"
+          }
+        }
+      ],
+      "interlude": "Jemima winks at the ladder graphic and invites everyone to grab the first rungs."
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Ancient Greece",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Athenian statesman introduced the reforms known as ostracism in the early 5th century BCE?",
+          "correct_answer": "Cleisthenes",
+          "distractors": {
+            "easy": "Pericles",
+            "medium": "Solon",
+            "hard": "Ephialtes"
+          }
+        },
+        {
+          "subject": "Roman Empire",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Roman emperor ordered the construction of Hadrian's Wall across northern Britain?",
+          "correct_answer": "Hadrian",
+          "distractors": {
+            "easy": "Augustus",
+            "medium": "Trajan",
+            "hard": "Antoninus Pius"
+          }
+        },
+        {
+          "subject": "Renaissance Art",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Florentine painter created the fresco cycle 'The Legend of the True Cross' in Arezzo?",
+          "correct_answer": "Piero della Francesca",
+          "distractors": {
+            "easy": "Sandro Botticelli",
+            "medium": "Andrea del Verrocchio",
+            "hard": "Fra Angelico"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "World War I",
+          "difficulty_tier": "enthusiast",
+          "question": "Which treaty signed in 1919 formally ended the state of war between Germany and the Allied Powers?",
+          "correct_answer": "Treaty of Versailles",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Treaty of Brest-Litovsk",
+            "hard": "Treaty of Saint-Germain-en-Laye"
+          }
+        },
+        {
+          "subject": "Geography — Mountains",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Central Asian mountain range includes the 7,495 metre peak Ismoil Somoni?",
+          "correct_answer": "Pamir Mountains",
+          "distractors": {
+            "easy": "Himalayas",
+            "medium": "Tien Shan",
+            "hard": "Kunlun Mountains"
+          }
+        },
+        {
+          "subject": "Flags",
+          "difficulty_tier": "enthusiast",
+          "question": "Which African nation redesigned its flag in 1994 to feature a sunburst inspired by a rayed shield?",
+          "correct_answer": "South Africa",
+          "distractors": {
+            "easy": "Zimbabwe",
+            "medium": "Namibia",
+            "hard": "Rwanda"
+          }
+        }
+      ],
+      "interlude": "Jemima taps the acrylic podium and jokes that the safety nets just disappeared."
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "Baroque Music",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Baroque composer wrote the orchestral suite 'Water Music' for a 1717 Thames performance?",
+          "correct_answer": "George Frideric Handel",
+          "distractors": {
+            "easy": "Arcangelo Corelli",
+            "medium": "Henry Purcell",
+            "hard": "Jean-Philippe Rameau"
+          }
+        },
+        {
+          "subject": "Classical Mythology",
+          "difficulty_tier": "specialist",
+          "question": "Which Titan was tasked with holding up the sky after the Titanomachy according to Hesiod?",
+          "correct_answer": "Atlas",
+          "distractors": {
+            "easy": "Prometheus",
+            "medium": "Hyperion",
+            "hard": "Crius"
+          }
+        },
+        {
+          "subject": "Norse Myth",
+          "difficulty_tier": "specialist",
+          "question": "Which wolf is fated to devour the moon during Ragnarök in Norse myth?",
+          "correct_answer": "Hati",
+          "distractors": {
+            "easy": "Fenrir",
+            "medium": "Geri",
+            "hard": "Sköll"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "World War II",
+          "difficulty_tier": "enthusiast",
+          "question": "Which 1942 battle halted the Japanese advance on New Guinea and is named for a small Australian settlement?",
+          "correct_answer": "Battle of Milne Bay",
+          "distractors": {
+            "easy": "Battle of Midway",
+            "medium": "Battle of Coral Sea",
+            "hard": "Battle of Buna-Gona"
+          }
+        },
+        {
+          "subject": "Modern Politics",
+          "difficulty_tier": "enthusiast",
+          "question": "Which chancellor led Germany during the signing of the 1990 Treaty on the Final Settlement with Respect to Germany?",
+          "correct_answer": "Helmut Kohl",
+          "distractors": {
+            "easy": "Angela Merkel",
+            "medium": "Gerhard Schröder",
+            "hard": "Hans-Dietrich Genscher"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "difficulty_tier": "specialist",
+          "question": "Which Siberian river, second only to the Yenisei in discharge to the Arctic Ocean, flows past the city of Yakutsk?",
+          "correct_answer": "Lena River",
+          "distractors": {
+            "easy": "Ob River",
+            "medium": "Kolyma River",
+            "hard": "Angara River"
+          }
+        }
+      ],
+      "interlude": "Jemima notes the studio lights have gone midnight blue and whispers that the climb is getting dizzying."
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "Physics — Mechanics",
+          "difficulty_tier": "specialist",
+          "question": "Which equation expresses the conservation of angular momentum for a rigid body with moment of inertia I and angular velocity ω?",
+          "correct_answer": "L = Iω",
+          "distractors": {
+            "easy": "F = ma",
+            "medium": "p = mv",
+            "hard": "τ = r×F"
+          }
+        },
+        {
+          "subject": "Chemistry — Elements",
+          "difficulty_tier": "specialist",
+          "question": "Which transition metal has the electron configuration [Ar] 3d7 4s2 and forms the ore pentlandite?",
+          "correct_answer": "Nickel",
+          "distractors": {
+            "easy": "Iron",
+            "medium": "Cobalt",
+            "hard": "Molybdenum"
+          }
+        },
+        {
+          "subject": "Biology — Cells",
+          "difficulty_tier": "specialist",
+          "question": "Which organelle buds from the trans-Golgi network and contains digestive enzymes activated at low pH?",
+          "correct_answer": "Lysosome",
+          "distractors": {
+            "easy": "Ribosome",
+            "medium": "Peroxisome",
+            "hard": "Endosome"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Computing — Algorithms",
+          "difficulty_tier": "specialist",
+          "question": "Which algorithm partitions data around a pivot element to achieve average-case O(n log n) sorting time?",
+          "correct_answer": "Quicksort",
+          "distractors": {
+            "easy": "Bubble sort",
+            "medium": "Merge sort",
+            "hard": "Heap sort"
+          }
+        },
+        {
+          "subject": "Space — Missions",
+          "difficulty_tier": "specialist",
+          "question": "Which NASA program launched Voyager 2, enabling flybys of Uranus and Neptune via the Grand Tour trajectory?",
+          "correct_answer": "Mariner Jupiter-Saturn 1977",
+          "distractors": {
+            "easy": "Pioneer 10",
+            "medium": "Voyager 1",
+            "hard": "New Horizons"
+          }
+        },
+        {
+          "subject": "Economics",
+          "difficulty_tier": "specialist",
+          "question": "Which economist proposed the concept of 'creative destruction' in his 1942 work 'Capitalism, Socialism and Democracy'?",
+          "correct_answer": "Joseph Schumpeter",
+          "distractors": {
+            "easy": "John Maynard Keynes",
+            "medium": "Friedrich Hayek",
+            "hard": "Paul Samuelson"
+          }
+        }
+      ],
+      "interlude": "Jemima signals the million-pound light show and promises no lifelines from here on."
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "Philosophy",
+          "difficulty_tier": "specialist",
+          "question": "Which Enlightenment thinker authored 'A Treatise of Human Nature' while working as a tutor in La Flèche?",
+          "correct_answer": "David Hume",
+          "distractors": {
+            "easy": "John Locke",
+            "medium": "George Berkeley",
+            "hard": "Baruch Spinoza"
+          }
+        },
+        {
+          "subject": "Psychology",
+          "difficulty_tier": "specialist",
+          "question": "Which psychologist introduced the concept of the zone of proximal development in the 1930s?",
+          "correct_answer": "Lev Vygotsky",
+          "distractors": {
+            "easy": "Jean Piaget",
+            "medium": "Jerome Bruner",
+            "hard": "Alexander Luria"
+          }
+        },
+        {
+          "subject": "Anthropology",
+          "difficulty_tier": "specialist",
+          "question": "Which anthropologist developed the theory of liminality and communitas in rites of passage?",
+          "correct_answer": "Victor Turner",
+          "distractors": {
+            "easy": "Claude Lévi-Strauss",
+            "medium": "Mary Douglas",
+            "hard": "E. E. Evans-Pritchard"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Linguistics",
+          "difficulty_tier": "specialist",
+          "question": "Which linguist proposed the distinction between langue and parole in his 1916 lectures?",
+          "correct_answer": "Ferdinand de Saussure",
+          "distractors": {
+            "easy": "Noam Chomsky",
+            "medium": "Roman Jakobson",
+            "hard": "Leonard Bloomfield"
+          }
+        },
+        {
+          "subject": "Music Theory",
+          "difficulty_tier": "specialist",
+          "question": "What term describes the simultaneous sounding of two keys a tritone apart, as popularised by Bartók?",
+          "correct_answer": "Bitonality",
+          "distractors": {
+            "easy": "Polyphony",
+            "medium": "Polyrhythm",
+            "hard": "Quartal harmony"
+          }
+        },
+        {
+          "subject": "Explorers",
+          "difficulty_tier": "specialist",
+          "question": "Which cartographer led the 1569 expedition that produced the first detailed map of the Gulf Stream?",
+          "correct_answer": "Andrés de Urdaneta",
+          "distractors": {
+            "easy": "Francis Drake",
+            "medium": "Amerigo Vespucci",
+            "hard": "Pedro Menéndez de Avilés"
+          }
+        }
+      ],
+      "interlude": "Jemima draws a breath, the lights narrow to pinpoints, and she declares the final ascent begins now."
+    }
+  ],
+  "maths": {
+    "location": "observatory",
+    "beats": [
+      "Jemima leads the duo onto a catwalk beneath a rotating star projector.",
+      "A holographic ladder unfurls with constellations marking each prize step.",
+      "The projector speeds up, scattering numbers across the dome like falling stars.",
+      "Only two equations remain glowing in the void, daring the finalists to answer."
+    ],
+    "questions": [
+      "A meteor shower tracker logs 128 meteors in four equal 15-minute intervals. How many meteors were seen each interval?",
+      "The observatory sells commemorative charts for £18 each. If they take £270 during the maths finale, how many charts were sold?"
+    ],
+    "answers": [
+      32,
+      15
+    ]
+  },
+  "integrity": {
+    "checksum": "9704335d460d8d3697ba8c4aa63f74653c308c211ea52c80328ac7a34a1becab",
+    "verified": true
+  }
+}
