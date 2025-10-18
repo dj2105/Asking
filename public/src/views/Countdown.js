@@ -31,6 +31,7 @@ import {
   timeUntil,
   getStoredRole,
 } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -57,9 +58,7 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    // per-view hue
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme({ phase: "countdown", round });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-countdown stage-center stage-center--solo" });
@@ -85,6 +84,7 @@ export default {
     // Allow round label to follow doc updates (e.g., if host armed next round before guest arrived)
     if (Number(room0.round)) {
       round = Number(room0.round);
+      applyTheme({ phase: "countdown", round });
     }
 
     const watchRoundDoc = (rNum) => {
@@ -107,6 +107,7 @@ export default {
 
       if (Number(data.round) && Number(data.round) !== round) {
         round = Number(data.round);
+        applyTheme({ phase: "countdown", round });
         roundReady = false;
         watchRoundDoc(round);
       }
