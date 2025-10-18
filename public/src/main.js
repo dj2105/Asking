@@ -71,8 +71,10 @@
 // - Hue is set by each view; router leaves theme to the views.
 
 import ScoreStrip from "./lib/ScoreStrip.js";
+import Atmosphere from "./lib/Atmosphere.js";
 
 const app = document.getElementById("app");
+Atmosphere.ensure();
 
 // Keep track of mounted view instance so we can unmount cleanly.
 let current = { route: "", mod: null, unmount: null };
@@ -162,6 +164,8 @@ async function mountRoute() {
       // Explicitly hide for excluded routes
       ScoreStrip.hide();
     }
+
+    Atmosphere.touch({ route: actualRoute });
   } catch (e) {
     // Hard failure: show a tiny crash card (keeps UX within visual language)
     console.error("[router] mount failed:", e);
