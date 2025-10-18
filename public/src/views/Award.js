@@ -17,6 +17,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -65,7 +66,7 @@ function resolveRoundDistractor(item = {}, round) {
 
 function renderQuestionSection({ heading, items, answers, round }) {
   const block = el("div", { class: "award-box award-box--questions" });
-  block.appendChild(el("div", { class: "mono award-box__title" }, heading));
+  block.appendChild(el("div", { class: "award-box__title" }, heading));
 
   for (let i = 0; i < 3; i += 1) {
     const item = items[i] || {};
@@ -80,7 +81,7 @@ function renderQuestionSection({ heading, items, answers, round }) {
     const row = el("div", { class: "award-question" });
     const textCol = el("div", { class: "award-question__text" });
     textCol.appendChild(
-      el("div", { class: "mono award-question__prompt" }, `${i + 1}. ${question}`)
+      el("div", { class: "award-question__prompt" }, `${i + 1}. ${question}`)
     );
 
     let distractor = resolveRoundDistractor(item, round);
@@ -136,14 +137,13 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme({ phase: "award", round });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
 
     const card = el("div", { class: "card award-card" });
-    const heading = el("div", { class: "mono award-title" }, "Daniel 0 — 0 Jaime");
+    const heading = el("div", { class: "award-title" }, "Daniel 0 — 0 Jaime");
     card.appendChild(heading);
 
     const reviewWrap = el("div", { class: "award-review" });
@@ -335,6 +335,7 @@ export default {
       if (stateName === "award" && dataRound && dataRound !== round) {
         round = dataRound;
         readyLabel = computeReadyLabel(round);
+        applyTheme({ phase: "award", round });
         if (!ackMine) {
           continueBtn.textContent = readyLabel;
         }
