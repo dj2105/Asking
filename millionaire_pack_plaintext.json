@@ -1,0 +1,417 @@
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "LAD",
+    "generatedAt": "2025-01-15T12:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "ladder": {
+    "per_player_15": [
+      "£100",
+      "£200",
+      "£300",
+      "£500",
+      "£1,000",
+      "£2,000",
+      "£4,000",
+      "£8,000",
+      "£16,000",
+      "£32,000",
+      "£64,000",
+      "£125,000",
+      "£250,000",
+      "£500,000",
+      "£1,000,000"
+    ]
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "difficulty_tier": "pub",
+          "question": "Which prince married Queen Victoria in 1840?",
+          "correct_answer": "Prince Albert",
+          "distractors": {
+            "easy": "Prince Philip",
+            "medium": "Prince George of Cambridge",
+            "hard": "Prince Ernest Augustus"
+          }
+        },
+        {
+          "subject": "Cats",
+          "difficulty_tier": "pub",
+          "question": "Which cat breed is known for being hairless with large ears?",
+          "correct_answer": "Sphynx",
+          "distractors": {
+            "easy": "Persian",
+            "medium": "Russian Blue",
+            "hard": "Peterbald"
+          }
+        },
+        {
+          "subject": "American TV Sitcoms",
+          "difficulty_tier": "pub",
+          "question": "What is the name of the coffee shop where the friends gather in 'Friends'?",
+          "correct_answer": "Central Perk",
+          "distractors": {
+            "easy": "Monk's Café",
+            "medium": "MacLaren's Pub",
+            "hard": "The Max"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Geography — Rivers",
+          "difficulty_tier": "pub",
+          "question": "Which river flows through the Egyptian capital, Cairo?",
+          "correct_answer": "The Nile",
+          "distractors": {
+            "easy": "The Amazon",
+            "medium": "The Tigris",
+            "hard": "The Zambezi"
+          }
+        },
+        {
+          "subject": "Geography — Mountains",
+          "difficulty_tier": "pub",
+          "question": "What is the highest peak in the Alps?",
+          "correct_answer": "Mont Blanc",
+          "distractors": {
+            "easy": "Matterhorn",
+            "medium": "Dufourspitze",
+            "hard": "Weisshorn"
+          }
+        },
+        {
+          "subject": "Folklore — Irish",
+          "difficulty_tier": "pub",
+          "question": "According to legend, who is said to have built the Giant's Causeway to Scotland?",
+          "correct_answer": "Fionn mac Cumhaill",
+          "distractors": {
+            "easy": "Cú Chulainn",
+            "medium": "Oisín",
+            "hard": "Diarmuid Ua Duibhne"
+          }
+        }
+      ],
+      "interlude": "Jemima twirls her mic cord and promises the warm-ups are only just beginning."
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Irish History",
+          "difficulty_tier": "pub",
+          "question": "Who read the Proclamation of the Irish Republic outside the GPO in Dublin in 1916?",
+          "correct_answer": "Patrick Pearse",
+          "distractors": {
+            "easy": "Éamon de Valera",
+            "medium": "James Connolly",
+            "hard": "Thomas MacDonagh"
+          }
+        },
+        {
+          "subject": "'90s Pop",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Irish band released the album 'No Need to Argue' featuring the single 'Zombie'?",
+          "correct_answer": "The Cranberries",
+          "distractors": {
+            "easy": "U2",
+            "medium": "The Corrs",
+            "hard": "The Frames"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "enthusiast",
+          "question": "Which city is the capital of New Zealand?",
+          "correct_answer": "Wellington",
+          "distractors": {
+            "easy": "Auckland",
+            "medium": "Christchurch",
+            "hard": "Dunedin"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Language — Grammar",
+          "difficulty_tier": "pub",
+          "question": "In the sentence 'She sang happily', which part of speech is the word 'happily'?",
+          "correct_answer": "Adverb",
+          "distractors": {
+            "easy": "Adjective",
+            "medium": "Gerund",
+            "hard": "Participle"
+          }
+        },
+        {
+          "subject": "Language — Punctuation",
+          "difficulty_tier": "enthusiast",
+          "question": "Which punctuation mark is used to link two closely related independent clauses without a conjunction?",
+          "correct_answer": "Semicolon",
+          "distractors": {
+            "easy": "Comma",
+            "medium": "Em dash",
+            "hard": "Colon"
+          }
+        },
+        {
+          "subject": "Printing & Type",
+          "difficulty_tier": "enthusiast",
+          "question": "Who designed the Gill Sans typeface in 1928?",
+          "correct_answer": "Eric Gill",
+          "distractors": {
+            "easy": "Stanley Morison",
+            "medium": "Neville Brody",
+            "hard": "Matthew Carter"
+          }
+        }
+      ],
+      "interlude": "She flashes the studio ladder graphic and jokes that round two is where the palms start to sweat."
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "Ancient Greece",
+          "difficulty_tier": "enthusiast",
+          "question": "Which philosopher founded the Lyceum in Athens?",
+          "correct_answer": "Aristotle",
+          "distractors": {
+            "easy": "Plato",
+            "medium": "Socrates",
+            "hard": "Zeno of Citium"
+          }
+        },
+        {
+          "subject": "Roman Empire",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Roman emperor completed the Colosseum and opened it with celebratory games?",
+          "correct_answer": "Titus",
+          "distractors": {
+            "easy": "Nero",
+            "medium": "Domitian",
+            "hard": "Hadrian"
+          }
+        },
+        {
+          "subject": "Medieval Europe",
+          "difficulty_tier": "specialist",
+          "question": "Which 843 agreement divided the Carolingian Empire among the grandsons of Charlemagne?",
+          "correct_answer": "Treaty of Verdun",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Treaty of Utrecht",
+            "hard": "Treaty of Meerssen"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Comics",
+          "difficulty_tier": "enthusiast",
+          "question": "Which comic series features the reporter adventurer Tintin and his dog Snowy?",
+          "correct_answer": "The Adventures of Tintin",
+          "distractors": {
+            "easy": "Asterix",
+            "medium": "Lucky Luke",
+            "hard": "Spirou et Fantasio"
+          }
+        },
+        {
+          "subject": "Anime",
+          "difficulty_tier": "enthusiast",
+          "question": "Which director created the film 'My Neighbor Totoro'?",
+          "correct_answer": "Hayao Miyazaki",
+          "distractors": {
+            "easy": "Isao Takahata",
+            "medium": "Mamoru Hosoda",
+            "hard": "Makoto Shinkai"
+          }
+        },
+        {
+          "subject": "TV — British",
+          "difficulty_tier": "specialist",
+          "question": "In 'Line of Duty', what kind of misconduct does unit AC-12 investigate?",
+          "correct_answer": "Police corruption",
+          "distractors": {
+            "easy": "Cold-case murders",
+            "medium": "Counter-terrorism plots",
+            "hard": "Border smuggling"
+          }
+        }
+      ],
+      "interlude": "Jemima spins the podium and cues the drama sting as the jackpot ladder looms large."
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "Renaissance Art",
+          "difficulty_tier": "specialist",
+          "question": "Which artist painted 'The Birth of Venus'?",
+          "correct_answer": "Sandro Botticelli",
+          "distractors": {
+            "easy": "Leonardo da Vinci",
+            "medium": "Titian",
+            "hard": "Piero di Cosimo"
+          }
+        },
+        {
+          "subject": "Baroque Music",
+          "difficulty_tier": "specialist",
+          "question": "Which composer premiered the oratorio 'Messiah' in Dublin in 1742?",
+          "correct_answer": "George Frideric Handel",
+          "distractors": {
+            "easy": "Antonio Vivaldi",
+            "medium": "Johann Pachelbel",
+            "hard": "Henry Purcell"
+          }
+        },
+        {
+          "subject": "Classical Mythology",
+          "difficulty_tier": "specialist",
+          "question": "Which hero slayed the Chimera with the help of the winged horse Pegasus?",
+          "correct_answer": "Bellerophon",
+          "distractors": {
+            "easy": "Perseus",
+            "medium": "Theseus",
+            "hard": "Heracles"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "TV — American Drama",
+          "difficulty_tier": "specialist",
+          "question": "Which actor portrays Jimmy McGill in 'Better Call Saul'?",
+          "correct_answer": "Bob Odenkirk",
+          "distractors": {
+            "easy": "Bryan Cranston",
+            "medium": "Jonathan Banks",
+            "hard": "Michael McKean"
+          }
+        },
+        {
+          "subject": "Sitcom — British",
+          "difficulty_tier": "specialist",
+          "question": "In 'Blackadder Goes Forth', what rank does Edmund Blackadder hold?",
+          "correct_answer": "Captain",
+          "distractors": {
+            "easy": "Lieutenant",
+            "medium": "Major",
+            "hard": "Colonel"
+          }
+        },
+        {
+          "subject": "Pop Culture — Memes",
+          "difficulty_tier": "specialist",
+          "question": "The line 'All your base are belong to us' comes from the European release of which video game's intro?",
+          "correct_answer": "Zero Wing",
+          "distractors": {
+            "easy": "Metal Gear",
+            "medium": "Contra",
+            "hard": "R-Type"
+          }
+        }
+      ],
+      "interlude": "She lets the lights linger on the million marker before whispering that legends are born in round four."
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "Norse Myth",
+          "difficulty_tier": "specialist",
+          "question": "Which serpent gnaws at the roots of the world tree Yggdrasil?",
+          "correct_answer": "Níðhöggr",
+          "distractors": {
+            "easy": "Fenrir",
+            "medium": "Jörmungandr",
+            "hard": "Fáfnir"
+          }
+        },
+        {
+          "subject": "World War I",
+          "difficulty_tier": "specialist",
+          "question": "Which 1916 battle saw tanks used in combat for the first time?",
+          "correct_answer": "Battle of the Somme",
+          "distractors": {
+            "easy": "Battle of Verdun",
+            "medium": "Battle of Passchendaele",
+            "hard": "Battle of Cambrai"
+          }
+        },
+        {
+          "subject": "Modern Politics",
+          "difficulty_tier": "specialist",
+          "question": "Which Scottish First Minister signed the 2012 Edinburgh Agreement with David Cameron?",
+          "correct_answer": "Alex Salmond",
+          "distractors": {
+            "easy": "Nicola Sturgeon",
+            "medium": "Henry McLeish",
+            "hard": "Jack McConnell"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "'80s Pop",
+          "difficulty_tier": "specialist",
+          "question": "Which artist released the 1985 album 'Hounds of Love'?",
+          "correct_answer": "Kate Bush",
+          "distractors": {
+            "easy": "Madonna",
+            "medium": "Annie Lennox",
+            "hard": "Sinéad O'Connor"
+          }
+        },
+        {
+          "subject": "'00s Pop",
+          "difficulty_tier": "specialist",
+          "question": "Whose 2007 single 'Bleeding Love' became an international number-one hit?",
+          "correct_answer": "Leona Lewis",
+          "distractors": {
+            "easy": "Rihanna",
+            "medium": "Alicia Keys",
+            "hard": "Natasha Bedingfield"
+          }
+        },
+        {
+          "subject": "Gameshow Lore",
+          "difficulty_tier": "specialist",
+          "question": "When 'Who Wants to Be a Millionaire?' returned in the UK with Jeremy Clarkson in 2018, which new lifeline was introduced?",
+          "correct_answer": "Ask the Host",
+          "distractors": {
+            "easy": "Double Dip",
+            "medium": "Switch the Question",
+            "hard": "Phone the Studio"
+          }
+        }
+      ],
+      "interlude": "Jemima draws a deep breath, straightens her cards, and invites both players to stare down the million."
+    }
+  ],
+  "maths": {
+    "location": "futuristic supermarket",
+    "beats": [
+      "Jemima wheels out a chrome trolley stuffed with neon groceries.",
+      "Each item blinks with dynamic price tags that keep climbing.",
+      "She locks the doors and hands the duo holographic calculators.",
+      "Only the quickest total can secure dessert for the green room."
+    ],
+    "questions": [
+      "Six price-surge tins jump from £3 each to £3.50 mid-scan; what is the new combined cost in pounds?",
+      "A crate shows 16 glowing limes sold at 4 for £5. Buying the whole crate earns a 20% discount on the subtotal—what do you pay in pounds?"
+    ],
+    "answers": [
+      21,
+      16
+    ]
+  }
+}

@@ -62,12 +62,19 @@ function padItems(list = []) {
   while (items.length < 3) items.push(buildEmptyItem());
   return items.slice(0, 3).map((item) => {
     const safe = item && typeof item === "object" ? item : buildEmptyItem();
+    const difficultyCandidates = [
+      safe?.difficulty_tier,
+      safe?.difficultyTier,
+      safe?.difficulty,
+      safe?.prize,
+    ];
+    const difficultyTier = difficultyCandidates.find(
+      (value) => typeof value === "string" && value.trim()
+    );
+
     return {
       subject: typeof safe.subject === "string" && safe.subject.trim() ? safe.subject : PLACEHOLDER,
-      difficulty_tier:
-        typeof safe.difficulty_tier === "string" && safe.difficulty_tier.trim()
-          ? safe.difficulty_tier
-          : PLACEHOLDER,
+      difficulty_tier: difficultyTier ? difficultyTier : PLACEHOLDER,
       question: typeof safe.question === "string" && safe.question.trim() ? safe.question : PLACEHOLDER,
       correct_answer:
         typeof safe.correct_answer === "string" && safe.correct_answer.trim()
