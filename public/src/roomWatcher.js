@@ -7,6 +7,7 @@
 
 import { ensureAuth, db } from "./lib/firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
+import { applyTheme } from "./lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -156,6 +157,7 @@ export default {
     await ensureAuth();
 
     const code = getQueryCode();
+    applyTheme("watcher");
     container.innerHTML = "";
     const card = el("div", { class: "card" }, [
       el("h1", { class: "title" }, "Linking up…"),
