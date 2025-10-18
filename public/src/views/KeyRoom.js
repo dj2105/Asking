@@ -16,8 +16,10 @@ import {
   seedFirestoreFromPack,
   DEMO_PACK_PASSWORD,
   PACK_VERSION_FULL,
+  PACK_VERSION_MATHS,
+  PACK_VERSION_MATHS_CHAIN,
 } from "../lib/seedUnsealer.js";
-import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import { clampCode, copyToClipboard, getHashParams, isChainMaths, isLegacyMaths, setStoredRole } from "../lib/util.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -128,25 +130,48 @@ function normalizeHalfpackRounds(rounds = [], which) {
   return map;
 }
 
-function normalizeMaths(maths = null) {
+function normalizeMaths(maths = null, versionHint = "") {
   const src = maths && typeof maths === "object" ? maths : {};
+  let version = String(versionHint || src.version || "").trim();
+  if (version !== PACK_VERSION_MATHS && version !== PACK_VERSION_MATHS_CHAIN) {
+    if (isChainMaths(src)) version = PACK_VERSION_MATHS_CHAIN;
+    else if (isLegacyMaths(src)) version = PACK_VERSION_MATHS;
+    else version = PACK_VERSION_MATHS;
+  }
+
+  const location = typeof src.location === "string" && src.location.trim() ? src.location : PLACEHOLDER;
+
+  if (version === PACK_VERSION_MATHS_CHAIN) {
+    const beats = Array.isArray(src.beats) ? src.beats.slice(0, 5) : [];
+    while (beats.length < 5) beats.push(PLACEHOLDER);
+    const safeBeats = beats.map((beat) => (typeof beat === "string" && beat.trim() ? beat : PLACEHOLDER));
+    const question = typeof src.question === "string" && src.question.trim() ? src.question : "___";
+    const answer = Number.isInteger(src.answer) ? src.answer : 0;
+    return {
+      version,
+      location,
+      beats: safeBeats,
+      question,
+      answer,
+    };
+  }
+
   const beats = Array.isArray(src.beats) ? src.beats.slice(0, 4) : [];
   while (beats.length < 4) beats.push(PLACEHOLDER);
+  const safeBeats = beats.map((beat) => (typeof beat === "string" && beat.trim() ? beat : PLACEHOLDER));
+  const questions = Array.isArray(src.questions) ? src.questions.slice(0, 2) : [];
+  while (questions.length < 2) questions.push(PLACEHOLDER);
+  const safeQuestions = questions.map((q) => (typeof q === "string" && q.trim() ? q : PLACEHOLDER));
+  const answers = Array.isArray(src.answers) ? src.answers.slice(0, 2) : [];
+  while (answers.length < 2) answers.push(0);
+  const safeAnswers = answers.map((ans) => (Number.isInteger(ans) ? ans : 0));
+
   return {
-    location: typeof src.location === "string" && src.location.trim() ? src.location : PLACEHOLDER,
-    beats: beats.map((beat) => (typeof beat === "string" && beat.trim() ? beat : PLACEHOLDER)),
-    questions: Array.isArray(src.questions) && src.questions.length
-      ? [0, 1].map((idx) => {
-          const q = src.questions[idx];
-          return typeof q === "string" && q.trim() ? q : PLACEHOLDER;
-        })
-      : [PLACEHOLDER, PLACEHOLDER],
-    answers: Array.isArray(src.answers) && src.answers.length
-      ? [0, 1].map((idx) => {
-          const a = src.answers[idx];
-          return Number.isInteger(a) ? a : 0;
-        })
-      : [0, 0],
+    version: PACK_VERSION_MATHS,
+    location,
+    beats: safeBeats,
+    questions: safeQuestions,
+    answers: safeAnswers,
   };
 }
 
@@ -461,15 +486,27 @@ function prepareStageState(pack, stageName, requestedRound) {
   const questionsHostTotal = summarizeRounds(rounds, answeredRounds, (entry) => entry.hostCorrect);
   const questionsGuestTotal = summarizeRounds(rounds, answeredRounds, (entry) => entry.guestCorrect);
 
+  const mathsBlock = pack?.maths || {};
+  const mathsVersion = mathsBlock.version || (isChainMaths(mathsBlock) ? PACK_VERSION_MATHS_CHAIN : PACK_VERSION_MATHS);
+
   const mathsAnswers = {};
+  const mathsAnswersChain = {};
   const mathsAnswersAck = {};
   if (stageName === "final") {
-    const source = Array.isArray(pack?.maths?.answers) ? pack.maths.answers.slice(0, 2) : [0, 0];
-    const safe = source.map((value) => (Number.isInteger(value) ? value : 0));
-    mathsAnswers.host = safe;
-    mathsAnswers.guest = safe.map((value, idx) => value + (idx === 0 ? -1 : 1));
-    mathsAnswersAck.host = true;
-    mathsAnswersAck.guest = true;
+    if (mathsVersion === PACK_VERSION_MATHS_CHAIN) {
+      const answer = Number.isInteger(mathsBlock.answer) ? mathsBlock.answer : 0;
+      mathsAnswersChain.host = { value: answer, submittedAt: Date.now() };
+      mathsAnswersChain.guest = { value: answer + 1, submittedAt: Date.now() };
+      mathsAnswersAck.host = true;
+      mathsAnswersAck.guest = true;
+    } else {
+      const source = Array.isArray(mathsBlock.answers) ? mathsBlock.answers.slice(0, 2) : [0, 0];
+      const safe = source.map((value) => (Number.isInteger(value) ? value : 0));
+      mathsAnswers.host = safe;
+      mathsAnswers.guest = safe.map((value, idx) => value + (idx === 0 ? -1 : 1));
+      mathsAnswersAck.host = true;
+      mathsAnswersAck.guest = true;
+    }
   }
 
   for (let i = 1; i <= 5; i += 1) {
@@ -524,9 +561,14 @@ function prepareStageState(pack, stageName, requestedRound) {
     scores: { questions: { host: questionsHostTotal, guest: questionsGuestTotal } },
     links: { guestReady },
     mathsAnswers,
+    mathsAnswersChain,
     mathsAnswersAck,
     award: { startAt: null },
   };
+
+  if (mathsVersion) {
+    roomPatch["meta.mathsVersion"] = mathsVersion;
+  }
 
   return {
     roomPatch,
@@ -985,11 +1027,16 @@ export default {
         : stage.base
         ? "Full Pack"
         : "—";
-      const mathsSource = stage.mathsOverride
+      const mathsEntry = stage.mathsOverride?.maths || stage.base?.maths || null;
+      let mathsSource = stage.mathsOverride
         ? "Maths Pack"
         : stage.base?.maths
         ? "Full Pack"
         : "—";
+      if (mathsEntry && mathsEntry.version) {
+        const tag = mathsEntry.version === PACK_VERSION_MATHS_CHAIN ? "chain" : "legacy";
+        mathsSource = `${mathsSource} (${tag})`;
+      }
       progressLine.textContent = `Sources → Host: ${hostSource} · Guest: ${guestSource} · Maths: ${mathsSource}`;
     }
 
@@ -1055,7 +1102,7 @@ export default {
       });
       stage.base = {
         rounds: normalizeFullRounds(pack.rounds || []),
-        maths: normalizeMaths(pack.maths),
+        maths: normalizeMaths(pack.maths, pack.maths?.version || pack.meta?.mathsVersion || ""),
         meta: {
           hostUid: pack.meta?.hostUid || DEFAULT_HOST_UID,
           guestUid: pack.meta?.guestUid || DEFAULT_GUEST_UID,
@@ -1149,16 +1196,19 @@ export default {
     }
 
     async function handleMaths(result) {
-      const { maths } = result;
-      stage.mathsOverride = { maths: normalizeMaths(maths), loadedAt: Date.now() };
+      const { maths, version } = result;
+      const normalized = normalizeMaths(maths, version);
+      stage.mathsOverride = { maths: normalized, version: normalized.version, loadedAt: Date.now() };
       const slot = slotMap.maths;
       if (slot) {
-        slot.statusEl.textContent = "Maths block loaded.";
+        const label = normalized.version === PACK_VERSION_MATHS_CHAIN ? "Maths block loaded (chain)." : "Maths block loaded.";
+        slot.statusEl.textContent = label;
         slot.active = true;
         slot.clearBtn.disabled = false;
       }
-      status.textContent = "Maths block overriding base content.";
-      log("maths block verified.");
+      const descriptor = normalized.version === PACK_VERSION_MATHS_CHAIN ? "chain" : "legacy";
+      status.textContent = `Maths block overriding base content (${descriptor}).`;
+      log(`maths block verified (${descriptor}).`);
       updateProgress();
       reflectStartState();
     }

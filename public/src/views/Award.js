@@ -235,7 +235,14 @@ export default {
 
     try {
       if (mountMathsPane && roomData0.maths) {
-        mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
+        mountMathsPane(mathsMount, {
+          maths: roomData0.maths,
+          round,
+          mode: "inline",
+          roomCode: code,
+          userUid: me.uid,
+          version: roomData0?.meta?.mathsVersion,
+        });
       }
     } catch (err) {
       console.warn("[award] MathsPane mount failed:", err);
