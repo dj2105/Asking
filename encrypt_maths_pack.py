@@ -11,6 +11,7 @@ except ModuleNotFoundError:  # pragma: no cover - fallback when PyCryptodome una
     SHA256 = None
 
 PASSWORD = b"DEMO-ONLY"
+ALLOWED_VERSIONS = {"jemima-maths-1", "jemima-maths-chain-1"}
 
 PACK_VERSION = "jemima-maths-chain-1"
 
@@ -123,9 +124,11 @@ def main():
 
     payload["version"] = PACK_VERSION
     meta = payload.get("meta", {})
-    if "roomCode" not in meta:
-        raise SystemExit("meta.roomCode is required (3-letter uppercase).")
-    meta.setdefault("generatedAt", "1970-01-01T00:00:00Z")
+    room_code = meta.get("roomCode")
+    if not isinstance(room_code, str) or not re.fullmatch(r"[A-Z]{3}", room_code):
+        raise SystemExit("meta.roomCode is required (3 uppercase letters).")
+    if "generatedAt" not in meta:
+        meta["generatedAt"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     meta.setdefault("hostUid", "demo-host")
     meta.setdefault("guestUid", "demo-guest")
     payload["meta"] = meta
