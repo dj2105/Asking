@@ -1,0 +1,399 @@
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "LUX",
+    "generatedAt": "2025-10-17T21:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "difficulty_tier": "pub",
+          "question": "For £100, which London landmark is the traditional balcony appearance site for newly crowned British monarchs?",
+          "correct_answer": "Buckingham Palace",
+          "distractors": {
+            "easy": "Tower Bridge",
+            "medium": "St James's Palace",
+            "hard": "Horse Guards Parade"
+          }
+        },
+        {
+          "subject": "Cats",
+          "difficulty_tier": "pub",
+          "question": "Worth £200, what is the common term for the short, vibrating hairs a domestic cat uses for balance and sensing air currents?",
+          "correct_answer": "Whiskers",
+          "distractors": {
+            "easy": "Fur tufts",
+            "medium": "Guard hairs",
+            "hard": "Vibrissal pads"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "pub",
+          "question": "For £300, which city serves as the administrative capital of South Africa?",
+          "correct_answer": "Pretoria",
+          "distractors": {
+            "easy": "Cape Town",
+            "medium": "Johannesburg",
+            "hard": "Bloemfontein"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "American TV Sitcoms",
+          "difficulty_tier": "pub",
+          "question": "For £100, which sitcom follows the employees of the fictional paper company Dunder Mifflin in Scranton, Pennsylvania?",
+          "correct_answer": "The Office",
+          "distractors": {
+            "easy": "Parks and Recreation",
+            "medium": "Brooklyn Nine-Nine",
+            "hard": "Superstore"
+          }
+        },
+        {
+          "subject": "’90s Pop",
+          "difficulty_tier": "pub",
+          "question": "Worth £200, which boy band released the chart-topping single 'Everybody (Backstreet's Back)' in 1997?",
+          "correct_answer": "Backstreet Boys",
+          "distractors": {
+            "easy": "NSYNC",
+            "medium": "Take That",
+            "hard": "Boyzone"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "difficulty_tier": "pub",
+          "question": "For £300, which European river famously flows through Budapest, Bratislava, and Vienna?",
+          "correct_answer": "Danube",
+          "distractors": {
+            "easy": "Rhine",
+            "medium": "Elbe",
+            "hard": "Drava"
+          }
+        }
+      ],
+      "interlude": "Jemima spins the neon ladder and the studio lights chase upward toward the next prize tier."
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Irish History",
+          "difficulty_tier": "pub",
+          "question": "For £500, which treaty ended the Irish War of Independence and created the Irish Free State in 1921?",
+          "correct_answer": "Anglo-Irish Treaty",
+          "distractors": {
+            "easy": "Treaty of Limerick",
+            "medium": "Treaty of Westminster",
+            "hard": "Sunningdale Agreement"
+          }
+        },
+        {
+          "subject": "Ancient Greece",
+          "difficulty_tier": "enthusiast",
+          "question": "Worth £1,000, which athletic festival held every four years honoured Zeus in ancient Greece?",
+          "correct_answer": "Olympic Games",
+          "distractors": {
+            "easy": "Pythian Games",
+            "medium": "Isthmian Games",
+            "hard": "Nemean Games"
+          }
+        },
+        {
+          "subject": "Language — Grammar",
+          "difficulty_tier": "enthusiast",
+          "question": "For £2,000, what grammatical term describes a verb form functioning as an adjective, as in 'the boiling kettle'?",
+          "correct_answer": "Participle",
+          "distractors": {
+            "easy": "Gerund",
+            "medium": "Infinitive",
+            "hard": "Supine"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "TV — British",
+          "difficulty_tier": "pub",
+          "question": "For £500, which long-running British soap opera is set around Albert Square in the fictional borough of Walford?",
+          "correct_answer": "EastEnders",
+          "distractors": {
+            "easy": "Coronation Street",
+            "medium": "Emmerdale",
+            "hard": "Brookside"
+          }
+        },
+        {
+          "subject": "Language — Punctuation",
+          "difficulty_tier": "enthusiast",
+          "question": "Worth £1,000, what punctuation mark is formed by placing a comma directly above a period?",
+          "correct_answer": "Semicolon",
+          "distractors": {
+            "easy": "Colon",
+            "medium": "Interrobang",
+            "hard": "Virgule"
+          }
+        },
+        {
+          "subject": "World War I",
+          "difficulty_tier": "enthusiast",
+          "question": "For £2,000, which 1916 battle on the Western Front is remembered as one of the bloodiest in British military history?",
+          "correct_answer": "Battle of the Somme",
+          "distractors": {
+            "easy": "Battle of Ypres",
+            "medium": "Battle of Cambrai",
+            "hard": "Battle of Arras"
+          }
+        }
+      ],
+      "interlude": "Jemima locks in the safety net and invites the players to climb toward the guaranteed money."
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "Roman Empire",
+          "difficulty_tier": "enthusiast",
+          "question": "For £4,000, which Roman emperor completed the Colosseum and opened it with lavish games in AD 80?",
+          "correct_answer": "Titus",
+          "distractors": {
+            "easy": "Vespasian",
+            "medium": "Domitian",
+            "hard": "Trajan"
+          }
+        },
+        {
+          "subject": "Classical Mythology",
+          "difficulty_tier": "enthusiast",
+          "question": "Worth £8,000, which hero accomplished the Twelve Labours as penance imposed by King Eurystheus?",
+          "correct_answer": "Heracles",
+          "distractors": {
+            "easy": "Perseus",
+            "medium": "Theseus",
+            "hard": "Bellerophon"
+          }
+        },
+        {
+          "subject": "Printing & Type",
+          "difficulty_tier": "specialist",
+          "question": "For £16,000, which typographic term refers to the vertical space between lines of text in digital layout software?",
+          "correct_answer": "Leading",
+          "distractors": {
+            "easy": "Kerning",
+            "medium": "Tracking",
+            "hard": "Baseline shift"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Comics",
+          "difficulty_tier": "enthusiast",
+          "question": "For £4,000, which graphic novelist created the work 'Watchmen' in collaboration with artist Dave Gibbons?",
+          "correct_answer": "Alan Moore",
+          "distractors": {
+            "easy": "Frank Miller",
+            "medium": "Grant Morrison",
+            "hard": "Neil Gaiman"
+          }
+        },
+        {
+          "subject": "Geography — Mountains",
+          "difficulty_tier": "enthusiast",
+          "question": "Worth £8,000, which Asian mountain range includes Nanga Parbat and stretches across Pakistan, India, and China?",
+          "correct_answer": "Karakoram",
+          "distractors": {
+            "easy": "Himalayas",
+            "medium": "Pamir",
+            "hard": "Kunlun"
+          }
+        },
+        {
+          "subject": "Anime",
+          "difficulty_tier": "specialist",
+          "question": "For £16,000, which director helmed the 1995 cyberpunk anime film 'Ghost in the Shell'?",
+          "correct_answer": "Mamoru Oshii",
+          "distractors": {
+            "easy": "Hideaki Anno",
+            "medium": "Katsuhiro Otomo",
+            "hard": "Satoshi Kon"
+          }
+        }
+      ],
+      "interlude": "The ladder glows gold as Jemima reminds both players that every step now sings with tension."
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "Renaissance Art",
+          "difficulty_tier": "specialist",
+          "question": "For £32,000, which Venetian painter created the large-scale work 'The Feast of the Gods' with Giovanni Bellini?",
+          "correct_answer": "Titian",
+          "distractors": {
+            "easy": "Giorgione",
+            "medium": "Tintoretto",
+            "hard": "Paolo Veronese"
+          }
+        },
+        {
+          "subject": "Baroque Music",
+          "difficulty_tier": "specialist",
+          "question": "Worth £64,000, which German composer premiered the 'Water Music' suites on barges along the Thames in 1717?",
+          "correct_answer": "George Frideric Handel",
+          "distractors": {
+            "easy": "Johann Pachelbel",
+            "medium": "Henry Purcell",
+            "hard": "Georg Philipp Telemann"
+          }
+        },
+        {
+          "subject": "Folklore — British",
+          "difficulty_tier": "specialist",
+          "question": "For £125,000, which legendary Welsh prophet is said to have foretold the coming of a once and future king?",
+          "correct_answer": "Myrddin Wyllt",
+          "distractors": {
+            "easy": "Taliesin",
+            "medium": "Gwion Bach",
+            "hard": "Arawn"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "World War II",
+          "difficulty_tier": "specialist",
+          "question": "For £32,000, which British general orchestrated Operation Compass, the first major Allied offensive in North Africa?",
+          "correct_answer": "Richard O'Connor",
+          "distractors": {
+            "easy": "Bernard Montgomery",
+            "medium": "Claude Auchinleck",
+            "hard": "Harold Alexander"
+          }
+        },
+        {
+          "subject": "Modern Politics",
+          "difficulty_tier": "specialist",
+          "question": "Worth £64,000, which German Chancellor succeeded Gerhard Schröder in 2005?",
+          "correct_answer": "Angela Merkel",
+          "distractors": {
+            "easy": "Olaf Scholz",
+            "medium": "Helmut Kohl",
+            "hard": "Frank-Walter Steinmeier"
+          }
+        },
+        {
+          "subject": "Mythology — Irish",
+          "difficulty_tier": "specialist",
+          "question": "For £125,000, which mythical Irish warrior is famed for wielding the spear Gáe Bulg?",
+          "correct_answer": "Cú Chulainn",
+          "distractors": {
+            "easy": "Fionn mac Cumhaill",
+            "medium": "Diarmuid Ua Duibhne",
+            "hard": "Conall Cernach"
+          }
+        }
+      ],
+      "interlude": "Jemima steadies the podium, knowing the next choices decide who faces the million-pound question."
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "World Literature",
+          "difficulty_tier": "specialist",
+          "question": "For £250,000, which Colombian author penned the novel 'The Autumn of the Patriarch'?",
+          "correct_answer": "Gabriel García Márquez",
+          "distractors": {
+            "easy": "Mario Vargas Llosa",
+            "medium": "Isabel Allende",
+            "hard": "Carlos Fuentes"
+          }
+        },
+        {
+          "subject": "Philosophy",
+          "difficulty_tier": "specialist",
+          "question": "Worth £500,000, which philosopher introduced the categorical imperative in his 1785 work on moral philosophy?",
+          "correct_answer": "Immanuel Kant",
+          "distractors": {
+            "easy": "Georg Wilhelm Friedrich Hegel",
+            "medium": "David Hume",
+            "hard": "Johann Gottlieb Fichte"
+          }
+        },
+        {
+          "subject": "Gameshow Lore",
+          "difficulty_tier": "specialist",
+          "question": "For £1,000,000, which British presenter hosted the first revival series of 'Who Wants to Be a Millionaire?' in 2018?",
+          "correct_answer": "Jeremy Clarkson",
+          "distractors": {
+            "easy": "Chris Tarrant",
+            "medium": "Davina McCall",
+            "hard": "Terry Wogan"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Science — Astronomy",
+          "difficulty_tier": "specialist",
+          "question": "For £250,000, which space telescope launched in 2021 is designed primarily for infrared observations of the early universe?",
+          "correct_answer": "James Webb Space Telescope",
+          "distractors": {
+            "easy": "Hubble Space Telescope",
+            "medium": "Spitzer Space Telescope",
+            "hard": "Chandra X-ray Observatory"
+          }
+        },
+        {
+          "subject": "Economics",
+          "difficulty_tier": "specialist",
+          "question": "Worth £500,000, which 20th-century economist developed the theory of creative destruction?",
+          "correct_answer": "Joseph Schumpeter",
+          "distractors": {
+            "easy": "John Maynard Keynes",
+            "medium": "Friedrich Hayek",
+            "hard": "Paul Samuelson"
+          }
+        },
+        {
+          "subject": "Folklore — Global",
+          "difficulty_tier": "specialist",
+          "question": "For £1,000,000, which Polynesian demigod is famed for slowing the sun with a rope in traditional legends?",
+          "correct_answer": "Māui",
+          "distractors": {
+            "easy": "Pele",
+            "medium": "Māui-tikitiki",
+            "hard": "Tangaroa"
+          }
+        }
+      ],
+      "interlude": "The studio hush settles as Jemima places the final question card on the plinth with a flourish."
+    }
+  ],
+  "maths": {
+    "location": "contestant lounge",
+    "beats": [
+      "Jemima tallies the cumulative winnings so far.",
+      "She imagines doubling tonight's jackpot for a charity draw.",
+      "A quick headcount of lifelines used gets scribbled on a napkin.",
+      "The producer signals the final mental warm-up."
+    ],
+    "questions": [
+      "If the host secures £250,000 and the guest secures £500,000, what is their combined total in pounds?",
+      "A jackpot of £1,000,000 is split equally among four finalists. How many pounds does each finalist receive?"
+    ],
+    "answers": [750000, 250000]
+  },
+  "integrity": {
+    "checksum": "placeholder",
+    "verified": true
+  }
+}
