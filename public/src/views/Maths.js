@@ -31,6 +31,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -59,10 +60,8 @@ export default {
 
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
-
-    // Per-view ink hue
-    const hue = Math.floor(Math.random()*360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    let themeRound = parseInt(params.get("round") || "5", 10) || 5;
+    applyTheme({ phase: "maths", round: themeRound });
 
     // Skeleton
     container.innerHTML = "";
@@ -114,6 +113,10 @@ export default {
     const rRef = roomRef(code);
     const roomSnap0 = await getDoc(rRef);
     const room0 = roomSnap0.data() || {};
+    if (Number(room0.round)) {
+      themeRound = Number(room0.round);
+      applyTheme({ phase: "maths", round: themeRound });
+    }
     const { hostUid, guestUid } = room0.meta || {};
     const storedRole = getStoredRole(code);
     const myRole  = (storedRole === "host" || storedRole === "guest")

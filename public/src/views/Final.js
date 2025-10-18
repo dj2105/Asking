@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 
 import { clampCode, getHashParams } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 const roundRef = (code, round) => doc(collection(roomRef(code), "rounds"), String(round));
@@ -275,9 +276,8 @@ export default {
 
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
-
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    const round = parseInt(params.get("round") || "5", 10) || 5;
+    applyTheme({ phase: "final", round });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-final" });
