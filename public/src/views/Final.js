@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 
 import { clampCode, getHashParams } from "../lib/util.js";
+import { applySceneTheme } from "../lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 const roundRef = (code, round) => doc(collection(roomRef(code), "rounds"), String(round));
@@ -276,8 +277,9 @@ export default {
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    let roundHint = 5.6;
+    const refreshTheme = () => applySceneTheme("final", { round: roundHint });
+    refreshTheme();
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-final" });
@@ -461,6 +463,15 @@ export default {
       const mathsSummary = computeMathsSummary(room);
       state.maths = mathsSummary;
       state.ready = true;
+
+      if (summary.rounds.length) {
+        const deepestRound = summary.rounds[summary.rounds.length - 1]?.round || roundHint;
+        const target = Math.min(6, Math.max(roundHint, deepestRound + 0.4));
+        if (Math.abs(target - roundHint) > 0.001) {
+          roundHint = target;
+          refreshTheme();
+        }
+      }
 
       if (!state.animationDone) {
         hostScoreValue.textContent = "0";
