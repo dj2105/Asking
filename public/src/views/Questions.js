@@ -19,6 +19,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -75,8 +76,7 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme({ phase: "questions", round: round || 1 });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-questions stage-center" });
@@ -154,6 +154,7 @@ export default {
     if (!round) {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
+      applyTheme({ phase: "questions", round });
     }
 
     const rdRef = doc(roundSubColRef(code), String(round));
