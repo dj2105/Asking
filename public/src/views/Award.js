@@ -17,6 +17,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -135,15 +136,14 @@ export default {
     const qs = getHashParams();
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
-
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    const syncTheme = () => applyTheme({ phase: "award", round });
+    syncTheme();
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
 
     const card = el("div", { class: "card award-card" });
-    const heading = el("div", { class: "mono award-title" }, "Daniel 0 — 0 Jaime");
+    const heading = el("div", { class: "award-title" }, "Daniel 0 — 0 Jaime");
     card.appendChild(heading);
 
     const reviewWrap = el("div", { class: "award-review" });
@@ -334,6 +334,7 @@ export default {
       const dataRound = Number(data.round);
       if (stateName === "award" && dataRound && dataRound !== round) {
         round = dataRound;
+        syncTheme();
         readyLabel = computeReadyLabel(round);
         if (!ackMine) {
           continueBtn.textContent = readyLabel;

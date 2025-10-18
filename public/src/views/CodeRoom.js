@@ -7,6 +7,7 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { clampCode, copyToClipboard, setStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -31,9 +32,7 @@ function formatShareUrl(code) {
 export default {
   async mount(container, params = {}) {
     await ensureAuth();
-
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme({ phase: "keyroom" });
 
     const code = clampCode(params.code || "");
     if (!code) {

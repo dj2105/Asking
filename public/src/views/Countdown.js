@@ -31,6 +31,7 @@ import {
   timeUntil,
   getStoredRole,
 } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -56,16 +57,32 @@ export default {
     const qs = getHashParams();
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
-
-    // per-view hue
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    const themePhase = () => applyTheme({ phase: "countdown", round });
+    themePhase();
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-countdown stage-center stage-center--solo" });
     const timer = el("div", { class: "mono countdown-big" }, "5");
     root.appendChild(timer);
     container.appendChild(root);
+
+    const reduceMotion = (() => {
+      try {
+        return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      } catch (err) {
+        return false;
+      }
+    })();
+
+    const pulseTimer = () => {
+      if (reduceMotion) return;
+      timer.classList.remove("countdown-tick");
+      void timer.offsetWidth; // restart animation frame
+      timer.classList.add("countdown-tick");
+    };
+
+    let lastDisplay = "5";
+    pulseTimer();
 
     const rRef = roomRef(code);
     const snap0 = await getDoc(rRef);
@@ -109,14 +126,19 @@ export default {
         round = Number(data.round);
         roundReady = false;
         watchRoundDoc(round);
+        themePhase();
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
       if (remoteStart && remoteStart !== countdownStartAt) {
         countdownStartAt = remoteStart;
         hasFlipped = false;
+        lastDisplay = null;
       }
       if (!remoteStart) {
+        if (countdownStartAt) {
+          lastDisplay = null;
+        }
         countdownStartAt = 0;
         hasFlipped = false;
       }
@@ -147,13 +169,22 @@ export default {
 
     const tick = setInterval(async () => {
       if (!countdownStartAt) {
-        timer.textContent = "5";
+        if (lastDisplay !== "5") {
+          lastDisplay = "5";
+          timer.textContent = "5";
+          pulseTimer();
+        }
         return;
       }
 
       const remainMs = timeUntil(countdownStartAt);
       const secs = Math.ceil(remainMs / 1000);
-      timer.textContent = String(secs > 0 ? secs : 0);
+      const display = String(secs > 0 ? secs : 0);
+      if (display !== lastDisplay) {
+        lastDisplay = display;
+        timer.textContent = display;
+        pulseTimer();
+      }
 
       if (remainMs <= 0 && !hasFlipped) {
         if (!roundReady) {
