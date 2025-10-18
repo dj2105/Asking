@@ -8,6 +8,7 @@
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import { collection, doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { applyStageTheme } from "../lib/theme.js";
 import {
   unsealFile,
   unsealHalfpack,
@@ -543,8 +544,7 @@ export default {
   async mount(container) {
     await ensureAuth();
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme({ stage: "keyroom" });
 
     const params = getHashParams();
     const hintedCode = clampCode(params.get("code") || "");

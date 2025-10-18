@@ -30,6 +30,7 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
+import { applyStageTheme } from "../lib/theme.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
@@ -60,9 +61,7 @@ export default {
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
 
-    // Per-view ink hue
-    const hue = Math.floor(Math.random()*360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme({ stage: "maths" });
 
     // Skeleton
     container.innerHTML = "";

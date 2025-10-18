@@ -5,6 +5,7 @@
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
+import { applyStageTheme } from "../lib/theme.js";
 import {
   clampCode,
   getHashParams,
@@ -33,8 +34,7 @@ export default {
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme({ stage: "seeding" });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-seeding" });
