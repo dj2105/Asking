@@ -19,6 +19,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -75,14 +76,13 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme({ phase: "questions", round: round || 1 });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header" });
+    const headerRow = el("div", { class: "phase-header" });
     const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
     const timerDisplay = el("div", {
       class: "phase-header__timer phase-header__timer--hidden",
@@ -91,7 +91,7 @@ export default {
     }, "");
     headerRow.appendChild(heading);
     headerRow.appendChild(timerDisplay);
-    const qText = el("div", { class: "mono question-card__prompt" }, "");
+    const qText = el("div", { class: "question-card__prompt" }, "");
 
     card.appendChild(headerRow);
     card.appendChild(qText);
@@ -104,7 +104,7 @@ export default {
     card.appendChild(btnWrap);
 
     let waitMessageDefault = "Waiting…";
-    const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
+    const waitMsg = el("div", { class: "wait-note" }, waitMessageDefault);
     waitMsg.style.display = "none";
     card.appendChild(waitMsg);
 
@@ -114,8 +114,8 @@ export default {
     root.appendChild(mathsMount);
 
     const overlay = el("div", { class: "stage-overlay stage-overlay--hidden" });
-    const overlayTitle = el("div", { class: "mono stage-overlay__title" }, "");
-    const overlayNote = el("div", { class: "mono small stage-overlay__note" }, "");
+    const overlayTitle = el("div", { class: "stage-overlay__title" }, "");
+    const overlayNote = el("div", { class: "stage-overlay__note" }, "");
     overlay.appendChild(overlayTitle);
     overlay.appendChild(overlayNote);
     root.appendChild(overlay);
@@ -154,6 +154,7 @@ export default {
     if (!round) {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
+      applyTheme({ phase: "questions", round });
     }
 
     const rdRef = doc(roundSubColRef(code), String(round));

@@ -11,6 +11,7 @@ import {
   getLastRoomCode,
   setLastRoomCode,
 } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -81,9 +82,7 @@ export default {
     const roleParamRaw = (params.get("role") || "").toLowerCase();
     const queryRole = roleParamRaw === "host" || roleParamRaw === "guest" ? roleParamRaw : "";
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "72%");
+    applyTheme({ phase: "lobby" });
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-rejoin" });
@@ -110,16 +109,16 @@ export default {
     const joinBtn = el("button", { class: "btn primary", type: "button" }, "Join");
     card.appendChild(joinBtn);
 
-    const statusLine = el("div", { class: "mono small", style: "margin-top:10px;min-height:18px;" }, "");
+    const statusLine = el("div", { style: "margin-top:10px;min-height:18px;font-size:0.9rem;letter-spacing:0.04em;" }, "");
     card.appendChild(statusLine);
 
     card.appendChild(el("div", {
       style: "margin:18px 0 12px 0;border-top:1px solid rgba(0,0,0,0.18);",
     }));
 
-    card.appendChild(el("div", { class: "mono", style: "font-weight:700;margin-bottom:6px;" }, "Manual Rejoin"));
+    card.appendChild(el("div", { style: "font-family:var(--display-font);font-weight:600;letter-spacing:0.18em;margin-bottom:6px;text-transform:uppercase;" }, "Manual Rejoin"));
 
-    const roleWrap = el("div", { class: "mono", style: "display:flex;gap:14px;margin-bottom:10px;" });
+    const roleWrap = el("div", { style: "display:flex;gap:14px;margin-bottom:10px;" });
     const roleOptions = [
       { value: "host", label: "Daniel" },
       { value: "guest", label: "Jaime" },
@@ -141,7 +140,7 @@ export default {
         },
       });
       if (currentRole === value) radio.checked = true;
-      const wrap = el("label", { class: "mono", for: id, style: "display:flex;align-items:center;gap:6px;" }, [radio, label]);
+      const wrap = el("label", { for: id, style: "display:flex;align-items:center;gap:6px;letter-spacing:0.04em;" }, [radio, label]);
       roleWrap.appendChild(wrap);
     });
     card.appendChild(roleWrap);

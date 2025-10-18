@@ -10,6 +10,7 @@ import {
   getHashParams,
   timeUntil,
 } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -33,19 +34,18 @@ export default {
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme({ phase: "seeding" });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-seeding" });
     root.appendChild(el("h1", { class: "title" }, "Linking Jemima…"));
 
     const card = el("div", { class: "card" });
-    const heading = el("div", { class: "mono", style: "text-align:center;margin-bottom:8px;" },
+    const heading = el("div", { style: "text-align:center;margin-bottom:8px;" },
       code ? `Room ${code}` : "Room unknown");
     card.appendChild(heading);
 
-    const status = el("div", { class: "mono", style: "min-height:18px;" }, "Waiting for host upload…");
+    const status = el("div", { style: "min-height:18px;" }, "Waiting for host upload…");
     card.appendChild(status);
 
     const logEl = el("pre", {

@@ -7,6 +7,7 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { clampCode, copyToClipboard, setStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -32,8 +33,7 @@ export default {
   async mount(container, params = {}) {
     await ensureAuth();
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme({ phase: "keyroom" });
 
     const code = clampCode(params.code || "");
     if (!code) {
@@ -52,8 +52,7 @@ export default {
     card.appendChild(el("h1", { class: "title" }, "Code Room"));
 
     const codeBlock = el("div", {
-      class: "mono",
-      style: "font-size:42px;font-weight:700;margin-top:10px;text-align:center;letter-spacing:6px;",
+      style: "font-family:var(--display-font);font-size:42px;font-weight:700;margin-top:10px;text-align:center;letter-spacing:6px;",
     }, code);
     card.appendChild(codeBlock);
 
@@ -73,14 +72,14 @@ export default {
 
     const status = el(
       "div",
-      { class: "mono", style: "margin-top:20px;min-height:20px;text-align:center;" },
+      { style: "margin-top:20px;min-height:20px;text-align:center;" },
       "Waiting for Jaime…"
     );
     card.appendChild(status);
 
     const guestBadge = el(
       "div",
-      { class: "mono small", style: "margin-top:6px;text-align:center;opacity:0.8;" },
+      { style: "margin-top:6px;text-align:center;opacity:0.8;font-size:0.9rem;letter-spacing:0.06em;" },
       ""
     );
     card.appendChild(guestBadge);

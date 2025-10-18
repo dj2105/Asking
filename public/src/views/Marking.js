@@ -19,6 +19,7 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { applyTheme } from "../lib/theme.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -75,14 +76,13 @@ export default {
     const code = clampCode(params.get("code") || "");
     const round = parseInt(params.get("round") || "1", 10) || 1;
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyTheme({ phase: "marking", round });
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header" });
+    const headerRow = el("div", { class: "phase-header" });
     const heading = el("div", { class: "phase-header__title" }, "MARKING");
     const timerDisplay = el("div", {
       class: "phase-header__timer phase-header__timer--hidden",
@@ -111,8 +111,8 @@ export default {
     root.appendChild(mathsMount);
 
     const overlay = el("div", { class: "stage-overlay stage-overlay--hidden" });
-    const overlayTitle = el("div", { class: "mono stage-overlay__title" }, "");
-    const overlayNote = el("div", { class: "mono small stage-overlay__note" }, "");
+    const overlayTitle = el("div", { class: "stage-overlay__title" }, "");
+    const overlayNote = el("div", { class: "stage-overlay__note" }, "");
     overlay.appendChild(overlayTitle);
     overlay.appendChild(overlayNote);
     root.appendChild(overlay);
