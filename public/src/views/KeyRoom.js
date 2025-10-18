@@ -706,8 +706,8 @@ export default {
     }
 
     for (const [role, cfg] of Object.entries(slotConfigs)) {
-    const slot = createSlot(role, cfg.label, cfg.initial);
-    slot.label = cfg.label;
+      const slot = createSlot(role, cfg.label, cfg.initial);
+      slot.label = cfg.label;
       slotMap[role] = slot;
       uploadGrid.appendChild(slot.wrapper);
     }
@@ -725,6 +725,61 @@ export default {
     const generatedLabel = el("span", {}, "");
     metaRow.appendChild(generatedLabel);
     card.appendChild(metaRow);
+
+    const mathsPreview = el("div", {
+      class: "mono",
+      style:
+        "margin-top:12px;padding:12px;border:1px solid rgba(0,0,0,0.2);border-radius:12px;background:rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:6px;",
+    });
+    const mathsHeading = el("div", { style: "font-weight:700;text-align:center;" }, "Maths block preview");
+    const mathsSourceCaption = el(
+      "div",
+      { class: "mono small", style: "text-align:center;opacity:0.8;" },
+      "Using —"
+    );
+    const mathsLocationValue = el("span", { style: "font-weight:700;" }, "—");
+    const mathsLocationLine = el(
+      "div",
+      { class: "mono small", style: "text-align:center;" },
+      ["Location · ", mathsLocationValue]
+    );
+    const mathsSnippetsHeading = el(
+      "div",
+      { class: "mono small", style: "font-weight:600;" },
+      "Snippets"
+    );
+    const mathsSnippetsList = el("ul", {
+      class: "mono small",
+      style: "margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:2px;text-align:left;",
+    });
+    const mathsQuestionsHeading = el(
+      "div",
+      { class: "mono small", style: "font-weight:600;margin-top:4px;" },
+      "Questions"
+    );
+    const mathsQuestionsList = el("ul", {
+      class: "mono small",
+      style: "margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:2px;text-align:left;",
+    });
+    const mathsAnswersHeading = el(
+      "div",
+      { class: "mono small", style: "font-weight:600;margin-top:4px;" },
+      "Answers"
+    );
+    const mathsAnswersList = el("ul", {
+      class: "mono small",
+      style: "margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:2px;text-align:left;",
+    });
+    mathsPreview.appendChild(mathsHeading);
+    mathsPreview.appendChild(mathsSourceCaption);
+    mathsPreview.appendChild(mathsLocationLine);
+    mathsPreview.appendChild(mathsSnippetsHeading);
+    mathsPreview.appendChild(mathsSnippetsList);
+    mathsPreview.appendChild(mathsQuestionsHeading);
+    mathsPreview.appendChild(mathsQuestionsList);
+    mathsPreview.appendChild(mathsAnswersHeading);
+    mathsPreview.appendChild(mathsAnswersList);
+    card.appendChild(mathsPreview);
 
     const status = el(
       "div",
@@ -970,6 +1025,43 @@ export default {
     updateJumpRoundVisibility();
     reflectJumpState();
 
+    function updateMathsPreview(sourceLabel = "—") {
+      mathsSourceCaption.textContent = `Using ${sourceLabel}`;
+      const source = stage.mathsOverride?.maths || stage.base?.maths || null;
+      const ensureText = (value) => {
+        if (typeof value === "number") return String(value);
+        if (typeof value === "string") return value;
+        return PLACEHOLDER;
+      };
+      const fillList = (listEl, prefix, items) => {
+        listEl.innerHTML = "";
+        items.forEach((item, idx) => {
+          const text = `${prefix} ${idx + 1} · ${ensureText(item)}`;
+          listEl.appendChild(
+            el("li", { class: "mono small", style: "margin:0;padding:1px 0;" }, text)
+          );
+        });
+      };
+
+      if (!source) {
+        mathsLocationValue.textContent = "—";
+        fillList(mathsSnippetsList, "Snippet", [PLACEHOLDER, PLACEHOLDER, PLACEHOLDER, PLACEHOLDER]);
+        fillList(mathsQuestionsList, "Question", [PLACEHOLDER, PLACEHOLDER]);
+        fillList(mathsAnswersList, "Answer", [PLACEHOLDER, PLACEHOLDER]);
+        return;
+      }
+
+      const maths = normalizeMaths(source);
+      mathsLocationValue.textContent = ensureText(maths.location);
+      fillList(mathsSnippetsList, "Snippet", maths.beats);
+      fillList(mathsQuestionsList, "Question", maths.questions);
+      fillList(
+        mathsAnswersList,
+        "Answer",
+        maths.answers.map((ans) => (Number.isInteger(ans) ? ans : PLACEHOLDER))
+      );
+    }
+
     function updateProgress() {
       const hostSource = stage.hostOverride
         ? "Host (15)"
@@ -991,6 +1083,7 @@ export default {
         ? "Full Pack"
         : "—";
       progressLine.textContent = `Sources → Host: ${hostSource} · Guest: ${guestSource} · Maths: ${mathsSource}`;
+      updateMathsPreview(mathsSource);
     }
 
     function log(message) {
