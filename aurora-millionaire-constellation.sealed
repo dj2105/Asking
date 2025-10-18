@@ -1,0 +1,402 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "roomCode": "OWL",
+    "generatedAt": "2025-10-17T20:00:00Z",
+    "hostUid": "jemima-host",
+    "guestUid": "jemima-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "pub",
+          "question": "Which city serves as the capital of Slovenia?",
+          "correct_answer": "Ljubljana",
+          "distractors": {
+            "easy": "Zagreb",
+            "medium": "Bratislava",
+            "hard": "Skopje"
+          }
+        },
+        {
+          "subject": "Cats",
+          "difficulty_tier": "pub",
+          "question": "Which domestic cat breed is known for its folded ears caused by a cartilage mutation?",
+          "correct_answer": "Scottish Fold",
+          "distractors": {
+            "easy": "Siamese",
+            "medium": "British Shorthair",
+            "hard": "Chartreux"
+          }
+        },
+        {
+          "subject": "’90s Pop",
+          "difficulty_tier": "pub",
+          "question": "Which singer released the 1999 hit single \"Genie in a Bottle\"?",
+          "correct_answer": "Christina Aguilera",
+          "distractors": {
+            "easy": "Britney Spears",
+            "medium": "Jessica Simpson",
+            "hard": "Mandy Moore"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "British Monarchy",
+          "difficulty_tier": "pub",
+          "question": "Who was the British monarch during the coronation of the first BBC television broadcast in 1937?",
+          "correct_answer": "George VI",
+          "distractors": {
+            "easy": "Edward VIII",
+            "medium": "George V",
+            "hard": "William IV"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "difficulty_tier": "pub",
+          "question": "The Danube River flows into which body of water?",
+          "correct_answer": "Black Sea",
+          "distractors": {
+            "easy": "Mediterranean Sea",
+            "medium": "Adriatic Sea",
+            "hard": "Sea of Azov"
+          }
+        },
+        {
+          "subject": "Gameshow Lore",
+          "difficulty_tier": "pub",
+          "question": "Which lifeline introduced in some international Millionaire formats allows contestants to swap their question?",
+          "correct_answer": "Switch the Question",
+          "distractors": {
+            "easy": "Double Dip",
+            "medium": "Ask the Expert",
+            "hard": "Ask Two Friends"
+          }
+        }
+      ],
+      "interlude": "Jemima jingles the prize ladder bells to welcome round one."
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Ancient Greece",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Greek city-state was home to the philosopher Democritus, often called the \"father of the atom\"?",
+          "correct_answer": "Abdera",
+          "distractors": {
+            "easy": "Athens",
+            "medium": "Miletus",
+            "hard": "Samos"
+          }
+        },
+        {
+          "subject": "American TV Sitcoms",
+          "difficulty_tier": "enthusiast",
+          "question": "In \"Parks and Recreation,\" what is the name of the miniature horse beloved by the town of Pawnee?",
+          "correct_answer": "Li'l Sebastian",
+          "distractors": {
+            "easy": "Mini Sebastian",
+            "medium": "Sir Regal",
+            "hard": "Champion"
+          }
+        },
+        {
+          "subject": "Language — Grammar",
+          "difficulty_tier": "enthusiast",
+          "question": "What term describes a verb that requires a direct object to complete its meaning?",
+          "correct_answer": "Transitive verb",
+          "distractors": {
+            "easy": "Linking verb",
+            "medium": "Auxiliary verb",
+            "hard": "Reflexive verb"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Irish History",
+          "difficulty_tier": "enthusiast",
+          "question": "Which treaty in 1921 established the Irish Free State?",
+          "correct_answer": "Anglo-Irish Treaty",
+          "distractors": {
+            "easy": "Treaty of Versailles",
+            "medium": "Easter Agreement",
+            "hard": "Downing Street Declaration"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Asian capital city is situated on the banks of the Han River?",
+          "correct_answer": "Seoul",
+          "distractors": {
+            "easy": "Bangkok",
+            "medium": "Taipei",
+            "hard": "Ulaanbaatar"
+          }
+        },
+        {
+          "subject": "Folklore — British",
+          "difficulty_tier": "enthusiast",
+          "question": "Which legendary Cornish giant is said to have hurled boulders across Mount's Bay?",
+          "correct_answer": "Cormoran",
+          "distractors": {
+            "easy": "Gogmagog",
+            "medium": "Bedivere",
+            "hard": "Wayland"
+          }
+        }
+      ],
+      "interlude": "Jemima swaps cue cards for a compass as the questions venture wider."
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "World War I",
+          "difficulty_tier": "specialist",
+          "question": "Which battle in 1917 marked the first mass use of tanks by the British Army?",
+          "correct_answer": "Battle of Cambrai",
+          "distractors": {
+            "easy": "Battle of the Somme",
+            "medium": "Battle of Passchendaele",
+            "hard": "Battle of Neuve Chapelle"
+          }
+        },
+        {
+          "subject": "Renaissance Art",
+          "difficulty_tier": "specialist",
+          "question": "Which painter created the fresco cycle of the \"Camera degli Sposi\" in Mantua?",
+          "correct_answer": "Andrea Mantegna",
+          "distractors": {
+            "easy": "Sandro Botticelli",
+            "medium": "Piero della Francesca",
+            "hard": "Cosimo Tura"
+          }
+        },
+        {
+          "subject": "Language — Punctuation",
+          "difficulty_tier": "specialist",
+          "question": "What is the name of the punctuation mark formed by combining a question mark and an exclamation mark into one glyph?",
+          "correct_answer": "Interrobang",
+          "distractors": {
+            "easy": "Pilcrow",
+            "medium": "Guillemot",
+            "hard": "Solidus"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Roman Empire",
+          "difficulty_tier": "specialist",
+          "question": "Which emperor commissioned the construction of the Column of Marcus Aurelius in Rome?",
+          "correct_answer": "Commodus",
+          "distractors": {
+            "easy": "Hadrian",
+            "medium": "Antoninus Pius",
+            "hard": "Caracalla"
+          }
+        },
+        {
+          "subject": "Baroque Music",
+          "difficulty_tier": "specialist",
+          "question": "Which composer wrote the opera \"Dido and Aeneas\"?",
+          "correct_answer": "Henry Purcell",
+          "distractors": {
+            "easy": "George Frideric Handel",
+            "medium": "Arcangelo Corelli",
+            "hard": "Jean-Philippe Rameau"
+          }
+        },
+        {
+          "subject": "TV — American Drama",
+          "difficulty_tier": "specialist",
+          "question": "In \"The Americans,\" which code name does Elizabeth Jennings frequently use during field operations?",
+          "correct_answer": "Clark's Wife",
+          "distractors": {
+            "easy": "Marta",
+            "medium": "Kate",
+            "hard": "Yousaf"
+          }
+        }
+      ],
+      "interlude": "Jemima dims the studio lights as the stakes start to glow."
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "Geography — Mountains",
+          "difficulty_tier": "specialist",
+          "question": "Mount Ararat, traditionally associated with Noah's Ark, lies in which modern-day country?",
+          "correct_answer": "Turkey",
+          "distractors": {
+            "easy": "Armenia",
+            "medium": "Iran",
+            "hard": "Georgia"
+          }
+        },
+        {
+          "subject": "Comics",
+          "difficulty_tier": "specialist",
+          "question": "Which comics writer created the character Dream of the Endless in \"The Sandman\" series?",
+          "correct_answer": "Neil Gaiman",
+          "distractors": {
+            "easy": "Alan Moore",
+            "medium": "Grant Morrison",
+            "hard": "Mike Carey"
+          }
+        },
+        {
+          "subject": "Modern Politics",
+          "difficulty_tier": "specialist",
+          "question": "Which German Chancellor championed the Energiewende policy accelerating the country's transition away from nuclear power after 2011?",
+          "correct_answer": "Angela Merkel",
+          "distractors": {
+            "easy": "Gerhard Schröder",
+            "medium": "Helmut Kohl",
+            "hard": "Olaf Scholz"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Medieval Europe",
+          "difficulty_tier": "specialist",
+          "question": "Which 13th-century treaty resolved disputes between England's Henry III and rebellious barons following the Second Barons' War?",
+          "correct_answer": "Treaty of Kenilworth",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Treaty of York",
+            "hard": "Treaty of Lambeth"
+          }
+        },
+        {
+          "subject": "Anime",
+          "difficulty_tier": "specialist",
+          "question": "Which anime series features the clandestine organization \"SEELE\" overseeing the Human Instrumentality Project?",
+          "correct_answer": "Neon Genesis Evangelion",
+          "distractors": {
+            "easy": "Cowboy Bebop",
+            "medium": "Serial Experiments Lain",
+            "hard": "Ergo Proxy"
+          }
+        },
+        {
+          "subject": "Pop Culture — Memes",
+          "difficulty_tier": "specialist",
+          "question": "Which internet meme centers on a dog confidently declaring \"This is fine\" while surrounded by flames?",
+          "correct_answer": "On Fire Dog",
+          "distractors": {
+            "easy": "Doge",
+            "medium": "Disaster Girl",
+            "hard": "Grumpy Cat"
+          }
+        }
+      ],
+      "interlude": "Jemima taps the Millionaire lights, asking if anyone feels brave enough to blink."
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "Classical Mythology",
+          "difficulty_tier": "specialist",
+          "question": "Which nymph fell in love with Narcissus and faded to only a voice after being spurned?",
+          "correct_answer": "Echo",
+          "distractors": {
+            "easy": "Daphne",
+            "medium": "Syrinx",
+            "hard": "Arethusa"
+          }
+        },
+        {
+          "subject": "World War II",
+          "difficulty_tier": "specialist",
+          "question": "Which Allied operation in 1944 aimed to seize bridges over the Rhine at Arnhem and Nijmegen?",
+          "correct_answer": "Operation Market Garden",
+          "distractors": {
+            "easy": "Operation Torch",
+            "medium": "Operation Husky",
+            "hard": "Operation Dragoon"
+          }
+        },
+        {
+          "subject": "Printing & Type",
+          "difficulty_tier": "specialist",
+          "question": "Which typographer designed the typeface Gill Sans in 1928?",
+          "correct_answer": "Eric Gill",
+          "distractors": {
+            "easy": "Stanley Morison",
+            "medium": "Neville Brody",
+            "hard": "Jan Tschichold"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Norse Myth",
+          "difficulty_tier": "specialist",
+          "question": "Which wolf is prophesied to devour Odin during Ragnarök?",
+          "correct_answer": "Fenrir",
+          "distractors": {
+            "easy": "Sköll",
+            "medium": "Geri",
+            "hard": "Freki"
+          }
+        },
+        {
+          "subject": "TV — British",
+          "difficulty_tier": "specialist",
+          "question": "In \"Line of Duty,\" which internal anti-corruption unit do the main protagonists belong to?",
+          "correct_answer": "AC-12",
+          "distractors": {
+            "easy": "MI-5",
+            "medium": "SO-19",
+            "hard": "OCG"
+          }
+        },
+        {
+          "subject": "’10s Pop",
+          "difficulty_tier": "specialist",
+          "question": "Which artist released the 2016 album \"Anti\" featuring the hit \"Work\"?",
+          "correct_answer": "Rihanna",
+          "distractors": {
+            "easy": "Beyoncé",
+            "medium": "SZA",
+            "hard": "Tinashe"
+          }
+        }
+      ],
+      "interlude": "Jemima rolls the final drumbeat, promising fireworks no matter the outcome."
+    }
+  ],
+  "maths": {
+    "location": "planetarium",
+    "beats": [
+      "Jemima guides the contestants past constellations toward a glowing abacus.",
+      "Meteor trails sketch multiplication tables across the dome.",
+      "The host and guest trade calculations with laser pointers.",
+      "A comet countdown ushers them into the final questions."
+    ],
+    "questions": [
+      "If a meteor shower shows 18 streaks per minute, how many appear in 7 minutes?",
+      "A telescope magnifies an image by a factor of 12. If the original width is 9 millimetres, what is the magnified width in millimetres?"
+    ],
+    "answers": [
+      126,
+      108
+    ]
+  },
+  "integrity": {
+    "checksum": "b4c0f1f92f2d4441a5e3d2c8f7b1a66e",
+    "verified": true
+  }
+}
