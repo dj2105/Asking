@@ -1,0 +1,402 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "roomCode": "CAT",
+    "generatedAt": "2025-01-17T12:00:00Z",
+    "hostUid": "daniel-001",
+    "guestUid": "jaime-001"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "difficulty_tier": "pub",
+          "question": "Which British monarch's 1953 coronation was the first to be televised?",
+          "correct_answer": "Elizabeth II",
+          "distractors": {
+            "easy": "George VI",
+            "medium": "Edward VIII",
+            "hard": "George V"
+          }
+        },
+        {
+          "subject": "Cats",
+          "difficulty_tier": "pub",
+          "question": "Which cat breed is famous for its naturally folded ears?",
+          "correct_answer": "Scottish Fold",
+          "distractors": {
+            "easy": "Siamese",
+            "medium": "Bengal",
+            "hard": "Cornish Rex"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "pub",
+          "question": "What is the capital city of Finland?",
+          "correct_answer": "Helsinki",
+          "distractors": {
+            "easy": "Oslo",
+            "medium": "Stockholm",
+            "hard": "Reykjavik"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "American TV Sitcoms",
+          "difficulty_tier": "pub",
+          "question": "Which sitcom features the fictional paper company Dunder Mifflin?",
+          "correct_answer": "The Office",
+          "distractors": {
+            "easy": "Parks and Recreation",
+            "medium": "Brooklyn Nine-Nine",
+            "hard": "30 Rock"
+          }
+        },
+        {
+          "subject": "’90s Pop",
+          "difficulty_tier": "pub",
+          "question": "Which singer released the 1994 hit single 'Baby Baby'?",
+          "correct_answer": "Amy Grant",
+          "distractors": {
+            "easy": "Mariah Carey",
+            "medium": "Toni Braxton",
+            "hard": "Natalie Merchant"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "difficulty_tier": "pub",
+          "question": "The Seine River flows through which European capital city?",
+          "correct_answer": "Paris",
+          "distractors": {
+            "easy": "Madrid",
+            "medium": "Brussels",
+            "hard": "Vienna"
+          }
+        }
+      ],
+      "interlude": "Jemima clinks her teacup and promises the questions will only get spicier from here."
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Irish History",
+          "difficulty_tier": "pub",
+          "question": "Which treaty signed in 1921 created the Irish Free State?",
+          "correct_answer": "Anglo-Irish Treaty",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Treaty of Limerick",
+            "hard": "Sunningdale Agreement"
+          }
+        },
+        {
+          "subject": "Ancient Greece",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Athenian statesman is credited with introducing the Council of 500 reforms?",
+          "correct_answer": "Cleisthenes",
+          "distractors": {
+            "easy": "Pericles",
+            "medium": "Solon",
+            "hard": "Ephialtes"
+          }
+        },
+        {
+          "subject": "Baroque Music",
+          "difficulty_tier": "enthusiast",
+          "question": "Which composer created the orchestral suite 'Water Music' for King George I?",
+          "correct_answer": "George Frideric Handel",
+          "distractors": {
+            "easy": "Antonio Vivaldi",
+            "medium": "Henry Purcell",
+            "hard": "Arcangelo Corelli"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "’80s Pop",
+          "difficulty_tier": "pub",
+          "question": "Which duo released the 1984 single 'Wake Me Up Before You Go-Go'?",
+          "correct_answer": "Wham!",
+          "distractors": {
+            "easy": "Pet Shop Boys",
+            "medium": "Tears for Fears",
+            "hard": "Spandau Ballet"
+          }
+        },
+        {
+          "subject": "TV — British",
+          "difficulty_tier": "enthusiast",
+          "question": "Which long-running British soap opera is set around Albert Square in Walford?",
+          "correct_answer": "EastEnders",
+          "distractors": {
+            "easy": "Coronation Street",
+            "medium": "Emmerdale",
+            "hard": "Brookside"
+          }
+        },
+        {
+          "subject": "Language — Grammar",
+          "difficulty_tier": "enthusiast",
+          "question": "What is the term for a verb that requires a direct object to complete its meaning?",
+          "correct_answer": "Transitive verb",
+          "distractors": {
+            "easy": "Linking verb",
+            "medium": "Auxiliary verb",
+            "hard": "Modal verb"
+          }
+        }
+      ],
+      "interlude": "Jemima straightens her note cards and whispers that round two favors the attentive."
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "Roman Empire",
+          "difficulty_tier": "enthusiast",
+          "question": "Which Roman emperor completed the construction of the Colosseum?",
+          "correct_answer": "Titus",
+          "distractors": {
+            "easy": "Nero",
+            "medium": "Domitian",
+            "hard": "Trajan"
+          }
+        },
+        {
+          "subject": "Medieval Europe",
+          "difficulty_tier": "enthusiast",
+          "question": "Which 14th-century pandemic significantly reduced Europe's population?",
+          "correct_answer": "The Black Death",
+          "distractors": {
+            "easy": "The Great Famine",
+            "medium": "The Justinian Plague",
+            "hard": "The English Sweating Sickness"
+          }
+        },
+        {
+          "subject": "Classical Mythology",
+          "difficulty_tier": "specialist",
+          "question": "Which hero slew the Calydonian boar with the help of Atalanta?",
+          "correct_answer": "Meleager",
+          "distractors": {
+            "easy": "Theseus",
+            "medium": "Bellerophon",
+            "hard": "Diomedes"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "TV — American Drama",
+          "difficulty_tier": "enthusiast",
+          "question": "Which fictional New Mexico city is the primary setting for 'Better Call Saul'?",
+          "correct_answer": "Albuquerque",
+          "distractors": {
+            "easy": "Santa Fe",
+            "medium": "Las Cruces",
+            "hard": "Roswell"
+          }
+        },
+        {
+          "subject": "Comics",
+          "difficulty_tier": "enthusiast",
+          "question": "Which character wields the Ebony Blade in Marvel Comics canon?",
+          "correct_answer": "Black Knight",
+          "distractors": {
+            "easy": "Moon Knight",
+            "medium": "Captain Britain",
+            "hard": "Dane Whitman"
+          }
+        },
+        {
+          "subject": "Language — Punctuation",
+          "difficulty_tier": "specialist",
+          "question": "What punctuation mark is used to denote the omission of letters within a single word, as in 'rock 'n' roll'?",
+          "correct_answer": "Apostrophe",
+          "distractors": {
+            "easy": "Ellipsis",
+            "medium": "En dash",
+            "hard": "Interpunct"
+          }
+        }
+      ],
+      "interlude": "Jemima fans herself with the scorecards and declares the midpoint a whirlpool of wits."
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "World War I",
+          "difficulty_tier": "specialist",
+          "question": "Which 1916 battle is remembered for the first major use of tanks in warfare?",
+          "correct_answer": "Battle of the Somme",
+          "distractors": {
+            "easy": "Battle of Verdun",
+            "medium": "Battle of Cambrai",
+            "hard": "Battle of Passchendaele"
+          }
+        },
+        {
+          "subject": "Renaissance Art",
+          "difficulty_tier": "specialist",
+          "question": "Which Renaissance artist painted the fresco cycle 'The Legend of the True Cross' in Arezzo?",
+          "correct_answer": "Piero della Francesca",
+          "distractors": {
+            "easy": "Fra Angelico",
+            "medium": "Andrea Mantegna",
+            "hard": "Masaccio"
+          }
+        },
+        {
+          "subject": "Norse Myth",
+          "difficulty_tier": "specialist",
+          "question": "Which Norse god is associated with the ship Skidbladnir, said to always have favorable wind?",
+          "correct_answer": "Frey",
+          "distractors": {
+            "easy": "Thor",
+            "medium": "Njord",
+            "hard": "Tyr"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Folklore — British",
+          "difficulty_tier": "specialist",
+          "question": "Which mythical Welsh dragon did Merlin prophesy would defeat the invading Saxons?",
+          "correct_answer": "Y Ddraig Goch",
+          "distractors": {
+            "easy": "The Lambton Worm",
+            "medium": "Black Shuck",
+            "hard": "Twrch Trwyth"
+          }
+        },
+        {
+          "subject": "Printing & Type",
+          "difficulty_tier": "specialist",
+          "question": "Which 18th-century typographer designed the Baskerville typeface?",
+          "correct_answer": "John Baskerville",
+          "distractors": {
+            "easy": "William Caslon",
+            "medium": "Giambattista Bodoni",
+            "hard": "Eric Gill"
+          }
+        },
+        {
+          "subject": "Anime",
+          "difficulty_tier": "specialist",
+          "question": "Which director helmed the 1995 anime film 'Ghost in the Shell'?",
+          "correct_answer": "Mamoru Oshii",
+          "distractors": {
+            "easy": "Hideaki Anno",
+            "medium": "Satoshi Kon",
+            "hard": "Katsuhiro Otomo"
+          }
+        }
+      ],
+      "interlude": "Jemima dims the studio lights and murmurs that legends are forged in round four."
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "Modern Politics",
+          "difficulty_tier": "specialist",
+          "question": "Which leader delivered the 2005 'Citizenship Ceremony' speech outlining Australia's values at Parliament House in Canberra?",
+          "correct_answer": "John Howard",
+          "distractors": {
+            "easy": "Kevin Rudd",
+            "medium": "Julia Gillard",
+            "hard": "Malcolm Turnbull"
+          }
+        },
+        {
+          "subject": "Geography — Mountains",
+          "difficulty_tier": "specialist",
+          "question": "Mount Elbrus rises in which mountain range that bridges Europe and Asia?",
+          "correct_answer": "Caucasus Mountains",
+          "distractors": {
+            "easy": "Alps",
+            "medium": "Urals",
+            "hard": "Tien Shan"
+          }
+        },
+        {
+          "subject": "Gameshow Lore",
+          "difficulty_tier": "specialist",
+          "question": "Which game show introduced the 'Switch the Question' lifeline during its 2004 Super Millionaire run?",
+          "correct_answer": "Who Wants to Be a Millionaire?",
+          "distractors": {
+            "easy": "Deal or No Deal",
+            "medium": "Greed",
+            "hard": "The Weakest Link"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "World War II",
+          "difficulty_tier": "specialist",
+          "question": "Which 1942 Allied conference in Casablanca set the policy of 'unconditional surrender'?",
+          "correct_answer": "Casablanca Conference",
+          "distractors": {
+            "easy": "Tehran Conference",
+            "medium": "Yalta Conference",
+            "hard": "Arcadia Conference"
+          }
+        },
+        {
+          "subject": "Pop Culture — Memes",
+          "difficulty_tier": "specialist",
+          "question": "Which viral 2010 meme remixed Antoine Dodson's warning to 'Hide yo kids, hide yo wife' into an Auto-Tuned song?",
+          "correct_answer": "Bed Intruder Song",
+          "distractors": {
+            "easy": "Double Rainbow Song",
+            "medium": "Friday",
+            "hard": "Chocolate Rain"
+          }
+        },
+        {
+          "subject": "’00s Pop",
+          "difficulty_tier": "specialist",
+          "question": "Which artist's 2007 album 'Good Girl Gone Bad' featured the chart-topping single 'Umbrella'?",
+          "correct_answer": "Rihanna",
+          "distractors": {
+            "easy": "Beyoncé",
+            "medium": "Ciara",
+            "hard": "Keri Hilson"
+          }
+        }
+      ],
+      "interlude": "Jemima raises the final question card like a sceptre and proclaims the grand finale."
+    }
+  ],
+  "maths": {
+    "location": "supermarket",
+    "beats": [
+      "A trolley with a wonky wheel squeaks toward the produce aisle.",
+      "Jemima debates the price of organic carrots versus standard fare.",
+      "A sudden announcement promises double loyalty points on tinned beans.",
+      "At the checkout, the scanner beeps an unexpected total."
+    ],
+    "questions": [
+      "If Jemima buys 8 tins of beans at £1.25 each and receives a 20% discount, what is the total cost?",
+      "The supermarket loyalty scheme grants 3 points per pound spent; how many points does Jemima earn on a £52.00 shop?"
+    ],
+    "answers": [
+      8,
+      156
+    ]
+  },
+  "integrity": {
+    "checksum": "2f3c8d9a7b1e4c56",
+    "verified": true
+  }
+}
