@@ -1,0 +1,24 @@
+{
+  "version": "jemima-maths-chain-1",
+  "meta": {
+    "roomCode": "SEA",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "location": "Harbour",
+    "beats": [
+      "I start by counting the 88 piano keys on the ferry's upright as the gulls squawk in time.",
+      "Then I add the 12 months I've spent coaching the crew's shanty harmonies between crossings.",
+      "Only half of them turn up tonight, so I halve my running total to match the duet that actually sings.",
+      "I toss in 31 for the days of our breezy October rehearsal challenge pinned to the noticeboard.",
+      "Finally, I subtract the 5 letters in the word 'SHORE' that I stencil across the sail before we dock."
+    ],
+    "question": "When the tide settles, what number am I humming about? ___",
+    "answer": 76
+  },
+  "integrity": {
+    "checksum": "will_be_filled_in_automatically",
+    "verified": true
+  }
+}
