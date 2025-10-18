@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-import sys, json, base64, hashlib, secrets
+import sys, json, base64, hashlib, secrets, re
+from datetime import datetime, timezone
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Hash import SHA256
 
 PASSWORD = b"DEMO-ONLY"
+ALLOWED_VERSIONS = {"jemima-maths-1", "jemima-maths-chain-1"}
 
 def js(o): return json.dumps(o, separators=(",", ":"), ensure_ascii=False)
 
@@ -16,11 +18,16 @@ def main():
     with open(in_path, "r", encoding="utf-8") as f:
         payload = json.load(f)
 
-    payload["version"] = "jemima-maths-1"
+    version = payload.get("version") or "jemima-maths-1"
+    if version not in ALLOWED_VERSIONS:
+        raise SystemExit("Unsupported maths pack version: %s" % version)
+    payload["version"] = version
     meta = payload.get("meta", {})
-    if "roomCode" not in meta:
-        raise SystemExit("meta.roomCode is required (3-letter uppercase).")
-    meta.setdefault("generatedAt", "1970-01-01T00:00:00Z")
+    room_code = meta.get("roomCode")
+    if not isinstance(room_code, str) or not re.fullmatch(r"[A-Z]{3}", room_code):
+        raise SystemExit("meta.roomCode is required (3 uppercase letters).")
+    if "generatedAt" not in meta:
+        meta["generatedAt"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     meta.setdefault("hostUid", "demo-host")
     meta.setdefault("guestUid", "demo-guest")
     payload["meta"] = meta
