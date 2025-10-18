@@ -1,0 +1,394 @@
+{
+  "meta": {
+    "roomCode": "AUR",
+    "generatedAt": "2025-10-17T20:00:00Z",
+    "hostUid": "daniel-001",
+    "guestUid": "jaime-001"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "difficulty_tier": "pub",
+          "question": "Which London abbey hosted the coronation of William the Conqueror in 1066?",
+          "correct_answer": "Westminster Abbey",
+          "distractors": {
+            "easy": "Canterbury Cathedral",
+            "medium": "St Paul's Cathedral",
+            "hard": "York Minster"
+          }
+        },
+        {
+          "subject": "Cats",
+          "difficulty_tier": "pub",
+          "question": "What term describes domestic cats born with more than the usual number of toes?",
+          "correct_answer": "Polydactyl",
+          "distractors": {
+            "easy": "Manx",
+            "medium": "Calico",
+            "hard": "Siamese"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "difficulty_tier": "pub",
+          "question": "Which city serves as the capital of Slovenia?",
+          "correct_answer": "Ljubljana",
+          "distractors": {
+            "easy": "Bratislava",
+            "medium": "Zagreb",
+            "hard": "Sarajevo"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "American TV Sitcoms",
+          "difficulty_tier": "pub",
+          "question": "In 'Parks and Recreation', what fictional Indiana town do the characters serve?",
+          "correct_answer": "Pawnee",
+          "distractors": {
+            "easy": "Scranton",
+            "medium": "Greendale",
+            "hard": "Wabash"
+          }
+        },
+        {
+          "subject": "Irish History",
+          "difficulty_tier": "pub",
+          "question": "Which treaty signed in December 1921 established the Irish Free State?",
+          "correct_answer": "Anglo-Irish Treaty",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Treaty of Utrecht",
+            "hard": "Sunningdale Agreement"
+          }
+        },
+        {
+          "subject": "'90s Pop",
+          "difficulty_tier": "pub",
+          "question": "Which Irish band topped charts in 1990 with the single 'Nothing Compares 2 U'?",
+          "correct_answer": "Sinéad O'Connor",
+          "distractors": {
+            "easy": "The Cranberries",
+            "medium": "Enya",
+            "hard": "Clannad"
+          }
+        }
+      ],
+      "interlude": "Jemima jingles the entry bell and invites everyone up the first glowing rung of the ladder."
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Ancient Greece",
+          "difficulty_tier": "pub",
+          "question": "Which festival in Olympia honoured Zeus with athletic contests every four years?",
+          "correct_answer": "The Olympic Games",
+          "distractors": {
+            "easy": "Panathenaic Games",
+            "medium": "Isthmian Games",
+            "hard": "Pythian Games"
+          }
+        },
+        {
+          "subject": "Roman Empire",
+          "difficulty_tier": "pub",
+          "question": "Which emperor built a massive defensive wall across northern Britain in the 2nd century CE?",
+          "correct_answer": "Hadrian",
+          "distractors": {
+            "easy": "Nero",
+            "medium": "Trajan",
+            "hard": "Antoninus Pius"
+          }
+        },
+        {
+          "subject": "Medieval Europe",
+          "difficulty_tier": "pub",
+          "question": "What 14th-century pandemic drastically reduced Europe's population and is often called the Black Death?",
+          "correct_answer": "The bubonic plague",
+          "distractors": {
+            "easy": "Spanish flu",
+            "medium": "Great Famine",
+            "hard": "Sweating sickness"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Renaissance Art",
+          "difficulty_tier": "pub",
+          "question": "Which Florentine artist sculpted the marble statue of David unveiled in 1504?",
+          "correct_answer": "Michelangelo",
+          "distractors": {
+            "easy": "Donatello",
+            "medium": "Gian Lorenzo Bernini",
+            "hard": "Andrea del Verrocchio"
+          }
+        },
+        {
+          "subject": "Baroque Music",
+          "difficulty_tier": "pub",
+          "question": "Which composer premiered 'Water Music' for a royal barge performance on the Thames in 1717?",
+          "correct_answer": "George Frideric Handel",
+          "distractors": {
+            "easy": "Henry Purcell",
+            "medium": "Antonio Vivaldi",
+            "hard": "Johann Pachelbel"
+          }
+        },
+        {
+          "subject": "Classical Mythology",
+          "difficulty_tier": "pub",
+          "question": "Which hero completed twelve labours as penance for slaying his family?",
+          "correct_answer": "Heracles",
+          "distractors": {
+            "easy": "Theseus",
+            "medium": "Perseus",
+            "hard": "Bellerophon"
+          }
+        }
+      ],
+      "interlude": "She flicks the studio lights to gold and whispers about ancient heroes before revealing round two."
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "Norse Myth",
+          "difficulty_tier": "enthusiast",
+          "question": "What is the name of the rainbow bridge said to connect Midgard to Asgard?",
+          "correct_answer": "Bifrost",
+          "distractors": {
+            "easy": "Yggdrasil",
+            "medium": "Gjallarbrú",
+            "hard": "Naglfar"
+          }
+        },
+        {
+          "subject": "World War I",
+          "difficulty_tier": "enthusiast",
+          "question": "Which 1916 battle became infamous for the first day losses of the British Army on the Western Front?",
+          "correct_answer": "The Battle of the Somme",
+          "distractors": {
+            "easy": "Battle of Ypres",
+            "medium": "Battle of Passchendaele",
+            "hard": "Battle of Cambrai"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "difficulty_tier": "enthusiast",
+          "question": "Which river flows through Baghdad before emptying into the Shatt al-Arab?",
+          "correct_answer": "Tigris",
+          "distractors": {
+            "easy": "Euphrates",
+            "medium": "Jordan",
+            "hard": "Orontes"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Geography — Mountains",
+          "difficulty_tier": "enthusiast",
+          "question": "Which mountain massif contains Mont Blanc, the highest peak in the Alps?",
+          "correct_answer": "Graian Alps",
+          "distractors": {
+            "easy": "Pennine Alps",
+            "medium": "Bernese Alps",
+            "hard": "Julian Alps"
+          }
+        },
+        {
+          "subject": "World War II",
+          "difficulty_tier": "enthusiast",
+          "question": "Which 1942-43 battle marked a decisive Soviet victory and turned the tide on the Eastern Front?",
+          "correct_answer": "Battle of Stalingrad",
+          "distractors": {
+            "easy": "Battle of Kursk",
+            "medium": "Battle of Leningrad",
+            "hard": "Battle of Kharkov"
+          }
+        },
+        {
+          "subject": "Modern Politics",
+          "difficulty_tier": "enthusiast",
+          "question": "Which treaty signed in 1992 established the European Union?",
+          "correct_answer": "Maastricht Treaty",
+          "distractors": {
+            "easy": "Lisbon Treaty",
+            "medium": "Schengen Agreement",
+            "hard": "Treaty of Nice"
+          }
+        }
+      ],
+      "interlude": "Jemima spins a miniature globe and hums the Millionaire theme before cueing the next climb."
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "Language — Grammar",
+          "difficulty_tier": "enthusiast",
+          "question": "What is the term for a word that imitates the sound it represents, such as 'buzz'?",
+          "correct_answer": "Onomatopoeia",
+          "distractors": {
+            "easy": "Homophone",
+            "medium": "Anaphora",
+            "hard": "Synecdoche"
+          }
+        },
+        {
+          "subject": "Language — Punctuation",
+          "difficulty_tier": "enthusiast",
+          "question": "Which punctuation mark consists of three dots indicating omitted text in a quotation?",
+          "correct_answer": "Ellipsis",
+          "distractors": {
+            "easy": "Colon",
+            "medium": "En dash",
+            "hard": "Pilcrow"
+          }
+        },
+        {
+          "subject": "Printing & Type",
+          "difficulty_tier": "enthusiast",
+          "question": "Which type designer created the sans-serif font Gill Sans in 1928?",
+          "correct_answer": "Eric Gill",
+          "distractors": {
+            "easy": "Stanley Morison",
+            "medium": "Jan Tschichold",
+            "hard": "Neville Brody"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Comics",
+          "difficulty_tier": "enthusiast",
+          "question": "Which artist co-created the character Black Panther alongside Stan Lee in 1966?",
+          "correct_answer": "Jack Kirby",
+          "distractors": {
+            "easy": "Steve Ditko",
+            "medium": "Joe Kubert",
+            "hard": "John Romita Sr."
+          }
+        },
+        {
+          "subject": "Anime",
+          "difficulty_tier": "enthusiast",
+          "question": "Which director helmed the 1997 film 'Princess Mononoke' for Studio Ghibli?",
+          "correct_answer": "Hayao Miyazaki",
+          "distractors": {
+            "easy": "Isao Takahata",
+            "medium": "Mamoru Hosoda",
+            "hard": "Makoto Shinkai"
+          }
+        },
+        {
+          "subject": "TV — British",
+          "difficulty_tier": "enthusiast",
+          "question": "Which long-running British soap is set in the fictional town of Weatherfield?",
+          "correct_answer": "Coronation Street",
+          "distractors": {
+            "easy": "Emmerdale",
+            "medium": "Brookside",
+            "hard": "Hollyoaks"
+          }
+        }
+      ],
+      "interlude": "She clicks a fountain pen, leaves an inky comet trail in the air, and ushers in the penultimate round."
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "TV — American Drama",
+          "difficulty_tier": "specialist",
+          "question": "Which Baltimore newspaper desk hires Alma Gutierrez as a rookie reporter in the fifth season of 'The Wire'?",
+          "correct_answer": "The city desk",
+          "distractors": {
+            "easy": "Sports desk",
+            "medium": "Business desk",
+            "hard": "Features desk"
+          }
+        },
+        {
+          "subject": "Sitcom — British",
+          "difficulty_tier": "specialist",
+          "question": "In 'Blackadder Goes Forth', what is the name of Captain Blackadder's incompetent superior officer?",
+          "correct_answer": "General Melchett",
+          "distractors": {
+            "easy": "Captain Darling",
+            "medium": "Lieutenant George",
+            "hard": "Field Marshal Haig"
+          }
+        },
+        {
+          "subject": "Pop Culture — Memes",
+          "difficulty_tier": "specialist",
+          "question": "Which imageboard did the LOLcats macro phenomenon prominently emerge from in the mid-2000s?",
+          "correct_answer": "4chan",
+          "distractors": {
+            "easy": "Reddit",
+            "medium": "Something Awful",
+            "hard": "Digg"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "'80s Pop",
+          "difficulty_tier": "specialist",
+          "question": "Which 1984 single by Prince opened with the lyric 'I never meant to cause you any sorrow'?",
+          "correct_answer": "Purple Rain",
+          "distractors": {
+            "easy": "When Doves Cry",
+            "medium": "Raspberry Beret",
+            "hard": "I Would Die 4 U"
+          }
+        },
+        {
+          "subject": "'00s Pop",
+          "difficulty_tier": "specialist",
+          "question": "Which producer featured on Nelly Furtado's 2006 hit 'Promiscuous'?",
+          "correct_answer": "Timbaland",
+          "distractors": {
+            "easy": "Pharrell Williams",
+            "medium": "Kanye West",
+            "hard": "Ryan Tedder"
+          }
+        },
+        {
+          "subject": "'10s Pop",
+          "difficulty_tier": "specialist",
+          "question": "Which 2016 single by Rihanna and Drake is built around the lyric 'You take my heart and my keys and my patience'?",
+          "correct_answer": "Work",
+          "distractors": {
+            "easy": "Needed Me",
+            "medium": "What's My Name?",
+            "hard": "Too Good"
+          }
+        }
+      ],
+      "interlude": "Jemima dimly lights the final rung, promising a glittering leap to the million as the last answers fall into place."
+    }
+  ],
+  "maths": {
+    "location": "retro game arcade",
+    "beats": [
+      "Jemima swaps quiz cards for neon tokens and powers up pixelated jackpots.",
+      "She watches twin players chase tickets with synchronized joystick jabs.",
+      "A jackpot siren blares as glowing ladders flash above their heads.",
+      "She cashes out the tickets and wonders how they convert to the grand prize."
+    ],
+    "questions": [
+      "The duo wins 180 tickets in round three and triple that in round four. How many tickets total do they have?",
+      "Each prize bundle costs 45 tickets. How many full bundles can they claim with their total tickets?"
+    ],
+    "answers": [720, 16]
+  }
+}
