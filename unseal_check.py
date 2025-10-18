@@ -119,9 +119,18 @@ def audit_pack(data):
             report["items_total"] = sum(
                 len(r.get("hostItems", [])) + len(r.get("guestItems", [])) for r in rounds
             )
+    maths_ok = False
     if "maths" in data:
         m = data["maths"]
-        report["maths_ok"] = isinstance(m.get("beats", []), list) and len(m.get("answers", [])) == 2
+        beats = m.get("beats", [])
+        if isinstance(beats, list):
+            if data.get("version") == "jemima-maths-chain-1":
+                maths_ok = len(beats) == 5 and isinstance(m.get("question"), str) and m.get("question", "").find("___") != -1 and isinstance(m.get("answer"), int)
+            else:
+                questions = m.get("questions", [])
+                answers = m.get("answers", [])
+                maths_ok = len(beats) >= 1 and isinstance(questions, list) and isinstance(answers, list) and len(answers) == 2
+    report["maths_ok"] = maths_ok
     clone = dict(data)
     clone.pop("integrity", None)
     canonical = js(clone)
