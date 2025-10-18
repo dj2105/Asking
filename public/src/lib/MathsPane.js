@@ -12,6 +12,8 @@
 
 import { db } from "./firebase.js";
 import { doc, collection, onSnapshot } from "firebase/firestore";
+import { PACK_VERSION_MATHS, PACK_VERSION_MATHS_CHAIN } from "./seedUnsealer.js";
+import { isChainMaths, isLegacyMaths } from "./util.js";
 
 const roundSubColRef = (code) => collection(doc(db, "rooms", code), "rounds");
 
@@ -87,7 +89,7 @@ function ensureSnippetStore(code) {
   return store;
 }
 
-export function mount(container, { maths, round = 1, mode = "inline", roomCode, userUid } = {}) {
+export function mount(container, { maths, round = 1, mode = "inline", roomCode, userUid, version } = {}) {
   if (!container) return;
 
   const prevCleanup = watcherMap.get(container);
@@ -110,11 +112,26 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
   listEl.className = "mono maths-panel__list";
   box.appendChild(listEl);
 
-  let dynamicEntries = [];
+  const footer = document.createElement("div");
+  footer.className = "mono maths-panel__footer";
+  footer.textContent = "Location: —";
+  box.appendChild(footer);
 
-  const updateList = () => {
+  let mathsEntries = [];
+  let snippetEntries = [];
+
+  const renderEntries = () => {
     listEl.innerHTML = "";
-    dynamicEntries.forEach((entry, index) => {
+    const combined = [...mathsEntries, ...snippetEntries];
+    if (!combined.length) {
+      const item = document.createElement("li");
+      item.className = "maths-panel__item maths-panel__item--subtle";
+      item.textContent = "Maths loading…";
+      listEl.appendChild(item);
+      return;
+    }
+
+    combined.forEach((entry) => {
       const item = document.createElement("li");
       item.className = "maths-panel__item";
       if (entry.bold) item.classList.add("maths-panel__item--bold");
@@ -124,7 +141,66 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
     });
   };
 
-  updateList();
+  const resolvedRound = () => {
+    if (mode === "maths") return 5;
+    const numeric = Number(round);
+    if (!Number.isInteger(numeric)) return 1;
+    return Math.max(1, Math.min(5, numeric));
+  };
+
+  const updateFooter = (locationText, resolvedVersion) => {
+    const loc = locationText && locationText.trim() ? locationText.trim() : "—";
+    let suffix = "";
+    if (resolvedVersion === PACK_VERSION_MATHS_CHAIN) suffix = " • chain";
+    else if (resolvedVersion === PACK_VERSION_MATHS) suffix = " • legacy";
+    else if (resolvedVersion) suffix = ` • ${resolvedVersion}`;
+    footer.textContent = `Location: ${loc}${suffix}`;
+  };
+
+  const applyMaths = () => {
+    if (!maths || typeof maths !== "object") {
+      mathsEntries = [{ text: "Maths loading…", subtle: true }];
+      updateFooter("", version);
+      renderEntries();
+      return;
+    }
+
+    const beats = Array.isArray(maths.beats) ? maths.beats : [];
+    const questions = Array.isArray(maths.questions) ? maths.questions : [];
+    const locationText = typeof maths.location === "string" ? maths.location : "";
+
+    let resolvedVersion = String(version || maths.version || "").trim();
+    if (resolvedVersion !== PACK_VERSION_MATHS && resolvedVersion !== PACK_VERSION_MATHS_CHAIN) {
+      if (isChainMaths(maths)) resolvedVersion = PACK_VERSION_MATHS_CHAIN;
+      else if (isLegacyMaths(maths)) resolvedVersion = PACK_VERSION_MATHS;
+    }
+
+    mathsEntries = [];
+
+    if (resolvedVersion === PACK_VERSION_MATHS_CHAIN) {
+      const idx = Math.max(0, Math.min(beats.length - 1, resolvedRound() - 1));
+      const beat = (beats[idx] || "").toString().trim();
+      mathsEntries.push({ text: beat || "…", bold: true });
+    } else if (resolvedVersion === PACK_VERSION_MATHS) {
+      const active = resolvedRound();
+      if (active >= 5 || mode === "maths") {
+        const first = (questions[0] || "").toString().trim();
+        const second = (questions[1] || "").toString().trim();
+        mathsEntries.push({ text: first || "Question 1 pending." });
+        mathsEntries.push({ text: second || "Question 2 pending." });
+      } else {
+        const beat = (beats[active - 1] || "").toString().trim();
+        mathsEntries.push({ text: beat || "…", bold: true });
+      }
+    } else {
+      mathsEntries.push({ text: "Maths format unsupported.", subtle: true });
+    }
+
+    updateFooter(locationText, resolvedVersion);
+    renderEntries();
+  };
+
+  applyMaths();
 
   container.appendChild(box);
 
@@ -139,10 +215,10 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
     const infoCurrent = map.get(round) || {};
     const currentSnippet = ((infoCurrent && infoCurrent.snippet) || "").toString().trim();
 
-    dynamicEntries = [];
+    snippetEntries = [];
 
     if (currentSnippet) {
-      dynamicEntries.push({ text: currentSnippet, bold: true });
+      snippetEntries.push({ text: currentSnippet, bold: true });
     }
 
     const entries = Array.from(map.entries())
@@ -153,10 +229,10 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
     entries.forEach(([, info]) => {
       const snippetText = (info?.snippet || "").toString().trim();
       if (!snippetText) return;
-      dynamicEntries.push({ text: snippetText, subtle: true });
+      snippetEntries.push({ text: snippetText, subtle: true });
     });
 
-    updateList();
+    renderEntries();
   };
 
   const store = ensureSnippetStore(roomCode);

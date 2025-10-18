@@ -120,6 +120,30 @@ export function getLastRoomCode() {
   }
 }
 
+export function isChainMaths(maths) {
+  if (!maths || typeof maths !== "object") return false;
+  const beats = Array.isArray(maths.beats) ? maths.beats : [];
+  const question = maths.question;
+  const answer = maths.answer;
+  return (
+    beats.length === 5 &&
+    beats.every((beat) => typeof beat === "string" && beat.trim()) &&
+    typeof question === "string" && question.includes("___") &&
+    Number.isInteger(answer)
+  );
+}
+
+export function isLegacyMaths(maths) {
+  if (!maths || typeof maths !== "object") return false;
+  const questions = Array.isArray(maths.questions) ? maths.questions : [];
+  const answers = Array.isArray(maths.answers) ? maths.answers : [];
+  return (
+    questions.length === 2 &&
+    answers.length === 2 &&
+    answers.every((ans) => Number.isInteger(ans))
+  );
+}
+
 export default {
   clampCode,
   getHashParams,
@@ -132,4 +156,6 @@ export default {
   getStoredRole,
   setLastRoomCode,
   getLastRoomCode,
+  isChainMaths,
+  isLegacyMaths,
 };

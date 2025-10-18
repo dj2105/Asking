@@ -30,7 +30,8 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { PACK_VERSION_MATHS, PACK_VERSION_MATHS_CHAIN } from "../lib/seedUnsealer.js";
+import { clampCode, getHashParams, getStoredRole, isChainMaths, isLegacyMaths } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -76,6 +77,13 @@ export default {
     const introNote = el("div", { class:"view-note" }, "Solve both beats, then send them to Jemima." );
 
     const form = el("div", { class:"maths-form" });
+
+    const chainRow = el("div", { class:"maths-question", style:"display:none;" });
+    const chainPrompt = el("div", { class:"mono maths-question__prompt" }, "");
+    const chainInput = el("input", { type:"number", class:"input", placeholder:"Final answer (integer)" });
+    chainRow.appendChild(chainPrompt);
+    chainRow.appendChild(chainInput);
+
     const row1 = el("div", { class:"maths-question" });
     const q1 = el("div", { class:"mono maths-question__prompt" }, "");
     const i1 = el("input", { type:"number", class:"input", placeholder:"Answer 1 (integer)" });
@@ -88,6 +96,7 @@ export default {
     row2.appendChild(q2);
     row2.appendChild(i2);
 
+    form.appendChild(chainRow);
     form.appendChild(row1);
     form.appendChild(row2);
 
@@ -129,25 +138,66 @@ export default {
     waitMsg.textContent = `Waiting for ${oppName}…`;
 
     // Mount maths pane in "maths" mode; it shows location + both questions
+    const mathsData = room0.maths || {};
+    let mathsVersion = String(room0?.meta?.mathsVersion || mathsData.version || "").trim();
+    if (mathsVersion !== PACK_VERSION_MATHS && mathsVersion !== PACK_VERSION_MATHS_CHAIN) {
+      if (isChainMaths(mathsData)) mathsVersion = PACK_VERSION_MATHS_CHAIN;
+      else if (isLegacyMaths(mathsData)) mathsVersion = PACK_VERSION_MATHS;
+      else mathsVersion = PACK_VERSION_MATHS;
+    }
+
     try {
       if (mountMathsPane && room0.maths) {
-        mountMathsPane(mathsMount, { maths: room0.maths, mode:"maths", roomCode: code, userUid: me.uid });
+        mountMathsPane(mathsMount, {
+          maths: room0.maths,
+          mode:"maths",
+          roomCode: code,
+          userUid: me.uid,
+          version: mathsVersion,
+        });
       }
     }
     catch(e){ console.warn("[maths] MathsPane mount failed:", e); }
 
-    const M = room0.maths || { questions: ["", ""] };
-    q1.textContent = M.questions?.[0] || "";
-    q2.textContent = M.questions?.[1] || "";
+    const isChain = mathsVersion === PACK_VERSION_MATHS_CHAIN;
+    const M = mathsData;
 
-    // Enable DONE when both filled
-    function validate() {
-      const a = i1.value.trim();
-      const b = i2.value.trim();
-      const ok = a !== "" && b !== "" && Number.isInteger(Number(a)) && Number.isInteger(Number(b));
-      done.disabled = !ok;
-      done.classList.toggle("throb", ok);
+    if (isChain) {
+      heading.textContent = "Jemima’s Maths — Final";
+      introNote.textContent = `Put the final number so ${oppName} can compare.`;
+      chainRow.style.display = "";
+      row1.style.display = "none";
+      row2.style.display = "none";
+      chainPrompt.textContent = M.question || "";
+      chainInput.value = "";
+    } else {
+      heading.textContent = `${readableName} — Jemima’s Maths`;
+      introNote.textContent = `Finish both answers so ${oppName} can compare.`;
+      chainRow.style.display = "none";
+      row1.style.display = "";
+      row2.style.display = "";
+      q1.textContent = M.questions?.[0] || "";
+      q2.textContent = M.questions?.[1] || "";
+      i1.value = "";
+      i2.value = "";
     }
+
+    // Enable DONE when required inputs filled
+    function validate() {
+      if (isChain) {
+        const value = chainInput.value.trim();
+        const ok = value !== "" && Number.isInteger(Number(value));
+        done.disabled = !ok || submitted;
+        done.classList.toggle("throb", ok && !submitted);
+      } else {
+        const a = i1.value.trim();
+        const b = i2.value.trim();
+        const ok = a !== "" && b !== "" && Number.isInteger(Number(a)) && Number.isInteger(Number(b));
+        done.disabled = !ok || submitted;
+        done.classList.toggle("throb", ok && !submitted);
+      }
+    }
+    chainInput.addEventListener("input", validate);
     i1.addEventListener("input", validate);
     i2.addEventListener("input", validate);
 
@@ -157,11 +207,18 @@ export default {
       if (submitted) return;
       submitted = true;
 
-      const a1 = parseInt(i1.value.trim(), 10);
-      const a2 = parseInt(i2.value.trim(), 10);
-
       const patch = {};
-      patch[`mathsAnswers.${myRole}`] = [a1, a2];
+      if (isChain) {
+        const chainValue = parseInt(chainInput.value.trim(), 10);
+        patch[`mathsAnswersChain.${myRole}`] = {
+          value: chainValue,
+          submittedAt: serverTimestamp(),
+        };
+      } else {
+        const a1 = parseInt(i1.value.trim(), 10);
+        const a2 = parseInt(i2.value.trim(), 10);
+        patch[`mathsAnswers.${myRole}`] = [a1, a2];
+      }
       patch[`mathsAnswersAck.${myRole}`] = true;
       patch["timestamps.updatedAt"] = serverTimestamp();
 
@@ -174,6 +231,7 @@ export default {
       } catch (e) {
         console.warn("[maths] publish failed:", e);
         submitted = false; // allow retry
+        validate();
       }
     }
 
@@ -198,6 +256,8 @@ export default {
     });
 
     this.unmount = () => { try { stop(); } catch{} };
+
+    validate();
   },
 
   async unmount() { /* no-op */ }

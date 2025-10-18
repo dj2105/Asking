@@ -5,6 +5,7 @@
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
+import { PACK_VERSION_MATHS, PACK_VERSION_MATHS_CHAIN } from "../lib/seedUnsealer.js";
 import {
   clampCode,
   getHashParams,
@@ -48,6 +49,9 @@ export default {
     const status = el("div", { class: "mono", style: "min-height:18px;" }, "Waiting for host upload…");
     card.appendChild(status);
 
+    const mathsMeta = el("div", { class: "mono small", style: "margin-top:6px;min-height:18px;" }, "Maths: —");
+    card.appendChild(mathsMeta);
+
     const logEl = el("pre", {
       class: "mono small", style: "margin-top:12px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:200px;overflow:auto;"
     });
@@ -72,6 +76,7 @@ export default {
     this._stop = onSnapshot(roomRef(code), (snap) => {
       if (!snap.exists()) {
         status.textContent = "Room not found yet.";
+        mathsMeta.textContent = "Maths: —";
         return;
       }
 
@@ -80,6 +85,17 @@ export default {
       const message = seeds.message || "Pack pending…";
       const progress = typeof seeds.progress === "number" ? `${Math.round(seeds.progress)}%` : "";
       status.textContent = progress ? `${message} (${progress})` : message;
+
+      const mathsVersion = data?.meta?.mathsVersion;
+      if (mathsVersion === PACK_VERSION_MATHS_CHAIN) {
+        mathsMeta.textContent = "Maths: chain (5 beats → final blank)";
+      } else if (mathsVersion === PACK_VERSION_MATHS) {
+        mathsMeta.textContent = "Maths: legacy (beats + 2 questions)";
+      } else if (mathsVersion) {
+        mathsMeta.textContent = `Maths: ${mathsVersion}`;
+      } else {
+        mathsMeta.textContent = "Maths: —";
+      }
 
       if (data.countdown?.startAt) {
         const ms = timeUntil(data.countdown.startAt);

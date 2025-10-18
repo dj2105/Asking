@@ -5,6 +5,8 @@ import {
   canonicalJSONStringify,
   clampCode,
   sha256Hex,
+  isChainMaths,
+  isLegacyMaths,
 } from "./util.js";
 import { db } from "./firebase.js";
 import {
@@ -24,12 +26,65 @@ export const PACK_VERSION_FULL = "jemima-pack-1";
 export const PACK_VERSION_HALF = "jemima-halfpack-1";
 export const PACK_VERSION_QUESTIONS = "jemima-questionpack-1";
 export const PACK_VERSION_MATHS = "jemima-maths-1";
+export const PACK_VERSION_MATHS_CHAIN = "jemima-maths-chain-1";
 const PBKDF2_ITERATIONS = 150_000;
 
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function assertStrNonEmpty(value, message) {
+  assert(typeof value === "string" && value.trim(), message);
+}
+
+function hasBlank(value) {
+  return typeof value === "string" && value.includes("___");
+}
+
+function validateMathsPayload(maths = {}, versionHint = "") {
+  const candidate = String(versionHint || "").trim();
+  const beats = Array.isArray(maths.beats) ? maths.beats : [];
+
+  assertStrNonEmpty(maths.location, "Maths location missing.");
+
+  const decideVersion = () => {
+    if (candidate) return candidate;
+    if (isChainMaths(maths)) return PACK_VERSION_MATHS_CHAIN;
+    if (isLegacyMaths(maths)) return PACK_VERSION_MATHS;
+    if (typeof maths.question === "string" && "answer" in maths) {
+      return PACK_VERSION_MATHS_CHAIN;
+    }
+    if (Array.isArray(maths.questions) && Array.isArray(maths.answers)) {
+      return PACK_VERSION_MATHS;
+    }
+    return "";
+  };
+
+  const version = decideVersion();
+
+  if (version === PACK_VERSION_MATHS_CHAIN) {
+    assert(Array.isArray(maths.beats) && beats.length === 5, "Maths requires five beats.");
+    assert(hasBlank(maths.question), "Maths question missing or invalid.");
+    assert(Number.isInteger(maths.answer), "Maths answer must be an integer.");
+    beats.forEach((beat, idx) => {
+      assert(typeof beat === "string" && beat.trim(), `Maths beat ${idx + 1} missing.`);
+    });
+    return version;
+  }
+
+  if (version === PACK_VERSION_MATHS) {
+    assert(Array.isArray(maths.beats) && beats.length >= 1, "Maths beats missing.");
+    assert(Array.isArray(maths.questions) && maths.questions.length === 2, "Maths requires two questions.");
+    assert(Array.isArray(maths.answers) && maths.answers.length === 2, "Maths requires two answers.");
+    maths.answers.forEach((ans, idx) => {
+      assert(Number.isInteger(ans), `Maths answer ${idx + 1} must be an integer.`);
+    });
+    return version;
+  }
+
+  assert(false, "Unsupported maths pack version.");
 }
 
 function base64ToBytes(b64) {
@@ -134,13 +189,7 @@ function validatePack(pack) {
   }
 
   const maths = pack.maths || {};
-  assert(typeof maths.location === "string" && maths.location.trim(), "Maths location missing.");
-  assert(Array.isArray(maths.beats) && maths.beats.length >= 1, "Maths beats missing.");
-  assert(Array.isArray(maths.questions) && maths.questions.length === 2, "Maths requires two questions.");
-  assert(Array.isArray(maths.answers) && maths.answers.length === 2, "Maths requires two answers.");
-  maths.answers.forEach((ans, idx) => {
-    assert(Number.isInteger(ans), `Maths answer ${idx + 1} must be an integer.`);
-  });
+  const mathsVersion = validateMathsPayload(maths, maths.version || pack.meta?.mathsVersion);
 
   const integrity = pack.integrity || {};
   assert(typeof integrity.checksum === "string" && /^[0-9a-f]{64}$/i.test(integrity.checksum), "Integrity checksum invalid.");
@@ -148,7 +197,7 @@ function validatePack(pack) {
     assert(Boolean(integrity.verified), "Integrity flag must be true.");
   }
 
-  return { code };
+  return { code, mathsVersion };
 }
 
 function clonePlain(value) {
@@ -266,7 +315,7 @@ function validateQuestionPack(pack) {
 
 function validateMaths(pack) {
   assert(pack && typeof pack === "object", "Decrypted pack empty.");
-  assert(pack.version === PACK_VERSION_MATHS, "Unsupported sealed version.");
+  const version = validateMathsPayload(pack.maths || {}, pack.version);
 
   const meta = pack.meta || {};
   assert(meta && typeof meta === "object", "Pack meta missing.");
@@ -275,25 +324,7 @@ function validateMaths(pack) {
   assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3–5 chars).");
   assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
 
-  const maths = pack.maths || {};
-  assert(typeof maths.location === "string" && maths.location.trim(), "Maths location missing.");
-  const beats = Array.isArray(maths.beats) ? maths.beats : [];
-  assert(beats.length === 4, "Maths requires four beats.");
-  beats.forEach((beat, idx) => {
-    assert(typeof beat === "string" && beat.trim(), `Maths beat ${idx + 1} missing.`);
-  });
-  const questions = Array.isArray(maths.questions) ? maths.questions : [];
-  assert(questions.length === 2, "Maths requires two questions.");
-  questions.forEach((question, idx) => {
-    assert(typeof question === "string" && question.trim(), `Maths question ${idx + 1} missing.`);
-  });
-  const answers = Array.isArray(maths.answers) ? maths.answers : [];
-  assert(answers.length === 2, "Maths requires two answers.");
-  answers.forEach((ans, idx) => {
-    assert(Number.isInteger(ans), `Maths answer ${idx + 1} must be an integer.`);
-  });
-
-  return { code };
+  return { code, version };
 }
 
 export async function unsealFile(file, { password = PASSWORD_DEMO } = {}) {
@@ -319,15 +350,15 @@ export async function unsealQuestionPack(file, { password = PASSWORD_DEMO } = {}
 
 export async function unsealMaths(file, { password = PASSWORD_DEMO } = {}) {
   const pack = await readSealedContent(file, password);
-  const { code } = validateMaths(pack);
+  const { code, version } = validateMaths(pack);
   await verifyIntegrity(pack, "Pack integrity checksum mismatch.");
-  return { maths: clonePlain(pack.maths), code };
+  return { maths: clonePlain(pack.maths), version, code };
 }
 
 export async function seedFirestoreFromPack(db, pack) {
   assert(db, "Firestore database handle required.");
-  validatePack(pack);
-  const code = clampCode(pack.meta.roomCode);
+  const { code, mathsVersion } = validatePack(pack);
+  const resolvedMathsVersion = mathsVersion || PACK_VERSION_MATHS;
   const roomDoc = roomRef(code);
   const countdown = { startAt: null };
   const maths = clonePlain(pack.maths);
@@ -339,6 +370,7 @@ export async function seedFirestoreFromPack(db, pack) {
         meta: {
           hostUid: pack.meta.hostUid,
           guestUid: pack.meta.guestUid,
+          mathsVersion: resolvedMathsVersion,
         },
         state: "keyroom",
         round: 1,
@@ -362,6 +394,7 @@ export async function seedFirestoreFromPack(db, pack) {
       const meta = { ...(data.meta || {}) };
       if (!meta.hostUid && pack.meta.hostUid) meta.hostUid = pack.meta.hostUid;
       if (!meta.guestUid && pack.meta.guestUid) meta.guestUid = pack.meta.guestUid;
+      meta.mathsVersion = resolvedMathsVersion;
 
       tx.update(roomDoc, {
         meta,

@@ -174,7 +174,14 @@ export default {
 
     try {
       if (mountMathsPane && room0.maths) {
-        mountMathsPane(mathsMount, { maths: room0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
+        mountMathsPane(mathsMount, {
+          maths: room0.maths,
+          round,
+          mode: "inline",
+          roomCode: code,
+          userUid: me.uid,
+          version: room0?.meta?.mathsVersion,
+        });
       }
     } catch (err) {
       console.warn("[questions] MathsPane mount failed:", err);

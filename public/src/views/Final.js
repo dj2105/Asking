@@ -13,7 +13,8 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 
-import { clampCode, getHashParams } from "../lib/util.js";
+import { PACK_VERSION_MATHS, PACK_VERSION_MATHS_CHAIN } from "../lib/seedUnsealer.js";
+import { clampCode, getHashParams, isChainMaths, isLegacyMaths } from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 const roundRef = (code, round) => doc(collection(roomRef(code), "rounds"), String(round));
@@ -184,6 +185,39 @@ function computeRoundSummary(room = {}, roundDocs = {}, hostUid = "", guestUid =
 
 function computeMathsSummary(room = {}) {
   const maths = room.maths || {};
+  let version = room?.meta?.mathsVersion || maths.version || "";
+  if (version !== PACK_VERSION_MATHS && version !== PACK_VERSION_MATHS_CHAIN) {
+    if (isChainMaths(maths)) version = PACK_VERSION_MATHS_CHAIN;
+    else if (isLegacyMaths(maths)) version = PACK_VERSION_MATHS;
+    else version = PACK_VERSION_MATHS;
+  }
+
+  if (version === PACK_VERSION_MATHS_CHAIN) {
+    const chainAnswers = room.mathsAnswersChain || {};
+    const expectedAnswer = Number.isInteger(maths.answer) ? maths.answer : null;
+    const hostEntry = chainAnswers.host || {};
+    const guestEntry = chainAnswers.guest || {};
+    const hostValue = Number.isFinite(Number(hostEntry.value)) ? Number(hostEntry.value) : null;
+    const guestValue = Number.isFinite(Number(guestEntry.value)) ? Number(guestEntry.value) : null;
+    const hostCorrect = expectedAnswer !== null && hostValue === expectedAnswer ? 1 : 0;
+    const guestCorrect = expectedAnswer !== null && guestValue === expectedAnswer ? 1 : 0;
+
+    return {
+      maths,
+      version,
+      expected: expectedAnswer !== null ? [expectedAnswer] : [],
+      hostAnswers: [],
+      guestAnswers: [],
+      hostCorrect,
+      guestCorrect,
+      chain: {
+        answer: expectedAnswer,
+        hostValue,
+        guestValue,
+      },
+    };
+  }
+
   const expected = Array.isArray(maths.answers) ? maths.answers : [];
   const mathsAnswers = room.mathsAnswers || {};
   const hostAnswers = Array.isArray(mathsAnswers.host) ? mathsAnswers.host : [];
@@ -194,11 +228,13 @@ function computeMathsSummary(room = {}) {
 
   return {
     maths,
+    version: PACK_VERSION_MATHS,
     expected,
     hostAnswers,
     guestAnswers,
     hostCorrect,
     guestCorrect,
+    chain: null,
   };
 }
 
@@ -221,11 +257,12 @@ function buildRoundBreakdown(rounds) {
 }
 
 function buildMathsContent(summary) {
-  const { maths, expected, hostAnswers, guestAnswers, hostCorrect, guestCorrect } = summary;
+  const { maths, expected, hostAnswers, guestAnswers, hostCorrect, guestCorrect, version, chain } = summary;
   const container = el("div", { class: "final-maths" });
 
   const location = maths.location ? `Location: ${maths.location}` : "Location: —";
-  container.appendChild(el("div", { class: "final-maths__location" }, location));
+  const versionTag = version === PACK_VERSION_MATHS_CHAIN ? "chain" : "legacy";
+  container.appendChild(el("div", { class: "final-maths__location" }, `${location} • ${versionTag}`));
 
   if (Array.isArray(maths.beats) && maths.beats.length) {
     const beatList = el("ul", { class: "final-maths__beats" });
@@ -235,36 +272,68 @@ function buildMathsContent(summary) {
     container.appendChild(beatList);
   }
 
-  const qaWrap = el("div", { class: "final-maths__qa" });
-  const header = el("div", { class: "final-maths__qa-head" }, [
-    el("div", { class: "final-maths__qa-question" }, "Question"),
-    el("div", { class: "final-maths__qa-answer" }, "Correct"),
-    el("div", { class: "final-maths__qa-answer" }, "Daniel"),
-    el("div", { class: "final-maths__qa-answer" }, "Jaime"),
-  ]);
-  qaWrap.appendChild(header);
+  if (version === PACK_VERSION_MATHS_CHAIN) {
+    const qaWrap = el("div", { class: "final-maths__qa" });
+    const header = el("div", { class: "final-maths__qa-head" }, [
+      el("div", { class: "final-maths__qa-question" }, "Final Question"),
+      el("div", { class: "final-maths__qa-answer" }, "Correct"),
+      el("div", { class: "final-maths__qa-answer" }, "Daniel"),
+      el("div", { class: "final-maths__qa-answer" }, "Jaime"),
+    ]);
+    qaWrap.appendChild(header);
 
-  const questions = Array.isArray(maths.questions) ? maths.questions : [];
-  for (let i = 0; i < Math.max(expected.length, questions.length); i += 1) {
     const row = el("div", { class: "final-maths__qa-row" });
-    const question = questions[i] || "—";
-    const correct = expected[i];
-    const host = hostAnswers[i];
-    const guest = guestAnswers[i];
+    const prompt = maths.question || "—";
+    const correct = chain?.answer;
+    const correctStr = correct !== null && correct !== undefined ? String(correct) : "—";
+    const hostValue = chain?.hostValue;
+    const guestValue = chain?.guestValue;
+    const hostStr = hostValue !== null && hostValue !== undefined ? String(hostValue) : "";
+    const guestStr = guestValue !== null && guestValue !== undefined ? String(guestValue) : "";
+    const hostClass = classifyAnswer(hostStr, correctStr);
+    const guestClass = classifyAnswer(guestStr, correctStr);
 
-    const hostClass = Number(host) === Number(correct) ? "final-answer--correct" : "final-answer--wrong";
-    const guestClass = Number(guest) === Number(correct) ? "final-answer--correct" : "final-answer--wrong";
-
-    row.appendChild(el("div", { class: "final-maths__qa-question" }, question));
-    row.appendChild(el("div", { class: "final-maths__qa-answer final-answer final-answer--key" }, String(correct ?? "—")));
-    row.appendChild(el("div", { class: `final-maths__qa-answer final-answer ${hostClass}` }, host !== undefined ? String(host) : "—"));
-    row.appendChild(el("div", { class: `final-maths__qa-answer final-answer ${guestClass}` }, guest !== undefined ? String(guest) : "—"));
+    row.appendChild(el("div", { class: "final-maths__qa-question" }, prompt));
+    row.appendChild(el("div", { class: "final-maths__qa-answer final-answer final-answer--key" }, correctStr));
+    row.appendChild(el("div", { class: `final-maths__qa-answer final-answer ${hostClass}` }, hostStr || "—"));
+    row.appendChild(el("div", { class: `final-maths__qa-answer final-answer ${guestClass}` }, guestStr || "—"));
     qaWrap.appendChild(row);
-  }
 
-  const footer = el("div", { class: "final-maths__footer" }, `Maths accuracy — Daniel ${hostCorrect}/2 · Jaime ${guestCorrect}/2`);
-  container.appendChild(qaWrap);
-  container.appendChild(footer);
+    const footer = el("div", { class: "final-maths__footer" }, `Maths accuracy — Daniel ${hostCorrect}/1 · Jaime ${guestCorrect}/1`);
+    container.appendChild(qaWrap);
+    container.appendChild(footer);
+  } else {
+    const qaWrap = el("div", { class: "final-maths__qa" });
+    const header = el("div", { class: "final-maths__qa-head" }, [
+      el("div", { class: "final-maths__qa-question" }, "Question"),
+      el("div", { class: "final-maths__qa-answer" }, "Correct"),
+      el("div", { class: "final-maths__qa-answer" }, "Daniel"),
+      el("div", { class: "final-maths__qa-answer" }, "Jaime"),
+    ]);
+    qaWrap.appendChild(header);
+
+    const questions = Array.isArray(maths.questions) ? maths.questions : [];
+    for (let i = 0; i < Math.max(expected.length, questions.length); i += 1) {
+      const row = el("div", { class: "final-maths__qa-row" });
+      const question = questions[i] || "—";
+      const correct = expected[i];
+      const host = hostAnswers[i];
+      const guest = guestAnswers[i];
+
+      const hostClass = Number(host) === Number(correct) ? "final-answer--correct" : "final-answer--wrong";
+      const guestClass = Number(guest) === Number(correct) ? "final-answer--correct" : "final-answer--wrong";
+
+      row.appendChild(el("div", { class: "final-maths__qa-question" }, question));
+      row.appendChild(el("div", { class: "final-maths__qa-answer final-answer final-answer--key" }, String(correct ?? "—")));
+      row.appendChild(el("div", { class: `final-maths__qa-answer final-answer ${hostClass}` }, host !== undefined ? String(host) : "—"));
+      row.appendChild(el("div", { class: `final-maths__qa-answer final-answer ${guestClass}` }, guest !== undefined ? String(guest) : "—"));
+      qaWrap.appendChild(row);
+    }
+
+    const footer = el("div", { class: "final-maths__footer" }, `Maths accuracy — Daniel ${hostCorrect}/2 · Jaime ${guestCorrect}/2`);
+    container.appendChild(qaWrap);
+    container.appendChild(footer);
+  }
 
   return container;
 }
@@ -479,9 +548,12 @@ export default {
       statsWrap.innerHTML = "";
       statsWrap.appendChild(formatStatLine("Rounds won", `Daniel ${summary.roundWins.host} · Jaime ${summary.roundWins.guest}`));
       statsWrap.appendChild(formatStatLine("Perfect rounds", `Daniel ${summary.perfect.host} · Jaime ${summary.perfect.guest}`));
+      const mathsDenominator = mathsSummary.version === PACK_VERSION_MATHS_CHAIN
+        ? 1
+        : Math.max(1, mathsSummary.expected.length || 2);
       statsWrap.appendChild(formatStatLine(
         "Maths accuracy",
-        `Daniel ${mathsSummary.hostCorrect}/2 · Jaime ${mathsSummary.guestCorrect}/2`
+        `Daniel ${mathsSummary.hostCorrect}/${mathsDenominator} · Jaime ${mathsSummary.guestCorrect}/${mathsDenominator}`
       ));
 
       mathsBody.innerHTML = "";
