@@ -1,0 +1,32 @@
+{
+  "version": "jemima-maths-chain-1",
+  "meta": {
+    "roomCode": "FKH",
+    "generatedAt": "2025-10-18T15:10:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "beats": [
+      "I swapped with a friend and doubled my stash.",
+      "On the bus, I gave a few to a kid who liked the shiny ones.",
+      "Later, I found an extra sheet tucked in a drawer.",
+      "Back home, I split them evenly with Daniel.",
+      "Then I lost some to a spilled drink on my desk."
+    ],
+    "reveals": [
+      { "type": "specific", "text": "After swapping, I had **40 stickers**." },
+      { "type": "total", "text": "At that point, the total was **35 stickers**." },
+      { "type": "obvious", "text": "Finding that sheet bumped me to **46 stickers**." },
+      { "type": "total", "text": "After sharing evenly, I sat at **23 stickers**." },
+      { "type": "specific", "text": "After the mishap, I ended with **20 stickers**." }
+    ],
+    "question": "What’s the final number of stickers? ___",
+    "answer": 20
+  },
+  "results": {
+    "passage": "I swapped with a friend and doubled my stash, reaching **40 stickers**; on the bus I gave away **5 stickers**, leaving **35**. Later I found **11 stickers** in a tucked sheet for **46**. Back home I split them evenly with Daniel so I had **23 stickers**. Then a spill cost me **3 stickers**, finishing at **20 stickers**.",
+    "finalAnswer": { "value": 20, "label": "Final total" }
+  }
+}
+
