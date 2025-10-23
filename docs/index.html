@@ -51,41 +51,19 @@
         }
       }
 
-      async function loadLocalConfig() {
-        try {
-          const mod = await import("./firebase.config.js");
-          const candidate = mod?.default ?? mod?.config ?? mod;
-          return applyConfig(candidate);
-        } catch (error) {
-          if (error && typeof error === "object") {
-            const message = String(error.message || error);
-            const missingModule = message.includes("Cannot find module") || message.includes("Failed to fetch dynamically imported module");
-            if (!missingModule) {
-              console.warn("[firebase] Failed to load firebase.config.js", error);
-            }
-          }
-          return false;
-        }
+  // Try to fetch Hosting config; don't block if missing (local Python server etc.)
+  async function injectFirebaseConfig() {
+    const ctl = new AbortController();
+    const timeout = setTimeout(() => ctl.abort(), 1500);
+    try {
+      const res = await fetch("./__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && typeof json === "object") window.__FIREBASE_CONFIG__ = json;
       }
 
-      async function injectFirebaseConfig() {
-        if (applyConfig(window.__FIREBASE_CONFIG__)) return true;
-        if (await loadHostingConfig()) return true;
-        if (await loadLocalConfig()) return true;
-        console.warn(
-          "[firebase] No configuration found. Provide window.__FIREBASE_CONFIG__ or docs/firebase.config.js so Firestore can initialise."
-        );
-        return false;
-      }
-
-      // Optional: show emulator banner only on localhost or ?emu=1
-      const qs = new URLSearchParams(location.search);
-      const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || qs.get("emu") === "1";
-      const banner = document.getElementById("emuBanner");
-      if (isLocal && banner) banner.style.display = "block";
-
-      await injectFirebaseConfig();
-      await import("./src/main.js");   // <— exactly one import; do NOT duplicate
-    </script>
+  await injectFirebaseConfig();
+  await import("./src/main.js");   // <— exactly one import; do NOT duplicate
+</script>
   </body>
 </html>
