@@ -5,7 +5,9 @@
 
   const rawPath = (location.pathname || "/").replace(/\/+/g, "/");
   const cleanedPath = rawPath.replace(/^\/+|\/+$|^$/g, "");
-  const segment = cleanedPath.split("/")[0].toLowerCase();
+  const segments = cleanedPath ? cleanedPath.split("/") : [];
+  const lastSegment = segments[segments.length - 1] || "";
+  const segment = lastSegment.toLowerCase();
   const knownDirect = new Set([
     "lobby",
     "keyroom",
@@ -24,7 +26,26 @@
 
   const url = new URL(window.location.href);
   const searchParams = new URLSearchParams(url.search || "");
-  url.pathname = "/";
+
+  const basePath = (() => {
+    if (!rawPath || rawPath === "/") return "/";
+    if (rawPath.endsWith("/")) return rawPath;
+
+    if (lastSegment && knownDirect.has(segment)) {
+      const trimmed = rawPath.slice(0, rawPath.length - lastSegment.length);
+      return trimmed.endsWith("/") ? trimmed : `${trimmed}/`;
+    }
+
+    if (lastSegment.includes(".")) {
+      const idx = rawPath.lastIndexOf("/");
+      if (idx <= 0) return "/";
+      return rawPath.slice(0, idx + 1) || "/";
+    }
+
+    return `${rawPath}/`;
+  })();
+
+  url.pathname = basePath || "/";
   url.search = "";
 
   if (segment && segment !== "index.html" && knownDirect.has(segment)) {
