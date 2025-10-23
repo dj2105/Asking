@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Jemima’s Asking</title>
 
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="./favicon.ico" />
 
     <script type="importmap">
     {
@@ -29,40 +29,63 @@
       Running in emulator mode. Do not use with production credentials.
     </p>
 
-<script type="importmap">
-{
-  "imports": {
-    "firebase/app": "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"
-  }
-}
-</script>
+    <script type="module">
+      const applyConfig = (candidate) => {
+        if (!candidate || typeof candidate !== "object") return false;
+        window.__FIREBASE_CONFIG__ = candidate;
+        return true;
+      };
 
-<script type="module">
-  // Optional: show emulator banner only on localhost or ?emu=1
-  const qs = new URLSearchParams(location.search);
-  const isLocal = ["localhost","127.0.0.1"].includes(location.hostname) || qs.get("emu")==="1";
-  const banner = document.getElementById("emuBanner");
-  if (isLocal && banner) banner.style.display = "block";
-
-  // Try to fetch Hosting config; don't block if missing (local Python server etc.)
-  async function injectFirebaseConfig() {
-    const ctl = new AbortController();
-    const timeout = setTimeout(() => ctl.abort(), 1500);
-    try {
-      const res = await fetch("/__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
-      if (res.ok) {
-        const json = await res.json();
-        if (json && typeof json === "object") window.__FIREBASE_CONFIG__ = json;
+      async function loadHostingConfig() {
+        const ctl = new AbortController();
+        const timeout = setTimeout(() => ctl.abort(), 1500);
+        try {
+          const res = await fetch("./__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
+          if (!res.ok) return false;
+          const json = await res.json();
+          return applyConfig(json);
+        } catch (_) {
+          return false;
+        } finally {
+          clearTimeout(timeout);
+        }
       }
-    } catch (_) {} finally {
-      clearTimeout(timeout);
-    }
-  }
 
-  await injectFirebaseConfig();
-  await import("/src/main.js");   // <— exactly one import; do NOT duplicate
-</script>
+      async function loadLocalConfig() {
+        try {
+          const mod = await import("./firebase.config.js");
+          const candidate = mod?.default ?? mod?.config ?? mod;
+          return applyConfig(candidate);
+        } catch (error) {
+          if (error && typeof error === "object") {
+            const message = String(error.message || error);
+            const missingModule = message.includes("Cannot find module") || message.includes("Failed to fetch dynamically imported module");
+            if (!missingModule) {
+              console.warn("[firebase] Failed to load firebase.config.js", error);
+            }
+          }
+          return false;
+        }
+      }
+
+      async function injectFirebaseConfig() {
+        if (applyConfig(window.__FIREBASE_CONFIG__)) return true;
+        if (await loadHostingConfig()) return true;
+        if (await loadLocalConfig()) return true;
+        console.warn(
+          "[firebase] No configuration found. Provide window.__FIREBASE_CONFIG__ or docs/firebase.config.js so Firestore can initialise."
+        );
+        return false;
+      }
+
+      // Optional: show emulator banner only on localhost or ?emu=1
+      const qs = new URLSearchParams(location.search);
+      const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || qs.get("emu") === "1";
+      const banner = document.getElementById("emuBanner");
+      if (isLocal && banner) banner.style.display = "block";
+
+      await injectFirebaseConfig();
+      await import("./src/main.js");   // <— exactly one import; do NOT duplicate
+    </script>
   </body>
 </html>
