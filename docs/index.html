@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Jemima’s Asking</title>
 
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="./favicon.ico" />
 
     <script type="importmap">
     {
@@ -51,7 +51,7 @@
     const ctl = new AbortController();
     const timeout = setTimeout(() => ctl.abort(), 1500);
     try {
-      const res = await fetch("/__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
+      const res = await fetch("./__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
       if (res.ok) {
         const json = await res.json();
         if (json && typeof json === "object") window.__FIREBASE_CONFIG__ = json;
@@ -62,7 +62,7 @@
   }
 
   await injectFirebaseConfig();
-  await import("/src/main.js");   // <— exactly one import; do NOT duplicate
+  await import("./src/main.js");   // <— exactly one import; do NOT duplicate
 </script>
   </body>
 </html>
