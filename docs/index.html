@@ -29,22 +29,27 @@
       Running in emulator mode. Do not use with production credentials.
     </p>
 
-<script type="importmap">
-{
-  "imports": {
-    "firebase/app": "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"
-  }
-}
-</script>
+    <script type="module">
+      const applyConfig = (candidate) => {
+        if (!candidate || typeof candidate !== "object") return false;
+        window.__FIREBASE_CONFIG__ = candidate;
+        return true;
+      };
 
-<script type="module">
-  // Optional: show emulator banner only on localhost or ?emu=1
-  const qs = new URLSearchParams(location.search);
-  const isLocal = ["localhost","127.0.0.1"].includes(location.hostname) || qs.get("emu")==="1";
-  const banner = document.getElementById("emuBanner");
-  if (isLocal && banner) banner.style.display = "block";
+      async function loadHostingConfig() {
+        const ctl = new AbortController();
+        const timeout = setTimeout(() => ctl.abort(), 1500);
+        try {
+          const res = await fetch("./__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
+          if (!res.ok) return false;
+          const json = await res.json();
+          return applyConfig(json);
+        } catch (_) {
+          return false;
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
 
   // Try to fetch Hosting config; don't block if missing (local Python server etc.)
   async function injectFirebaseConfig() {
@@ -56,10 +61,6 @@
         const json = await res.json();
         if (json && typeof json === "object") window.__FIREBASE_CONFIG__ = json;
       }
-    } catch (_) {} finally {
-      clearTimeout(timeout);
-    }
-  }
 
   await injectFirebaseConfig();
   await import("./src/main.js");   // <— exactly one import; do NOT duplicate
