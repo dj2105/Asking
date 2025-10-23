@@ -30,6 +30,10 @@ if (injectedConfig) {
       firebaseConfig[key] = value;
     }
   }
+} else if (typeof FALLBACK_CONFIG.apiKey === "string" && FALLBACK_CONFIG.apiKey.includes("YOUR_REAL_KEY")) {
+  console.error(
+    "[firebase] Missing Firebase credentials. Copy docs/firebase.config.sample.js to docs/firebase.config.js (or inject window.__FIREBASE_CONFIG__) before deploying."
+  );
 }
 
 export const app = initializeApp(firebaseConfig);

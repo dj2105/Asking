@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Jemima’s Asking</title>
 
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="./favicon.ico" />
 
     <script type="importmap">
     {
@@ -29,40 +29,122 @@
       Running in emulator mode. Do not use with production credentials.
     </p>
 
-<script type="importmap">
-{
-  "imports": {
-    "firebase/app": "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"
-  }
-}
-</script>
+    <script type="module">
+      const REQUIRED_KEYS = ["apiKey", "authDomain", "projectId", "storageBucket", "messagingSenderId", "appId"];
 
-<script type="module">
-  // Optional: show emulator banner only on localhost or ?emu=1
-  const qs = new URLSearchParams(location.search);
-  const isLocal = ["localhost","127.0.0.1"].includes(location.hostname) || qs.get("emu")==="1";
-  const banner = document.getElementById("emuBanner");
-  if (isLocal && banner) banner.style.display = "block";
+      const unwrapConfig = (candidate) => {
+        if (!candidate || typeof candidate !== "object") return null;
 
-  // Try to fetch Hosting config; don't block if missing (local Python server etc.)
-  async function injectFirebaseConfig() {
-    const ctl = new AbortController();
-    const timeout = setTimeout(() => ctl.abort(), 1500);
-    try {
-      const res = await fetch("/__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
-      if (res.ok) {
-        const json = await res.json();
-        if (json && typeof json === "object") window.__FIREBASE_CONFIG__ = json;
+        const hasDirectShape = REQUIRED_KEYS.every((key) => {
+          const value = candidate[key];
+          return typeof value === "string" && value.trim() !== "";
+        });
+        if (hasDirectShape) {
+          return candidate;
+        }
+
+        const aliases = ["default", "config", "firebaseConfig", "FIREBASE_CONFIG", "defaultConfig"];
+        for (const alias of aliases) {
+          const nested = candidate[alias];
+          if (!nested || nested === candidate) continue;
+          const unwrapped = unwrapConfig(nested);
+          if (unwrapped) return unwrapped;
+        }
+
+        return null;
+      };
+
+      const applyConfig = (candidate, source = "") => {
+        const config = unwrapConfig(candidate);
+        if (!config) return false;
+
+        const missing = REQUIRED_KEYS.filter((key) => {
+          const value = config[key];
+          return typeof value !== "string" || value.trim() === "";
+        });
+        if (missing.length) {
+          console.warn(
+            `[firebase] Ignoring ${source || "inline"} config because it is missing: ${missing.join(", ")}.`
+          );
+          return false;
+        }
+
+        window.__FIREBASE_CONFIG__ = { ...config };
+        return true;
+      };
+
+      async function loadHostingConfig() {
+        const ctl = new AbortController();
+        const timeout = setTimeout(() => ctl.abort(), 1500);
+        try {
+          const res = await fetch("./__/firebase/init.json", { cache: "no-store", signal: ctl.signal });
+          if (!res.ok) return false;
+          const json = await res.json();
+          return applyConfig(json);
+        } catch (_) {
+          return false;
+        } finally {
+          clearTimeout(timeout);
+        }
       }
-    } catch (_) {} finally {
-      clearTimeout(timeout);
-    }
-  }
 
-  await injectFirebaseConfig();
-  await import("/src/main.js");   // <— exactly one import; do NOT duplicate
-</script>
+      async function loadLocalConfig() {
+        try {
+          const mod = await import("./firebase.config.js");
+          if (applyConfig(mod, "firebase.config.js exports")) return true;
+          if (applyConfig(window.__FIREBASE_CONFIG__, "firebase.config.js side effects")) return true;
+          console.warn(
+            "[firebase] firebase.config.js loaded but did not export a usable config. Use `export default { ... }`."
+          );
+          return false;
+        } catch (error) {
+          if (error && typeof error === "object") {
+            const message = String(error.message || error);
+            const missingModule =
+              message.includes("Cannot find module") || message.includes("Failed to fetch dynamically imported module");
+            if (!missingModule) {
+              console.warn("[firebase] Failed to load firebase.config.js", error);
+            }
+          }
+          return applyConfig(window.__FIREBASE_CONFIG__, "firebase.config.js side effects");
+        }
+      }
+
+      async function injectFirebaseConfig() {
+        if (applyConfig(window.__FIREBASE_CONFIG__)) return true;
+        if (await loadHostingConfig()) return true;
+        if (await loadLocalConfig()) return true;
+        console.warn(
+          "[firebase] No configuration found. Provide window.__FIREBASE_CONFIG__ or docs/firebase.config.js so Firestore can initialise."
+        );
+        return false;
+      }
+
+      // Optional: show emulator banner only on localhost or ?emu=1
+      const qs = new URLSearchParams(location.search);
+      const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || qs.get("emu") === "1";
+      const banner = document.getElementById("emuBanner");
+      if (isLocal && banner) banner.style.display = "block";
+
+      async function boot() {
+        await injectFirebaseConfig();
+        try {
+          await import("./src/main.js");   // <— exactly one import; do NOT duplicate
+        } catch (error) {
+          console.error("[bootstrap] Failed to load main bundle", error);
+          const appRoot = document.getElementById("app");
+          if (appRoot) {
+            appRoot.innerHTML = `
+              <div class="view"><div class="card">
+                <div class="mono" style="font-weight:700;margin-bottom:6px;">Couldn’t start the app.</div>
+                <div class="mono small" style="opacity:.8">Check the browser console for Firebase errors.</div>
+              </div></div>
+            `;
+          }
+        }
+      }
+
+      boot();
+    </script>
   </body>
 </html>
