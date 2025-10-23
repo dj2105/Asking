@@ -1,15 +1,10 @@
-// Copy this file to firebase.config.js and replace the placeholder values with
-// your Firebase project credentials. These values are safe to commit; GitHub
-// Pages needs them at build time so the client SDK can initialise.
-//
-// If you prefer to inject credentials another way, ensure window.__FIREBASE_CONFIG__
-// is populated before docs/src/main.js loads.
-
-export default {
-  apiKey: "REPLACE_WITH_API_KEY",
-  authDomain: "REPLACE_WITH_PROJECT.firebaseapp.com",
-  projectId: "REPLACE_WITH_PROJECT",
-  storageBucket: "REPLACE_WITH_PROJECT.appspot.com",
-  messagingSenderId: "REPLACE_WITH_SENDER_ID",
-  appId: "REPLACE_WITH_APP_ID",
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBI9mL-Mbcz15ka5Gfh-O00G3GZqrgWOGk",
+  authDomain: "asking-6d3d5.firebaseapp.com",
+  projectId: "asking-6d3d5",
+  storageBucket: "asking-6d3d5.firebasestorage.app",
+  messagingSenderId: "397557111515",
+  appId: "1:397557111515:web:f6287b968e91e1cd9f0afe",
+  measurementId: "G-W81ZXQ0JN6"
 };
