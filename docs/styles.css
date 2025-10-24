@@ -776,95 +776,135 @@ input[type="text"], input[type="number"], .input {
    Lobby welcome
    =========================== */
 .view-lobby {
-  min-height: calc(100vh - 96px);
+  min-height: calc(100vh - 72px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 0 24px;
+  padding: 0 18px 18px;
 }
 
 .lobby-card {
   width: 100%;
-  max-width: 420px;
-  padding: 44px 38px 48px;
-  border-radius: 24px;
-  border: 1px solid rgba(0,0,0,.08);
-  box-shadow: 0 40px 64px rgba(0,0,0,.16);
-  background: rgba(255,255,255,0.96);
+  max-width: 360px;
+  padding: 32px 28px 36px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 28px 48px rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .lobby-title {
-  margin: 0 0 10px;
-  font-size: 2.05rem;
+  margin: 0 0 6px;
+  font-size: 1.85rem;
   font-weight: 700;
   text-align: center;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
 }
 
 .lobby-prompt {
-  margin: 0 0 28px;
+  margin: 0 0 20px;
   text-align: center;
-  font-size: 1.32rem;
+  font-size: 1.16rem;
   font-weight: 700;
-  letter-spacing: .04em;
+  letter-spacing: 0.05em;
 }
 
 .lobby-input-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .lobby-code-input {
   width: 100%;
-  max-width: 220px;
+  max-width: 208px;
   text-transform: uppercase;
-  letter-spacing: .32em;
+  letter-spacing: 0.28em;
   text-align: center;
-  font-size: 1.35rem;
-  padding: 14px 16px;
-  border-radius: 16px;
+  font-size: 1.18rem;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 2px solid rgba(18, 22, 36, 0.16);
+  font-weight: 600;
+  color: rgba(18, 22, 36, 0.78);
+  transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.lobby-code-input::placeholder {
+  color: rgba(18, 22, 36, 0.32);
+  font-weight: 600;
+}
+
+.lobby-code-input--invalid {
+  color: #a3262d;
+  border-color: rgba(210, 77, 87, 0.7);
+  background: rgba(220, 90, 86, 0.1);
+  font-weight: 700;
+}
+
+.lobby-code-input--invalid::placeholder {
+  color: rgba(210, 77, 87, 0.45);
+}
+
+.lobby-code-input--clearing {
+  color: rgba(18, 22, 36, 0.35);
+}
+
+.lobby-code-input--clearing::placeholder {
+  color: rgba(18, 22, 36, 0.35);
 }
 
 .lobby-start-btn {
   display: block;
-  margin: 0 auto;
-  font-size: 1.1rem;
-  letter-spacing: .24em;
-  padding: 16px 38px;
+  margin: 8px auto 0;
+  font-size: 1.02rem;
+  letter-spacing: 0.2em;
+  padding: 14px 30px;
   border-width: 2px;
   text-transform: uppercase;
   font-weight: 700;
-  box-shadow: 0 12px 24px rgba(0,0,0,.12);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
 }
-.lobby-start-btn.is-ready { box-shadow: 0 18px 32px rgba(0,0,0,.16); }
+.lobby-start-btn.is-ready {
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.16);
+}
 
 .lobby-status {
-  min-height: 20px;
   text-align: center;
-  font-size: .92rem;
-  margin: 22px 0 8px;
-  opacity: .85;
+  font-size: 0.88rem;
+  margin: 14px 0 4px;
+  opacity: 0.88;
+}
+
+.lobby-status.is-empty {
+  display: none;
 }
 
 .lobby-links-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .lobby-link {
   flex: 1;
-  font-size: .95rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
   text-decoration: none;
   color: var(--ink);
   font-weight: 700;
+  text-transform: uppercase;
 }
 
-.lobby-link--left { text-align: left; }
-.lobby-link--right { text-align: right; }
+.lobby-link--left {
+  text-align: left;
+}
+.lobby-link--right {
+  text-align: right;
+}
 
 /* Other helpers */
 .status { opacity: .8; }
