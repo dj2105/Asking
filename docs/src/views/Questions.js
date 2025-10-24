@@ -86,11 +86,9 @@ export default {
     const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
     const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
     headerRow.appendChild(heading);
-    const clueBox = el("div", { class: "mono question-card__clue" }, "");
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
     card.appendChild(headerRow);
-    card.appendChild(clueBox);
     card.appendChild(qText);
 
     const btnWrap = el("div", { class: "choice-row" });
@@ -119,21 +117,24 @@ export default {
 
     container.appendChild(root);
 
-    const setStageVisible = (visible) => {
-      card.style.display = visible ? "" : "none";
-      mathsMount.style.display = visible ? "" : "none";
-    };
-
     const showOverlay = (title, note) => {
       overlayTitle.textContent = title || "";
       overlayNote.textContent = note || "";
+      overlay.classList.add("stage-overlay--with-maths");
+      overlay.appendChild(mathsMount);
       overlay.classList.remove("stage-overlay--hidden");
-      setStageVisible(false);
+      card.style.display = "none";
     };
 
     const hideOverlay = () => {
+      overlay.classList.remove("stage-overlay--with-maths");
       overlay.classList.add("stage-overlay--hidden");
-      setStageVisible(true);
+      card.style.display = "";
+      if (root.contains(overlay)) {
+        root.insertBefore(mathsMount, overlay);
+      } else {
+        root.appendChild(mathsMount);
+      }
     };
 
     let stopWatcher = null;
@@ -177,15 +178,6 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    let clueMap = room0.clues || {};
-    const resolveClue = (r) =>
-      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || "";
-    const setClueText = (text) => {
-      clueBox.textContent = text || "";
-      clueBox.classList.toggle("question-card__clue--empty", !text);
-    };
-    setClueText(resolveClue(round));
-
     const setButtonsEnabled = (enabled) => {
       btn1.disabled = !enabled;
       btn2.disabled = !enabled;
@@ -353,14 +345,10 @@ export default {
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
 
-      if (data.clues && typeof data.clues === "object") {
-        clueMap = data.clues;
-      }
       const nextRound = Number(data.round) || round;
       if (nextRound !== round) {
         round = nextRound;
       }
-      setClueText(resolveClue(round));
 
       if (data.state === "marking") {
         setTimeout(() => {
