@@ -63,30 +63,18 @@ $env:GOOGLE_APPLICATION_CREDENTIALS = "C:\Path\To\service-account.json"
 
 Leave this step out if you are running purely offline; the `generate-sealed-pack` command does not contact Firebase.
 
-## 5. Ensure the `codex` runner is available
+## 5. Note on the retired Codex runner
 
-The repository defines Codex tasks in `codex.yaml`. Install the CLI globally (only once per machine):
-
-```powershell
-npm install --global @codex-cli/runner
-```
-
-Verify it is on PATH:
-
-```powershell
-codex --version
-```
-
-If you prefer not to install the CLI globally, you can run the underlying Python script directly (see Step 6b and 7b).
+The repository previously exposed convenience tasks through the Codex CLI (`@codex-cli/runner`). That npm package has been retired and is no longer distributed. No additional installation is required—use the Python commands in Steps 6 and 7 directly. If you still have the legacy CLI installed, it may continue to work, but it is no longer maintained.
 
 ## 6. Generate sealed packs
 
-### 6a. Via Codex (recommended)
+### 6a. Direct Python (recommended)
 
-Run the task; it creates any missing pair of sealed packs plus JSON manifests under `packs\new`:
+Invoke the workflow script directly; it creates any missing pair of sealed packs plus JSON manifests under `packs\new`:
 
 ```powershell
-codex run generate-sealed-pack --out packs/new
+python .\ops\sealed_workflow.py generate --out packs/new
 ```
 
 Expected side effects:
@@ -102,22 +90,22 @@ Confirm the files exist:
 Get-ChildItem -Path .\packs\new -Filter "*PACK_*.sealed"
 ```
 
-If the task reports that one pack already exists, it will only create the missing counterpart.
+If the command reports that one pack already exists, it will only create the missing counterpart.
 
-### 6b. Direct Python fallback
+### 6b. Legacy Codex CLI (deprecated)
 
-If Codex is unavailable, invoke the workflow script directly (output is identical):
+If you still have the Codex runner installed, the original task continues to work, but expect future removal:
 
 ```powershell
-python .\ops\sealed_workflow.py generate --out packs/new
+codex run generate-sealed-pack --out packs/new
 ```
 
 ## 7. Start a game with the next unused pack pair
 
-### 7a. Via Codex
+### 7a. Direct Python (recommended)
 
 ```powershell
-codex run start-game-with-new-pack
+python .\ops\sealed_workflow.py start
 ```
 
 The command will:
@@ -137,21 +125,27 @@ Get-ChildItem -Path .\packs\used\AB3
 
 Replace `AB3` with the actual room code reported in the JSON response.
 
-### 7b. Direct Python fallback
+### 7b. Legacy Codex CLI (deprecated)
+
+If you still have the Codex runner installed, the original task remains available:
 
 ```powershell
-python .\ops\sealed_workflow.py start
+codex run start-game-with-new-pack
 ```
-
-The behaviour and output mirror the Codex task.
 
 ## 8. Troubleshooting tips
 
-* **`libcrypto` not found** – add the OpenSSL `bin` folder to the current session before running the command:
-  ```powershell
-  $env:Path = "C:\Program Files\OpenSSL-Win64\bin;" + $env:Path
-  ```
-  Alternatively, rely on the `cryptography` wheel installed in Step 3.
+* **`libcrypto` not found** – add an OpenSSL `bin` directory to the *current* PowerShell session before running the command.
+  * If you installed the standalone runtime in Step 2:
+    ```powershell
+    $env:Path = "C:\Program Files\OpenSSL-Win64\bin;" + $env:Path
+    ```
+  * To use the copy bundled with the `cryptography` wheel inside `.venv` (installed in Step 3):
+    ```powershell
+    $opensslFromVenv = Resolve-Path .\.venv\Lib\site-packages\cryptography\hazmat\bindings\openssl
+    $env:Path = "$opensslFromVenv;" + $env:Path
+    ```
+    Verify that `libcrypto-3-x64.dll` (or `libcrypto-1_1-x64.dll` on older Python wheels) is present in the directory returned by `Resolve-Path` (for example `C:\Users\Spaniel\Downloads\Asking-man\Asking-main\.venv\Lib\site-packages\cryptography\hazmat\bindings\openssl`).
 
 * **`firebase_admin` import error** – ensure the virtual environment is active and rerun:
   ```powershell
@@ -162,7 +156,7 @@ The behaviour and output mirror the Codex task.
 
 * **No packs available** – rerun the generate step to produce a fresh pair.
 
-* **Codex command not found** – re-open PowerShell after `npm install -g` so PATH updates. As an immediate workaround, use the direct Python commands.
+* **Codex command not found** – the Codex runner is deprecated and no longer distributed. Prefer the Python commands shown above. If you rely on the legacy CLI, ensure it remains on PATH.
 
 ## 9. Wrap up
 
