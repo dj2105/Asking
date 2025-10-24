@@ -82,7 +82,7 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header" });
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
     const heading = el("div", { class: "phase-header__title" }, "MARKING");
     headerRow.appendChild(heading);
     const clueBox = el("div", { class: "mono mark-card__clue" }, "");

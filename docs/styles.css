@@ -337,6 +337,14 @@ input[type="text"], input[type="number"], .input {
   text-transform: uppercase;
   text-align: left;
 }
+.phase-header--centered {
+  justify-content: center;
+  text-align: center;
+}
+.phase-header--centered .phase-header__title {
+  flex: 1;
+  text-align: center;
+}
 .phase-header__title {
   font-size: inherit;
   font-weight: inherit;
@@ -425,16 +433,14 @@ input[type="text"], input[type="number"], .input {
   box-shadow: 0 0 0 2px rgba(211, 51, 51, 0.18);
 }
 
-.award-scoreline,
 .award-timeline {
-  font-size: 1rem;
+  font-size: 0.92rem;
   text-align: center;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin: 4px 0;
+  opacity: 0.7;
 }
-
-.award-timeline { opacity: 0.7; font-size: 0.92rem; }
 
 .award-reveal {
   margin-top: 8px;
@@ -741,24 +747,15 @@ input[type="text"], input[type="number"], .input {
   margin-right: auto;
   box-shadow: 0 24px 36px rgba(0,0,0,0.24);
 }
-.jemima-maths-box .maths-panel__heading {
-  font-weight: 700;
-  font-size: 1.05em;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  margin-bottom: 12px;
+.jemima-maths-box .maths-panel__clue {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  text-align: center;
+  white-space: pre-wrap;
 }
-.jemima-maths-box .maths-panel__list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.jemima-maths-box .maths-panel__clue--empty {
+  opacity: 0.7;
 }
-.maths-panel__item { line-height: 1.5; }
-.maths-panel__item--bold { font-weight: 700; }
-.maths-panel__item--subtle { opacity: 0.8; }
 
 /* ===========================
    Lobby welcome
