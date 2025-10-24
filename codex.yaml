@@ -1,0 +1,10 @@
+tasks:
+  generate-sealed-pack:
+    command: python ops/sealed_workflow.py generate --out {{args.out}}
+    args:
+      out:
+        description: Output directory for sealed packs
+        required: false
+        default: packs/new
+  start-game-with-new-pack:
+    command: python ops/sealed_workflow.py start
