@@ -83,7 +83,17 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
+    const backBtn = el(
+      "button",
+      {
+        class: "btn subtle phase-header__back",
+        type: "button",
+      },
+      "BACK"
+    );
+    backBtn.style.display = "none";
+    headerRow.appendChild(backBtn);
     const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
     headerRow.appendChild(heading);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
@@ -97,6 +107,11 @@ export default {
     btnWrap.appendChild(btn1);
     btnWrap.appendChild(btn2);
     card.appendChild(btnWrap);
+
+    let idx = 0;
+    const chosen = ["", "", ""];
+    let published = false;
+    let submitting = false;
 
     let waitMessageDefault = "Waiting…";
     const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
@@ -178,12 +193,20 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    const setButtonsEnabled = (enabled) => {
+    function refreshChoiceStyles() {
+      const current = chosen[idx] || "";
+      const btn1Selected = !btn1.disabled && current && btn1.textContent === current;
+      const btn2Selected = !btn2.disabled && current && btn2.textContent === current;
+      btn1.classList.toggle("selected", Boolean(btn1Selected));
+      btn2.classList.toggle("selected", Boolean(btn2Selected));
+      btn1.classList.toggle("throb", !btn1.disabled && !btn1Selected);
+      btn2.classList.toggle("throb", !btn2.disabled && !btn2Selected);
+    }
+    function setButtonsEnabled(enabled) {
       btn1.disabled = !enabled;
       btn2.disabled = !enabled;
-      btn1.classList.toggle("throb", enabled);
-      btn2.classList.toggle("throb", enabled);
-    };
+      refreshChoiceStyles();
+    }
 
     const waitForRoundData = async () => {
       let firstWait = true;
@@ -237,28 +260,34 @@ export default {
       return { question, options: [optA, optB], correct };
     });
 
-    let idx = 0;
-    const chosen = [];
-    let published = false;
-    let submitting = false;
+    const updateBackVisibility = () => {
+      const canGoBack = idx > 0 && !published && !submitting;
+      if (canGoBack) {
+        backBtn.style.display = "";
+        backBtn.disabled = false;
+      } else {
+        backBtn.style.display = "none";
+        backBtn.disabled = true;
+      }
+    };
 
-    function renderIndex() {
+    const timerContext = { code, role: myRole, round };
+
+    const showQuestion = (targetIdx) => {
+      if (triplet.length === 0) return;
+      if (targetIdx < 0) targetIdx = 0;
+      if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
+      idx = targetIdx;
       const cur = triplet[idx];
       heading.textContent = `QUESTION ${Math.min(idx + 1, 3)}/3`;
       qText.textContent = cur?.question || "";
       btn1.textContent = cur?.options?.[0] || "";
       btn2.textContent = cur?.options?.[1] || "";
-    }
-
-    const timerContext = { code, role: myRole, round };
-
-    const presentQuestion = () => {
-      if (idx >= triplet.length) return;
-      resumeRoundTimer(timerContext);
       btnWrap.style.display = "flex";
       waitMsg.style.display = "none";
       setButtonsEnabled(true);
-      renderIndex();
+      updateBackVisibility();
+      resumeRoundTimer(timerContext);
     };
 
     const finishRound = () => {
@@ -267,6 +296,8 @@ export default {
       waitMsg.style.display = "none";
       showWaitingOverlay();
       publishAnswers(false);
+      backBtn.style.display = "none";
+      backBtn.disabled = true;
     };
 
     const showWaitingState = (text) => {
@@ -310,17 +341,21 @@ export default {
 
     function onPick(text) {
       if (published || submitting) return;
-      chosen[idx] = text;
-      idx += 1;
-      if (idx >= 3) {
+      const currentIndex = idx;
+      chosen[currentIndex] = text;
+      if (currentIndex >= triplet.length - 1) {
         finishRound();
       } else {
-        presentQuestion();
+        showQuestion(currentIndex + 1);
       }
     }
 
     btn1.addEventListener("click", () => onPick(btn1.textContent));
     btn2.addEventListener("click", () => onPick(btn2.textContent));
+    backBtn.addEventListener("click", () => {
+      if (idx <= 0 || submitting || published) return;
+      showQuestion(idx - 1);
+    });
 
     const tripletReady = triplet.every((entry) =>
       entry.question && entry.options && entry.options.length === 2
@@ -339,7 +374,7 @@ export default {
       pauseRoundTimer(timerContext);
       showWaitingOverlay();
     } else {
-      presentQuestion();
+      showQuestion(0);
     }
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
