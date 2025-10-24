@@ -146,9 +146,8 @@ export default {
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
 
     let clueMap = roomData0.clues || {};
-    let mathsClues = Array.isArray(roomData0.maths?.clues) ? roomData0.maths.clues : [];
     const resolveClue = (r) =>
-      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || mathsClues[r - 1] || "";
+      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || "";
     const updateClue = () => {
       const text = resolveClue(round);
       clueBox.textContent = text || "";
@@ -416,9 +415,6 @@ export default {
 
       if (data.clues && typeof data.clues === "object") {
         clueMap = data.clues;
-      }
-      if (data.maths && Array.isArray(data.maths.clues)) {
-        mathsClues = data.maths.clues;
       }
       if (Number.isFinite(Number(data.round))) {
         const nextRound = Number(data.round);

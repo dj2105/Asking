@@ -15,13 +15,7 @@ import {
   runTransaction,
 } from "firebase/firestore";
 
-import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
-const mountMathsPane =
-  (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
-   typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
-   typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
-   null);
 
 const CONTINUE_LEAD_MS = 3_000;
 
@@ -170,22 +164,17 @@ export default {
     const scoreHeading = el("div", { class: "mono award-title" }, "");
     const timeLine = el("div", { class: "mono award-timeline" }, "");
     const revealBox = el("div", { class: "mono award-reveal award-reveal--hidden" }, "");
-    const clueBox = el("div", { class: "mono award-clue" }, "");
     const reviewWrap = el("div", { class: "award-review" });
 
     card.appendChild(scoreHeading);
     card.appendChild(timeLine);
     card.appendChild(revealBox);
-    card.appendChild(clueBox);
     card.appendChild(reviewWrap);
 
     const continueBtn = el("button", { class: "btn" }, "I'M READY");
     card.appendChild(continueBtn);
 
     root.appendChild(card);
-
-    const mathsMount = el("div", { class: "jemima-maths-pinned" });
-    root.appendChild(mathsMount);
 
     container.appendChild(root);
 
@@ -206,9 +195,7 @@ export default {
     let waitingLabel = `WAITING FOR ${oppName.toUpperCase()}`;
     continueBtn.textContent = readyLabel;
 
-    let clueMap = roomData0.clues || {};
     let revealMap = roomData0.reveals || {};
-    let mathsClues = Array.isArray(roomData0.maths?.clues) ? roomData0.maths.clues : [];
     let mathsReveals = Array.isArray(roomData0.maths?.reveals) ? roomData0.maths.reveals : [];
     let timingsData = roomData0.timings || {};
 
@@ -219,8 +206,6 @@ export default {
       guestAnswers: []
     };
 
-    const resolveClue = (r) =>
-      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || mathsClues[r - 1] || "";
     const resolveReveal = (r) => {
       if (revealMap && typeof revealMap[r] === "string") return revealMap[r];
       const idx = r - 1;
@@ -249,11 +234,6 @@ export default {
       slowCoachRound = round;
     };
 
-    const updateClue = () => {
-      const text = resolveClue(round);
-      clueBox.textContent = text || "";
-      clueBox.classList.toggle("award-clue--empty", !text);
-    };
     const updateTimes = () => {
       const hostTiming = Number((((timingsData || {}).host || {})[round] || {}).totalSeconds);
       const guestTiming = Number((((timingsData || {}).guest || {})[round] || {}).totalSeconds);
@@ -341,17 +321,8 @@ export default {
     const refreshSummary = () => {
       updateRoundScores();
       updateTimes();
-      updateClue();
       updateReveal();
     };
-
-    try {
-      if (mountMathsPane && roomData0.maths) {
-        mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
-      }
-    } catch (err) {
-      console.warn("[award] MathsPane mount failed:", err);
-    }
 
     refreshReviews();
     refreshSummary();
@@ -444,14 +415,8 @@ export default {
     const stop = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
 
-      if (data.clues && typeof data.clues === "object") {
-        clueMap = data.clues;
-      }
       if (data.reveals && typeof data.reveals === "object") {
         revealMap = data.reveals;
-      }
-      if (data.maths && Array.isArray(data.maths.clues)) {
-        mathsClues = data.maths.clues;
       }
       if (data.maths && Array.isArray(data.maths.reveals)) {
         mathsReveals = data.maths.reveals;
