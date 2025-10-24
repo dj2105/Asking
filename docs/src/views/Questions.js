@@ -178,9 +178,8 @@ export default {
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
     let clueMap = room0.clues || {};
-    let mathsClues = Array.isArray(room0.maths?.clues) ? room0.maths.clues : [];
     const resolveClue = (r) =>
-      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || mathsClues[r - 1] || "";
+      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || "";
     const setClueText = (text) => {
       clueBox.textContent = text || "";
       clueBox.classList.toggle("question-card__clue--empty", !text);
@@ -356,9 +355,6 @@ export default {
 
       if (data.clues && typeof data.clues === "object") {
         clueMap = data.clues;
-      }
-      if (data.maths && Array.isArray(data.maths.clues)) {
-        mathsClues = data.maths.clues;
       }
       const nextRound = Number(data.round) || round;
       if (nextRound !== round) {
