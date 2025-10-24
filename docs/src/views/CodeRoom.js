@@ -45,11 +45,9 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-coderoom" });
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card card--tight card--soft coderoom-card" });
     root.appendChild(card);
     container.appendChild(root);
-
-    card.appendChild(el("h1", { class: "title" }, "Code Room"));
 
     const codeBlock = el("div", {
       class: "mono",
@@ -90,7 +88,7 @@ export default {
       {
         class: "btn outline",
         type: "button",
-        style: "margin-top:24px;",
+        style: "margin-top:16px;align-self:flex-start;padding:8px 16px;",
         onclick: async () => {
           if (currentState === "coderoom") {
             try {
