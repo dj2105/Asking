@@ -51,7 +51,6 @@ You are Codex. Generate **two JSON files** in `/packs/out/` for a new Jemima’s
           "correct": "A"
         }
         ```
-    - `"interlude"` = optional 1-sentence line in Jemima’s voice.
   - Topics: broad, witty, factual.  
     Avoid repetition across rounds; mix history, pop culture, geography, science, arts, etc.
 

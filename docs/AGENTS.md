@@ -56,10 +56,10 @@ Keep new modules under /public/src/lib or /public/src/views. Use relative ESM im
 Sealed Content (single source of trivia)
         •       Filenames end with .sealed. Any base name works; room codes are chosen in Key Room.
         •       Supported envelopes:
-                – Full pack (version jemima-pack-1): 5 rounds of host+guest items + interludes, maths block, integrity checksum.
-                – Half pack (jemima-halfpack-1): host OR guest items only. Interludes may be included; maths optional.
-                – Question override (jemima-questionpack-1): replaces both sides’ questions/interludes.
-                – Maths override (jemima-maths-1): replaces only the maths block.
+                – Full pack (version jemima-pack-1): 5 rounds of host+guest items, round clues, maths block, integrity checksum.
+                – Half pack (jemima-halfpack-1): host OR guest items only; maths optional.
+                – Question override (jemima-questionpack-1): replaces both sides’ question items.
+                – Maths override (jemima-maths-chain-2): replaces only the maths block.
         •       Key Room lets Daniel mix these: start from a full pack, then layer optional question/host/guest/maths overrides. Missing items are padded with “<empty>”.
         •       Decryption: AES-GCM envelope, PBKDF2 150k iters, TextDecoder. Password default = DEMO-ONLY.
         •       Integrity: SHA-256 over canonical JSON (integrity.checksum) and verified flag true.
@@ -68,7 +68,7 @@ Sealed Content (single source of trivia)
 
 Firestore Contract (rooms/{CODE})
         •       meta.hostUid, meta.guestUid — written during seeding; reused for rejoin.
-        •       state — "keyroom" | "coderoom" | "seeding" | "countdown" | "questions" | "marking" | "interlude" | "award" | "maths" | "final".
+        •       state — "keyroom" | "coderoom" | "seeding" | "countdown" | "questions" | "marking" | "award" | "maths" | "final".
         •       round — 1…5 for Q&A, stays 5 during maths/final.
         •       countdown.startAt — ms epoch for the next synced hop.
         •       links.guestReady — guest has joined and armed countdown from lobby.
@@ -78,14 +78,14 @@ Firestore Contract (rooms/{CODE})
         •       markingAck.host.{round} / markingAck.guest.{round} — booleans acknowledging marking complete.
         •       award.startAt — ms epoch when award began.
         •       awardAck.host.{round} / awardAck.guest.{round} — confirms both saw the award.
-        •       scores.questions.{host|guest} — running tally of correct answers (auto from answers in views).
+        •       scores.{host|guest} — per-round question totals written during award transitions.
         •       maths — maths block from the merged pack.
-        •       mathsAnswers.{host|guest} & mathsAnswersAck.{host|guest} — final stage submissions/acks.
+        •       mathsAnswers.{host|guest} & mathsAnswersAck.{host|guest} — final stage submissions/acks (value/delta/points).
         •       seeds.progress/message — status from pack loading & jump tooling.
         •       timestamps.createdAt, timestamps.updatedAt — serverTimestamp().
 
 Subcollections
-        •       rooms/{CODE}/rounds/{N} — hostItems[3], guestItems[3], interlude, timings/snippet info as the game progresses.
+        •       rooms/{CODE}/rounds/{N} — hostItems[3], guestItems[3], timings/snippet info as the game progresses.
         •       rooms/{CODE}/players/{uid} — optional extras (e.g., retainedSnippets) written by Key Room jump tooling.
 
 Do not overwrite claimed UIDs. Never mix host/guest items.
@@ -115,24 +115,21 @@ Gameplay Flow (canonical)
 
 5) Questions (local per role)
         •       Exactly 3 questions for the logged-in role (hostItems vs guestItems). Selecting an option auto-advances; question 3 auto-submits.
-        •       MathsPane pinned with the current beat copy.
+        •       MathsPane pinned with the current round clue.
         •       On submit: writes answers + submitted flag, then shows “Waiting for opponent…”.
 
-6) Interlude (local filler)
-        •       If one player finishes early, they see the round’s interlude while waiting. Not a shared phase; watcher ignores it.
-
-7) Marking (local, 30s timer)
+6) Marking (local, 30s timer)
         •       Each player marks the opponent’s answers via ✓/✕ toggles. Timer enforced via marking.startAt.
         •       Submitting writes marking arrays + ack.
 
-8) Award (sync, 30s timer)
+7) Award (sync, 30s timer)
         •       Shows your answers with ✓/✕ result. Score strip recomputes from answers (marking is informational).
         •       On timeout or Continue (both roles) → Countdown for next round; Round increments.
 
-9) Maths (local)
+8) Maths (local)
         •       Two integer answers with units prompts. MathsPane stays mounted. Submits mathsAnswers + ack.
 
-10) Final (sync)
+9) Final (sync)
         •       Minimal summary + “Return to Lobby” reset.
 
 RoomWatcher + Rejoin
@@ -181,6 +178,6 @@ Style (non-negotiable)
 
 Safe Agent Tasks
         •       Role isolation audits (Questions/Marking fetch paths, stored role usage).
-        •       Score integrity (answers → scores.questions → ScoreStrip rendering).
+        •       Score integrity (answers → scores.{host|guest} → ScoreStrip rendering).
         •       Key Room tooling (pack overlay logic, countdown arming, jump paths).
         •       Countdown resilience (client clock drift ±5s).

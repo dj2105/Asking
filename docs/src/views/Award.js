@@ -23,7 +23,7 @@ const mountMathsPane =
    typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
    null);
 
-const CONTINUE_LEAD_MS = 5_000;
+const CONTINUE_LEAD_MS = 3_000;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -143,10 +143,18 @@ export default {
     const root = el("div", { class: "view view-award" });
 
     const card = el("div", { class: "card award-card" });
-    const heading = el("div", { class: "mono award-title" }, "Daniel 0 — 0 Jaime");
-    card.appendChild(heading);
-
+    const title = el("div", { class: "mono award-title" }, `Round ${round}`);
+    const scoreLine = el("div", { class: "mono award-scoreline" }, "");
+    const timeLine = el("div", { class: "mono award-timeline" }, "");
+    const clueBox = el("div", { class: "mono award-clue" }, "");
+    const revealBox = el("div", { class: "mono award-reveal award-reveal--hidden" }, "");
     const reviewWrap = el("div", { class: "award-review" });
+
+    card.appendChild(title);
+    card.appendChild(scoreLine);
+    card.appendChild(timeLine);
+    card.appendChild(clueBox);
+    card.appendChild(revealBox);
     card.appendChild(reviewWrap);
 
     const continueBtn = el("button", { class: "btn" }, "I'M READY");
@@ -176,11 +184,65 @@ export default {
     let waitingLabel = `WAITING FOR ${oppName.toUpperCase()}`;
     continueBtn.textContent = readyLabel;
 
+    let clueMap = roomData0.clues || {};
+    let revealMap = roomData0.reveals || {};
+    let mathsClues = Array.isArray(roomData0.maths?.clues) ? roomData0.maths.clues : [];
+    let mathsReveals = Array.isArray(roomData0.maths?.reveals) ? roomData0.maths.reveals : [];
+    let timingsData = roomData0.timings || {};
+
     let reviewData = {
       hostItems: [],
       guestItems: [],
       hostAnswers: [],
       guestAnswers: []
+    };
+
+    const resolveClue = (r) =>
+      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || mathsClues[r - 1] || "";
+    const resolveReveal = (r) => {
+      if (revealMap && typeof revealMap[r] === "string") return revealMap[r];
+      const idx = r - 1;
+      const entry = mathsReveals[idx];
+      if (!entry) return "";
+      if (typeof entry === "string") return entry;
+      if (entry && typeof entry.prompt === "string") return entry.prompt;
+      return "";
+    };
+    const formatSeconds = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return "—";
+      return `${num.toFixed(1)}s`;
+    };
+
+    const updateTitle = () => {
+      title.textContent = `Round ${round}`;
+    };
+    const updateClue = () => {
+      const text = resolveClue(round);
+      clueBox.textContent = text || "";
+      clueBox.classList.toggle("award-clue--empty", !text);
+    };
+    const updateTimes = () => {
+      const hostTiming = Number((((timingsData || {}).host || {})[round] || {}).totalSeconds);
+      const guestTiming = Number((((timingsData || {}).guest || {})[round] || {}).totalSeconds);
+      timeLine.textContent = `Daniel ${formatSeconds(hostTiming)} • Jaime ${formatSeconds(guestTiming)}`;
+    };
+    const updateReveal = () => {
+      const revealText = resolveReveal(round);
+      const hostTiming = Number((((timingsData || {}).host || {})[round] || {}).totalSeconds);
+      const guestTiming = Number((((timingsData || {}).guest || {})[round] || {}).totalSeconds);
+      let show = false;
+      if (revealText && Number.isFinite(hostTiming) && Number.isFinite(guestTiming) && hostTiming !== guestTiming) {
+        const hostFaster = hostTiming < guestTiming;
+        show = (myRole === "host" && hostFaster) || (myRole === "guest" && !hostFaster);
+      }
+      if (show) {
+        revealBox.textContent = revealText;
+        revealBox.classList.remove("award-reveal--hidden");
+      } else {
+        revealBox.textContent = "";
+        revealBox.classList.add("award-reveal--hidden");
+      }
     };
 
     const rdSnap = await getDoc(rdRef);
@@ -208,7 +270,7 @@ export default {
     const updateRoundScores = () => {
       const hostScore = countCorrect(reviewData.hostAnswers, reviewData.hostItems);
       const guestScore = countCorrect(reviewData.guestAnswers, reviewData.guestItems);
-      heading.textContent = `Daniel ${hostScore} — ${guestScore} Jaime`;
+      scoreLine.textContent = `Daniel ${hostScore} — ${guestScore} Jaime`;
     };
 
     const refreshReviews = () => {
@@ -233,6 +295,14 @@ export default {
       updateRoundScores();
     };
 
+    const refreshSummary = () => {
+      updateTitle();
+      updateRoundScores();
+      updateTimes();
+      updateClue();
+      updateReveal();
+    };
+
     try {
       if (mountMathsPane && roomData0.maths) {
         mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
@@ -242,6 +312,7 @@ export default {
     }
 
     refreshReviews();
+    refreshSummary();
 
     let ackMine = Boolean(((roomData0.awardAck || {})[myRole] || {})[round]);
     let ackOpp = Boolean(((roomData0.awardAck || {})[oppRole] || {})[round]);
@@ -323,12 +394,29 @@ export default {
       reviewData.hostItems = Array.isArray(data.hostItems) ? data.hostItems : reviewData.hostItems;
       reviewData.guestItems = Array.isArray(data.guestItems) ? data.guestItems : reviewData.guestItems;
       refreshReviews();
+      refreshSummary();
     }, (err) => {
       console.warn("[award] round watch error:", err);
     });
 
     const stop = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
+
+      if (data.clues && typeof data.clues === "object") {
+        clueMap = data.clues;
+      }
+      if (data.reveals && typeof data.reveals === "object") {
+        revealMap = data.reveals;
+      }
+      if (data.maths && Array.isArray(data.maths.clues)) {
+        mathsClues = data.maths.clues;
+      }
+      if (data.maths && Array.isArray(data.maths.reveals)) {
+        mathsReveals = data.maths.reveals;
+      }
+      if (data.timings && typeof data.timings === "object") {
+        timingsData = data.timings;
+      }
 
       const stateName = String(data.state || "").toLowerCase();
       const dataRound = Number(data.round);
@@ -346,6 +434,7 @@ export default {
         reviewData.hostAnswers = Array.isArray(answersHost) ? answersHost : [];
         reviewData.guestAnswers = Array.isArray(answersGuest) ? answersGuest : [];
         refreshReviews();
+        refreshSummary();
       }
 
       const ackData = data.awardAck || {};
@@ -381,6 +470,9 @@ export default {
 
       if (stateName === "final") {
         setTimeout(() => { location.hash = `#/final?code=${code}`; }, 80);
+      }
+      if (stateName !== "award") {
+        refreshSummary();
       }
     }, (err) => {
       console.warn("[award] snapshot error:", err);

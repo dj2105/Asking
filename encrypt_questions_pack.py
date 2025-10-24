@@ -138,9 +138,8 @@ def normalize_pack(pack: dict) -> dict:
             items = rd.get(side)
             must(isinstance(items, list) and len(items) == 3, f"Round {key}: need 3 {side}")
             rd[side] = [convert_item_if_needed(it) for it in items]
-        # interlude optional; keep if present and string
-        if "interlude" in rd and not (isinstance(rd["interlude"], str) and rd["interlude"].strip()):
-            rd.pop("interlude", None)
+        # ensure no legacy interlude leftovers
+        rd.pop("interlude", None)
     pack["rounds"] = rounds
     return pack
 

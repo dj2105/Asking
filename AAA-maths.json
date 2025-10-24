@@ -1,5 +1,5 @@
 {
-  "version": "jemima-maths-chain-1",
+  "version": "jemima-maths-chain-2",
   "meta": {
     "roomCode": "AAA",
     "generatedAt": "2025-10-19T01:30:00Z",
@@ -7,7 +7,7 @@
     "guestUid": "demo-guest"
   },
   "maths": {
-    "beats": [
+    "clues": [
       "I begin with the degrees in a full circle—perfect for turning on the spot.",
       "Then I divide my total by the main compass directions—neat, cardinals only.",
       "Next, I add the kilometres in a marathon; paws do love a long trot.",
@@ -15,17 +15,13 @@
       "Finally, I subtract the keys on a full piano—silence, but for purring."
     ],
     "reveals": [
-      { "prompt": "A full circle has **360** degrees.", "type": "obvious" },
-      { "prompt": "My total so far is **90**—quartered nicely.", "type": "total" },
-      { "prompt": "A marathon is **42 kilometres**.", "type": "specific" },
-      { "prompt": "My running total has reached **1056**—positively operatic.", "type": "total" },
-      { "prompt": "A full piano has **88** keys.", "type": "specific" }
+      "A full circle has **360** degrees.",
+      "My total so far is **90**—quartered nicely.",
+      "A marathon is **42 kilometres**.",
+      "My running total has reached **1056**—positively operatic.",
+      "A full piano has **88** keys."
     ],
     "question": "Tidy sums done—what number do I finish on? ___",
     "answer": 968
-  },
-  "results": {
-    "passage": "I begin with the degrees in a full circle **360**—perfect for turning on the spot. Then I divide my total by the main compass directions **4**—neat, cardinals only. Next, I add the kilometres in a marathon **42 kilometres**; paws do love a long trot. After that, I multiply by the letters in the word 'WHISKERS' **8**—branding is everything. Finally, I subtract the keys on a full piano **88**—silence, but for purring.",
-    "finalAnswer": { "value": 968, "label": "Final total" }
   }
 }

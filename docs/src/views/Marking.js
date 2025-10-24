@@ -1,9 +1,9 @@
 // /src/views/Marking.js
 //
-// Marking phase — judge opponent answers with a single 30s countdown.
+// Marking phase — judge opponent answers while a hidden timer keeps running.
 // • Shows opponent questions + chosen answers with ✓/✕/I DUNNO toggles.
-// • Countdown submits automatically when it reaches zero (unmarked entries submit as UNKNOWN).
-// • Submission writes marking.{role}.{round}, markingAck.{role}.{round} = true.
+// • No visible countdown; the round timer resumes when marking begins and stops on submission.
+// • Submission writes marking.{role}.{round}, timings.{role}.{round}, markingAck.{role}.{round} = true.
 // • Host advances to Award once both acknowledgements are present.
 
 import { ensureAuth, db } from "../lib/firebase.js";
@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
+import { resumeRoundTimer, pauseRoundTimer, getRoundTimerTotal, clearRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
@@ -26,7 +27,6 @@ const mountMathsPane =
    null);
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
-const MARKING_LIMIT_MS = 30_000;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -73,7 +73,7 @@ export default {
 
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
-    const round = parseInt(params.get("round") || "1", 10) || 1;
+    let round = parseInt(params.get("round") || "1", 10) || 1;
 
     const hue = Math.floor(Math.random() * 360);
     document.documentElement.style.setProperty("--ink-h", String(hue));
@@ -84,17 +84,13 @@ export default {
     const card = el("div", { class: "card card--center mark-card" });
     const headerRow = el("div", { class: "mono phase-header" });
     const heading = el("div", { class: "phase-header__title" }, "MARKING");
-    const timerDisplay = el("div", {
-      class: "phase-header__timer phase-header__timer--hidden",
-      role: "timer",
-      "aria-live": "off",
-    }, "");
     headerRow.appendChild(heading);
-    headerRow.appendChild(timerDisplay);
+    const clueBox = el("div", { class: "mono mark-card__clue" }, "");
 
     const list = el("div", { class: "qa-list" });
 
     card.appendChild(headerRow);
+    card.appendChild(clueBox);
     card.appendChild(list);
     const submitBtn = el("button", {
       class: "btn outline mark-submit-btn",
@@ -119,27 +115,12 @@ export default {
 
     container.appendChild(root);
 
-    function formatSeconds(value) {
-      const safe = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
-      return safe < 10 ? `0${safe}`.slice(-2) : String(safe);
-    }
-    function showTimerValue(seconds) {
-      timerDisplay.textContent = formatSeconds(seconds);
-      timerDisplay.classList.remove("phase-header__timer--hidden");
-    }
-    function hideTimerValue() {
-      timerDisplay.textContent = "";
-      timerDisplay.classList.add("phase-header__timer--hidden");
-    }
-    hideTimerValue();
-
     const setStageVisible = (visible) => {
       card.style.display = visible ? "" : "none";
       mathsMount.style.display = visible ? "" : "none";
     };
 
     const showOverlay = (title, note) => {
-      hideTimerValue();
       overlayTitle.textContent = title || "";
       overlayNote.textContent = note || "";
       overlay.classList.remove("stage-overlay--hidden");
@@ -164,6 +145,19 @@ export default {
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
 
+    let clueMap = roomData0.clues || {};
+    let mathsClues = Array.isArray(roomData0.maths?.clues) ? roomData0.maths.clues : [];
+    const resolveClue = (r) =>
+      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || mathsClues[r - 1] || "";
+    const updateClue = () => {
+      const text = resolveClue(round);
+      clueBox.textContent = text || "";
+      clueBox.classList.toggle("mark-card__clue--empty", !text);
+    };
+    updateClue();
+
+    const timerContext = { code, role: myRole, round };
+
     try {
       if (mountMathsPane && roomData0.maths) {
         mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
@@ -181,49 +175,9 @@ export default {
     let marks = [null, null, null];
     let published = false;
     let submitting = false;
-    let countdownDeadline = null;
-    let countdownInterval = null;
-    let countdownExpired = false;
 
     const disableFns = [];
     const reflectFns = [];
-
-    const recordedStartAt = Number(markingMeta.startAt);
-    if (Number.isFinite(recordedStartAt) && recordedStartAt > 0) {
-      countdownDeadline = recordedStartAt + MARKING_LIMIT_MS;
-    }
-
-    const stopCountdown = () => {
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
-      }
-    };
-
-    const updateCountdown = () => {
-      if (!countdownDeadline) {
-        hideTimerValue();
-        return;
-      }
-      const remainingMs = countdownDeadline - Date.now();
-      const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-      showTimerValue(remainingSeconds);
-      if (remainingSeconds <= 0 && !countdownExpired) {
-        countdownExpired = true;
-        stopCountdown();
-        handleTimeout();
-      }
-    };
-
-    const startCountdown = () => {
-      if (published || countdownInterval) return;
-      if (!countdownDeadline) countdownDeadline = Date.now() + MARKING_LIMIT_MS;
-      countdownExpired = false;
-      const remainingSeconds = Math.max(0, Math.ceil((countdownDeadline - Date.now()) / 1000));
-      showTimerValue(remainingSeconds);
-      updateCountdown();
-      countdownInterval = setInterval(updateCountdown, 200);
-    };
 
     const markValue = (value) => {
       if (value === VERDICT.RIGHT) return VERDICT.RIGHT;
@@ -248,25 +202,17 @@ export default {
       submitBtn.classList.toggle("throb", ready && !submitting);
     };
 
-    const handleTimeout = () => {
-      if (published || submitting) return;
-      marks = marks.map((value) => markValue(value));
-      reflectFns.forEach((fn) => { try { fn(); } catch {} });
-      updateDoneState();
-      submitMarks(true);
-    };
-
-    const submitMarks = async (timedOut = false) => {
+    const submitMarks = async () => {
       if (published || submitting) return;
       submitting = true;
-      countdownExpired = true;
-      const remainingMs = countdownDeadline ? Math.max(0, countdownDeadline - Date.now()) : 0;
-      stopCountdown();
-
       const safeMarks = marks.map((value) => markValue(value));
+      pauseRoundTimer(timerContext);
+      const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
+      const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
       const patch = {
         [`marking.${myRole}.${round}`]: safeMarks,
         [`markingAck.${myRole}.${round}`]: true,
+        [`timings.${myRole}.${round}`]: { totalSeconds },
         "timestamps.updatedAt": serverTimestamp(),
       };
 
@@ -277,15 +223,13 @@ export default {
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         submitBtn.disabled = true;
         submitBtn.classList.remove("throb");
-        hideTimerValue();
-        showWaitingOverlay(timedOut ? "Time's up" : "Review submitted");
+        showWaitingOverlay("Review submitted");
+        clearRoundTimer(timerContext);
       } catch (err) {
         console.warn("[marking] submit failed:", err);
         submitting = false;
         if (!published) {
-          countdownDeadline = Date.now() + (remainingMs || 3_000);
-          countdownExpired = false;
-          startCountdown();
+          resumeRoundTimer(timerContext);
           updateDoneState();
           hideOverlay();
         }
@@ -409,18 +353,18 @@ export default {
       published = true;
       reflectFns.forEach((fn) => { try { fn(); } catch {} });
       disableFns.forEach((fn) => { try { fn(); } catch {} });
-      hideTimerValue();
       showWaitingOverlay("Review submitted");
+      pauseRoundTimer(timerContext);
+      clearRoundTimer(timerContext);
     } else {
-      if (!countdownDeadline) countdownDeadline = Date.now() + MARKING_LIMIT_MS;
-      startCountdown();
+      resumeRoundTimer(timerContext);
       hideOverlay();
     }
 
     updateDoneState();
 
     submitBtn.addEventListener("click", () => {
-      submitMarks(false);
+      submitMarks();
     });
 
     let stopRoomWatch = null;
@@ -449,16 +393,13 @@ export default {
 
           const roundHostScore = countCorrectAnswers(answersHost, hostItems);
           const roundGuestScore = countCorrectAnswers(answersGuest, guestItems);
-          const baseScores = ((roomData.scores || {}).questions) || {};
-          const nextHost = Number(baseScores.host || 0) + roundHostScore;
-          const nextGuest = Number(baseScores.guest || 0) + roundGuestScore;
           const currentRound = Number(roomData.round) || round;
 
           tx.update(rRef, {
             state: "award",
             round: currentRound,
-            "scores.questions.host": nextHost,
-            "scores.questions.guest": nextGuest,
+            [`scores.host.${currentRound}`]: roundHostScore,
+            [`scores.guest.${currentRound}`]: roundGuestScore,
             "timestamps.updatedAt": serverTimestamp(),
           });
         });
@@ -472,6 +413,21 @@ export default {
     stopRoomWatch = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
       const stateName = (data.state || "").toLowerCase();
+
+      if (data.clues && typeof data.clues === "object") {
+        clueMap = data.clues;
+      }
+      if (data.maths && Array.isArray(data.maths.clues)) {
+        mathsClues = data.maths.clues;
+      }
+      if (Number.isFinite(Number(data.round))) {
+        const nextRound = Number(data.round);
+        if (nextRound !== round) {
+          round = nextRound;
+          timerContext.round = round;
+        }
+      }
+      updateClue();
 
       if (stateName === "countdown") {
         setTimeout(() => {
@@ -508,11 +464,11 @@ export default {
         published = true;
         reflectFns.forEach((fn) => { try { fn(); } catch {} });
         disableFns.forEach((fn) => { try { fn(); } catch {} });
-        stopCountdown();
-        hideTimerValue();
         showWaitingOverlay(ackOpp ? "Waiting for opponent" : "Review submitted");
         submitBtn.disabled = true;
         submitBtn.classList.remove("throb");
+        pauseRoundTimer(timerContext);
+        clearRoundTimer(timerContext);
       }
 
       if (myRole === "host" && stateName === "marking" && ackMine && ackOpp) {
@@ -524,8 +480,7 @@ export default {
 
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
-      stopCountdown();
-      hideTimerValue();
+      pauseRoundTimer(timerContext);
     };
   },
 

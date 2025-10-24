@@ -21,7 +21,6 @@
     "final",
     "watcher",
     "rejoin",
-    "interlude",
   ]);
 
   const url = new URL(window.location.href);
@@ -115,7 +114,6 @@ const VIEW_MAP = {
   final:     () => import("./views/Final.js"),
   watcher:   () => import("./roomWatcher.js"),
   rejoin:    () => import("./views/Rejoin.js"),
-  interlude: () => import("./views/Interlude.js"),
 };
 
 function parseHash() {

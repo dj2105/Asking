@@ -8,17 +8,25 @@ function isRoom(s){ return /^[A-Z]{3}$/.test(s||""); }
 
 function validateMaths(file){
   const p = JSON.parse(fs.readFileSync(file,"utf8"));
-  must(p.version==="jemima-maths-chain-1","Maths: wrong version");
+  must(p.version==="jemima-maths-chain-2","Maths: wrong version");
   const m=p.maths||{};
-  must(Array.isArray(m.beats)&&m.beats.length===5,"Maths: need 5 beats");
+  must(Array.isArray(m.clues)&&m.clues.length===5,"Maths: need 5 clues");
+  m.clues.forEach((clue,idx)=>{
+    must(typeof clue==="string"&&clue.trim(),`Maths clue ${idx+1} missing`);
+  });
   must(Array.isArray(m.reveals)&&m.reveals.length===5,"Maths: need 5 reveals");
-  const totals=m.reveals.filter(r=>r.type==="total").length;
-  must(totals===2,"Maths: must have exactly 2 total reveals");
-  must(hasBlank(m.question),"Maths: question must include ___");
-  must(Number.isInteger(m.answer),"Maths: answer must be integer");
-  const r=p.results||{};
-  must(typeof r.passage==="string"&&r.passage.trim(),"Results passage missing");
-  must(r.finalAnswer&&Number.isInteger(r.finalAnswer.value),"Results finalAnswer integer missing");
+  m.reveals.forEach((reveal,idx)=>{
+    if(typeof reveal==="string"){
+      must(reveal.trim(),`Maths reveal ${idx+1} empty`);
+    }else if(typeof reveal==="object"&&reveal!==null){
+      const txt=reveal.prompt||reveal.text||reveal.value||"";
+      must(typeof txt==="string"&&txt.trim(),`Maths reveal ${idx+1} missing text`);
+    }else{
+      must(false,`Maths reveal ${idx+1} invalid`);
+    }
+  });
+  must(typeof m.question==="string"&&m.question.trim(),"Maths question missing");
+  must(Number.isInteger(m.answer),"Maths answer must be integer");
   must(isRoom(p.meta?.roomCode),"Maths: meta.roomCode invalid");
 }
 
@@ -48,3 +56,4 @@ const qs = files.find(f=>/-questions\.json$/i.test(f));
 must(maths&&qs,"Expected both <ROOM>-maths.json and <ROOM>-questions.json in "+dir);
 validateMaths(maths); validateQuestions(qs);
 console.log("✅ OK:", path.basename(maths),"and",path.basename(qs));
+

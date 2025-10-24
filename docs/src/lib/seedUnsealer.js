@@ -23,7 +23,7 @@ const PASSWORD_DEMO = "DEMO-ONLY"; // TODO: externalise to env/config.
 export const PACK_VERSION_FULL = "jemima-pack-1";
 export const PACK_VERSION_HALF = "jemima-halfpack-1";
 export const PACK_VERSION_QUESTIONS = "jemima-questionpack-1";
-export const PACK_VERSION_MATHS = "jemima-maths-1";
+export const PACK_VERSION_MATHS = "jemima-maths-chain-2";
 const PBKDF2_ITERATIONS = 150_000;
 
 function assert(condition, message) {
@@ -125,8 +125,6 @@ function validatePack(pack) {
     assert(guestItems.length === 3, `Round ${rnum} guestItems must be 3.`);
     hostItems.forEach((item, i) => validateItem(item, `Round ${rnum} host item ${i + 1}`));
     guestItems.forEach((item, i) => validateItem(item, `Round ${rnum} guest item ${i + 1}`));
-
-    assert(typeof round.interlude === "string" && round.interlude.trim(), `Round ${rnum} interlude missing.`);
   });
   assert(seenRounds.size === 5, "Pack rounds must cover 1–5 exactly.");
   for (let i = 1; i <= 5; i += 1) {
@@ -134,13 +132,17 @@ function validatePack(pack) {
   }
 
   const maths = pack.maths || {};
-  assert(typeof maths.location === "string" && maths.location.trim(), "Maths location missing.");
-  assert(Array.isArray(maths.beats) && maths.beats.length >= 1, "Maths beats missing.");
-  assert(Array.isArray(maths.questions) && maths.questions.length === 2, "Maths requires two questions.");
-  assert(Array.isArray(maths.answers) && maths.answers.length === 2, "Maths requires two answers.");
-  maths.answers.forEach((ans, idx) => {
-    assert(Number.isInteger(ans), `Maths answer ${idx + 1} must be an integer.`);
+  assert(Array.isArray(maths.clues) && maths.clues.length === 5, "Maths clues must contain 5 entries.");
+  maths.clues.forEach((clue, idx) => {
+    assert(typeof clue === "string" && clue.trim(), `Maths clue ${idx + 1} missing.`);
   });
+  assert(Array.isArray(maths.reveals) && maths.reveals.length === 5, "Maths reveals must contain 5 entries.");
+  maths.reveals.forEach((reveal, idx) => {
+    const ok = typeof reveal === "string" ? reveal.trim() : typeof reveal === "object";
+    assert(ok, `Maths reveal ${idx + 1} missing.`);
+  });
+  assert(typeof maths.question === "string" && maths.question.trim(), "Maths question missing.");
+  assert(Number.isInteger(maths.answer), "Maths answer must be an integer.");
 
   const integrity = pack.integrity || {};
   assert(typeof integrity.checksum === "string" && /^[0-9a-f]{64}$/i.test(integrity.checksum), "Integrity checksum invalid.");
@@ -211,8 +213,6 @@ function validateHalfpack(pack) {
       throw new Error("Halfpack invalid: each round needs exactly 3 items for its side.");
     }
     activeItems.forEach((item, i) => validateItem(item, `Round ${rnum} ${meta.which} item ${i + 1}`));
-
-    assert(typeof round.interlude === "string" && round.interlude.trim(), `Round ${rnum} interlude missing.`);
   });
 
   assert(seenRounds.size === 5, "Pack rounds must cover 1–5 exactly.");
@@ -252,8 +252,6 @@ function validateQuestionPack(pack) {
     assert(guestItems.length === 3, `Round ${rnum} guestItems must be 3.`);
     hostItems.forEach((item, i) => validateItem(item, `Round ${rnum} host item ${i + 1}`));
     guestItems.forEach((item, i) => validateItem(item, `Round ${rnum} guest item ${i + 1}`));
-
-    assert(typeof round.interlude === "string" && round.interlude.trim(), `Round ${rnum} interlude missing.`);
   });
 
   assert(seenRounds.size === 5, "Question pack rounds must cover 1–5 exactly.");
@@ -276,22 +274,17 @@ function validateMaths(pack) {
   assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
 
   const maths = pack.maths || {};
-  assert(typeof maths.location === "string" && maths.location.trim(), "Maths location missing.");
-  const beats = Array.isArray(maths.beats) ? maths.beats : [];
-  assert(beats.length === 4, "Maths requires four beats.");
-  beats.forEach((beat, idx) => {
-    assert(typeof beat === "string" && beat.trim(), `Maths beat ${idx + 1} missing.`);
+  assert(Array.isArray(maths.clues) && maths.clues.length === 5, "Maths clues must contain 5 entries.");
+  maths.clues.forEach((clue, idx) => {
+    assert(typeof clue === "string" && clue.trim(), `Maths clue ${idx + 1} missing.`);
   });
-  const questions = Array.isArray(maths.questions) ? maths.questions : [];
-  assert(questions.length === 2, "Maths requires two questions.");
-  questions.forEach((question, idx) => {
-    assert(typeof question === "string" && question.trim(), `Maths question ${idx + 1} missing.`);
+  assert(Array.isArray(maths.reveals) && maths.reveals.length === 5, "Maths reveals must contain 5 entries.");
+  maths.reveals.forEach((reveal, idx) => {
+    const ok = typeof reveal === "string" ? reveal.trim() : typeof reveal === "object";
+    assert(ok, `Maths reveal ${idx + 1} missing.`);
   });
-  const answers = Array.isArray(maths.answers) ? maths.answers : [];
-  assert(answers.length === 2, "Maths requires two answers.");
-  answers.forEach((ans, idx) => {
-    assert(Number.isInteger(ans), `Maths answer ${idx + 1} must be an integer.`);
-  });
+  assert(typeof maths.question === "string" && maths.question.trim(), "Maths question missing.");
+  assert(Number.isInteger(maths.answer), "Maths answer must be an integer.");
 
   return { code };
 }
@@ -331,6 +324,29 @@ export async function seedFirestoreFromPack(db, pack) {
   const roomDoc = roomRef(code);
   const countdown = { startAt: null };
   const maths = clonePlain(pack.maths);
+  const clueMap = {};
+  if (Array.isArray(maths?.clues)) {
+    maths.clues.forEach((clue, idx) => {
+      if (typeof clue === "string" && clue.trim()) {
+        clueMap[idx + 1] = clue;
+      }
+    });
+  }
+  const revealMap = {};
+  if (Array.isArray(maths?.reveals)) {
+    maths.reveals.forEach((reveal, idx) => {
+      let text = "";
+      if (typeof reveal === "string") text = reveal;
+      else if (reveal && typeof reveal === "object") {
+        if (typeof reveal.prompt === "string") text = reveal.prompt;
+        else if (typeof reveal.text === "string") text = reveal.text;
+        else if (typeof reveal.value === "string") text = reveal.value;
+      }
+      if (text) {
+        revealMap[idx + 1] = text;
+      }
+    });
+  }
 
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(roomDoc);
@@ -343,6 +359,8 @@ export async function seedFirestoreFromPack(db, pack) {
         state: "keyroom",
         round: 1,
         maths,
+        clues: clueMap,
+        reveals: revealMap,
         countdown,
         answers: { host: {}, guest: {} },
         submitted: { host: {}, guest: {} },
@@ -350,7 +368,8 @@ export async function seedFirestoreFromPack(db, pack) {
         markingAck: { host: {}, guest: {} },
         award: { startAt: null },
         awardAck: { host: {}, guest: {} },
-        scores: { questions: { host: 0, guest: 0 } },
+        scores: { host: {}, guest: {} },
+        timings: { host: {}, guest: {} },
         seeds: { progress: 100, message: "Pack ready." },
         timestamps: {
           createdAt: serverTimestamp(),
@@ -368,6 +387,8 @@ export async function seedFirestoreFromPack(db, pack) {
         state: "keyroom",
         round: 1,
         maths,
+        clues: clueMap,
+        reveals: revealMap,
         countdown,
         answers: { host: {}, guest: {} },
         submitted: { host: {}, guest: {} },
@@ -375,7 +396,8 @@ export async function seedFirestoreFromPack(db, pack) {
         markingAck: { host: {}, guest: {} },
         award: { startAt: null },
         awardAck: { host: {}, guest: {} },
-        scores: { questions: { host: 0, guest: 0 } },
+        scores: { host: {}, guest: {} },
+        timings: { host: {}, guest: {} },
         seeds: { progress: 100, message: "Pack ready." },
         "timestamps.updatedAt": serverTimestamp(),
       });
@@ -391,7 +413,6 @@ export async function seedFirestoreFromPack(db, pack) {
       round: rnum,
       hostItems: clonePlain(round.hostItems),
       guestItems: clonePlain(round.guestItems),
-      interlude: round.interlude,
     };
     return setDoc(docRef, payload);
   }));

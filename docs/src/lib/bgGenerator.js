@@ -2,7 +2,7 @@
 // Legacy (unused in sealed flow).
 // Background generator for Rounds 2–5.
 // Provides: startBackgroundQuestionGen({ apiKey, code, startRound=2, endRound=5, onTick })
-// It streams progress via onTick and writes each round's items + interlude.
+// It streams progress via onTick and writes each round's items + round clue.
 
 import { db } from "./firebase.js";
 import {
@@ -74,14 +74,14 @@ export async function startBackgroundQuestionGen({
       continue; // don’t block dev flow
     }
 
-    // 4) interlude
-    emit(basePct+3, `Round ${round}: interlude`);
-    const inter = await Gemini.callGeminiJemima({ apiKey, round, model:"gemini-2.5-flash" });
+    // 4) clue for the round
+    emit(basePct+3, `Round ${round}: clue`);
+    const clue = await Gemini.callGeminiJemima({ apiKey, round, model:"gemini-2.5-flash" });
 
     // 5) write round doc
     await setDoc(doc(roundSubColRef(theCode), String(round)), {
       items: final3,
-      interlude: inter?.interlude || `Round ${round} awaits.`,
+      clue: clue?.clue || `Round ${round} awaits.`,
       createdAt: serverTimestamp()
     }, { merge: true });
 

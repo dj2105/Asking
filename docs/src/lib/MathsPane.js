@@ -1,93 +1,85 @@
 // /src/lib/MathsPane.js
 //
-// Jemima’s Maths Pane — pinned, inverted info box shown in Questions, Marking, Interlude, etc.
-// - Always renders consistently (bottom, fixed height, inverted scheme)
-// - Shows one of the 4 beats for the current round, or both questions during maths round
-// - Mirrors retained snippets (when a player wins the speed bonus) beneath the usual content.
-// - Can be mounted via:
-//     import MathsPane from "../lib/MathsPane.js";
-//     MathsPane.mount(container, { maths, round, mode:"inline", roomCode, userUid });
-//
-// CSS colours rely on --ink and --paper variables set by each view.
+// Jemima’s Maths Pane — inverted helper that now focuses on reveal access.
+// • Shows which round reveals the current player has earned (fastest time wins).
+// • Watches the room document for timings + reveal content.
+// • Falls back to a friendly placeholder until any reveals are unlocked.
 
 import { db } from "./firebase.js";
-import { doc, collection, onSnapshot } from "firebase/firestore";
-
-const roundSubColRef = (code) => collection(doc(db, "rooms", code), "rounds");
+import { doc, onSnapshot } from "firebase/firestore";
 
 const watcherMap = new WeakMap();
-const snippetStores = new Map();
 
-function extractSnippetText(raw) {
-  if (!raw) return "";
-  if (typeof raw === "string") return raw;
-  if (Array.isArray(raw)) {
-    return raw
-      .map((entry) => extractSnippetText(entry))
-      .filter((part) => part && part.trim())
-      .join(" ")
-      .trim();
+const clampCode = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 5);
+
+function normaliseReveal(entry) {
+  if (!entry) return "";
+  if (typeof entry === "string") return entry;
+  if (typeof entry === "object") {
+    if (typeof entry.prompt === "string") return entry.prompt;
+    if (typeof entry.text === "string") return entry.text;
+    if (typeof entry.value === "string") return entry.value;
   }
-  if (typeof raw === "object") {
-    if (typeof raw.text === "string") return raw.text;
-    if (typeof raw.snippet === "string") return raw.snippet;
-    if (typeof raw.value === "string") return raw.value;
-    if (raw.current) return extractSnippetText(raw.current);
-    if (Array.isArray(raw.lines)) {
-      return raw.lines
-        .map((entry) => extractSnippetText(entry))
-        .filter((part) => part && part.trim())
-        .join("\n")
-        .trim();
-    }
-  }
-  return String(raw || "");
+  return "";
 }
 
-function ensureSnippetStore(code) {
-  const key = String(code || "").trim().toUpperCase();
-  if (!key) return null;
-  if (snippetStores.has(key)) return snippetStores.get(key);
-
-  const store = {
-    key,
-    data: new Map(),
-    listeners: new Set(),
-    unsubs: []
-  };
-  snippetStores.set(key, store);
-
-  (async () => {
-    try {
-      for (let r = 1; r <= 5; r += 1) {
-        const ref = doc(roundSubColRef(key), String(r));
-        const stop = onSnapshot(ref, (snap) => {
-          if (!snap.exists()) {
-            store.data.set(r, { snippet: "", winnerUid: null });
-          } else {
-            const data = snap.data() || {};
-            const snippet = extractSnippetText(data.snippet ?? data.interlude ?? "");
-            const winnerUid = data.snippetWinnerUid || null;
-            const tie = Boolean(data.snippetTie);
-            store.data.set(r, { snippet, winnerUid, tie });
-          }
-          store.listeners.forEach((fn) => {
-            try { fn(store.data); } catch (err) { console.warn("[maths-pane] listener error:", err); }
-          });
-        }, (err) => {
-          console.warn("[maths-pane] snippet watch error:", err);
-        });
-        store.unsubs.push(stop);
-      }
-    } catch (err) {
-      console.warn("[maths-pane] init failed:", err);
-    }
-  })();
-
-  return store;
+function determineRole(room = {}, userUid = "") {
+  const meta = room.meta || {};
+  if (userUid && meta.hostUid === userUid) return "host";
+  if (userUid && meta.guestUid === userUid) return "guest";
+  return "guest";
 }
 
-export function mount(container, { maths, round = 1, mode = "inline", roomCode, userUid } = {}) {
+function collectReveals(room = {}, role = "guest") {
+  const timings = room.timings || {};
+  const hostTimings = timings.host || {};
+  const guestTimings = timings.guest || {};
+  const revealsMap = room.reveals || {};
+  const mathsReveals = Array.isArray(room.maths?.reveals) ? room.maths.reveals : [];
+
+  const entries = [];
+  for (let round = 1; round <= 5; round += 1) {
+    const hostTiming = Number((hostTimings[round] || {}).totalSeconds);
+    const guestTiming = Number((guestTimings[round] || {}).totalSeconds);
+    const revealText = normaliseReveal(revealsMap[round] ?? mathsReveals[round - 1]);
+    if (!revealText) continue;
+    if (!Number.isFinite(hostTiming) || !Number.isFinite(guestTiming)) continue;
+    if (hostTiming === guestTiming) continue;
+    const hostFaster = hostTiming < guestTiming;
+    const winnerRole = hostFaster ? "host" : "guest";
+    if (winnerRole === role) {
+      entries.push({ round, text: revealText });
+    }
+  }
+  return entries;
+}
+
+function renderList(listEl, entries, currentRound) {
+  listEl.innerHTML = "";
+  if (!entries.length) {
+    const item = document.createElement("li");
+    item.className = "maths-panel__item maths-panel__item--subtle";
+    item.textContent = "No reveals unlocked yet.";
+    listEl.appendChild(item);
+    return;
+  }
+  entries
+    .sort((a, b) => a.round - b.round)
+    .forEach(({ round, text }) => {
+      const li = document.createElement("li");
+      li.className = "maths-panel__item";
+      if (round === currentRound) li.classList.add("maths-panel__item--bold");
+      li.textContent = `Round ${round}: ${text}`;
+      listEl.appendChild(li);
+    });
+}
+
+export function mount(container, { maths, round = 1, roomCode, userUid } = {}) {
   if (!container) return;
 
   const prevCleanup = watcherMap.get(container);
@@ -97,81 +89,46 @@ export function mount(container, { maths, round = 1, mode = "inline", roomCode, 
   watcherMap.delete(container);
 
   container.innerHTML = "";
-
   const box = document.createElement("div");
   box.className = "jemima-maths-box mono";
 
   const heading = document.createElement("div");
   heading.className = "mono maths-panel__heading";
-  heading.textContent = "Jemima's List";
+  heading.textContent = "Unlocked reveals";
   box.appendChild(heading);
 
   const listEl = document.createElement("ul");
   listEl.className = "mono maths-panel__list";
   box.appendChild(listEl);
 
-  let dynamicEntries = [];
-
-  const updateList = () => {
-    listEl.innerHTML = "";
-    dynamicEntries.forEach((entry, index) => {
-      const item = document.createElement("li");
-      item.className = "maths-panel__item";
-      if (entry.bold) item.classList.add("maths-panel__item--bold");
-      if (entry.subtle) item.classList.add("maths-panel__item--subtle");
-      item.textContent = entry.text;
-      listEl.appendChild(item);
-    });
-  };
-
-  updateList();
-
   container.appendChild(box);
 
-  if (!roomCode || !userUid) {
+  const code = clampCode(roomCode);
+  if (!code || !userUid) {
+    renderList(listEl, [], round);
     return;
   }
 
-  const renderRetained = (dataMap) => {
-    const map = dataMap instanceof Map
-      ? dataMap
-      : new Map(Object.entries(dataMap || {}));
-    const infoCurrent = map.get(round) || {};
-    const currentSnippet = ((infoCurrent && infoCurrent.snippet) || "").toString().trim();
-
-    dynamicEntries = [];
-
-    if (currentSnippet) {
-      dynamicEntries.push({ text: currentSnippet, bold: true });
+  let stop = null;
+  stop = onSnapshot(doc(db, "rooms", code), (snap) => {
+    if (!snap.exists()) {
+      renderList(listEl, [], round);
+      return;
     }
-
-    const entries = Array.from(map.entries())
-      .filter(([r]) => Number(r) !== Number(round))
-      .filter(([, info]) => info && info.snippet && (info.tie || info.winnerUid === userUid))
-      .sort((a, b) => Number(b[0]) - Number(a[0]));
-
-    entries.forEach(([, info]) => {
-      const snippetText = (info?.snippet || "").toString().trim();
-      if (!snippetText) return;
-      dynamicEntries.push({ text: snippetText, subtle: true });
-    });
-
-    updateList();
-  };
-
-  const store = ensureSnippetStore(roomCode);
-  if (!store) {
-    return;
-  }
-
-  const listener = (data) => {
-    renderRetained(data || store.data);
-  };
-  store.listeners.add(listener);
-  listener(store.data);
+    const roomData = snap.data() || {};
+    // Prefer live maths info but fallback to prop for initial render.
+    if (!roomData.maths && maths) {
+      roomData.maths = maths;
+    }
+    const role = determineRole(roomData, userUid);
+    const entries = collectReveals(roomData, role);
+    renderList(listEl, entries, round);
+  }, (err) => {
+    console.warn("[maths-pane] room watch error:", err);
+  });
 
   watcherMap.set(container, () => {
-    store.listeners.delete(listener);
+    try { stop && stop(); } catch {}
   });
 }
 

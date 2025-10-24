@@ -63,7 +63,7 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-countdown stage-center stage-center--solo" });
-    const timer = el("div", { class: "mono countdown-big" }, "5");
+    const timer = el("div", { class: "mono countdown-big" }, "3");
     root.appendChild(timer);
     container.appendChild(root);
 
@@ -147,7 +147,7 @@ export default {
 
     const tick = setInterval(async () => {
       if (!countdownStartAt) {
-        timer.textContent = "5";
+        timer.textContent = "3";
         return;
       }
 
