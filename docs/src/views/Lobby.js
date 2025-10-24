@@ -52,6 +52,9 @@ export default {
     const initialCode = clampCode(params.get("code") || "");
     const recentCode = getLastRoomCode();
 
+    let invalidHoldTimer = 0;
+    let invalidClearTimer = 0;
+
     const input = el("input", {
       type: "text",
       autocomplete: "off",
@@ -60,7 +63,11 @@ export default {
       placeholder: "CAT",
       class: "lobby-code-input",
       value: initialCode,
-      oninput: (e) => { e.target.value = clampCode(e.target.value); reflect(); },
+      oninput: (e) => {
+        clearInvalidHighlight();
+        e.target.value = clampCode(e.target.value);
+        reflect();
+      },
       onkeydown: (e) => { if (e.key === "Enter") join(); }
     });
 
@@ -75,7 +82,11 @@ export default {
     }, "START");
     card.appendChild(startBtn);
 
-    const status = el("div", { class: "lobby-status" }, "");
+    const status = el("div", {
+      class: "lobby-status is-empty",
+      role: "status",
+      "aria-live": "polite",
+    }, "");
     card.appendChild(status);
 
     const rejoinHref = recentCode ? `#/rejoin?code=${recentCode}` : "#/rejoin";
@@ -83,21 +94,60 @@ export default {
     const rejoinLink = el("a", {
       href: rejoinHref,
       class: "lobby-link lobby-link--left",
-    }, "Rejoin Game");
+    }, "Rejoin");
     const hostLink = el("a", {
       href: "#/keyroom",
       class: "lobby-link lobby-link--right"
-    }, "Daniel’s Entrance");
+    }, "Keyroom");
     linksRow.appendChild(rejoinLink);
     linksRow.appendChild(hostLink);
     card.appendChild(linksRow);
 
-    function setStatus(msg) { status.textContent = msg || ""; }
+    function setStatus(msg) {
+      const text = msg || "";
+      status.textContent = text;
+      status.classList.toggle("is-empty", !text);
+    }
+
+    function clearInvalidHighlight() {
+      if (invalidHoldTimer) {
+        clearTimeout(invalidHoldTimer);
+        invalidHoldTimer = 0;
+      }
+      if (invalidClearTimer) {
+        clearTimeout(invalidClearTimer);
+        invalidClearTimer = 0;
+      }
+      input.classList.remove("lobby-code-input--invalid", "lobby-code-input--clearing");
+      input.removeAttribute("aria-invalid");
+    }
+
+    function flashInvalid(code) {
+      clearInvalidHighlight();
+      input.classList.add("lobby-code-input--invalid");
+      input.setAttribute("aria-invalid", "true");
+      input.value = code;
+      reflect();
+      input.focus();
+
+      invalidHoldTimer = window.setTimeout(() => {
+        invalidHoldTimer = 0;
+        input.classList.add("lobby-code-input--clearing");
+        input.value = "";
+        input.removeAttribute("aria-invalid");
+        reflect();
+
+        invalidClearTimer = window.setTimeout(() => {
+          input.classList.remove("lobby-code-input--invalid", "lobby-code-input--clearing");
+          invalidClearTimer = 0;
+        }, 320);
+      }, 900);
+    }
 
     function reflect() {
       const value = clampCode(input.value);
       if (value !== input.value) input.value = value;
-      const ready = value.length >= 3;
+      const ready = value.length >= 3 && !input.classList.contains("lobby-code-input--invalid");
       startBtn.disabled = !ready;
       startBtn.classList.toggle("is-ready", ready);
       startBtn.classList.toggle("throb-soft", ready);
@@ -105,6 +155,7 @@ export default {
 
     async function join() {
       setStatus("");
+      clearInvalidHighlight();
       const code = clampCode(input.value);
       if (code.length < 3) return;
 
@@ -113,8 +164,8 @@ export default {
         const snap = await getDoc(rRef);
 
         if (!snap.exists()) {
-          setStatus("Room not found. Check the 3–5 letter code.");
           console.warn(`[lobby] join code=${code} | room not found`);
+          flashInvalid(code);
           return;
         }
 
