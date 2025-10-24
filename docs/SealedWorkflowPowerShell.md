@@ -146,6 +146,14 @@ codex run start-game-with-new-pack
     $env:Path = "$opensslFromVenv;" + $env:Path
     ```
     Verify that `libcrypto-3-x64.dll` (or `libcrypto-1_1-x64.dll` on older Python wheels) is present in the directory returned by `Resolve-Path` (for example `C:\Users\Spaniel\Downloads\Asking-man\Asking-main\.venv\Lib\site-packages\cryptography\hazmat\bindings\openssl`).
+    ```powershell
+    Get-ChildItem $opensslFromVenv -Filter "libcrypto*.dll"
+    ```
+    If no DLL appears, reinstall the wheel so that the bundled OpenSSL files are restored:
+    ```powershell
+    python -m pip install --upgrade --force-reinstall --only-binary cryptography cryptography
+    ```
+    Once the reinstall succeeds, rerun `Get-ChildItem` to confirm the DLL is now present before re-attempting the workflow command.
 
 * **`firebase_admin` import error** – ensure the virtual environment is active and rerun:
   ```powershell
