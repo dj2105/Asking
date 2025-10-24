@@ -83,19 +83,19 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
+    const headerRow = el("div", { class: "mono phase-header" });
     const backBtn = el(
       "button",
       {
-        class: "btn subtle phase-header__back",
+        class: "phase-header__back phase-header__back--hidden",
         type: "button",
       },
-      "BACK"
+      "<BACK"
     );
-    backBtn.style.display = "none";
     headerRow.appendChild(backBtn);
-    const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
-    headerRow.appendChild(heading);
+    headerRow.appendChild(el("div", { class: "phase-header__title" }, "QUESTION"));
+    const progress = el("div", { class: "phase-header__progress" }, "1/3");
+    headerRow.appendChild(progress);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
     card.appendChild(headerRow);
@@ -109,6 +109,7 @@ export default {
     card.appendChild(btnWrap);
 
     let idx = 0;
+    let advancing = false;
     const chosen = ["", "", ""];
     let published = false;
     let submitting = false;
@@ -206,6 +207,7 @@ export default {
       btn1.disabled = !enabled;
       btn2.disabled = !enabled;
       refreshChoiceStyles();
+      updateBackVisibility();
     }
 
     const waitForRoundData = async () => {
@@ -262,16 +264,17 @@ export default {
 
     const updateBackVisibility = () => {
       const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
-      }
+      backBtn.disabled = !canGoBack;
+      backBtn.classList.toggle("phase-header__back--hidden", !canGoBack);
     };
 
     const timerContext = { code, role: myRole, round };
+
+    const updateProgress = () => {
+      const total = triplet.length || 3;
+      const current = Math.min(idx + 1, total);
+      progress.textContent = `${current}/${total}`;
+    };
 
     const showQuestion = (targetIdx) => {
       if (triplet.length === 0) return;
@@ -279,7 +282,7 @@ export default {
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
       const cur = triplet[idx];
-      heading.textContent = `QUESTION ${Math.min(idx + 1, 3)}/3`;
+      updateProgress();
       qText.textContent = cur?.question || "";
       btn1.textContent = cur?.options?.[0] || "";
       btn2.textContent = cur?.options?.[1] || "";
@@ -296,8 +299,8 @@ export default {
       waitMsg.style.display = "none";
       showWaitingOverlay();
       publishAnswers(false);
-      backBtn.style.display = "none";
       backBtn.disabled = true;
+      backBtn.classList.add("phase-header__back--hidden");
     };
 
     const showWaitingState = (text) => {
@@ -306,11 +309,14 @@ export default {
       waitMsg.textContent = text || waitMessageDefault;
       waitMsg.style.display = "";
       setButtonsEnabled(false);
+      backBtn.disabled = true;
+      backBtn.classList.add("phase-header__back--hidden");
     };
 
     async function publishAnswers() {
       if (submitting || published) return;
       submitting = true;
+      updateBackVisibility();
 
       const payload = triplet.map((entry, idx) => ({
         question: entry.question || "",
@@ -328,6 +334,7 @@ export default {
         await updateDoc(rRef, patch);
         published = true;
         submitting = false;
+        updateBackVisibility();
         pauseRoundTimer(timerContext);
         showWaitingOverlay("Waiting for opponent");
       } catch (err) {
@@ -336,13 +343,21 @@ export default {
         hideOverlay();
         showWaitingState("Retrying…");
         setButtonsEnabled(true);
+        updateBackVisibility();
       }
     }
 
-    function onPick(text) {
-      if (published || submitting) return;
+    async function onPick(text) {
+      if (published || submitting || advancing) return;
       const currentIndex = idx;
       chosen[currentIndex] = text;
+      setButtonsEnabled(false);
+      advancing = true;
+      refreshChoiceStyles();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      advancing = false;
+      if (!alive || published || submitting) return;
+      if (idx !== currentIndex) return;
       if (currentIndex >= triplet.length - 1) {
         finishRound();
       } else {
@@ -372,7 +387,9 @@ export default {
       btnWrap.style.display = "none";
       waitMsg.style.display = "none";
       pauseRoundTimer(timerContext);
+      updateProgress();
       showWaitingOverlay();
+      updateBackVisibility();
     } else {
       showQuestion(0);
     }
