@@ -139,21 +139,28 @@ codex run start-game-with-new-pack
   * If you installed the standalone runtime in Step 2:
     ```powershell
     $env:Path = "C:\Program Files\OpenSSL-Win64\bin;" + $env:Path
+    Get-ChildItem "C:\Program Files\OpenSSL-Win64\bin" -Filter "libcrypto*.dll"
     ```
+    The listing should include `libcrypto-3-x64.dll` (or `libcrypto-1_1-x64.dll` for older installers). If it does not, reinstall the Win64 OpenSSL runtime and repeat the check before retrying the workflow command.
   * To use the copy bundled with the `cryptography` wheel inside `.venv` (installed in Step 3):
     ```powershell
     $opensslFromVenv = Resolve-Path .\.venv\Lib\site-packages\cryptography\hazmat\bindings\openssl
     $env:Path = "$opensslFromVenv;" + $env:Path
-    ```
-    Verify that `libcrypto-3-x64.dll` (or `libcrypto-1_1-x64.dll` on older Python wheels) is present in the directory returned by `Resolve-Path` (for example `C:\Users\Spaniel\Downloads\Asking-man\Asking-main\.venv\Lib\site-packages\cryptography\hazmat\bindings\openssl`).
-    ```powershell
     Get-ChildItem $opensslFromVenv -Filter "libcrypto*.dll"
     ```
-    If no DLL appears, reinstall the wheel so that the bundled OpenSSL files are restored:
+    Typical output resembles:
+    ```
+    Directory: C:\Users\Spaniel\Downloads\Asking-man\Asking-main\.venv\Lib\site-packages\cryptography\hazmat\bindings\openssl
+
+    Mode                 LastWriteTime         Length Name
+    ----                 -------------         ------ ----
+    -a---          24/10/2025    22:41        3159552 libcrypto-3-x64.dll
+    ```
+    If the DLL is missing, reinstall the wheel so that the bundled OpenSSL files are restored, then rerun the listing:
     ```powershell
     python -m pip install --upgrade --force-reinstall --only-binary cryptography cryptography
     ```
-    Once the reinstall succeeds, rerun `Get-ChildItem` to confirm the DLL is now present before re-attempting the workflow command.
+    Still seeing `CryptoError: Unable to locate libcrypto shared library` after confirming the DLL exists? Make sure you run `python .\ops\sealed_workflow.py …` from the same PowerShell tab where you updated `$env:Path`; the PATH change only applies to that live session.
 
 * **Traceback ends with `raise SystemExit(main())`** – that final line only reflects the script exiting through its `main()` wrapper. Scroll to the *first* lines of the traceback for the real exception (for example, a missing DLL or Python module), resolve that issue, and then rerun the workflow command. The `SystemExit` frame alone does not indicate the underlying cause.
 
