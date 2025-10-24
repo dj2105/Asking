@@ -365,6 +365,27 @@ input[type="text"], input[type="number"], .input {
   font-size: 1.1rem;
 }
 
+.question-card__clue,
+.mark-card__clue,
+.award-clue {
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+.question-card__clue { text-align: center; font-weight: 600; }
+.mark-card__clue { text-align: left; }
+.award-clue { text-align: center; font-weight: 600; }
+
+.question-card__clue--empty,
+.mark-card__clue--empty,
+.award-clue--empty {
+  display: none;
+}
+
 .choice-row {
   display: flex;
   gap: 12px;
@@ -374,6 +395,57 @@ input[type="text"], input[type="number"], .input {
 }
 
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
+
+.maths-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.maths-input-label {
+  font-weight: 700;
+  text-align: left;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.maths-input { width: 100%; }
+
+.maths-helper {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-top: 6px;
+  text-align: center;
+}
+
+.input--error {
+  border-color: #d33;
+  box-shadow: 0 0 0 2px rgba(211, 51, 51, 0.18);
+}
+
+.award-scoreline,
+.award-timeline {
+  font-size: 1rem;
+  text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 4px 0;
+}
+
+.award-timeline { opacity: 0.7; font-size: 0.92rem; }
+
+.award-reveal {
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 214, 0, 0.18);
+  border-radius: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.award-reveal--hidden { display: none; }
 
 .result-panel {
   text-align: center;
@@ -1114,4 +1186,77 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   padding: 28px 32px;
   box-shadow: var(--shadow);
   text-align: center;
+}
+
+/* Updated final summary layout */
+.final-card {
+  align-items: stretch;
+  gap: 18px;
+}
+
+.final-winner {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.section-heading {
+  font-size: 1.05rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin: 14px 0 6px;
+}
+
+.final-round-table,
+.final-maths__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.final-round-table th,
+.final-round-table td,
+.final-maths__table th,
+.final-maths__table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.final-round-table th:first-child,
+.final-round-table td:first-child {
+  text-align: left;
+}
+
+.final-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.final-totals {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.final-totals li {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.final-maths__question {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.final-maths__answer {
+  font-style: italic;
+  opacity: 0.75;
+  margin-bottom: 6px;
 }

@@ -88,7 +88,6 @@ function buildPacks() {
       rounds: [
         {
           round: 1,
-          interlude: 'Jemima straightens the quiz cards and grins at the warm-up topics.',
           hostItems: [
             {
               subject: 'astronomy',
@@ -162,7 +161,6 @@ function buildPacks() {
         },
         {
           round: 2,
-          interlude: 'She flips to the next stack, delighted the topics wander through old libraries.',
           hostItems: [
             {
               subject: 'history',
@@ -236,7 +234,6 @@ function buildPacks() {
         },
         {
           round: 3,
-          interlude: 'Jemima hums a quiz-show theme and winks at the scoreboard.',
           hostItems: [
             {
               subject: 'science',
@@ -310,7 +307,6 @@ function buildPacks() {
         },
         {
           round: 4,
-          interlude: 'She scribbles a lightning doodle next to the speed round.',
           hostItems: [
             {
               subject: 'language',
@@ -384,7 +380,6 @@ function buildPacks() {
         },
         {
           round: 5,
-          interlude: 'Jemima exhales, promising the finale is a delicious grab bag.',
           hostItems: [
             {
               subject: 'television',
@@ -491,7 +486,6 @@ function buildPacks() {
       rounds: [
         {
           round: 1,
-          interlude: 'Jemima taps a rhythm on the table, welcoming everyone back.',
           hostItems: [
             {
               subject: 'space',
@@ -565,7 +559,6 @@ function buildPacks() {
         },
         {
           round: 2,
-          interlude: 'She lifts a mug of tea and salutes the quiz faithful.',
           hostItems: [
             {
               subject: 'mythology',
@@ -639,7 +632,6 @@ function buildPacks() {
         },
         {
           round: 3,
-          interlude: 'She shuffles the cards so the lightning round feels electric.',
           hostItems: [
             {
               subject: 'science',
@@ -713,7 +705,6 @@ function buildPacks() {
         },
         {
           round: 4,
-          interlude: 'She sketches a quick star next to the scoreboard before reading on.',
           hostItems: [
             {
               subject: 'geography',
@@ -787,7 +778,6 @@ function buildPacks() {
         },
         {
           round: 5,
-          interlude: 'She grins, promising the finale is friendly but fierce.',
           hostItems: [
             {
               subject: 'music',
@@ -894,7 +884,6 @@ function buildPacks() {
       rounds: [
         {
           round: 1,
-          interlude: 'Jemima flicks on the fairy lights and salutes the returning duo.',
           hostItems: [
             {
               subject: 'science',
@@ -968,7 +957,6 @@ function buildPacks() {
         },
         {
           round: 2,
-          interlude: 'She slides a shell across the table as a lucky talisman.',
           hostItems: [
             {
               subject: 'nature',
@@ -1042,7 +1030,6 @@ function buildPacks() {
         },
         {
           round: 3,
-          interlude: 'Jemima laughs that the mid-game always brings oddball favourites.',
           hostItems: [
             {
               subject: 'technology',
@@ -1116,7 +1103,6 @@ function buildPacks() {
         },
         {
           round: 4,
-          interlude: 'She cues a sea-shanty playlist to keep the pace brisk.',
           hostItems: [
             {
               subject: 'science',
@@ -1190,7 +1176,6 @@ function buildPacks() {
         },
         {
           round: 5,
-          interlude: 'She claps once, promising a finale full of crowd-pleasers.',
           hostItems: [
             {
               subject: 'music',

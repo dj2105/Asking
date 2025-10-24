@@ -9,67 +9,273 @@
   "rounds": {
     "1": {
       "hostItems": [
-        { "prompt": "Which planet is known for its rings?", "options": ["Saturn", "Mars"], "correct": "A" },
-        { "prompt": "The Mona Lisa hangs in which city?", "options": ["Paris", "Rome"], "correct": "A" },
-        { "prompt": "Which ocean touches Australia’s west coast?", "options": ["Indian Ocean", "Atlantic Ocean"], "correct": "A" }
+        {
+          "prompt": "Which planet is known for its rings?",
+          "options": [
+            "Saturn",
+            "Mars"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "The Mona Lisa hangs in which city?",
+          "options": [
+            "Paris",
+            "Rome"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which ocean touches Australia’s west coast?",
+          "options": [
+            "Indian Ocean",
+            "Atlantic Ocean"
+          ],
+          "correct": "A"
+        }
       ],
       "guestItems": [
-        { "prompt": "In music, a trio has how many players?", "options": ["Three", "Four"], "correct": "A" },
-        { "prompt": "Mount Kilimanjaro is on which continent?", "options": ["Africa", "Asia"], "correct": "A" },
-        { "prompt": "Which metal is liquid at room temperature?", "options": ["Mercury", "Aluminium"], "correct": "A" }
-      ],
-      "interlude": "Jemima hums a bar and taps the table."
+        {
+          "prompt": "In music, a trio has how many players?",
+          "options": [
+            "Three",
+            "Four"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Mount Kilimanjaro is on which continent?",
+          "options": [
+            "Africa",
+            "Asia"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which metal is liquid at room temperature?",
+          "options": [
+            "Mercury",
+            "Aluminium"
+          ],
+          "correct": "A"
+        }
+      ]
     },
     "2": {
       "hostItems": [
-        { "prompt": "Which author created Sherlock Holmes?", "options": ["Arthur Conan Doyle", "Agatha Christie"], "correct": "A" },
-        { "prompt": "The Great Barrier Reef lies off which country?", "options": ["Australia", "Mexico"], "correct": "A" },
-        { "prompt": "Which gas do plants breathe in?", "options": ["Carbon dioxide", "Oxygen"], "correct": "A" }
+        {
+          "prompt": "Which author created Sherlock Holmes?",
+          "options": [
+            "Arthur Conan Doyle",
+            "Agatha Christie"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "The Great Barrier Reef lies off which country?",
+          "options": [
+            "Australia",
+            "Mexico"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which gas do plants breathe in?",
+          "options": [
+            "Carbon dioxide",
+            "Oxygen"
+          ],
+          "correct": "A"
+        }
       ],
       "guestItems": [
-        { "prompt": "Which city hosted the 2012 Olympics?", "options": ["London", "Beijing"], "correct": "A" },
-        { "prompt": "What does DNA stand for?", "options": ["Deoxyribonucleic acid", "Dynamic nucleic array"], "correct": "A" },
-        { "prompt": "Which instrument has keys, pedals, and strings?", "options": ["Piano", "Clarinet"], "correct": "A" }
-      ],
-      "interlude": "A postcard on the fridge reminds her of a trip."
+        {
+          "prompt": "Which city hosted the 2012 Olympics?",
+          "options": [
+            "London",
+            "Beijing"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "What does DNA stand for?",
+          "options": [
+            "Deoxyribonucleic acid",
+            "Dynamic nucleic array"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which instrument has keys, pedals, and strings?",
+          "options": [
+            "Piano",
+            "Clarinet"
+          ],
+          "correct": "A"
+        }
+      ]
     },
     "3": {
       "hostItems": [
-        { "prompt": "What is the capital of Canada?", "options": ["Ottawa", "Toronto"], "correct": "A" },
-        { "prompt": "Which element has the symbol Au?", "options": ["Gold", "Silver"], "correct": "A" },
-        { "prompt": "Who painted The Starry Night?", "options": ["Vincent van Gogh", "Pablo Picasso"], "correct": "A" }
+        {
+          "prompt": "What is the capital of Canada?",
+          "options": [
+            "Ottawa",
+            "Toronto"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which element has the symbol Au?",
+          "options": [
+            "Gold",
+            "Silver"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Who painted The Starry Night?",
+          "options": [
+            "Vincent van Gogh",
+            "Pablo Picasso"
+          ],
+          "correct": "A"
+        }
       ],
       "guestItems": [
-        { "prompt": "Which bird is the symbol of peace?", "options": ["Dove", "Eagle"], "correct": "A" },
-        { "prompt": "What is the largest mammal?", "options": ["Blue whale", "Elephant"], "correct": "A" },
-        { "prompt": "Which continent is the Amazon River on?", "options": ["South America", "Africa"], "correct": "A" }
+        {
+          "prompt": "Which bird is the symbol of peace?",
+          "options": [
+            "Dove",
+            "Eagle"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "What is the largest mammal?",
+          "options": [
+            "Blue whale",
+            "Elephant"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which continent is the Amazon River on?",
+          "options": [
+            "South America",
+            "Africa"
+          ],
+          "correct": "A"
+        }
       ]
     },
     "4": {
       "hostItems": [
-        { "prompt": "Which language has the most native speakers?", "options": ["Mandarin Chinese", "English"], "correct": "A" },
-        { "prompt": "Which device measures atmospheric pressure?", "options": ["Barometer", "Thermometer"], "correct": "A" },
-        { "prompt": "Which city is famous for the Colosseum?", "options": ["Rome", "Athens"], "correct": "A" }
+        {
+          "prompt": "Which language has the most native speakers?",
+          "options": [
+            "Mandarin Chinese",
+            "English"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which device measures atmospheric pressure?",
+          "options": [
+            "Barometer",
+            "Thermometer"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which city is famous for the Colosseum?",
+          "options": [
+            "Rome",
+            "Athens"
+          ],
+          "correct": "A"
+        }
       ],
       "guestItems": [
-        { "prompt": "What part of the plant conducts photosynthesis?", "options": ["Leaf", "Root"], "correct": "A" },
-        { "prompt": "Which composer wrote The Four Seasons?", "options": ["Vivaldi", "Mozart"], "correct": "A" },
-        { "prompt": "What is H2O commonly known as?", "options": ["Water", "Hydrogen"], "correct": "A" }
-      ],
-      "interlude": "She smiles at a trivia fact scribbled on a napkin."
+        {
+          "prompt": "What part of the plant conducts photosynthesis?",
+          "options": [
+            "Leaf",
+            "Root"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which composer wrote The Four Seasons?",
+          "options": [
+            "Vivaldi",
+            "Mozart"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "What is H2O commonly known as?",
+          "options": [
+            "Water",
+            "Hydrogen"
+          ],
+          "correct": "A"
+        }
+      ]
     },
     "5": {
       "hostItems": [
-        { "prompt": "Which country gifted the Statue of Liberty?", "options": ["France", "Spain"], "correct": "A" },
-        { "prompt": "Which desert covers much of northern Africa?", "options": ["Sahara", "Gobi"], "correct": "A" },
-        { "prompt": "Which scientist proposed the three laws of motion?", "options": ["Isaac Newton", "Albert Einstein"], "correct": "A" }
+        {
+          "prompt": "Which country gifted the Statue of Liberty?",
+          "options": [
+            "France",
+            "Spain"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which desert covers much of northern Africa?",
+          "options": [
+            "Sahara",
+            "Gobi"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which scientist proposed the three laws of motion?",
+          "options": [
+            "Isaac Newton",
+            "Albert Einstein"
+          ],
+          "correct": "A"
+        }
       ],
       "guestItems": [
-        { "prompt": "Which art movement is Claude Monet associated with?", "options": ["Impressionism", "Cubism"], "correct": "A" },
-        { "prompt": "Which organ pumps blood through the body?", "options": ["Heart", "Liver"], "correct": "A" },
-        { "prompt": "Which continent has the most countries?", "options": ["Africa", "Europe"], "correct": "A" }
+        {
+          "prompt": "Which art movement is Claude Monet associated with?",
+          "options": [
+            "Impressionism",
+            "Cubism"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which organ pumps blood through the body?",
+          "options": [
+            "Heart",
+            "Liver"
+          ],
+          "correct": "A"
+        },
+        {
+          "prompt": "Which continent has the most countries?",
+          "options": [
+            "Africa",
+            "Europe"
+          ],
+          "correct": "A"
+        }
       ]
     }
   }
 }
-

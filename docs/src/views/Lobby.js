@@ -125,7 +125,7 @@ export default {
         const round = Number(data.round) || 1;
 
         if (state === "coderoom") {
-          const startAt = Date.now() + 5_000;
+          const startAt = Date.now() + 3_000;
           try {
             await updateDoc(rRef, {
               state: "countdown",

@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
+import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
@@ -84,16 +85,12 @@ export default {
     const card = el("div", { class: "card card--soft card--center question-card" });
     const headerRow = el("div", { class: "mono phase-header" });
     const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
-    const timerDisplay = el("div", {
-      class: "phase-header__timer phase-header__timer--hidden",
-      role: "timer",
-      "aria-live": "off",
-    }, "");
     headerRow.appendChild(heading);
-    headerRow.appendChild(timerDisplay);
+    const clueBox = el("div", { class: "mono question-card__clue" }, "");
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
     card.appendChild(headerRow);
+    card.appendChild(clueBox);
     card.appendChild(qText);
 
     const btnWrap = el("div", { class: "choice-row" });
@@ -128,7 +125,6 @@ export default {
     };
 
     const showOverlay = (title, note) => {
-      hideTimerValue();
       overlayTitle.textContent = title || "";
       overlayNote.textContent = note || "";
       overlay.classList.remove("stage-overlay--hidden");
@@ -181,74 +177,21 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    const QUESTION_LIMIT_SECONDS = 10;
-    const QUESTION_LIMIT_MS = QUESTION_LIMIT_SECONDS * 1000;
-    function formatSeconds(value) {
-      const safe = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
-      return safe < 10 ? `0${safe}`.slice(-2) : String(safe);
-    }
-    function showTimerValue(seconds) {
-      timerDisplay.textContent = formatSeconds(seconds);
-      timerDisplay.classList.remove("phase-header__timer--hidden");
-    }
-    function hideTimerValue() {
-      timerDisplay.textContent = "";
-      timerDisplay.classList.add("phase-header__timer--hidden");
-    }
-    hideTimerValue();
-    let timerDeadline = null;
-    let timerInterval = null;
+    let clueMap = room0.clues || {};
+    let mathsClues = Array.isArray(room0.maths?.clues) ? room0.maths.clues : [];
+    const resolveClue = (r) =>
+      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || mathsClues[r - 1] || "";
+    const setClueText = (text) => {
+      clueBox.textContent = text || "";
+      clueBox.classList.toggle("question-card__clue--empty", !text);
+    };
+    setClueText(resolveClue(round));
 
     const setButtonsEnabled = (enabled) => {
       btn1.disabled = !enabled;
       btn2.disabled = !enabled;
       btn1.classList.toggle("throb", enabled);
       btn2.classList.toggle("throb", enabled);
-    };
-
-    const updateTimerDisplay = () => {
-      if (!timerDeadline) return;
-      const remainingMs = timerDeadline - Date.now();
-      const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-      showTimerValue(remainingSeconds);
-      if (remainingSeconds <= 0) {
-        stopTimer();
-        handleTimeout();
-      }
-    };
-
-    const startQuestionTimer = () => {
-      stopTimer();
-      timerDeadline = Date.now() + QUESTION_LIMIT_MS;
-      showTimerValue(QUESTION_LIMIT_SECONDS);
-      updateTimerDisplay();
-      timerInterval = setInterval(updateTimerDisplay, 200);
-    };
-
-    const stopTimer = () => {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      timerDeadline = null;
-    };
-
-    const handleTimeout = () => {
-      if (published || submitting) return;
-      stopTimer();
-      if (idx >= triplet.length) {
-        finishRound(true);
-        return;
-      }
-      if (typeof chosen[idx] !== "string") {
-        chosen[idx] = "";
-      }
-      idx += 1;
-      if (idx >= triplet.length) {
-        finishRound(true);
-      } else {
-        presentQuestion();
-      }
     };
 
     const waitForRoundData = async () => {
@@ -316,22 +259,23 @@ export default {
       btn2.textContent = cur?.options?.[1] || "";
     }
 
+    const timerContext = { code, role: myRole, round };
+
     const presentQuestion = () => {
       if (idx >= triplet.length) return;
+      resumeRoundTimer(timerContext);
       btnWrap.style.display = "flex";
       waitMsg.style.display = "none";
       setButtonsEnabled(true);
       renderIndex();
-      showTimerValue(QUESTION_LIMIT_SECONDS);
-      startQuestionTimer();
     };
 
-    const finishRound = (timedOut) => {
+    const finishRound = () => {
+      pauseRoundTimer(timerContext);
       setButtonsEnabled(false);
       waitMsg.style.display = "none";
-      hideTimerValue();
-      showWaitingOverlay(timedOut ? "Time's up" : undefined);
-      publishAnswers(Boolean(timedOut));
+      showWaitingOverlay();
+      publishAnswers(false);
     };
 
     const showWaitingState = (text) => {
@@ -340,10 +284,9 @@ export default {
       waitMsg.textContent = text || waitMessageDefault;
       waitMsg.style.display = "";
       setButtonsEnabled(false);
-      hideTimerValue();
     };
 
-    async function publishAnswers(timedOut = false) {
+    async function publishAnswers() {
       if (submitting || published) return;
       submitting = true;
 
@@ -363,9 +306,8 @@ export default {
         await updateDoc(rRef, patch);
         published = true;
         submitting = false;
-        stopTimer();
-        const note = timedOut ? "Time's up" : "Waiting for opponent";
-        showWaitingOverlay(note);
+        pauseRoundTimer(timerContext);
+        showWaitingOverlay("Waiting for opponent");
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
@@ -377,11 +319,10 @@ export default {
 
     function onPick(text) {
       if (published || submitting) return;
-      stopTimer();
       chosen[idx] = text;
       idx += 1;
       if (idx >= 3) {
-        finishRound(false);
+        finishRound();
       } else {
         presentQuestion();
       }
@@ -395,18 +336,16 @@ export default {
     );
 
     if (!tripletReady) {
-      stopTimer();
       btnWrap.style.display = "none";
       waitMsg.textContent = "Preparing questions…";
       waitMsg.style.display = "";
-      hideTimerValue();
+      pauseRoundTimer(timerContext);
     } else if (existingAns.length === 3) {
       published = true;
       idx = 3;
       btnWrap.style.display = "none";
       waitMsg.style.display = "none";
-      stopTimer();
-      hideTimerValue();
+      pauseRoundTimer(timerContext);
       showWaitingOverlay();
     } else {
       presentQuestion();
@@ -414,6 +353,18 @@ export default {
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
+
+      if (data.clues && typeof data.clues === "object") {
+        clueMap = data.clues;
+      }
+      if (data.maths && Array.isArray(data.maths.clues)) {
+        mathsClues = data.maths.clues;
+      }
+      const nextRound = Number(data.round) || round;
+      if (nextRound !== round) {
+        round = nextRound;
+      }
+      setClueText(resolveClue(round));
 
       if (data.state === "marking") {
         setTimeout(() => {
@@ -466,8 +417,7 @@ export default {
     this.unmount = () => {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
-      stopTimer();
-      hideTimerValue();
+      pauseRoundTimer(timerContext);
     };
   },
 

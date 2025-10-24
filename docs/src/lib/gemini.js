@@ -59,12 +59,6 @@ function buildVerificationPrompt({ qcfg }) {
   const { verification_prompt } = getPrompts(qcfg);
   return verification_prompt;
 }
-function buildMathsPrompt({ jmaths, round }) {
-  assert(jmaths, "Missing jmaths config.");
-  const preface = `You are generating a maths interlude for a quiz game. Output valid JSON only.`;
-  return `${preface}\n\nCONFIG:\n${JSON.stringify(jmaths)}\n\nROUND: ${round}`;
-}
-
 /* ---------------- tolerant JSON parsing ---------------- */
 function normaliseQuotes(s) {
   return String(s || "")
@@ -260,9 +254,9 @@ export async function verifyItems({ apiKey, qcfg, items, model = DEFAULT_V_MODEL
   return { approved, rejected, results };
 }
 
-// callGeminiJemima -> returns { interlude: "..." }
+// callGeminiJemima -> returns { clue: "..." }
 export async function callGeminiJemima({ apiKey, round = 1, model = DEFAULT_M_MODEL }) {
-  const prompt = `Write a single, playful one-line interlude for Round ${round} of a head-to-head quiz. Keep it short and British. Output plain text only.`;
+  const prompt = `Write a single, playful one-line maths clue for Round ${round} of a head-to-head quiz. Keep it short, British, and hinting at a number. Output plain text only.`;
   const contents = [{ role: "user", parts: [{ text: prompt }] }];
 
   const result = await callGeminiRaw({
@@ -270,12 +264,12 @@ export async function callGeminiJemima({ apiKey, round = 1, model = DEFAULT_M_MO
     generationConfig: { temperature: 0.8, maxOutputTokens: 120, candidateCount: 1 }
   });
 
-  const interlude =
+  const clue =
     textFromCandidate(result.candidates?.[0]) ||
     textFromCandidate(result) ||
     `Round ${round} begins.`;
 
-  return { interlude: String(interlude).trim() };
+  return { clue: String(clue).trim() };
 }
 
 // generateMaths -> returns an object matching your jmaths output contract
@@ -285,31 +279,34 @@ export async function generateMaths({ apiKey, jmaths, model = DEFAULT_M_MODEL })
   const makePrompt = (strict = false) => strict
     ? (
       `Return ONLY JSON with EXACTLY these keys & types and nothing else:\n` +
-      `{"location":"string","beats":["a","b","c","d"],"questions":["q1","q2"],"answers":[1,2]}\n` +
-      `- beats: 4 strings (each includes at least one numeric fact).\n` +
-      `- questions: 2 strings with explicit units and a blank "___".\n` +
-      `- answers: 2 integers. No decimals.\n` +
-      `British English. No markdown.\n` +
+      `{"clues":["c1","c2","c3","c4","c5"],"reveals":["r1","r2","r3","r4","r5"],"question":"string","answer":123}\n` +
+      `Rules:\n` +
+      `- clues: five short sentences (1–2), each hinting at a number used in the final maths.\n` +
+      `- reveals: five short sentences sharing concrete numeric facts aligned to the clues.\n` +
+      `- question: playful British English, contains a blank ___ tying all clues together.\n` +
+      `- answer: single whole number (integer).\n` +
+      `No markdown, no commentary.\n` +
       `CONFIG:\n${JSON.stringify(jmaths)}`
     )
     : (
-      `You are generating a short maths interlude for a quiz game.\n` +
-      `Return ONLY JSON. Do not include markdown fences or prose.\n` +
-      `The JSON MUST match this shape exactly:\n` +
-      `{\n` +
-      `  "location": "string",\n` +
-      `  "beats": ["string","string","string","string"],\n` +
-      `  "questions": ["string","string"],\n` +
-      `  "answers": [integer, integer]\n` +
-      `}\n` +
-      `Rules:\n` +
-      `- beats: 4 entries, each 1–2 sentences, each with at least one numeric fact.\n` +
-      `- questions: 2 entries with explicit units and a blank like "___ euros".\n` +
-      `- answers: two whole numbers (integers) aligned to the questions.\n` +
-      `- Use British English and the whimsical style implied by CONFIG.\n` +
-      `- No extra fields, no commentary.\n\n` +
+      `You are generating Jemima's five-round maths chain.\n` +
+      `Return ONLY JSON with keys: clues[5], reveals[5], question, answer.\n` +
+      `- Each clue is 1–2 sentences hinting at one numeric step (integers only).\n` +
+      `- Each reveal is 1 sentence sharing the actual number for that clue.\n` +
+      `- The question references the story and includes a visible blank ___ .\n` +
+      `- The answer is the exact final integer.\n` +
+      `Use British English, Jemima's warm tone, and keep numbers integer-friendly.\n\n` +
       `CONFIG:\n${JSON.stringify(jmaths)}`
     );
+
+  const normaliseReveal = (entry) => {
+    if (typeof entry === "string") return entry.trim();
+    if (entry && typeof entry === "object") {
+      const txt = entry.prompt || entry.text || entry.value;
+      if (typeof txt === "string") return txt.trim();
+    }
+    return "";
+  };
 
   const tryOnce = async (mdl, prompt, note) => {
     const contents = [{ role: "user", parts: [{ text: prompt }] }];
@@ -332,22 +329,24 @@ export async function generateMaths({ apiKey, jmaths, model = DEFAULT_M_MODEL })
       return null;
     }
 
-    const out = {
-      location: String(parsed.location ?? "").trim(),
-      beats: Array.isArray(parsed.beats) ? parsed.beats.map(String) : [],
-      questions: Array.isArray(parsed.questions) ? parsed.questions.map(String) : [],
-      answers: Array.isArray(parsed.answers) ? parsed.answers.map(v => parseInt(v, 10)) : []
-    };
+    const clues = Array.isArray(parsed.clues) ? parsed.clues.map((c) => String(c || "").trim()) : [];
+    const revealsRaw = Array.isArray(parsed.reveals) ? parsed.reveals : [];
+    const reveals = revealsRaw.map(normaliseReveal);
+    const question = typeof parsed.question === "string" ? parsed.question.trim() : "";
+    const answer = Number.isInteger(parsed.answer)
+      ? parsed.answer
+      : Number.isFinite(parseInt(parsed.answer, 10))
+      ? parseInt(parsed.answer, 10)
+      : null;
 
-    if (!out.location) return null;
-    if (out.beats.length !== 4 || out.beats.some(b => !b)) return null;
-    if (out.questions.length !== 2 || out.questions.some(q => !q)) return null;
-    if (out.answers.length !== 2 || out.answers.some(a => !Number.isInteger(a))) return null;
+    if (clues.length !== 5 || clues.some((c) => !c)) return null;
+    if (reveals.length !== 5 || reveals.some((r) => !r)) return null;
+    if (!question) return null;
+    if (!Number.isInteger(answer)) return null;
 
-    return out;
+    return { clues, reveals, question, answer };
   };
 
-  // Try Pro then Flash; normal then strict
   const models = ["models/gemini-2.5-pro", "models/gemini-2.5-flash"];
   for (const mdl of models) {
     const a1 = await tryOnce(mdl, makePrompt(false), `${mdl} attempt#1`);
@@ -356,62 +355,22 @@ export async function generateMaths({ apiKey, jmaths, model = DEFAULT_M_MODEL })
     if (a2) return a2;
   }
 
-  // Local synthesis fallback (never block the game)
   console.warn("[gemini.generateMaths] Falling back to local synthesis.");
-  try {
-    const beatsLib = Array.isArray(jmaths?.beat_library) ? jmaths.beat_library.slice() : [];
-    const locations = Array.isArray(jmaths?.constraints?.locations_allowed)
-      ? jmaths.constraints.locations_allowed.slice()
-      : ["supermarket"];
-    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-    const int = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-    const loc = pick(locations);
-    const tmplFallback = [
-      "Jemima bought X tickets at €Y each.",
-      "She walked X metres and took Y cat naps.",
-      "She drank X ml from a Y ml bottle.",
-      "She laughed X times at a hat."
-    ];
-    const source = beatsLib.length ? beatsLib : tmplFallback;
-
-    const beats = Array.from({ length: 4 }, () => {
-      const t = pick(source);
-      const X = int(1, 12), Y = int(1, 12);
-      return t.replace(/\bX\b/g, String(X)).replace(/\bY\b/g, String(Y));
-    });
-
-    // derive two valid Q/As
-    const q1 = "How much did Jemima spend in total? ___ euros";
-    let ans1 = int(3, 24);
-    const priceTickets = beats.find(b => /€\d+\s*each/i.test(b));
-    if (priceTickets) {
-      const m = priceTickets.match(/(\d+)\s+.*?€(\d+)\s*each/i);
-      if (m) ans1 = parseInt(m[1], 10) * parseInt(m[2], 10);
-    }
-
-    const q2 = "How many steps did Jemima climb? ___ steps";
-    let ans2 = int(5, 40);
-    const stepsBeat = beats.find(b => /(\d+)\s+steps?/i.test(b));
-    const m2 = stepsBeat && stepsBeat.match(/(\d+)\s+steps?/i);
-    if (m2) ans2 = parseInt(m2[1], 10);
-
-    return { location: loc, beats, questions: [q1, q2], answers: [ans1, ans2] };
-  } catch {
-    // rock-solid minimal
-    return {
-      location: "supermarket",
-      beats: [
-        "Jemima entered with €10.",
-        "She bought 2 apples at €2 each.",
-        "She tipped a busker €1.",
-        "She clinked tins exactly 4 times."
-      ],
-      questions: [
-        "How much did Jemima spend? ___ euros",
-        "How many times did she clink? ___ times"
-      ],
-      answers: [5, 4]
-    };
-  }
+  const safeClues = [
+    "I start with the 360 degrees of a perfect circle on Jemima's sketchpad.",
+    "She halves it neatly because only two directions matter tonight.",
+    "Then she adds the 42 kilometres she cycled this week.",
+    "She multiplies by the 8 letters in 'WHISKERS' for luck.",
+    "Finally she subtracts the 88 keys of her favourite piano."
+  ];
+  const safeReveals = [
+    "A circle has 360 degrees.",
+    "Halving brings the running total to 180.",
+    "Adding 42 lifts the total to 222.",
+    "Multiplying by 8 vaults it to 1776.",
+    "Subtracting 88 leaves the final answer." 
+  ];
+  const safeQuestion = "All tallied, what number does Jemima finish on? ___";
+  const safeAnswer = 1688;
+  return { clues: safeClues, reveals: safeReveals, question: safeQuestion, answer: safeAnswer };
 }

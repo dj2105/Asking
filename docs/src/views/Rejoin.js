@@ -54,8 +54,6 @@ function resolveRouteForState(stateRaw, code, round, role) {
       return `#/questions?code=${code}&round=${r}`;
     case "marking":
       return `#/marking?code=${code}&round=${r}`;
-    case "interlude":
-      return `#/interlude?code=${code}&round=${r}`;
     case "award":
       return `#/award?code=${code}&round=${r}`;
     case "maths":

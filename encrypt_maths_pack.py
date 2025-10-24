@@ -3,8 +3,7 @@
 encrypt_maths_pack.py
 
 Seal a Jemima maths pack JSON using AES-256-GCM with PBKDF2-HMAC-SHA256 (150k).
-Supports the new chain spec ("jemima-maths-chain-1") and accepts legacy
-"jemima-maths-1" for backward compatibility.
+Supports the latest chain spec ("jemima-maths-chain-2").
 
 Output: <ROOM>-maths.sealed
 """
@@ -24,8 +23,8 @@ except ModuleNotFoundError:  # pragma: no cover
 
 PASSWORD = b"DEMO-ONLY"           # <-- replace in production
 PBKDF2_ROUNDS = 150_000
-ALLOWED_VERSIONS = {"jemima-maths-1", "jemima-maths-chain-1"}
-DEFAULT_VERSION = "jemima-maths-chain-1"
+ALLOWED_VERSIONS = {"jemima-maths-chain-2"}
+DEFAULT_VERSION = "jemima-maths-chain-2"
 
 # ------------------------- helpers & crypto -------------------------
 
@@ -147,43 +146,32 @@ def must(cond, msg):
     if not cond:
         raise SystemExit(msg)
 
-def has_blank(s: str) -> bool:
-    return isinstance(s, str) and "___" in s
-
 def room_ok(s: str) -> bool:
     return bool(re.fullmatch(r"[A-Z]{3}", s or ""))
 
 def validate_chain_pack(p: dict):
-    must(p.get("version") == "jemima-maths-chain-1", "Wrong version for chain pack.")
-    m = p.get("maths") or {}
-    beats = m.get("beats")
-    reveals = m.get("reveals")
-    must(isinstance(beats, list) and len(beats) == 5, "Maths: need exactly 5 beats.")
+    must(p.get("version") == "jemima-maths-chain-2", "Wrong version for maths pack.")
+    maths = p.get("maths") or {}
+    clues = maths.get("clues")
+    reveals = maths.get("reveals")
+    must(isinstance(clues, list) and len(clues) == 5, "Maths: need exactly 5 clues.")
     must(isinstance(reveals, list) and len(reveals) == 5, "Maths: need exactly 5 reveals.")
-    # exactly two totals among reveals 2..4 (i.e., indexes 1..3); never on final reveal
-    types = [r.get("type") for r in reveals]
-    must(all(t in {"obvious", "specific", "total"} for t in types), "Maths: invalid reveal type present.")
-    total_count = sum(1 for t in types if t == "total")
-    must(total_count == 2, "Maths: must have exactly 2 total-so-far reveals.")
-    must(types[-1] != "total", "Maths: beat 5 reveal cannot be 'total'.")
-    must(has_blank(m.get("question", "")), "Maths: question must contain ___")
-    must(isinstance(m.get("answer"), int), "Maths: answer must be an integer.")
-    # results block
-    res = p.get("results") or {}
-    must(isinstance(res.get("passage"), str) and res["passage"].strip(), "Results: passage missing.")
-    fa = res.get("finalAnswer") or {}
-    must(isinstance(fa.get("value"), int), "Results: finalAnswer.value must be integer.")
-
-def validate_legacy_pack(p: dict):
-    must(p.get("version") == "jemima-maths-1", "Wrong version for legacy pack.")
-    m = p.get("maths") or {}
-    must(isinstance(m.get("beats"), list) and len(m["beats"]) >= 1, "Legacy maths: beats missing.")
-    qs = m.get("questions")
-    ans = m.get("answers")
-    must(isinstance(qs, list) and len(qs) == 2, "Legacy maths: requires two questions.")
-    must(isinstance(ans, list) and len(ans) == 2, "Legacy maths: requires two answers.")
-    for a in ans:
-        must(isinstance(a, int), "Legacy maths: answers must be integers.")
+    for idx, clue in enumerate(clues, start=1):
+        must(isinstance(clue, str) and clue.strip(), f"Maths: clue {idx} missing or empty.")
+    for idx, reveal in enumerate(reveals, start=1):
+        if isinstance(reveal, str):
+            must(reveal.strip(), f"Maths: reveal {idx} empty.")
+        elif isinstance(reveal, dict):
+            txt = (
+                (reveal.get("prompt") if isinstance(reveal.get("prompt"), str) else None)
+                or (reveal.get("text") if isinstance(reveal.get("text"), str) else None)
+                or (reveal.get("value") if isinstance(reveal.get("value"), str) else None)
+            )
+            must(txt and txt.strip(), f"Maths: reveal {idx} missing text.")
+        else:
+            must(False, f"Maths: reveal {idx} must be string or object.")
+    must(isinstance(maths.get("question"), str) and maths["question"].strip(), "Maths: question missing.")
+    must(isinstance(maths.get("answer"), int), "Maths: answer must be an integer.")
 
 # ------------------------------ main ------------------------------
 
@@ -212,10 +200,7 @@ def main():
     pack["meta"] = meta
 
     # Validation
-    if ver == "jemima-maths-chain-1":
-        validate_chain_pack(pack)
-    else:
-        validate_legacy_pack(pack)
+    validate_chain_pack(pack)
 
     # Integrity
     payload = dict(pack)

@@ -94,7 +94,7 @@ function padItems(list = []) {
 function normalizeFullRounds(rounds = []) {
   const map = {};
   for (let i = 1; i <= 5; i += 1) {
-    map[i] = { hostItems: [], guestItems: [], interlude: PLACEHOLDER };
+    map[i] = { hostItems: [], guestItems: [] };
   }
   rounds.forEach((round) => {
     const rnum = Number(round?.round);
@@ -102,7 +102,6 @@ function normalizeFullRounds(rounds = []) {
     map[rnum] = {
       hostItems: clone(round.hostItems || []),
       guestItems: clone(round.guestItems || []),
-      interlude: typeof round.interlude === "string" && round.interlude.trim() ? round.interlude : PLACEHOLDER,
     };
   });
   return map;
@@ -111,7 +110,7 @@ function normalizeFullRounds(rounds = []) {
 function normalizeHalfpackRounds(rounds = [], which) {
   const map = {};
   for (let i = 1; i <= 5; i += 1) {
-    map[i] = { hostItems: [], guestItems: [], interlude: PLACEHOLDER };
+    map[i] = { hostItems: [], guestItems: [] };
   }
   rounds.forEach((round) => {
     const rnum = Number(round?.round);
@@ -121,33 +120,43 @@ function normalizeHalfpackRounds(rounds = [], which) {
     } else {
       map[rnum].guestItems = clone(round.guestItems || []);
     }
-    if (typeof round.interlude === "string" && round.interlude.trim()) {
-      map[rnum].interlude = round.interlude;
-    }
   });
   return map;
 }
 
 function normalizeMaths(maths = null) {
   const src = maths && typeof maths === "object" ? maths : {};
-  const beats = Array.isArray(src.beats) ? src.beats.slice(0, 4) : [];
-  while (beats.length < 4) beats.push(PLACEHOLDER);
-  return {
-    location: typeof src.location === "string" && src.location.trim() ? src.location : PLACEHOLDER,
-    beats: beats.map((beat) => (typeof beat === "string" && beat.trim() ? beat : PLACEHOLDER)),
-    questions: Array.isArray(src.questions) && src.questions.length
-      ? [0, 1].map((idx) => {
-          const q = src.questions[idx];
-          return typeof q === "string" && q.trim() ? q : PLACEHOLDER;
-        })
-      : [PLACEHOLDER, PLACEHOLDER],
-    answers: Array.isArray(src.answers) && src.answers.length
-      ? [0, 1].map((idx) => {
-          const a = src.answers[idx];
-          return Number.isInteger(a) ? a : 0;
-        })
-      : [0, 0],
-  };
+  const rawClues = Array.isArray(src.clues)
+    ? src.clues
+    : Array.isArray(src.beats)
+    ? src.beats
+    : [];
+  const clues = rawClues.slice(0, 5).map((clue) =>
+    typeof clue === "string" && clue.trim() ? clue.trim() : PLACEHOLDER
+  );
+  while (clues.length < 5) clues.push(PLACEHOLDER);
+
+  const rawReveals = Array.isArray(src.reveals) ? src.reveals.slice(0, 5) : [];
+  const reveals = rawReveals.map((entry) => {
+    if (typeof entry === "string" && entry.trim()) return entry.trim();
+    if (entry && typeof entry === "object") {
+      const text =
+        (typeof entry.prompt === "string" && entry.prompt.trim()) ||
+        (typeof entry.text === "string" && entry.text.trim()) ||
+        (typeof entry.value === "string" && entry.value.trim());
+      if (text) return text;
+    }
+    return PLACEHOLDER;
+  });
+  while (reveals.length < 5) reveals.push(PLACEHOLDER);
+
+  const question =
+    typeof src.question === "string" && src.question.trim()
+      ? src.question.trim()
+      : "All tallied, what number does Jemima finish on? ___";
+  const answer = Number.isInteger(src.answer) ? src.answer : 0;
+
+  return { clues, reveals, question, answer };
 }
 
 function generateRandomCode() {
@@ -348,16 +357,6 @@ function simulateRounds(pack) {
   return { rounds, hostUid, guestUid };
 }
 
-function summarizeRounds(rounds, limit, selector) {
-  let total = 0;
-  for (let i = 1; i <= limit; i += 1) {
-    const entry = rounds[i];
-    if (!entry) continue;
-    total += Number(selector(entry)) || 0;
-  }
-  return total;
-}
-
 function prepareStageState(pack, stageName, requestedRound) {
   const { rounds, hostUid, guestUid } = simulateRounds(pack);
   let round = Number.isFinite(Number(requestedRound)) ? Number(requestedRound) : 1;
@@ -458,16 +457,21 @@ function prepareStageState(pack, stageName, requestedRound) {
     awardAckGuest[i] = true;
   }
 
-  const questionsHostTotal = summarizeRounds(rounds, answeredRounds, (entry) => entry.hostCorrect);
-  const questionsGuestTotal = summarizeRounds(rounds, answeredRounds, (entry) => entry.guestCorrect);
+  const scoresHost = {};
+  const scoresGuest = {};
+  for (let i = 1; i <= completedRounds; i += 1) {
+    const entry = rounds[i];
+    if (!entry) continue;
+    scoresHost[i] = entry.hostCorrect;
+    scoresGuest[i] = entry.guestCorrect;
+  }
 
   const mathsAnswers = {};
   const mathsAnswersAck = {};
   if (stageName === "final") {
-    const source = Array.isArray(pack?.maths?.answers) ? pack.maths.answers.slice(0, 2) : [0, 0];
-    const safe = source.map((value) => (Number.isInteger(value) ? value : 0));
-    mathsAnswers.host = safe;
-    mathsAnswers.guest = safe.map((value, idx) => value + (idx === 0 ? -1 : 1));
+    const expected = Number.isInteger(pack?.maths?.answer) ? pack.maths.answer : 0;
+    mathsAnswers.host = { value: expected, delta: 0, points: 3 };
+    mathsAnswers.guest = { value: expected + 1, delta: Math.abs((expected + 1) - expected), points: 1 };
     mathsAnswersAck.host = true;
     mathsAnswersAck.guest = true;
   }
@@ -521,7 +525,7 @@ function prepareStageState(pack, stageName, requestedRound) {
     marking: { host: markingHost, guest: markingGuest, startAt: markingStartAt },
     markingAck: { host: markingAckHost, guest: markingAckGuest },
     awardAck: { host: awardAckHost, guest: awardAckGuest },
-    scores: { questions: { host: questionsHostTotal, guest: questionsGuestTotal } },
+    scores: { host: scoresHost, guest: scoresGuest },
     links: { guestReady },
     mathsAnswers,
     mathsAnswersAck,
@@ -1210,7 +1214,6 @@ export default {
         rounds[i] = {
           hostItems: [],
           guestItems: [],
-          interlude: PLACEHOLDER,
         };
       }
 
@@ -1220,7 +1223,6 @@ export default {
           if (entry) {
             rounds[i].hostItems = clone(entry.hostItems || []);
             rounds[i].guestItems = clone(entry.guestItems || []);
-            if (entry.interlude) rounds[i].interlude = entry.interlude;
           }
         }
       }
@@ -1231,7 +1233,6 @@ export default {
           if (entry) {
             rounds[i].hostItems = clone(entry.hostItems || rounds[i].hostItems);
             rounds[i].guestItems = clone(entry.guestItems || rounds[i].guestItems);
-            if (entry.interlude) rounds[i].interlude = entry.interlude;
           }
         }
       }
@@ -1241,9 +1242,6 @@ export default {
           const entry = stage.hostOverride.rounds?.[i];
           if (entry && entry.hostItems?.length) {
             rounds[i].hostItems = clone(entry.hostItems);
-            if (entry.interlude && entry.interlude.trim()) {
-              rounds[i].interlude = entry.interlude;
-            }
           }
         }
       }
@@ -1253,9 +1251,6 @@ export default {
           const entry = stage.guestOverride.rounds?.[i];
           if (entry && entry.guestItems?.length) {
             rounds[i].guestItems = clone(entry.guestItems);
-            if (entry.interlude && entry.interlude.trim()) {
-              rounds[i].interlude = entry.interlude;
-            }
           }
         }
       }
@@ -1266,10 +1261,6 @@ export default {
           round: i,
           hostItems: padItems(rounds[i].hostItems),
           guestItems: padItems(rounds[i].guestItems),
-          interlude:
-            typeof rounds[i].interlude === "string" && rounds[i].interlude.trim()
-              ? rounds[i].interlude
-              : PLACEHOLDER,
         });
       }
 

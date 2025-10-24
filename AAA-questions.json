@@ -11,186 +11,271 @@
       "hostItems": [
         {
           "prompt": "Which British monarch's 1953 coronation was the first to be televised?",
-          "options": ["Elizabeth II", "Edward VIII"],
+          "options": [
+            "Elizabeth II",
+            "Edward VIII"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which cat breed is famous for its naturally folded ears?",
-          "options": ["Scottish Fold", "Bengal"],
+          "options": [
+            "Scottish Fold",
+            "Bengal"
+          ],
           "correct": "A"
         },
         {
           "prompt": "What is the capital city of Finland?",
-          "options": ["Helsinki", "Stockholm"],
+          "options": [
+            "Helsinki",
+            "Stockholm"
+          ],
           "correct": "A"
         }
       ],
       "guestItems": [
         {
           "prompt": "Which sitcom features the fictional paper company Dunder Mifflin?",
-          "options": ["The Office", "Brooklyn Nine-Nine"],
+          "options": [
+            "The Office",
+            "Brooklyn Nine-Nine"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which singer released the 1994 hit single 'Baby Baby'?",
-          "options": ["Amy Grant", "Toni Braxton"],
+          "options": [
+            "Amy Grant",
+            "Toni Braxton"
+          ],
           "correct": "A"
         },
         {
           "prompt": "The Seine River flows through which European capital city?",
-          "options": ["Paris", "Brussels"],
+          "options": [
+            "Paris",
+            "Brussels"
+          ],
           "correct": "A"
         }
-      ],
-      "interlude": "Jemima clinks her teacup and promises the questions will only get spicier from here."
+      ]
     },
     "2": {
       "hostItems": [
         {
           "prompt": "Which treaty signed in 1921 created the Irish Free State?",
-          "options": ["Anglo-Irish Treaty", "Treaty of Limerick"],
+          "options": [
+            "Anglo-Irish Treaty",
+            "Treaty of Limerick"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which Athenian statesman is credited with introducing the Council of 500 reforms?",
-          "options": ["Cleisthenes", "Solon"],
+          "options": [
+            "Cleisthenes",
+            "Solon"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which composer created the orchestral suite 'Water Music' for King George I?",
-          "options": ["George Frideric Handel", "Henry Purcell"],
+          "options": [
+            "George Frideric Handel",
+            "Henry Purcell"
+          ],
           "correct": "A"
         }
       ],
       "guestItems": [
         {
           "prompt": "Which duo released the 1984 single 'Wake Me Up Before You Go-Go'?",
-          "options": ["Wham!", "Tears for Fears"],
+          "options": [
+            "Wham!",
+            "Tears for Fears"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which long-running British soap opera is set around Albert Square in Walford?",
-          "options": ["EastEnders", "Emmerdale"],
+          "options": [
+            "EastEnders",
+            "Emmerdale"
+          ],
           "correct": "A"
         },
         {
           "prompt": "What is the term for a verb that requires a direct object to complete its meaning?",
-          "options": ["Transitive verb", "Auxiliary verb"],
+          "options": [
+            "Transitive verb",
+            "Auxiliary verb"
+          ],
           "correct": "A"
         }
-      ],
-      "interlude": "Jemima straightens her note cards and whispers that round two favors the attentive."
+      ]
     },
     "3": {
       "hostItems": [
         {
           "prompt": "Which Roman emperor completed the construction of the Colosseum?",
-          "options": ["Titus", "Domitian"],
+          "options": [
+            "Titus",
+            "Domitian"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which 14th-century pandemic significantly reduced Europe's population?",
-          "options": ["The Black Death", "The Justinian Plague"],
+          "options": [
+            "The Black Death",
+            "The Justinian Plague"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which hero slew the Calydonian boar with the help of Atalanta?",
-          "options": ["Meleager", "Bellerophon"],
+          "options": [
+            "Meleager",
+            "Bellerophon"
+          ],
           "correct": "A"
         }
       ],
       "guestItems": [
         {
           "prompt": "Which fictional New Mexico city is the primary setting for 'Better Call Saul'?",
-          "options": ["Albuquerque", "Las Cruces"],
+          "options": [
+            "Albuquerque",
+            "Las Cruces"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which character wields the Ebony Blade in Marvel Comics canon?",
-          "options": ["Black Knight", "Captain Britain"],
+          "options": [
+            "Black Knight",
+            "Captain Britain"
+          ],
           "correct": "A"
         },
         {
           "prompt": "What punctuation mark is used to denote the omission of letters within a single word, as in 'rock 'n' roll'?",
-          "options": ["Apostrophe", "En dash"],
+          "options": [
+            "Apostrophe",
+            "En dash"
+          ],
           "correct": "A"
         }
-      ],
-      "interlude": "Jemima fans herself with the scorecards and declares the midpoint a whirlpool of wits."
+      ]
     },
     "4": {
       "hostItems": [
         {
           "prompt": "Which 1916 battle is remembered for the first major use of tanks in warfare?",
-          "options": ["Battle of the Somme", "Battle of Cambrai"],
+          "options": [
+            "Battle of the Somme",
+            "Battle of Cambrai"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which Renaissance artist painted the fresco cycle 'The Legend of the True Cross' in Arezzo?",
-          "options": ["Piero della Francesca", "Andrea Mantegna"],
+          "options": [
+            "Piero della Francesca",
+            "Andrea Mantegna"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which Norse god is associated with the ship Skidbladnir, said to always have favorable wind?",
-          "options": ["Frey", "Njord"],
+          "options": [
+            "Frey",
+            "Njord"
+          ],
           "correct": "A"
         }
       ],
       "guestItems": [
         {
           "prompt": "Which mythical Welsh dragon did Merlin prophesy would defeat the invading Saxons?",
-          "options": ["Y Ddraig Goch", "Black Shuck"],
+          "options": [
+            "Y Ddraig Goch",
+            "Black Shuck"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which 18th-century typographer designed the Baskerville typeface?",
-          "options": ["John Baskerville", "Giambattista Bodoni"],
+          "options": [
+            "John Baskerville",
+            "Giambattista Bodoni"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which director helmed the 1995 anime film 'Ghost in the Shell'?",
-          "options": ["Mamoru Oshii", "Satoshi Kon"],
+          "options": [
+            "Mamoru Oshii",
+            "Satoshi Kon"
+          ],
           "correct": "A"
         }
-      ],
-      "interlude": "Jemima dims the studio lights and murmurs that legends are forged in round four."
+      ]
     },
     "5": {
       "hostItems": [
         {
           "prompt": "Which leader delivered the 2005 'Citizenship Ceremony' speech outlining Australia's values at Parliament House in Canberra?",
-          "options": ["John Howard", "Kevin Rudd"],
+          "options": [
+            "John Howard",
+            "Kevin Rudd"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Mount Elbrus rises in which mountain range that bridges Europe and Asia?",
-          "options": ["Caucasus Mountains", "Urals"],
+          "options": [
+            "Caucasus Mountains",
+            "Urals"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which game show introduced the 'Switch the Question' lifeline during its 2004 Super Millionaire run?",
-          "options": ["Who Wants to Be a Millionaire?", "The Weakest Link"],
+          "options": [
+            "Who Wants to Be a Millionaire?",
+            "The Weakest Link"
+          ],
           "correct": "A"
         }
       ],
       "guestItems": [
         {
           "prompt": "Which 1942 Allied conference in Casablanca set the policy of 'unconditional surrender'?",
-          "options": ["Casablanca Conference", "Yalta Conference"],
+          "options": [
+            "Casablanca Conference",
+            "Yalta Conference"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which viral 2010 meme remixed Antoine Dodson's warning to 'Hide yo kids, hide yo wife' into an Auto-Tuned song?",
-          "options": ["Bed Intruder Song", "Friday"],
+          "options": [
+            "Bed Intruder Song",
+            "Friday"
+          ],
           "correct": "A"
         },
         {
           "prompt": "Which artist's 2007 album 'Good Girl Gone Bad' featured the chart-topping single 'Umbrella'?",
-          "options": ["Rihanna", "Beyoncé"],
+          "options": [
+            "Rihanna",
+            "Beyoncé"
+          ],
           "correct": "A"
         }
-      ],
-      "interlude": "Jemima raises the final question card like a sceptre and proclaims the grand finale."
+      ]
     }
   }
 }
