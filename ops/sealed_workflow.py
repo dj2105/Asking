@@ -585,11 +585,9 @@ def _seed_firestore(pack: dict[str, Any], seed_source: dict[str, Any]) -> None:
 
     countdown = {"startAt": None}
 
-    transaction = db.transaction()
-
-    @fb_firestore.transactional
-    def txn(transaction_obj):
-        snap = room_ref.get(transaction=transaction_obj)
+    @db.transaction()
+    def txn(transaction):
+        snap = room_ref.get(transaction=transaction)
         base_doc = {
             "meta": {
                 "hostUid": pack["meta"].get("hostUid"),
@@ -616,7 +614,7 @@ def _seed_firestore(pack: dict[str, Any], seed_source: dict[str, Any]) -> None:
             },
         }
         if not snap.exists():
-            transaction_obj.set(room_ref, base_doc)
+            transaction.set(room_ref, base_doc)
         else:
             data = snap.to_dict() or {}
             meta = data.get("meta") or {}
@@ -624,7 +622,7 @@ def _seed_firestore(pack: dict[str, Any], seed_source: dict[str, Any]) -> None:
                 meta["hostUid"] = base_doc["meta"]["hostUid"]
             if not meta.get("guestUid"):
                 meta["guestUid"] = base_doc["meta"]["guestUid"]
-            transaction_obj.update(
+            transaction.update(
                 room_ref,
                 {
                     "meta": meta,
@@ -647,7 +645,7 @@ def _seed_firestore(pack: dict[str, Any], seed_source: dict[str, Any]) -> None:
                 },
             )
 
-    txn(transaction)
+    txn()
 
     rounds_ref = room_ref.collection("rounds")
     for entry in pack.get("rounds", []):
