@@ -645,6 +645,8 @@ def _seed_firestore(pack: dict[str, Any], seed_source: dict[str, Any]) -> None:
                 },
             )
 
+    txn()
+
     rounds_ref = room_ref.collection("rounds")
     for entry in pack.get("rounds", []):
         rnum = int(entry.get("round", 0))
