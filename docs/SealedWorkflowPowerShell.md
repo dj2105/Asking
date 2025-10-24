@@ -155,6 +155,8 @@ codex run start-game-with-new-pack
     ```
     Once the reinstall succeeds, rerun `Get-ChildItem` to confirm the DLL is now present before re-attempting the workflow command.
 
+* **Traceback ends with `raise SystemExit(main())`** – that final line only reflects the script exiting through its `main()` wrapper. Scroll to the *first* lines of the traceback for the real exception (for example, a missing DLL or Python module), resolve that issue, and then rerun the workflow command. The `SystemExit` frame alone does not indicate the underlying cause.
+
 * **`firebase_admin` import error** – ensure the virtual environment is active and rerun:
   ```powershell
   python -m pip install firebase-admin
