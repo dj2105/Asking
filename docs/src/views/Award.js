@@ -25,6 +25,29 @@ const mountMathsPane =
 
 const CONTINUE_LEAD_MS = 3_000;
 
+const SLOW_COACH_LINES = [
+  "Speed earns secrets.",
+  "Hints don’t wait for hesitation.",
+  "Quicker minds get the clues.",
+  "Lag and lose the lead.",
+  "No haste, no hint.",
+  "The swift see what the slow miss.",
+  "Hesitation costs revelation.",
+  "Move faster to unlock wisdom.",
+  "Delay denies discovery.",
+  "A sluggish tap wins no clue.",
+  "Only the sharp catch the whisper.",
+  "The clock favours the keen.",
+  "Too late for enlightenment.",
+  "Speed is the price of insight.",
+  "The hint runs ahead of you.",
+  "Swift fingers, sharp minds.",
+  "Clues slip past the slow.",
+  "You blinked, the hint vanished.",
+  "Momentum makes meaning.",
+  "The hint rewards the hurried.",
+];
+
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
   for (const k in attrs) {
@@ -107,6 +130,7 @@ function renderQuestionSection({ heading, items, answers, round }) {
       );
     }
 
+    const statusSymbol = wasCorrect ? "✓" : "✕";
     const status = el(
       "div",
       {
@@ -114,7 +138,7 @@ function renderQuestionSection({ heading, items, answers, round }) {
           ? "award-question__status award-question__status--right"
           : "award-question__status award-question__status--wrong"
       },
-      "-"
+      statusSymbol
     );
 
     row.appendChild(textCol);
@@ -143,18 +167,16 @@ export default {
     const root = el("div", { class: "view view-award" });
 
     const card = el("div", { class: "card award-card" });
-    const title = el("div", { class: "mono award-title" }, `Round ${round}`);
-    const scoreLine = el("div", { class: "mono award-scoreline" }, "");
+    const scoreHeading = el("div", { class: "mono award-title" }, "");
     const timeLine = el("div", { class: "mono award-timeline" }, "");
-    const clueBox = el("div", { class: "mono award-clue" }, "");
     const revealBox = el("div", { class: "mono award-reveal award-reveal--hidden" }, "");
+    const clueBox = el("div", { class: "mono award-clue" }, "");
     const reviewWrap = el("div", { class: "award-review" });
 
-    card.appendChild(title);
-    card.appendChild(scoreLine);
+    card.appendChild(scoreHeading);
     card.appendChild(timeLine);
-    card.appendChild(clueBox);
     card.appendChild(revealBox);
+    card.appendChild(clueBox);
     card.appendChild(reviewWrap);
 
     const continueBtn = el("button", { class: "btn" }, "I'M READY");
@@ -214,9 +236,19 @@ export default {
       return `${num.toFixed(1)}s`;
     };
 
-    const updateTitle = () => {
-      title.textContent = `Round ${round}`;
+    let slowCoachRound = null;
+    let slowCoachLine = "";
+    const pickSlowCoachLine = () => {
+      if (!SLOW_COACH_LINES.length) {
+        slowCoachLine = "";
+        slowCoachRound = round;
+        return;
+      }
+      const idx = Math.floor(Math.random() * SLOW_COACH_LINES.length);
+      slowCoachLine = SLOW_COACH_LINES[idx];
+      slowCoachRound = round;
     };
+
     const updateClue = () => {
       const text = resolveClue(round);
       clueBox.textContent = text || "";
@@ -225,24 +257,35 @@ export default {
     const updateTimes = () => {
       const hostTiming = Number((((timingsData || {}).host || {})[round] || {}).totalSeconds);
       const guestTiming = Number((((timingsData || {}).guest || {})[round] || {}).totalSeconds);
-      timeLine.textContent = `Daniel ${formatSeconds(hostTiming)} • Jaime ${formatSeconds(guestTiming)}`;
+      timeLine.textContent = `Round ${round} • Daniel ${formatSeconds(hostTiming)} • Jaime ${formatSeconds(guestTiming)}`;
     };
     const updateReveal = () => {
-      const revealText = resolveReveal(round);
+      const revealText = (resolveReveal(round) || "").trim();
       const hostTiming = Number((((timingsData || {}).host || {})[round] || {}).totalSeconds);
       const guestTiming = Number((((timingsData || {}).guest || {})[round] || {}).totalSeconds);
-      let show = false;
-      if (revealText && Number.isFinite(hostTiming) && Number.isFinite(guestTiming) && hostTiming !== guestTiming) {
+      const timingsReady = Number.isFinite(hostTiming) && Number.isFinite(guestTiming);
+      if (revealText && timingsReady && hostTiming !== guestTiming) {
         const hostFaster = hostTiming < guestTiming;
-        show = (myRole === "host" && hostFaster) || (myRole === "guest" && !hostFaster);
+        const winnerRole = hostFaster ? "host" : "guest";
+        const isWinner = myRole === winnerRole;
+        let displayText = revealText;
+        if (!isWinner) {
+          if (slowCoachRound !== round || !slowCoachLine) pickSlowCoachLine();
+          displayText = slowCoachLine;
+        }
+        if (displayText) {
+          revealBox.textContent = displayText;
+          revealBox.classList.remove("award-reveal--hidden");
+          return;
+        }
       }
-      if (show) {
-        revealBox.textContent = revealText;
-        revealBox.classList.remove("award-reveal--hidden");
-      } else {
-        revealBox.textContent = "";
-        revealBox.classList.add("award-reveal--hidden");
-      }
+      revealBox.textContent = "";
+      revealBox.classList.add("award-reveal--hidden");
+    };
+
+    const resetSlowCoachLine = () => {
+      slowCoachRound = null;
+      slowCoachLine = "";
     };
 
     const rdSnap = await getDoc(rdRef);
@@ -270,7 +313,7 @@ export default {
     const updateRoundScores = () => {
       const hostScore = countCorrect(reviewData.hostAnswers, reviewData.hostItems);
       const guestScore = countCorrect(reviewData.guestAnswers, reviewData.guestItems);
-      scoreLine.textContent = `Daniel ${hostScore} — ${guestScore} Jaime`;
+      scoreHeading.textContent = `Daniel ${hostScore} — ${guestScore} Jaime`;
     };
 
     const refreshReviews = () => {
@@ -296,7 +339,6 @@ export default {
     };
 
     const refreshSummary = () => {
-      updateTitle();
       updateRoundScores();
       updateTimes();
       updateClue();
@@ -422,6 +464,7 @@ export default {
       const dataRound = Number(data.round);
       if (stateName === "award" && dataRound && dataRound !== round) {
         round = dataRound;
+        resetSlowCoachLine();
         readyLabel = computeReadyLabel(round);
         if (!ackMine) {
           continueBtn.textContent = readyLabel;

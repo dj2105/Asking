@@ -1,9 +1,9 @@
 // /src/lib/MathsPane.js
 //
-// Jemima’s Maths Pane — inverted helper that now focuses on reveal access.
-// • Shows which round reveals the current player has earned (fastest time wins).
-// • Watches the room document for timings + reveal content.
-// • Falls back to a friendly placeholder until any reveals are unlocked.
+// Jemima’s Maths Pane — inverted helper that now focuses on round clues.
+// • Shows only the clue for the current round.
+// • Watches the room document for live clue/maths updates.
+// • Falls back to the supplied maths payload when Firestore is unavailable.
 
 import { db } from "./firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -17,66 +17,35 @@ const clampCode = (value) =>
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 5);
 
-function normaliseReveal(entry) {
-  if (!entry) return "";
-  if (typeof entry === "string") return entry;
-  if (typeof entry === "object") {
-    if (typeof entry.prompt === "string") return entry.prompt;
-    if (typeof entry.text === "string") return entry.text;
-    if (typeof entry.value === "string") return entry.value;
-  }
+const normaliseClue = (value) => {
+  if (typeof value === "string") return value.trim();
   return "";
-}
+};
 
-function determineRole(room = {}, userUid = "") {
-  const meta = room.meta || {};
-  if (userUid && meta.hostUid === userUid) return "host";
-  if (userUid && meta.guestUid === userUid) return "guest";
-  return "guest";
-}
+const clueFromMap = (map, round) => {
+  if (!map || typeof map !== "object") return "";
+  const direct = map[round];
+  return normaliseClue(direct);
+};
 
-function collectReveals(room = {}, role = "guest") {
-  const timings = room.timings || {};
-  const hostTimings = timings.host || {};
-  const guestTimings = timings.guest || {};
-  const revealsMap = room.reveals || {};
-  const mathsReveals = Array.isArray(room.maths?.reveals) ? room.maths.reveals : [];
+const clueFromArray = (arr, round) => {
+  if (!Array.isArray(arr)) return "";
+  const idx = round - 1;
+  if (idx < 0 || idx >= arr.length) return "";
+  return normaliseClue(arr[idx]);
+};
 
-  const entries = [];
-  for (let round = 1; round <= 5; round += 1) {
-    const hostTiming = Number((hostTimings[round] || {}).totalSeconds);
-    const guestTiming = Number((guestTimings[round] || {}).totalSeconds);
-    const revealText = normaliseReveal(revealsMap[round] ?? mathsReveals[round - 1]);
-    if (!revealText) continue;
-    if (!Number.isFinite(hostTiming) || !Number.isFinite(guestTiming)) continue;
-    if (hostTiming === guestTiming) continue;
-    const hostFaster = hostTiming < guestTiming;
-    const winnerRole = hostFaster ? "host" : "guest";
-    if (winnerRole === role) {
-      entries.push({ round, text: revealText });
-    }
-  }
-  return entries;
-}
+function resolveClue(roomData = {}, fallbackMaths = {}, round = 1) {
+  const fromRoom = clueFromMap(roomData.clues, round);
+  if (fromRoom) return fromRoom;
 
-function renderList(listEl, entries, currentRound) {
-  listEl.innerHTML = "";
-  if (!entries.length) {
-    const item = document.createElement("li");
-    item.className = "maths-panel__item maths-panel__item--subtle";
-    item.textContent = "No reveals unlocked yet.";
-    listEl.appendChild(item);
-    return;
-  }
-  entries
-    .sort((a, b) => a.round - b.round)
-    .forEach(({ round, text }) => {
-      const li = document.createElement("li");
-      li.className = "maths-panel__item";
-      if (round === currentRound) li.classList.add("maths-panel__item--bold");
-      li.textContent = `Round ${round}: ${text}`;
-      listEl.appendChild(li);
-    });
+  const fromRoomMaths = clueFromArray(roomData.maths?.clues, round);
+  if (fromRoomMaths) return fromRoomMaths;
+
+  const fromFallbackMaths = clueFromArray(fallbackMaths?.clues, round);
+  if (fromFallbackMaths) return fromFallbackMaths;
+
+  return "";
 }
 
 export function mount(container, { maths, round = 1, roomCode, userUid } = {}) {
@@ -92,37 +61,36 @@ export function mount(container, { maths, round = 1, roomCode, userUid } = {}) {
   const box = document.createElement("div");
   box.className = "jemima-maths-box mono";
 
-  const heading = document.createElement("div");
-  heading.className = "mono maths-panel__heading";
-  heading.textContent = "Unlocked reveals";
-  box.appendChild(heading);
-
-  const listEl = document.createElement("ul");
-  listEl.className = "mono maths-panel__list";
-  box.appendChild(listEl);
+  const clueEl = document.createElement("div");
+  clueEl.className = "mono maths-panel__clue";
+  box.appendChild(clueEl);
 
   container.appendChild(box);
 
+  const applyClue = (roomData = {}) => {
+    const text = resolveClue(roomData, maths, round);
+    clueEl.textContent = text;
+    clueEl.classList.toggle("maths-panel__clue--empty", !text);
+  };
+
+  applyClue({ maths });
+
   const code = clampCode(roomCode);
-  if (!code || !userUid) {
-    renderList(listEl, [], round);
+  if (!code) {
     return;
   }
 
   let stop = null;
   stop = onSnapshot(doc(db, "rooms", code), (snap) => {
     if (!snap.exists()) {
-      renderList(listEl, [], round);
+      applyClue({ maths });
       return;
     }
     const roomData = snap.data() || {};
-    // Prefer live maths info but fallback to prop for initial render.
     if (!roomData.maths && maths) {
       roomData.maths = maths;
     }
-    const role = determineRole(roomData, userUid);
-    const entries = collectReveals(roomData, role);
-    renderList(listEl, entries, round);
+    applyClue(roomData);
   }, (err) => {
     console.warn("[maths-pane] room watch error:", err);
   });
