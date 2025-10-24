@@ -92,6 +92,10 @@ export function mount(container, { code } = {}) {
     state.node = n;
   } else if (!state.node.isConnected) {
     container.prepend(state.node);
+  } else if (state.node.parentNode === container && container.firstChild !== state.node) {
+    container.insertBefore(state.node, container.firstChild);
+  } else if (state.node.parentNode !== container) {
+    container.prepend(state.node);
   }
   bind(code);
 }
