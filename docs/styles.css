@@ -98,6 +98,21 @@ body {
   display: flex;
 }
 
+.stage-overlay--with-maths {
+  justify-content: flex-start;
+}
+
+.stage-overlay--with-maths .jemima-maths-pinned {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.stage-overlay--with-maths .jemima-maths-pinned .jemima-maths-box {
+  width: 100%;
+}
+
 .stage-overlay__title {
   font-size: 2rem;
   font-weight: 700;

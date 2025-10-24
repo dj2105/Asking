@@ -85,12 +85,10 @@ export default {
     const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
     const heading = el("div", { class: "phase-header__title" }, "MARKING");
     headerRow.appendChild(heading);
-    const clueBox = el("div", { class: "mono mark-card__clue" }, "");
 
     const list = el("div", { class: "qa-list" });
 
     card.appendChild(headerRow);
-    card.appendChild(clueBox);
     card.appendChild(list);
     const submitBtn = el("button", {
       class: "btn outline mark-submit-btn",
@@ -115,21 +113,24 @@ export default {
 
     container.appendChild(root);
 
-    const setStageVisible = (visible) => {
-      card.style.display = visible ? "" : "none";
-      mathsMount.style.display = visible ? "" : "none";
-    };
-
     const showOverlay = (title, note) => {
       overlayTitle.textContent = title || "";
       overlayNote.textContent = note || "";
+      overlay.classList.add("stage-overlay--with-maths");
+      overlay.appendChild(mathsMount);
       overlay.classList.remove("stage-overlay--hidden");
-      setStageVisible(false);
+      card.style.display = "none";
     };
 
     const hideOverlay = () => {
+      overlay.classList.remove("stage-overlay--with-maths");
       overlay.classList.add("stage-overlay--hidden");
-      setStageVisible(true);
+      card.style.display = "";
+      if (root.contains(overlay)) {
+        root.insertBefore(mathsMount, overlay);
+      } else {
+        root.appendChild(mathsMount);
+      }
     };
 
     const rRef = roomRef(code);
@@ -144,16 +145,6 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-
-    let clueMap = roomData0.clues || {};
-    const resolveClue = (r) =>
-      (clueMap && typeof clueMap[r] === "string" && clueMap[r]) || "";
-    const updateClue = () => {
-      const text = resolveClue(round);
-      clueBox.textContent = text || "";
-      clueBox.classList.toggle("mark-card__clue--empty", !text);
-    };
-    updateClue();
 
     const timerContext = { code, role: myRole, round };
 
@@ -413,9 +404,6 @@ export default {
       const data = snap.data() || {};
       const stateName = (data.state || "").toLowerCase();
 
-      if (data.clues && typeof data.clues === "object") {
-        clueMap = data.clues;
-      }
       if (Number.isFinite(Number(data.round))) {
         const nextRound = Number(data.round);
         if (nextRound !== round) {
@@ -423,7 +411,6 @@ export default {
           timerContext.round = round;
         }
       }
-      updateClue();
 
       if (stateName === "countdown") {
         setTimeout(() => {
