@@ -1,0 +1,28 @@
+{
+  "version": "jemima-maths-chain-2",
+  "meta": {
+    "roomCode": "WAV",
+    "generatedAt": "2025-10-21T18:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "location": "Seaside Science Fair",
+    "clues": [
+      "I start with 24 for the hours my borrowed lighthouse lamp patiently spins each day.",
+      "I add 15 tide charts I’ve pinned beside the model wave tank for curious visitors.",
+      "Next, I triple the lot because three neighbouring schools signed up for my demo in a rush.",
+      "Then I subtract 8 octopus puppets we hand out before the second bell.",
+      "At the end I add 60 minutes for the bonus twilight workshop I promised the keenest crew."
+    ],
+    "reveals": [
+      "A full day gifts me 24 lighthouse rotations to borrow for the story.",
+      "Fifteen tide charts make the stall look like a mini harbour office.",
+      "Three schools piling in means my tally leaps to 117 guests’ worth of energy.",
+      "Eight puppets vanish fast—down to 109 bits of prep on paper.",
+      "An extra hour adds 60 straight back, nudging the total to 169."
+    ],
+    "question": "Tot everything up for me—what number do I beam out? ___",
+    "answer": 169
+  }
+}
