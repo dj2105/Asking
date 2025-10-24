@@ -18,6 +18,7 @@ import {
   PACK_VERSION_FULL,
 } from "../lib/seedUnsealer.js";
 import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import { runCodexTask } from "../lib/codexBridge.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -1298,32 +1299,55 @@ export default {
       return pack;
     }
 
+    async function manualSeedAndStart(code) {
+      const pack = assemblePack(code);
+      await seedFirestoreFromPack(db, pack);
+      await updateDoc(roomRef(code), {
+        state: "coderoom",
+        "countdown.startAt": null,
+        "links.guestReady": false,
+        "timestamps.updatedAt": serverTimestamp(),
+      });
+      setStoredRole(code, "host");
+      log(`room ${code} prepared; waiting in code room.`);
+      location.hash = `#/coderoom?code=${code}`;
+    }
+
     async function startGame() {
-      const code = clampCode(codeInput.value);
-      if (code.length < 3) {
-        status.textContent = "Enter a valid room code first.";
-        return;
-      }
       startBtn.disabled = true;
       startBtn.classList.remove("throb");
-      status.textContent = "Seeding Firestore…";
-      const pack = assemblePack(code);
+
       try {
-        await seedFirestoreFromPack(db, pack);
-        await updateDoc(roomRef(code), {
-          state: "coderoom",
-          "countdown.startAt": null,
-          "links.guestReady": false,
-          "timestamps.updatedAt": serverTimestamp(),
-        });
-        setStoredRole(code, "host");
-        log(`room ${code} prepared; waiting in code room.`);
-        location.hash = `#/coderoom?code=${code}`;
-      } catch (err) {
-        console.error("[keyroom] start failed", err);
-        status.textContent = err?.message || "Failed to start. Please try again.";
-        startBtn.disabled = false;
-        reflectStartState();
+        status.textContent = "Assigning sealed pack…";
+        const result = await runCodexTask("start-game-with-new-pack");
+        const assignedCode = clampCode(result?.roomCode || "");
+        if (!assignedCode) {
+          throw new Error("Sealed pack workflow returned no room code.");
+        }
+        setStoredRole(assignedCode, "host");
+        log(`room ${assignedCode} prepared via sealed pack workflow.`);
+        status.textContent = `Room ${assignedCode} ready. Routing to code room…`;
+        location.hash = `#/coderoom?code=${assignedCode}`;
+        return;
+      } catch (codexErr) {
+        console.warn("[keyroom] sealed start unavailable, falling back", codexErr);
+        const fallbackCode = clampCode(codeInput.value);
+        if (fallbackCode.length < 3) {
+          status.textContent =
+            codexErr?.message || "Codex start unavailable. Enter a room code to use manual fallback.";
+          startBtn.disabled = false;
+          reflectStartState();
+          return;
+        }
+        status.textContent = "Codex start unavailable. Seeding locally…";
+        try {
+          await manualSeedAndStart(fallbackCode);
+        } catch (err) {
+          console.error("[keyroom] start failed", err);
+          status.textContent = err?.message || "Failed to start. Please try again.";
+          startBtn.disabled = false;
+          reflectStartState();
+        }
       }
     }
 
