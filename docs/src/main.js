@@ -92,6 +92,49 @@
 
 import ScoreStrip from "./lib/ScoreStrip.js";
 
+if ("scrollRestoration" in history) {
+  try { history.scrollRestoration = "manual"; } catch {}
+}
+
+const ScrollReset = (() => {
+  let pending = 0;
+  let lastKey = "";
+
+  const toKey = (route, qs) => {
+    const pairs = [];
+    if (qs && typeof qs.forEach === "function") {
+      qs.forEach((value, key) => { pairs.push([key, value]); });
+    }
+    pairs.sort((a, b) => {
+      if (a[0] === b[0]) return String(a[1] || "").localeCompare(String(b[1] || ""));
+      return String(a[0] || "").localeCompare(String(b[0] || ""));
+    });
+    const query = pairs.map(([key, value]) => `${key}=${value}`).join("&");
+    return `${route || ""}?${query}`;
+  };
+
+  const flush = () => {
+    pending = 0;
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+    if (document?.documentElement) document.documentElement.scrollTop = 0;
+    if (document?.body) document.body.scrollTop = 0;
+  };
+
+  return {
+    reset(route, qs) {
+      const key = toKey(route, qs);
+      if (!key || key === lastKey) return;
+      lastKey = key;
+      if (pending) cancelAnimationFrame(pending);
+      pending = requestAnimationFrame(flush);
+    },
+  };
+})();
+
 const app = document.getElementById("app");
 
 // Keep track of mounted view instance so we can unmount cleanly.
@@ -181,6 +224,8 @@ async function mountRoute() {
       // Explicitly hide for excluded routes
       ScoreStrip.hide();
     }
+
+    ScrollReset.reset(actualRoute, qs);
   } catch (e) {
     // Hard failure: show a tiny crash card (keeps UX within visual language)
     console.error("[router] mount failed:", e);
@@ -190,6 +235,7 @@ async function mountRoute() {
         <div class="mono" style="font-weight:700;margin-bottom:6px;">Oops — couldn’t load “${route}”.</div>
         <div class="mono small" style="opacity:.8">Try going back to the lobby.</div>
       </div></div>`;
+    ScrollReset.reset(actualRoute, qs);
   }
 }
 
