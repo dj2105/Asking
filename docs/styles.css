@@ -450,6 +450,192 @@ input[type="text"], input[type="number"], .input {
 
 .wait-note { text-align: center; opacity: .78; margin-top: 12px; }
 
+.questions-neutral.stage-center,
+.marking-neutral.stage-center {
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 32px;
+  padding: 48px 0 64px;
+}
+
+.qm-heading {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.qm-switcher {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.qm-chip {
+  border-radius: 20px;
+  border: 1px solid hsl(var(--ink-h), 35%, 65%);
+  background: hsl(var(--ink-h), 72%, 95%);
+  color: hsl(var(--ink-h), 50%, 26%);
+  padding: 8px 16px;
+  min-width: 42px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.qm-chip.is-active {
+  background: hsl(var(--ink-h), 82%, 97%);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.qm-chip.is-answered {
+  border-color: hsl(var(--ink-h), 42%, 55%);
+}
+
+.qm-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+
+.qm-question {
+  font-size: 1.22rem;
+  line-height: 1.6;
+  font-weight: 600;
+  white-space: pre-wrap;
+  text-align: left;
+  color: hsl(var(--ink-h), 42%, 20%);
+}
+
+.qm-answer {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: hsl(var(--ink-h), 40%, 28%);
+  opacity: 0.82;
+}
+
+.qm-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.qm-answers--hidden {
+  display: none;
+}
+
+.qm-answer-btn {
+  width: 100%;
+  border: 1.5px solid hsl(var(--ink-h), 38%, 62%);
+  border-radius: 18px;
+  background: transparent;
+  color: hsl(var(--ink-h), 44%, 20%);
+  padding: 18px 20px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-align: left;
+  transition: background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.qm-answer-btn.is-selected {
+  background: hsl(var(--ink-h), 82%, 93%);
+  color: hsl(var(--ink-h), 50%, 20%);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+}
+
+.qm-answer-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+.qm-submit {
+  margin: 12px auto 0;
+  padding: 16px 28px;
+  border-radius: 24px;
+  border: 1.5px solid hsl(var(--ink-h), 40%, 55%);
+  background: transparent;
+  color: hsl(var(--ink-h), 44%, 22%);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  min-width: 200px;
+}
+
+.qm-submit.is-ready {
+  background: hsl(var(--ink-h), 62%, 42%);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  border-color: hsl(var(--ink-h), 62%, 42%);
+}
+
+.qm-submit.is-submitted {
+  background: hsl(var(--ink-h), 78%, 94%);
+  color: hsl(var(--ink-h), 44%, 20%);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.qm-submit.is-busy {
+  opacity: 0.72;
+  box-shadow: none;
+}
+
+.qm-submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
+.marking-choices {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.marking-btn {
+  flex: 1;
+  border-radius: 18px;
+  padding: 14px 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1.5px solid transparent;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.marking-btn--right {
+  background: hsl(142, 62%, 90%);
+  color: hsl(142, 44%, 26%);
+  border-color: hsl(142, 48%, 58%);
+}
+
+.marking-btn--unknown {
+  background: hsl(var(--ink-h), 80%, 93%);
+  color: hsl(var(--ink-h), 48%, 24%);
+  border-color: hsl(var(--ink-h), 60%, 65%);
+}
+
+.marking-btn--wrong {
+  background: hsl(4, 76%, 92%);
+  color: hsl(4, 68%, 32%);
+  border-color: hsl(4, 68%, 64%);
+}
+
+.marking-btn.is-selected {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  border-color: currentColor;
+}
+
+.marking-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
 .maths-form {
   display: flex;
   flex-direction: column;
