@@ -39,30 +39,25 @@ function balanceQuestionText(input = "") {
 function createPaletteApplier(hue, accentHue) {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
+    const inkLight = 16 + depth * 1.2;
+    const mutedLight = Math.min(inkLight + 18, 48);
+    const lineLight = Math.min(inkLight + 12, 42);
+    const accentSoftLight = 86 - depth * 0.6;
+    const accentStrongLight = Math.max(18, 26 - depth * 0.5);
     document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
+    document.documentElement.style.setProperty("--ink-s", "56%");
     document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
     document.documentElement.style.setProperty(
       "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+      `hsla(${hue}, 26%, ${mutedLight.toFixed(1)}%, 0.78)`
     );
     document.documentElement.style.setProperty(
       "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
-    );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
+      `hsla(${hue}, 34%, ${lineLight.toFixed(1)}%, 0.26)`
     );
     document.documentElement.style.setProperty(
       "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
+      `hsl(${accentHue}, 60%, ${accentSoftLight.toFixed(1)}%)`
     );
     document.documentElement.style.setProperty(
       "--accent-strong",
@@ -171,10 +166,16 @@ export default {
       "SUBMIT"
     );
 
+    const submitWrap = el("div", { class: "round-panel__submit-wrap" });
+    submitWrap.appendChild(submitBtn);
+
+    const stage = el("div", { class: "round-panel__stage" });
+    stage.appendChild(content);
+    stage.appendChild(submitWrap);
+
     panel.appendChild(heading);
     panel.appendChild(steps);
-    panel.appendChild(content);
-    panel.appendChild(submitBtn);
+    panel.appendChild(stage);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -200,6 +201,24 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
+    const setSubmitVisible = (visible) => {
+      if (visible) {
+        submitWrap.classList.add("is-visible");
+        content.classList.add("is-obscured");
+        content.classList.remove("is-answering");
+      } else {
+        submitWrap.classList.remove("is-visible");
+        content.classList.remove("is-obscured");
+        content.classList.remove("is-answering");
+      }
+    };
+
+    setSubmitVisible(false);
+
+    const clearAnsweringState = () => {
+      content.classList.remove("is-answering");
+    };
+
     const setPrompt = (text, { status = false } = {}) => {
       const content = status ? String(text || "") : balanceQuestionText(text);
       prompt.textContent = content;
@@ -212,6 +231,7 @@ export default {
 
     let idx = 0;
     const chosen = ["", "", ""];
+    const allAnswered = () => chosen.filter((value) => value).length >= triplet.length;
     let triplet = [];
     let published = false;
     let submitting = false;
@@ -253,8 +273,15 @@ export default {
       }
     };
 
-    const animateSwap = (renderFn) => {
+    const animateSwap = (renderFn, mode = "step") => {
       clearSwapTimer();
+      if (mode === "answer") {
+        swapTimer = setTimeout(() => {
+          swapTimer = null;
+          renderFn();
+        }, 180);
+        return;
+      }
       content.classList.add("is-leaving");
       swapTimer = setTimeout(() => {
         swapTimer = null;
@@ -312,12 +339,14 @@ export default {
       }
     };
 
-    const showQuestion = (targetIdx, { animate = true } = {}) => {
+    const showQuestion = (targetIdx, { animate = true, reason = "step" } = {}) => {
       if (triplet.length === 0) return;
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
+      setSubmitVisible(false);
       const render = () => {
+        clearAnsweringState();
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
@@ -326,7 +355,7 @@ export default {
         renderSteps();
         highlightSubmitIfReady();
       };
-      if (animate) animateSwap(render);
+      if (animate) animateSwap(render, reason);
       else render();
       if (!published && !submitting) resumeRoundTimer(timerContext);
     };
@@ -341,6 +370,20 @@ export default {
       return null;
     };
 
+    const revealSubmit = () => {
+      clearSwapTimer();
+      swapTimer = setTimeout(() => {
+        swapTimer = null;
+        if (!alive || submitting || published) return;
+        if (!allAnswered()) {
+          clearAnsweringState();
+          return;
+        }
+        setSubmitVisible(true);
+        highlightSubmitIfReady();
+      }, 220);
+    };
+
     const scheduleAdvance = (currentIndex) => {
       clearAdvanceTimer();
       advanceTimer = setTimeout(() => {
@@ -348,17 +391,18 @@ export default {
         if (!alive || submitting || published) return;
         const next = findNextUnanswered(currentIndex);
         if (next !== null && next !== undefined) {
-          showQuestion(next, { animate: true });
+          showQuestion(next, { animate: true, reason: "answer" });
         } else if (triplet.length > 0) {
-          showQuestion(triplet.length - 1, { animate: true });
+          revealSubmit();
         }
-        highlightSubmitIfReady();
       }, 700);
     };
 
     const showWaitingPrompt = () => {
       setPrompt(waitingLabel, { status: true });
       setChoicesVisible(false);
+      setSubmitVisible(false);
+      clearAnsweringState();
       clearAdvanceTimer();
     };
 
@@ -391,6 +435,8 @@ export default {
       pauseRoundTimer(timerContext);
       setPrompt(text, { status: true });
       setChoicesVisible(false);
+      setSubmitVisible(false);
+      clearAnsweringState();
       renderSteps();
       updateSubmitState();
     };
@@ -463,6 +509,11 @@ export default {
       setLoadingState("Preparing questions…");
     }
 
+    if (!submittedAlready && allAnswered() && !published) {
+      setSubmitVisible(true);
+      highlightSubmitIfReady();
+    }
+
     renderSteps();
     renderChoices();
     updateSubmitState();
@@ -515,6 +566,10 @@ export default {
         const text = btn.textContent || "";
         const currentIndex = idx;
         if (!text) return;
+        clearAdvanceTimer();
+        clearSwapTimer();
+        setSubmitVisible(false);
+        content.classList.add("is-answering");
         chosen[currentIndex] = text;
         choiceButtons.forEach((choiceBtn) => {
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
@@ -536,7 +591,9 @@ export default {
         if (triplet.length === 0) return;
         if (published || submitting) return;
         clearAdvanceTimer();
-        showQuestion(i, { animate: true });
+        clearSwapTimer();
+        setSubmitVisible(false);
+        showQuestion(i, { animate: true, reason: "step" });
         renderChoices();
         renderSteps();
         updateSubmitState();
@@ -584,6 +641,10 @@ export default {
         submitBtn.textContent = "SUBMIT";
         showQuestion(revertIdx, { animate: false });
         updateSubmitState();
+        if (!published && allAnswered()) {
+          setSubmitVisible(true);
+          highlightSubmitIfReady();
+        }
         resumeRoundTimer(timerContext);
       }
     });
