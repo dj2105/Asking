@@ -82,7 +82,17 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
+    const backBtn = el(
+      "button",
+      {
+        class: "btn subtle phase-header__back",
+        type: "button",
+      },
+      "BACK"
+    );
+    backBtn.disabled = true;
+    headerRow.appendChild(backBtn);
     const heading = el("div", { class: "phase-header__title" }, "MARKING 1/3");
     headerRow.appendChild(heading);
 
@@ -130,8 +140,8 @@ export default {
       "I DUNNO"
     );
     pair.appendChild(btnRight);
-    pair.appendChild(btnWrong);
     pair.appendChild(btnUnknown);
+    pair.appendChild(btnWrong);
     markRow.appendChild(pair);
 
     list.appendChild(markRow);
@@ -214,6 +224,11 @@ export default {
     const disableFns = [];
     const reflectFns = [];
 
+    function updateBackButtonState() {
+      const cannotGoBack = idx <= 0 || submitting || published;
+      backBtn.disabled = cannotGoBack;
+    }
+
     const markValue = (value) => {
       if (value === VERDICT.RIGHT) return VERDICT.RIGHT;
       if (value === VERDICT.WRONG) return VERDICT.WRONG;
@@ -252,8 +267,15 @@ export default {
 
     disableFns.push(() => {
       setVerdictsEnabled(false);
+      backBtn.disabled = true;
     });
     reflectFns.push(() => { reflect(); });
+
+    backBtn.addEventListener("click", () => {
+      if (backBtn.disabled || published || submitting) return;
+      if (idx <= 0) return;
+      showMark(idx - 1);
+    });
 
     const showMark = (targetIdx) => {
       clearAdvanceTimer();
@@ -270,6 +292,7 @@ export default {
       reflect();
       resumeRoundTimer(timerContext);
       hideOverlay();
+      updateBackButtonState();
     };
 
     const submitMarks = async () => {
@@ -278,6 +301,7 @@ export default {
       const safeMarks = marks.map((value) => markValue(value));
       clearAdvanceTimer();
       setVerdictsEnabled(false);
+      backBtn.disabled = true;
       pauseRoundTimer(timerContext);
       const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
       const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
@@ -304,6 +328,7 @@ export default {
           hideOverlay();
           resumeRoundTimer(timerContext);
           setVerdictsEnabled(true);
+          updateBackButtonState();
         }
       }
     };

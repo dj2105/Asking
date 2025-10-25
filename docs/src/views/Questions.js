@@ -83,7 +83,17 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
+    const backBtn = el(
+      "button",
+      {
+        class: "btn subtle phase-header__back",
+        type: "button",
+      },
+      "BACK"
+    );
+    backBtn.disabled = true;
+    headerRow.appendChild(backBtn);
     const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
     headerRow.appendChild(heading);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
@@ -103,6 +113,7 @@ export default {
     let published = false;
     let submitting = false;
     let advanceTimer = null;
+    let tripletReady = false;
 
     let waitMessageDefault = "Waiting…";
     const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
@@ -195,11 +206,19 @@ export default {
       btn2.classList.toggle("selected", btn2Selected);
       btn1.classList.toggle("throb", !btn1Selected && !btn1.disabled);
       btn2.classList.toggle("throb", !btn2Selected && !btn2.disabled);
+      const hasSelection = Boolean(current);
+      qText.classList.toggle("question-card__prompt--selected", hasSelection);
     }
     function setButtonsEnabled(enabled) {
       btn1.disabled = !enabled;
       btn2.disabled = !enabled;
       refreshChoiceStyles();
+      updateBackButtonState();
+    }
+
+    function updateBackButtonState() {
+      const cannotGoBack = idx <= 0 || !tripletReady || submitting || published;
+      backBtn.disabled = cannotGoBack;
     }
 
     const waitForRoundData = async () => {
@@ -310,6 +329,7 @@ export default {
         historyIndex = idx;
       }
       resumeRoundTimer(timerContext);
+      updateBackButtonState();
     }
 
     const handlePopState = (event) => {
@@ -334,6 +354,7 @@ export default {
     const finishRound = () => {
       pauseRoundTimer(timerContext);
       setButtonsEnabled(false);
+      backBtn.disabled = true;
       waitMsg.style.display = "none";
       showWaitingOverlay();
       publishAnswers();
@@ -350,6 +371,7 @@ export default {
     async function publishAnswers() {
       if (submitting || published) return;
       submitting = true;
+      backBtn.disabled = true;
 
       const payload = triplet.map((entry, idx) => ({
         question: entry.question || "",
@@ -395,10 +417,16 @@ export default {
       }, 500);
     }
 
+    backBtn.addEventListener("click", () => {
+      if (backBtn.disabled || published || submitting) return;
+      if (idx <= 0) return;
+      showQuestion(idx - 1, { forceReplace: true });
+    });
+
     btn1.addEventListener("click", () => onPick(btn1.textContent));
     btn2.addEventListener("click", () => onPick(btn2.textContent));
 
-    const tripletReady = triplet.every((entry) =>
+    tripletReady = triplet.every((entry) =>
       entry.question && entry.options && entry.options.length === 2
     );
 
