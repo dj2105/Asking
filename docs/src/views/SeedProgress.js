@@ -10,6 +10,7 @@ import {
   getHashParams,
   timeUntil,
 } from "../lib/util.js";
+import { createViewPalette } from "../lib/palette.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -33,8 +34,8 @@ export default {
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    const { apply: applyPalette } = createViewPalette();
+    applyPalette();
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-seeding" });
