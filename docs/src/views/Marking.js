@@ -82,8 +82,18 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
+    const headerRow = el(
+      "div",
+      { class: "mono phase-header phase-header--centered phase-header--with-back" }
+    );
+    const backBtn = el(
+      "button",
+      { class: "btn subtle phase-header__back", type: "button" },
+      "BACK"
+    );
+    backBtn.disabled = true;
     const heading = el("div", { class: "phase-header__title" }, "MARKING 1/3");
+    headerRow.appendChild(backBtn);
     headerRow.appendChild(heading);
 
     const list = el("div", { class: "qa-list" });
@@ -109,16 +119,6 @@ export default {
       },
       "✓"
     );
-    const btnWrong = el(
-      "button",
-      {
-        class: "btn verdict-btn verdict-cross",
-        type: "button",
-        title: "Mark as incorrect",
-        "aria-pressed": "false",
-      },
-      "✕"
-    );
     const btnUnknown = el(
       "button",
       {
@@ -129,9 +129,19 @@ export default {
       },
       "I DUNNO"
     );
+    const btnWrong = el(
+      "button",
+      {
+        class: "btn verdict-btn verdict-cross",
+        type: "button",
+        title: "Mark as incorrect",
+        "aria-pressed": "false",
+      },
+      "✕"
+    );
     pair.appendChild(btnRight);
-    pair.appendChild(btnWrong);
     pair.appendChild(btnUnknown);
+    pair.appendChild(btnWrong);
     markRow.appendChild(pair);
 
     list.appendChild(markRow);
@@ -210,6 +220,7 @@ export default {
     let published = false;
     let submitting = false;
     let advanceTimer = null;
+    let blockBack = true;
 
     const disableFns = [];
     const reflectFns = [];
@@ -235,6 +246,8 @@ export default {
       btnRight.disabled = !enabled;
       btnWrong.disabled = !enabled;
       btnUnknown.disabled = !enabled;
+      blockBack = !enabled;
+      updateBackButton();
     };
 
     const reflect = () => {
@@ -255,6 +268,10 @@ export default {
     });
     reflectFns.push(() => { reflect(); });
 
+    const updateBackButton = () => {
+      backBtn.disabled = blockBack || published || submitting || idx <= 0;
+    };
+
     const showMark = (targetIdx) => {
       clearAdvanceTimer();
       if (targetIdx < 0) targetIdx = 0;
@@ -270,11 +287,13 @@ export default {
       reflect();
       resumeRoundTimer(timerContext);
       hideOverlay();
+      updateBackButton();
     };
 
     const submitMarks = async () => {
       if (published || submitting) return;
       submitting = true;
+      updateBackButton();
       const safeMarks = marks.map((value) => markValue(value));
       clearAdvanceTimer();
       setVerdictsEnabled(false);
@@ -297,6 +316,7 @@ export default {
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         showWaitingOverlay("Review submitted");
         clearRoundTimer(timerContext);
+        updateBackButton();
       } catch (err) {
         console.warn("[marking] submit failed:", err);
         submitting = false;
@@ -305,6 +325,7 @@ export default {
           resumeRoundTimer(timerContext);
           setVerdictsEnabled(true);
         }
+        updateBackButton();
       }
     };
 
@@ -328,6 +349,16 @@ export default {
     btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG));
     btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN));
 
+    backBtn.addEventListener("click", () => {
+      if (published || submitting) return;
+      if (idx <= 0) return;
+      clearAdvanceTimer();
+      blockBack = false;
+      showMark(idx - 1);
+    });
+
+    updateBackButton();
+
     const existingMarks = (((roomData0.marking || {})[myRole] || {})[round] || []);
     if (Array.isArray(existingMarks) && existingMarks.length === 3) {
       marks = new Array(totalMarks).fill(null).map((_, i) => markValue(existingMarks[i]));
@@ -337,6 +368,8 @@ export default {
       showWaitingOverlay("Review submitted");
       pauseRoundTimer(timerContext);
       clearRoundTimer(timerContext);
+      blockBack = true;
+      updateBackButton();
     } else {
       showMark(0);
     }

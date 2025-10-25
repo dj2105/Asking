@@ -83,8 +83,18 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
+    const headerRow = el(
+      "div",
+      { class: "mono phase-header phase-header--centered phase-header--with-back" }
+    );
+    const backBtn = el(
+      "button",
+      { class: "btn subtle phase-header__back", type: "button" },
+      "BACK"
+    );
+    backBtn.disabled = true;
     const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
+    headerRow.appendChild(backBtn);
     headerRow.appendChild(heading);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
@@ -103,6 +113,7 @@ export default {
     let published = false;
     let submitting = false;
     let advanceTimer = null;
+    let blockBack = true;
 
     let waitMessageDefault = "Waiting…";
     const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
@@ -186,6 +197,10 @@ export default {
     }
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
+    function updateBackButton() {
+      backBtn.disabled = blockBack || published || submitting || idx <= 0;
+    }
+
     function refreshChoiceStyles() {
       const current = chosen[idx] || "";
       const matches = (btn) => Boolean(current) && (btn.textContent || "") === current;
@@ -195,11 +210,15 @@ export default {
       btn2.classList.toggle("selected", btn2Selected);
       btn1.classList.toggle("throb", !btn1Selected && !btn1.disabled);
       btn2.classList.toggle("throb", !btn2Selected && !btn2.disabled);
+      const hasSelection = Boolean(current);
+      qText.classList.toggle("question-card__prompt--selected", hasSelection);
     }
     function setButtonsEnabled(enabled) {
       btn1.disabled = !enabled;
       btn2.disabled = !enabled;
+      blockBack = !enabled;
       refreshChoiceStyles();
+      updateBackButton();
     }
 
     const waitForRoundData = async () => {
@@ -304,12 +323,17 @@ export default {
       waitMsg.style.display = "none";
       setButtonsEnabled(true);
       if (!options.skipHistory) {
-        const shouldReplace = historyIndex === null || options.forceReplace;
-        recordHistoryIndex(idx, { replace: shouldReplace });
+        const mode = options.historyMode || "auto";
+        let replaceFlag;
+        if (mode === "replace") replaceFlag = true;
+        else if (mode === "push") replaceFlag = false;
+        else replaceFlag = historyIndex === null || options.forceReplace;
+        recordHistoryIndex(idx, { replace: replaceFlag });
       } else {
         historyIndex = idx;
       }
       resumeRoundTimer(timerContext);
+      updateBackButton();
     }
 
     const handlePopState = (event) => {
@@ -350,6 +374,7 @@ export default {
     async function publishAnswers() {
       if (submitting || published) return;
       submitting = true;
+      updateBackButton();
 
       const payload = triplet.map((entry, idx) => ({
         question: entry.question || "",
@@ -369,12 +394,14 @@ export default {
         submitting = false;
         pauseRoundTimer(timerContext);
         showWaitingOverlay("Waiting for opponent");
+        updateBackButton();
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
         hideOverlay();
         showWaitingState("Retrying…");
         setButtonsEnabled(true);
+        updateBackButton();
       }
     }
 
@@ -398,6 +425,15 @@ export default {
     btn1.addEventListener("click", () => onPick(btn1.textContent));
     btn2.addEventListener("click", () => onPick(btn2.textContent));
 
+    backBtn.addEventListener("click", () => {
+      if (published || submitting) return;
+      if (idx <= 0) return;
+      clearAdvanceTimer();
+      showQuestion(idx - 1, { historyMode: "replace" });
+    });
+
+    updateBackButton();
+
     const tripletReady = triplet.every((entry) =>
       entry.question && entry.options && entry.options.length === 2
     );
@@ -407,6 +443,8 @@ export default {
       waitMsg.textContent = "Preparing questions…";
       waitMsg.style.display = "";
       pauseRoundTimer(timerContext);
+      blockBack = true;
+      updateBackButton();
     } else if (existingAns.length === 3) {
       published = true;
       idx = 3;
@@ -414,6 +452,8 @@ export default {
       waitMsg.style.display = "none";
       pauseRoundTimer(timerContext);
       showWaitingOverlay();
+      blockBack = true;
+      updateBackButton();
     } else {
       showQuestion(0);
     }
