@@ -113,6 +113,8 @@ export default {
     content.appendChild(prompt);
     content.appendChild(choicesWrap);
 
+    const waitingMessage = el("div", { class: "round-panel__waiting mono is-hidden" }, "");
+
     const submitBtn = el(
       "button",
       {
@@ -126,6 +128,7 @@ export default {
     panel.appendChild(heading);
     panel.appendChild(steps);
     panel.appendChild(content);
+    panel.appendChild(waitingMessage);
     panel.appendChild(submitBtn);
     root.appendChild(panel);
 
@@ -161,6 +164,10 @@ export default {
       choicesWrap.classList.toggle("is-hidden", !visible);
     };
 
+    const setStepsVisible = (visible) => {
+      steps.classList.toggle("is-hidden", !visible);
+    };
+
     let idx = 0;
     const chosen = ["", "", ""];
     let triplet = [];
@@ -168,6 +175,7 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    let waitingMode = false;
 
     let stopWatcher = null;
     let alive = true;
@@ -203,11 +211,26 @@ export default {
       }, 140);
     };
 
+    const getQuestionNumber = (localIndex) => {
+      const roundNumber = Number.isFinite(round) && round > 0 ? round : 1;
+      const base = (roundNumber - 1) * 3;
+      return base + localIndex + 1;
+    };
+
+    const updateStepNumbers = () => {
+      stepButtons.forEach((btn, i) => {
+        const number = getQuestionNumber(i);
+        btn.textContent = String(number);
+        btn.setAttribute("aria-label", `Question ${number}`);
+      });
+    };
+
     const renderSteps = () => {
+      updateStepNumbers();
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
-        btn.disabled = triplet.length === 0;
+        btn.disabled = triplet.length === 0 || waitingMode;
       });
     };
 
@@ -252,9 +275,11 @@ export default {
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
+      setWaitingMode(false);
       const render = () => {
         const current = triplet[idx] || {};
-        const label = current.question ? `${idx + 1}. ${current.question}` : "";
+        const number = getQuestionNumber(idx);
+        const label = current.question ? `${number}. ${current.question}` : "";
         setPrompt(label, { status: false });
         setChoicesVisible(true);
         renderChoices();
@@ -308,12 +333,30 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    const waitingLabel = `WAITING FOR ${oppName.toUpperCase()}`;
+    let waitingLabel = `WAITING FOR ${oppName.toUpperCase()}`;
 
     const timerContext = { code, role: myRole, round };
 
+    const setWaitingMode = (active) => {
+      waitingMode = active;
+      if (active) {
+        waitingMessage.textContent = waitingLabel;
+      }
+      setStepsVisible(!active);
+      content.classList.toggle("is-hidden", active);
+      waitingMessage.classList.toggle("is-hidden", !active);
+      if (active) {
+        setChoicesVisible(false);
+      }
+      submitBtn.classList.toggle("is-hidden", active);
+      renderSteps();
+    };
+
     const setLoadingState = (text) => {
       pauseRoundTimer(timerContext);
+      setWaitingMode(false);
+      content.classList.remove("is-hidden");
+      waitingMessage.classList.add("is-hidden");
       setPrompt(text, { status: true });
       setChoicesVisible(false);
       renderSteps();
@@ -375,12 +418,9 @@ export default {
 
     if (submittedAlready) {
       published = true;
-      const lastIdx = triplet.length > 0 ? triplet.length - 1 : 0;
-      showQuestion(lastIdx, { animate: false });
       submitBtn.disabled = true;
       submitBtn.textContent = waitingLabel;
-      renderChoices();
-      renderSteps();
+      setWaitingMode(true);
       pauseRoundTimer(timerContext);
     } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
       showQuestion(0, { animate: false });
@@ -441,10 +481,14 @@ export default {
         const text = btn.textContent || "";
         const currentIndex = idx;
         if (!text) return;
+        choiceButtons.forEach((other) => {
+          other.classList.toggle("is-selected", other === btn);
+        });
         chosen[currentIndex] = text;
         renderChoices();
         renderSteps();
         updateSubmitState();
+        highlightSubmitIfReady();
         scheduleAdvance(currentIndex);
       });
     });
@@ -487,10 +531,7 @@ export default {
         submitting = false;
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
-        const lastIdx = triplet.length > 0 ? triplet.length - 1 : 0;
-        showQuestion(lastIdx, { animate: false });
-        renderChoices();
-        renderSteps();
+        setWaitingMode(true);
         clearAdvanceTimer();
         pauseRoundTimer(timerContext);
       } catch (err) {
@@ -508,6 +549,7 @@ export default {
       if (nextRound !== round) {
         round = nextRound;
         timerContext.round = round;
+        renderSteps();
       }
 
       if (data.state === "marking") {
@@ -531,6 +573,7 @@ export default {
         if (myDone && !oppDone) {
           submitBtn.disabled = true;
           submitBtn.textContent = waitingLabel;
+          setWaitingMode(true);
         }
       }
 
