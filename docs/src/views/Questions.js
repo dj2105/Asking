@@ -1,8 +1,8 @@
 // /src/views/Questions.js
 //
-// Questions phase — local-only until the 3rd selection.
-// • Shows exactly the player’s three questions from rooms/{code}/rounds/{round}/{role}Items.
-// • Two large buttons per question. Selecting the 3rd answer auto-submits once.
+// Questions phase — local-only until submission.
+// • Shows the player’s three questions from rooms/{code}/rounds/{round}/{role}Items inside a tabbed card.
+// • Each tab stores its selection locally so the player can review and adjust freely before submitting.
 // • Submission writes answers.{role}.{round} = [{ chosen }, …] and timestamps.updatedAt.
 // • Host watches both submissions and flips state → "marking".
 // • Local UI keeps selections in memory only; Firestore only written on submission.
@@ -17,15 +17,8 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-import * as MathsPaneMod from "../lib/MathsPane.js";
 import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
-const mountMathsPane =
-  (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
-   typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
-   typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
-   null);
-
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
 const FALLBACK_ITEMS = [
@@ -82,37 +75,38 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-questions stage-center" });
 
-    const card = el("div", { class: "card card--soft card--center question-card" });
+    const card = el("div", { class: "card card--soft card--center question-card question-card--tabbed" });
     const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
-    const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
+    const heading = el("div", { class: "phase-header__title" }, "Questions");
     headerRow.appendChild(heading);
-    const qText = el("div", { class: "mono question-card__prompt" }, "");
+
+    const tabbedBox = el("div", { class: "tabbed-box" });
+    const tabRow = el("div", { class: "tabbed-box__tabs" });
+    const body = el("div", { class: "tabbed-box__body" });
+    const prompt = el("div", { class: "mono question-card__prompt tabbed-box__prompt" }, "");
+    const choiceWrap = el("div", { class: "tabbed-box__choices" });
+    const btn1 = el("button", { class: "btn big tabbed-choice-btn", type: "button" }, "");
+    const btn2 = el("button", { class: "btn big tabbed-choice-btn", type: "button" }, "");
+    choiceWrap.appendChild(btn1);
+    choiceWrap.appendChild(btn2);
+    body.appendChild(prompt);
+    body.appendChild(choiceWrap);
+    tabbedBox.appendChild(tabRow);
+    tabbedBox.appendChild(body);
+
+    const statusNote = el("div", { class: "mono small wait-note" }, "Waiting…");
+    statusNote.style.display = "none";
+
+    const submitRow = el("div", { class: "tabbed-box__submit" });
+    const submitBtn = el("button", { class: "btn mark-submit-btn", type: "button", disabled: "disabled" }, "Submit");
+    submitRow.appendChild(submitBtn);
 
     card.appendChild(headerRow);
-    card.appendChild(qText);
-
-    const btnWrap = el("div", { class: "choice-row" });
-    const btn1 = el("button", { class: "btn big outline" }, "");
-    const btn2 = el("button", { class: "btn big outline" }, "");
-    btnWrap.appendChild(btn1);
-    btnWrap.appendChild(btn2);
-    card.appendChild(btnWrap);
-
-    let idx = 0;
-    const chosen = ["", "", ""];
-    let published = false;
-    let submitting = false;
-    let advanceTimer = null;
-
-    let waitMessageDefault = "Waiting…";
-    const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
-    waitMsg.style.display = "none";
-    card.appendChild(waitMsg);
+    card.appendChild(tabbedBox);
+    card.appendChild(statusNote);
+    card.appendChild(submitRow);
 
     root.appendChild(card);
-
-    const mathsMount = el("div", { class: "jemima-maths-pinned" });
-    root.appendChild(mathsMount);
 
     const overlay = el("div", { class: "stage-overlay stage-overlay--hidden" });
     const overlayTitle = el("div", { class: "mono stage-overlay__title" }, "");
@@ -126,30 +120,135 @@ export default {
     const showOverlay = (title, note) => {
       overlayTitle.textContent = title || "";
       overlayNote.textContent = note || "";
-      overlay.classList.add("stage-overlay--with-maths");
-      overlay.appendChild(mathsMount);
       overlay.classList.remove("stage-overlay--hidden");
-      card.style.display = "none";
+      card.classList.add("tabbed-card--hidden");
     };
 
     const hideOverlay = () => {
-      overlay.classList.remove("stage-overlay--with-maths");
       overlay.classList.add("stage-overlay--hidden");
-      card.style.display = "";
-      if (root.contains(overlay)) {
-        root.insertBefore(mathsMount, overlay);
+      card.classList.remove("tabbed-card--hidden");
+    };
+
+    const TAB_PALETTES = [
+      { base: "#f5f1ff", accent: "#e2d9ff", strong: "#cdbdff", ink: "#26194b" },
+      { base: "#eef7ff", accent: "#cde6ff", strong: "#abd4ff", ink: "#15355a" },
+      { base: "#fff5f0", accent: "#ffdacc", strong: "#ffc0a6", ink: "#5a2c18" },
+    ];
+
+    const tabButtons = TAB_PALETTES.map((palette, index) => {
+      const tab = el("button", {
+        class: "tabbed-box__tab",
+        type: "button",
+        "data-index": String(index),
+      }, String(index + 1));
+      tab.dataset.base = palette.base;
+      tab.dataset.accent = palette.accent;
+      tab.dataset.strong = palette.strong;
+      tab.dataset.ink = palette.ink;
+      tab.style.setProperty("--tab-color", palette.accent);
+      tab.style.setProperty("--tab-color-strong", palette.strong);
+      tabRow.appendChild(tab);
+      return tab;
+    });
+
+    let activeTab = 0;
+    const chosen = ["", "", ""];
+    let published = false;
+    let submitting = false;
+    let triplet = [];
+    let timerContext = null;
+    let waitMessageDefault = "Waiting…";
+
+    const setPalette = (index) => {
+      const tab = tabButtons[index] || {};
+      const base = tab.dataset?.base || TAB_PALETTES[index]?.base || TAB_PALETTES[0].base;
+      const accent = tab.dataset?.accent || TAB_PALETTES[index]?.accent || TAB_PALETTES[0].accent;
+      const strong = tab.dataset?.strong || TAB_PALETTES[index]?.strong || TAB_PALETTES[0].strong;
+      const ink = tab.dataset?.ink || TAB_PALETTES[index]?.ink || TAB_PALETTES[0].ink || "#111";
+      tabbedBox.style.setProperty("--tab-base", base);
+      tabbedBox.style.setProperty("--tab-accent", accent);
+      tabbedBox.style.setProperty("--tab-strong", strong);
+      tabbedBox.style.setProperty("--tab-ink", ink);
+    };
+
+    const refreshTabs = () => {
+      tabButtons.forEach((tab, index) => {
+        const answered = Boolean(chosen[index]);
+        tab.classList.toggle("is-active", index === activeTab);
+        tab.classList.toggle("is-answered", answered);
+      });
+      setPalette(activeTab);
+    };
+
+    const refreshChoiceStyles = () => {
+      const current = chosen[activeTab] || "";
+      [btn1, btn2].forEach((btn) => {
+        const isSelected = Boolean(current) && (btn.textContent || "") === current;
+        btn.classList.toggle("is-selected", isSelected);
+        btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        if (!btn.disabled && !published) {
+          btn.classList.toggle("throb", !isSelected);
+        } else {
+          btn.classList.remove("throb");
+        }
+      });
+    };
+
+    const setButtonsEnabled = (enabled) => {
+      btn1.disabled = !enabled;
+      btn2.disabled = !enabled;
+      if (!enabled) {
+        btn1.classList.remove("throb");
+        btn2.classList.remove("throb");
+      }
+      refreshChoiceStyles();
+    };
+
+    const renderActiveQuestion = () => {
+      const entry = triplet[activeTab] || {};
+      const [optA = "", optB = ""] = Array.isArray(entry.options) ? entry.options : [];
+      prompt.textContent = entry.question || "";
+      btn1.textContent = optA;
+      btn2.textContent = optB;
+      refreshChoiceStyles();
+    };
+
+    const updateSubmitState = () => {
+      const ready = chosen.every((value) => Boolean(value));
+      submitBtn.disabled = !(ready && !published && !submitting);
+      submitBtn.classList.toggle("throb", !submitBtn.disabled);
+    };
+
+    const showStatus = (text, { disable = false } = {}) => {
+      statusNote.textContent = text || waitMessageDefault;
+      statusNote.style.display = "";
+      if (disable) {
+        tabbedBox.classList.add("is-disabled");
+        setButtonsEnabled(false);
       } else {
-        root.appendChild(mathsMount);
+        tabbedBox.classList.remove("is-disabled");
       }
     };
 
+    const hideStatus = () => {
+      statusNote.style.display = "none";
+      tabbedBox.classList.remove("is-disabled");
+    };
+
+    tabButtons.forEach((tab, index) => {
+      tab.addEventListener("click", () => {
+        activeTab = index;
+        refreshTabs();
+        renderActiveQuestion();
+      });
+    });
+
     let stopWatcher = null;
     let alive = true;
-    let removePopStateListener = () => {};
     this.unmount = () => {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
-      try { removePopStateListener(); } catch {}
+      pauseRoundTimer(timerContext || {});
     };
 
     const rRef = roomRef(code);
@@ -170,37 +269,14 @@ export default {
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
     waitMessageDefault = `Waiting for ${oppName}…`;
-    waitMsg.textContent = waitMessageDefault;
+    statusNote.textContent = waitMessageDefault;
 
     const overlayWaiting = () => `Waiting for ${oppName}`;
     const showWaitingOverlay = (note) => {
       showOverlay(overlayWaiting(), note || "Waiting for opponent");
     };
 
-    try {
-      if (mountMathsPane && room0.maths) {
-        mountMathsPane(mathsMount, { maths: room0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
-      }
-    } catch (err) {
-      console.warn("[questions] MathsPane mount failed:", err);
-    }
-
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    function refreshChoiceStyles() {
-      const current = chosen[idx] || "";
-      const matches = (btn) => Boolean(current) && (btn.textContent || "") === current;
-      const btn1Selected = matches(btn1);
-      const btn2Selected = matches(btn2);
-      btn1.classList.toggle("selected", btn1Selected);
-      btn2.classList.toggle("selected", btn2Selected);
-      btn1.classList.toggle("throb", !btn1Selected && !btn1.disabled);
-      btn2.classList.toggle("throb", !btn2Selected && !btn2.disabled);
-    }
-    function setButtonsEnabled(enabled) {
-      btn1.disabled = !enabled;
-      btn2.disabled = !enabled;
-      refreshChoiceStyles();
-    }
 
     const waitForRoundData = async () => {
       let firstWait = true;
@@ -215,10 +291,7 @@ export default {
           console.warn("[questions] failed to load round doc:", err);
         }
         if (firstWait) {
-          waitMsg.textContent = "Waiting for round data…";
-          waitMsg.style.display = "";
-          btnWrap.style.display = "none";
-          setButtonsEnabled(false);
+          showStatus("Waiting for round data…", { disable: true });
           firstWait = false;
         }
         if (attempts >= MAX_ATTEMPTS) break;
@@ -233,7 +306,7 @@ export default {
     const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
 
     const tier = roundTier(round);
-    const triplet = [0, 1, 2].map((i) => {
+    triplet = [0, 1, 2].map((i) => {
       const it = myItems[i] || {};
       const fallback = FALLBACK_ITEMS[i % FALLBACK_ITEMS.length];
       const rawQuestion = typeof it.question === "string" ? it.question.trim() : "";
@@ -254,97 +327,37 @@ export default {
       return { question, options: [optA, optB], correct };
     });
 
-    const timerContext = { code, role: myRole, round };
+    timerContext = { code, role: myRole, round };
 
-    const historySupported =
-      typeof window !== "undefined" &&
-      window.history &&
-      typeof window.history.pushState === "function" &&
-      typeof window.history.replaceState === "function";
-    const historyKey = "jemimaQuestions";
-    let historyIndex = null;
+    const tripletReady = triplet.every((entry) =>
+      entry.question && entry.options && entry.options.length === 2
+    );
 
-    function recordHistoryIndex(nextIndex, { replace = false } = {}) {
-      historyIndex = nextIndex;
-      if (!historySupported) return;
-      const baseState = window.history.state && typeof window.history.state === "object"
-        ? { ...window.history.state }
-        : {};
-      baseState[historyKey] = { idx: nextIndex, code };
-      try {
-        if (replace) {
-          window.history.replaceState(baseState, document.title);
-        } else {
-          window.history.pushState(baseState, document.title);
-        }
-      } catch (err) {
-        console.warn("[questions] history state update failed:", err);
-      }
-    }
-
-    const clearAdvanceTimer = () => {
-      if (advanceTimer) {
-        clearTimeout(advanceTimer);
-        advanceTimer = null;
-      }
-    };
-
-    function showQuestion(targetIdx, options = {}) {
-      clearAdvanceTimer();
-      if (triplet.length === 0) return;
-      if (targetIdx < 0) targetIdx = 0;
-      if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
-      idx = targetIdx;
-      const cur = triplet[idx];
-      heading.textContent = `QUESTION ${Math.min(idx + 1, 3)}/3`;
-      qText.textContent = cur?.question || "";
-      btn1.textContent = cur?.options?.[0] || "";
-      btn2.textContent = cur?.options?.[1] || "";
-      btnWrap.style.display = "flex";
-      waitMsg.style.display = "none";
+    if (!tripletReady) {
+      showStatus("Preparing questions…", { disable: true });
+      pauseRoundTimer(timerContext);
+    } else if (existingAns.length === 3) {
+      published = true;
+      hideStatus();
+      refreshTabs();
+      renderActiveQuestion();
+      setButtonsEnabled(false);
+      updateSubmitState();
+      pauseRoundTimer(timerContext);
+      showWaitingOverlay();
+    } else {
+      hideStatus();
+      refreshTabs();
+      renderActiveQuestion();
       setButtonsEnabled(true);
-      if (!options.skipHistory) {
-        const shouldReplace = historyIndex === null || options.forceReplace;
-        recordHistoryIndex(idx, { replace: shouldReplace });
-      } else {
-        historyIndex = idx;
-      }
+      updateSubmitState();
       resumeRoundTimer(timerContext);
     }
 
-    const handlePopState = (event) => {
-      if (published || submitting) return;
-      const state = event?.state;
-      const payload = state && typeof state === "object" ? state[historyKey] : null;
-      if (!payload || payload.code !== code) return;
-      const target = Number(payload.idx);
-      if (!Number.isFinite(target)) return;
-      showQuestion(target, { skipHistory: true });
-    };
-    if (historySupported) {
-      window.addEventListener("popstate", handlePopState);
-      removePopStateListener = () => {
-        try {
-          window.removeEventListener("popstate", handlePopState);
-        } catch {}
-        removePopStateListener = () => {};
-      };
-    }
-
-    const finishRound = () => {
-      pauseRoundTimer(timerContext);
-      setButtonsEnabled(false);
-      waitMsg.style.display = "none";
-      showWaitingOverlay();
-      publishAnswers();
-    };
-
-    const showWaitingState = (text) => {
+    const showWaitingState = (text, options = {}) => {
       hideOverlay();
-      btnWrap.style.display = "none";
-      waitMsg.textContent = text || waitMessageDefault;
-      waitMsg.style.display = "";
-      setButtonsEnabled(false);
+      const disable = options.disable !== undefined ? options.disable : true;
+      showStatus(text || waitMessageDefault, { disable });
     };
 
     async function publishAnswers() {
@@ -373,50 +386,31 @@ export default {
         console.warn("[questions] publish failed:", err);
         submitting = false;
         hideOverlay();
-        showWaitingState("Retrying…");
+        showWaitingState("Retrying…", { disable: false });
         setButtonsEnabled(true);
       }
     }
 
-    function onPick(text) {
+    const onPick = (text) => {
       if (published || submitting) return;
-      const currentIndex = idx;
-      clearAdvanceTimer();
-      chosen[currentIndex] = text;
+      chosen[activeTab] = text || "";
+      refreshTabs();
       refreshChoiceStyles();
-      advanceTimer = setTimeout(() => {
-        advanceTimer = null;
-        if (published || submitting || !alive) return;
-        if (currentIndex >= triplet.length - 1) {
-          finishRound();
-        } else {
-          showQuestion(currentIndex + 1);
-        }
-      }, 500);
-    }
+      updateSubmitState();
+    };
 
     btn1.addEventListener("click", () => onPick(btn1.textContent));
     btn2.addEventListener("click", () => onPick(btn2.textContent));
 
-    const tripletReady = triplet.every((entry) =>
-      entry.question && entry.options && entry.options.length === 2
-    );
+    submitBtn.addEventListener("click", () => {
+      if (submitBtn.disabled) return;
+      if (!chosen.every((value) => Boolean(value))) return;
+      setButtonsEnabled(false);
+      updateSubmitState();
+      publishAnswers();
+    });
 
-    if (!tripletReady) {
-      btnWrap.style.display = "none";
-      waitMsg.textContent = "Preparing questions…";
-      waitMsg.style.display = "";
-      pauseRoundTimer(timerContext);
-    } else if (existingAns.length === 3) {
-      published = true;
-      idx = 3;
-      btnWrap.style.display = "none";
-      waitMsg.style.display = "none";
-      pauseRoundTimer(timerContext);
-      showWaitingOverlay();
-    } else {
-      showQuestion(0);
-    }
+    updateSubmitState();
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
@@ -454,7 +448,16 @@ export default {
         }
       }
 
-      // Host monitors opponent completion to flip state (idempotent)
+      if (!published) {
+        const remoteAnswers = (((data.answers || {})[myRole] || {})[round] || []);
+        if (remoteAnswers.length === 3) {
+          published = true;
+          setButtonsEnabled(false);
+          updateSubmitState();
+          showWaitingOverlay();
+        }
+      }
+
       if (myRole === "host" && data.state === "questions") {
         const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
         const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
@@ -474,13 +477,7 @@ export default {
       console.warn("[questions] snapshot error:", err);
     });
 
-    this.unmount = () => {
-      alive = false;
-      clearAdvanceTimer();
-      try { stopWatcher && stopWatcher(); } catch {}
-      pauseRoundTimer(timerContext);
-      try { removePopStateListener(); } catch {}
-    };
+    // cleanup handled via earlier unmount assignment
   },
 
   async unmount() { /* instance handles cleanup */ }
