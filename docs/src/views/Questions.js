@@ -36,38 +36,25 @@ function balanceQuestionText(input = "") {
   return `${firstLine}\n${secondLine}`;
 }
 
-function createPaletteApplier(hue, accentHue) {
+function createPaletteApplier(hue) {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
+    const inkLight = 14 + depth * 1.2;
+    const mutedLight = Math.max(inkLight + 14, 30);
+    const lineLight = Math.max(inkLight + 6, 24);
     document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
+    document.documentElement.style.setProperty("--ink-s", "60%");
     document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
     document.documentElement.style.setProperty(
       "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+      `hsla(${hue}, 24%, ${mutedLight.toFixed(1)}%, 0.78)`
     );
     document.documentElement.style.setProperty(
       "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
+      `hsla(${hue}, 28%, ${lineLight.toFixed(1)}%, 0.22)`
     );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
-    );
+    document.documentElement.style.setProperty("--accent-soft", "#d6e8ff");
+    document.documentElement.style.setProperty("--accent-strong", "#10366b");
   };
 }
 
@@ -120,8 +107,7 @@ export default {
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
     const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
+    const applyPalette = createPaletteApplier(hue);
     applyPalette(round || 1);
 
     container.innerHTML = "";
@@ -217,6 +203,8 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    let revealTimer = null;
+    let submitRevealed = false;
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -253,18 +241,59 @@ export default {
       }
     };
 
-    const animateSwap = (renderFn) => {
+    const clearRevealTimer = () => {
+      if (revealTimer) {
+        clearTimeout(revealTimer);
+        revealTimer = null;
+      }
+    };
+
+    const animateSwap = (renderFn, effect = "bump") => {
       clearSwapTimer();
-      content.classList.add("is-leaving");
+      const leavingClass = effect === "fade" ? "is-fading-out" : "is-leaving";
+      const enteringClass = effect === "fade" ? "is-fading-in" : "is-entering";
+      content.classList.remove("is-leaving", "is-entering", "is-fading-out", "is-fading-in");
+      content.classList.add(leavingClass);
+      const delay = effect === "fade" ? 150 : 140;
       swapTimer = setTimeout(() => {
         swapTimer = null;
         renderFn();
-        content.classList.remove("is-leaving");
-        content.classList.add("is-entering");
+        content.classList.remove(leavingClass);
+        content.classList.add(enteringClass);
         requestAnimationFrame(() => {
-          content.classList.remove("is-entering");
+          content.classList.remove(enteringClass);
         });
-      }, 140);
+      }, delay);
+    };
+
+    const resetFadeState = () => {
+      prompt.classList.remove("is-fading");
+      choiceButtons.forEach((btn) => btn.classList.remove("is-fading"));
+      content.classList.remove("is-fade-context");
+    };
+
+    const startSelectionFade = (selectedBtn) => {
+      content.classList.add("is-fade-context");
+      prompt.classList.add("is-fading");
+      choiceButtons.forEach((choiceBtn) => {
+        if (choiceBtn !== selectedBtn) {
+          choiceBtn.classList.add("is-fading");
+        }
+      });
+    };
+
+    const hideSubmit = () => {
+      clearRevealTimer();
+      submitRevealed = false;
+      content.classList.remove("is-collapsed");
+      submitBtn.classList.remove("is-visible");
+      submitBtn.classList.remove("throb");
+    };
+
+    const revealSubmit = () => {
+      submitRevealed = true;
+      content.classList.add("is-collapsed");
+      submitBtn.classList.add("is-visible");
     };
 
     const renderSteps = () => {
@@ -294,7 +323,7 @@ export default {
       const ready = allAnswered && !published && !submitting;
       submitBtn.disabled = !ready;
       submitBtn.classList.toggle("round-panel__submit--ready", ready);
-      submitBtn.classList.toggle("throb", ready);
+      submitBtn.classList.toggle("throb", ready && submitRevealed);
       if (!ready) {
         submitBtn.classList.remove("round-panel__submit--ready");
         submitBtn.classList.remove("throb");
@@ -302,31 +331,26 @@ export default {
       if (!published) {
         submitBtn.textContent = "SUBMIT";
       }
+      return { ready, answeredCount };
     };
 
-    const highlightSubmitIfReady = () => {
-      const answeredCount = chosen.filter((value) => value).length;
-      if (triplet.length > 0 && answeredCount >= triplet.length && !published && !submitting) {
-        submitBtn.classList.add("round-panel__submit--ready");
-        submitBtn.classList.add("throb");
-      }
-    };
-
-    const showQuestion = (targetIdx, { animate = true } = {}) => {
+    const showQuestion = (targetIdx, { animate = true, effect = "bump" } = {}) => {
       if (triplet.length === 0) return;
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
       const render = () => {
+        resetFadeState();
+        if (!published && !submitting) hideSubmit();
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
         choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
-        highlightSubmitIfReady();
+        updateSubmitState();
       };
-      if (animate) animateSwap(render);
+      if (animate) animateSwap(render, effect);
       else render();
       if (!published && !submitting) resumeRoundTimer(timerContext);
     };
@@ -348,17 +372,16 @@ export default {
         if (!alive || submitting || published) return;
         const next = findNextUnanswered(currentIndex);
         if (next !== null && next !== undefined) {
-          showQuestion(next, { animate: true });
-        } else if (triplet.length > 0) {
-          showQuestion(triplet.length - 1, { animate: true });
+          showQuestion(next, { animate: true, effect: "fade" });
         }
-        highlightSubmitIfReady();
-      }, 700);
+      }, 480);
     };
 
     const showWaitingPrompt = () => {
       setPrompt(waitingLabel, { status: true });
       setChoicesVisible(false);
+      resetFadeState();
+      hideSubmit();
       clearAdvanceTimer();
     };
 
@@ -391,6 +414,8 @@ export default {
       pauseRoundTimer(timerContext);
       setPrompt(text, { status: true });
       setChoicesVisible(false);
+      hideSubmit();
+      resetFadeState();
       renderSteps();
       updateSubmitState();
     };
@@ -524,10 +549,22 @@ export default {
         setTimeout(() => {
           btn.classList.remove("is-blinking");
         }, 900);
+        startSelectionFade(btn);
         renderChoices();
         renderSteps();
-        updateSubmitState();
-        scheduleAdvance(currentIndex);
+        const { ready } = updateSubmitState();
+        if (ready) {
+          clearAdvanceTimer();
+          clearRevealTimer();
+          revealTimer = setTimeout(() => {
+            revealTimer = null;
+            resetFadeState();
+            revealSubmit();
+            updateSubmitState();
+          }, 220);
+        } else {
+          scheduleAdvance(currentIndex);
+        }
       });
     });
 
@@ -536,7 +573,7 @@ export default {
         if (triplet.length === 0) return;
         if (published || submitting) return;
         clearAdvanceTimer();
-        showQuestion(i, { animate: true });
+        showQuestion(i, { animate: true, effect: "bump" });
         renderChoices();
         renderSteps();
         updateSubmitState();
@@ -576,6 +613,8 @@ export default {
         showWaitingPrompt();
         renderSteps();
         renderChoices();
+        hideSubmit();
+        resetFadeState();
         updateSubmitState();
         pauseRoundTimer(timerContext);
       } catch (err) {
@@ -647,6 +686,7 @@ export default {
       alive = false;
       clearAdvanceTimer();
       clearSwapTimer();
+      clearRevealTimer();
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);
