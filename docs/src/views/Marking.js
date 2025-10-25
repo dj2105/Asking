@@ -108,6 +108,7 @@ export default {
       steps.appendChild(btn);
       return btn;
     });
+    const marksPerRound = stepButtons.length;
 
     const content = el("div", { class: "round-panel__content" });
     const prompt = el("div", { class: "round-panel__question mono" }, "");
@@ -203,6 +204,20 @@ export default {
       verdictRow.classList.toggle("is-hidden", !visible);
     };
 
+    const setStepsVisible = (visible) => {
+      steps.classList.toggle("is-hidden", !visible);
+    };
+
+    const safeRoundValue = () => {
+      const numeric = Number(round);
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : 1;
+    };
+
+    const globalMarkNumber = (localIndex) => {
+      const perRound = marksPerRound || 3;
+      return (safeRoundValue() - 1) * perRound + localIndex + 1;
+    };
+
     let idx = 0;
     let marks = [null, null, null];
     let triplet = [];
@@ -248,9 +263,12 @@ export default {
 
     const renderSteps = () => {
       stepButtons.forEach((btn, i) => {
+        const globalNumber = globalMarkNumber(i);
+        btn.textContent = String(globalNumber);
+        btn.setAttribute("aria-label", `Mark ${globalNumber}`);
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", marks[i] !== null);
-        btn.disabled = triplet.length === 0;
+        btn.disabled = triplet.length === 0 || published || submitting;
       });
     };
 
@@ -304,7 +322,9 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
-        setPrompt(`${idx + 1}. ${questionText}`, { status: false });
+        const displayNumber = globalMarkNumber(idx);
+        setPrompt(`${displayNumber}. ${questionText}`, { status: false });
+        setStepsVisible(true);
         answerValue.textContent = answerText;
         renderSteps();
         reflectVerdicts();
@@ -362,8 +382,16 @@ export default {
       setPrompt(text, { status: true });
       setMarkingVisible(false);
       setVerdictsEnabled(false);
+      setStepsVisible(false);
       renderSteps();
       updateSubmitState();
+    };
+
+    const showWaitingState = () => {
+      setPrompt(waitingLabel, { status: true });
+      setMarkingVisible(false);
+      setVerdictsEnabled(false);
+      setStepsVisible(false);
     };
 
     setLoadingState("Preparing responses…");
@@ -390,7 +418,7 @@ export default {
       submitBtn.disabled = true;
       submitBtn.textContent = waitingLabel;
       setVerdictsEnabled(false);
-      showMark(marks.length - 1, { animate: false });
+      showWaitingState();
       clearRoundTimer(timerContext);
     } else {
       showMark(0, { animate: false });
@@ -398,7 +426,9 @@ export default {
     }
 
     renderSteps();
-    reflectVerdicts();
+    if (!published) {
+      reflectVerdicts();
+    }
     updateSubmitState();
 
     const showBackConfirm = () => {
@@ -502,9 +532,9 @@ export default {
         submitting = false;
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
-        const lastIdx = marks.length > 0 ? marks.length - 1 : 0;
-        showMark(lastIdx, { animate: false });
-        reflectVerdicts();
+        showWaitingState();
+        renderSteps();
+        updateSubmitState();
         clearRoundTimer(timerContext);
       } catch (err) {
         console.warn("[marking] submit failed:", err);
@@ -519,6 +549,7 @@ export default {
       if (published || submitting) return;
       marks[idx] = markValue(value);
       reflectVerdicts();
+      renderSteps();
       updateSubmitState();
       scheduleAdvance(idx);
     };
@@ -581,10 +612,11 @@ export default {
         published = true;
         submitting = false;
         reflectVerdicts();
+        renderSteps();
         updateSubmitState();
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
-        setVerdictsEnabled(false);
+        showWaitingState();
         clearRoundTimer(timerContext);
       }
 
