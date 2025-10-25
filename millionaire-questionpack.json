@@ -1,0 +1,380 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "roomCode": "SEA",
+    "generatedAt": "2025-01-12T12:00:00.000Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which British monarch's coronation was the first to be televised nationwide?",
+          "correct_answer": "Elizabeth II",
+          "distractors": {
+            "easy": "Victoria",
+            "medium": "George VI",
+            "hard": "Edward VII"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "pub",
+          "question": "Which gas do plants absorb during photosynthesis?",
+          "correct_answer": "Carbon dioxide",
+          "distractors": {
+            "easy": "Oxygen",
+            "medium": "Nitrogen",
+            "hard": "Hydrogen"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which river flows through the Egyptian capital of Cairo?",
+          "correct_answer": "Nile",
+          "distractors": {
+            "easy": "Amazon",
+            "medium": "Tigris",
+            "hard": "Mekong"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "entertainment",
+          "difficulty_tier": "pub",
+          "question": "Which film won the Academy Award for Best Picture in 1998?",
+          "correct_answer": "Titanic",
+          "distractors": {
+            "easy": "Armageddon",
+            "medium": "Saving Private Ryan",
+            "hard": "Good Will Hunting"
+          }
+        },
+        {
+          "subject": "sports",
+          "difficulty_tier": "pub",
+          "question": "How many players start on the field for a rugby union team?",
+          "correct_answer": "15",
+          "distractors": {
+            "easy": "11",
+            "medium": "13",
+            "hard": "17"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Who wrote the dystopian novel 'Fahrenheit 451'?",
+          "correct_answer": "Ray Bradbury",
+          "distractors": {
+            "easy": "George Orwell",
+            "medium": "Aldous Huxley",
+            "hard": "Philip K. Dick"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which artist released the album '21' in 2011?",
+          "correct_answer": "Adele",
+          "distractors": {
+            "easy": "Beyoncé",
+            "medium": "Florence Welch",
+            "hard": "Kelly Clarkson"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "pub",
+          "question": "Which company created the first commercially successful graphical web browser Mosaic?",
+          "correct_answer": "NCSA",
+          "distractors": {
+            "easy": "Microsoft",
+            "medium": "Netscape",
+            "hard": "Sun Microsystems"
+          }
+        },
+        {
+          "subject": "culture",
+          "difficulty_tier": "pub",
+          "question": "In Japanese cuisine, what is miso primarily made from?",
+          "correct_answer": "Fermented soybeans",
+          "distractors": {
+            "easy": "Fermented rice",
+            "medium": "Fermented barley",
+            "hard": "Fermented wheat"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which European city is nicknamed the City of Bridges with over 400 spans?",
+          "correct_answer": "Venice",
+          "distractors": {
+            "easy": "Amsterdam",
+            "medium": "Prague",
+            "hard": "Hamburg"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Who was the first President of the United States to live in the White House?",
+          "correct_answer": "John Adams",
+          "distractors": {
+            "easy": "George Washington",
+            "medium": "Thomas Jefferson",
+            "hard": "James Madison"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "pub",
+          "question": "Which element has the chemical symbol 'Na'?",
+          "correct_answer": "Sodium",
+          "distractors": {
+            "easy": "Nitrogen",
+            "medium": "Neon",
+            "hard": "Strontium"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "literature",
+          "difficulty_tier": "enthusiast",
+          "question": "Which poet wrote the epic 'Paradise Lost'?",
+          "correct_answer": "John Milton",
+          "distractors": {
+            "easy": "Geoffrey Chaucer",
+            "medium": "William Blake",
+            "hard": "John Donne"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "enthusiast",
+          "question": "Which scientist proposed the three laws of planetary motion?",
+          "correct_answer": "Johannes Kepler",
+          "distractors": {
+            "easy": "Galileo Galilei",
+            "medium": "Isaac Newton",
+            "hard": "Tycho Brahe"
+          }
+        },
+        {
+          "subject": "world",
+          "difficulty_tier": "enthusiast",
+          "question": "Which country hosts the annual La Tomatina tomato festival?",
+          "correct_answer": "Spain",
+          "distractors": {
+            "easy": "Italy",
+            "medium": "Portugal",
+            "hard": "Argentina"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "music",
+          "difficulty_tier": "enthusiast",
+          "question": "Which composer wrote the orchestral suite 'The Planets'?",
+          "correct_answer": "Gustav Holst",
+          "distractors": {
+            "easy": "Edward Elgar",
+            "medium": "Ralph Vaughan Williams",
+            "hard": "Benjamin Britten"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "enthusiast",
+          "question": "What was the code name for the first iPhone project inside Apple?",
+          "correct_answer": "Project Purple",
+          "distractors": {
+            "easy": "Project Titan",
+            "medium": "Project Lisa",
+            "hard": "Project Dolphin"
+          }
+        },
+        {
+          "subject": "culture",
+          "difficulty_tier": "enthusiast",
+          "question": "Which author created the detective Hercule Poirot?",
+          "correct_answer": "Agatha Christie",
+          "distractors": {
+            "easy": "Dorothy L. Sayers",
+            "medium": "Ngaio Marsh",
+            "hard": "G. K. Chesterton"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "history",
+          "difficulty_tier": "specialist",
+          "question": "Which ancient city was buried by the eruption of Mount Vesuvius in 79 CE?",
+          "correct_answer": "Pompeii",
+          "distractors": {
+            "easy": "Athens",
+            "medium": "Herculaneum",
+            "hard": "Ostia"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "specialist",
+          "question": "Which physicist developed the uncertainty principle?",
+          "correct_answer": "Werner Heisenberg",
+          "distractors": {
+            "easy": "Albert Einstein",
+            "medium": "Niels Bohr",
+            "hard": "Erwin Schrödinger"
+          }
+        },
+        {
+          "subject": "world",
+          "difficulty_tier": "specialist",
+          "question": "Which African nation was formerly known as Abyssinia?",
+          "correct_answer": "Ethiopia",
+          "distractors": {
+            "easy": "Eritrea",
+            "medium": "Somalia",
+            "hard": "Djibouti"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "literature",
+          "difficulty_tier": "specialist",
+          "question": "Which playwright coined the phrase 'All the world's a stage'?",
+          "correct_answer": "William Shakespeare",
+          "distractors": {
+            "easy": "Christopher Marlowe",
+            "medium": "Ben Jonson",
+            "hard": "Thomas Middleton"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "specialist",
+          "question": "Which organelle is known as the powerhouse of the cell?",
+          "correct_answer": "Mitochondrion",
+          "distractors": {
+            "easy": "Nucleus",
+            "medium": "Golgi apparatus",
+            "hard": "Endoplasmic reticulum"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "specialist",
+          "question": "Who led the Haitian Revolution and established the first Black republic?",
+          "correct_answer": "Toussaint Louverture",
+          "distractors": {
+            "easy": "Jean-Jacques Dessalines",
+            "medium": "Henri Christophe",
+            "hard": "Boukman"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "expert",
+          "question": "Which scientist isolated penicillin in 1928?",
+          "correct_answer": "Alexander Fleming",
+          "distractors": {
+            "easy": "Louis Pasteur",
+            "medium": "Howard Florey",
+            "hard": "Ernst Chain"
+          }
+        },
+        {
+          "subject": "world",
+          "difficulty_tier": "expert",
+          "question": "Which is the world's highest navigable lake by elevation?",
+          "correct_answer": "Lake Titicaca",
+          "distractors": {
+            "easy": "Lake Baikal",
+            "medium": "Lake Tahoe",
+            "hard": "Lake Tana"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "expert",
+          "question": "Which treaty ended World War I between Germany and the Allied Powers?",
+          "correct_answer": "Treaty of Versailles",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Treaty of Brest-Litovsk",
+            "hard": "Treaty of Saint-Germain"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "culture",
+          "difficulty_tier": "expert",
+          "question": "Which architect designed the Guggenheim Museum in Bilbao?",
+          "correct_answer": "Frank Gehry",
+          "distractors": {
+            "easy": "I. M. Pei",
+            "medium": "Santiago Calatrava",
+            "hard": "Zaha Hadid"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "expert",
+          "question": "Which particle carries the strong nuclear force between quarks?",
+          "correct_answer": "Gluon",
+          "distractors": {
+            "easy": "Photon",
+            "medium": "W boson",
+            "hard": "Higgs boson"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "expert",
+          "question": "Which composer premiered the ballet 'The Rite of Spring' in 1913?",
+          "correct_answer": "Igor Stravinsky",
+          "distractors": {
+            "easy": "Sergei Prokofiev",
+            "medium": "Maurice Ravel",
+            "hard": "Erik Satie"
+          }
+        }
+      ]
+    }
+  ],
+  "integrity": {
+    "checksum": "cf30fc972fe8dcae520127c1e55510b3c5a37b84e9efe9d8322c27494aa1de87",
+    "verified": true
+  }
+}
