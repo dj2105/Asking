@@ -96,6 +96,7 @@ export default {
       steps.appendChild(btn);
       return btn;
     });
+    const questionsPerRound = stepButtons.length;
 
     const content = el("div", { class: "round-panel__content" });
     const prompt = el("div", { class: "round-panel__question mono" }, "");
@@ -161,6 +162,20 @@ export default {
       choicesWrap.classList.toggle("is-hidden", !visible);
     };
 
+    const setStepsVisible = (visible) => {
+      steps.classList.toggle("is-hidden", !visible);
+    };
+
+    const safeRoundValue = () => {
+      const numeric = Number(round);
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : 1;
+    };
+
+    const globalQuestionNumber = (localIndex) => {
+      const perRound = questionsPerRound || 3;
+      return (safeRoundValue() - 1) * perRound + localIndex + 1;
+    };
+
     let idx = 0;
     const chosen = ["", "", ""];
     let triplet = [];
@@ -205,9 +220,12 @@ export default {
 
     const renderSteps = () => {
       stepButtons.forEach((btn, i) => {
+        const globalNumber = globalQuestionNumber(i);
+        btn.textContent = String(globalNumber);
+        btn.setAttribute("aria-label", `Question ${globalNumber}`);
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
-        btn.disabled = triplet.length === 0;
+        btn.disabled = triplet.length === 0 || published || submitting;
       });
     };
 
@@ -254,8 +272,10 @@ export default {
       idx = targetIdx;
       const render = () => {
         const current = triplet[idx] || {};
-        const label = current.question ? `${idx + 1}. ${current.question}` : "";
+        const displayNumber = globalQuestionNumber(idx);
+        const label = current.question ? `${displayNumber}. ${current.question}` : "";
         setPrompt(label, { status: false });
+        setStepsVisible(true);
         setChoicesVisible(true);
         renderChoices();
         renderSteps();
@@ -316,8 +336,15 @@ export default {
       pauseRoundTimer(timerContext);
       setPrompt(text, { status: true });
       setChoicesVisible(false);
+      setStepsVisible(false);
       renderSteps();
       updateSubmitState();
+    };
+
+    const showWaitingState = () => {
+      setPrompt(waitingLabel, { status: true });
+      setChoicesVisible(false);
+      setStepsVisible(false);
     };
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
@@ -375,12 +402,9 @@ export default {
 
     if (submittedAlready) {
       published = true;
-      const lastIdx = triplet.length > 0 ? triplet.length - 1 : 0;
-      showQuestion(lastIdx, { animate: false });
       submitBtn.disabled = true;
       submitBtn.textContent = waitingLabel;
-      renderChoices();
-      renderSteps();
+      showWaitingState();
       pauseRoundTimer(timerContext);
     } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
       showQuestion(0, { animate: false });
@@ -389,8 +413,12 @@ export default {
       setLoadingState("Preparing questions…");
     }
 
-    renderSteps();
-    renderChoices();
+    if (!published) {
+      renderSteps();
+      renderChoices();
+    } else {
+      renderSteps();
+    }
     updateSubmitState();
 
     const showBackConfirm = () => {
@@ -442,6 +470,10 @@ export default {
         const currentIndex = idx;
         if (!text) return;
         chosen[currentIndex] = text;
+        choiceButtons.forEach((choiceBtn) => {
+          const isSame = choiceBtn === btn;
+          choiceBtn.classList.toggle("is-selected", isSame);
+        });
         renderChoices();
         renderSteps();
         updateSubmitState();
@@ -487,11 +519,9 @@ export default {
         submitting = false;
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
-        const lastIdx = triplet.length > 0 ? triplet.length - 1 : 0;
-        showQuestion(lastIdx, { animate: false });
-        renderChoices();
-        renderSteps();
         clearAdvanceTimer();
+        showWaitingState();
+        updateSubmitState();
         pauseRoundTimer(timerContext);
       } catch (err) {
         console.warn("[questions] publish failed:", err);
@@ -531,6 +561,8 @@ export default {
         if (myDone && !oppDone) {
           submitBtn.disabled = true;
           submitBtn.textContent = waitingLabel;
+          showWaitingState();
+          updateSubmitState();
         }
       }
 
