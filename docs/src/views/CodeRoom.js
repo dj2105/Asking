@@ -124,8 +124,6 @@ export default {
         location.hash = `#/marking?code=${code}&round=${round || 1}`;
       } else if (lower === "award") {
         location.hash = `#/award?code=${code}&round=${round || 1}`;
-      } else if (lower === "maths") {
-        location.hash = `#/maths?code=${code}`;
       } else if (lower === "final") {
         location.hash = `#/final?code=${code}`;
       }

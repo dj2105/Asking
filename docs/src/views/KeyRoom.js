@@ -476,8 +476,6 @@ function computeHostHash(stage, code, round) {
       return `#/marking?code=${code}&round=${round}`;
     case "award":
       return `#/award?code=${code}&round=${round}`;
-    case "maths":
-      return `#/maths?code=${code}`;
     case "final":
       return `#/final?code=${code}`;
     default:
@@ -1003,7 +1001,6 @@ export default {
       { value: "questions", label: "Questions" },
       { value: "marking", label: "Marking" },
       { value: "award", label: "Award" },
-      { value: "maths", label: "Maths" },
       { value: "final", label: "Final" },
     ].forEach(({ value, label }) => {
       jumpStageSelect.appendChild(el("option", { value }, label));

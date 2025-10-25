@@ -196,7 +196,7 @@ export default {
           return;
         }
 
-        if (state === "countdown" || state === "questions" || state === "marking" || state === "award" || state === "maths" || state === "final") {
+        if (state === "countdown" || state === "questions" || state === "marking" || state === "award" || state === "final") {
           const target = `#/watcher?code=${code}`;
           if (location.hash !== target) {
             location.hash = target;

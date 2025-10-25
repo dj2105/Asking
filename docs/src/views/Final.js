@@ -1,9 +1,8 @@
 // /src/views/Final.js
 //
-// Final summary — aggregates per-round scores and maths outcome.
+// Final summary — aggregates per-round question scores.
 // • Shows round-by-round question totals.
-// • Displays maths answers, deltas, and awarded points.
-// • Highlights the overall winner (question totals + maths points).
+// • Highlights the overall winner from question points.
 // • Offers a button to return to the lobby.
 
 import { ensureAuth, db } from "../lib/firebase.js";
@@ -35,13 +34,7 @@ function formatPoints(value) {
   return String(num);
 }
 
-function formatDelta(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "—";
-  return `${num}`;
-}
-
-function computeTotals(scores = {}, mathsAnswers = {}) {
+function computeTotals(scores = {}) {
   const hostRounds = scores.host || {};
   const guestRounds = scores.guest || {};
   let hostQuestions = 0;
@@ -50,15 +43,11 @@ function computeTotals(scores = {}, mathsAnswers = {}) {
     hostQuestions += Number(hostRounds[r] || 0);
     guestQuestions += Number(guestRounds[r] || 0);
   }
-  const hostMaths = Number((mathsAnswers.host || {}).points || 0);
-  const guestMaths = Number((mathsAnswers.guest || {}).points || 0);
   return {
     hostQuestions,
     guestQuestions,
-    hostMaths,
-    guestMaths,
-    hostTotal: hostQuestions + hostMaths,
-    guestTotal: guestQuestions + guestMaths,
+    hostTotal: hostQuestions,
+    guestTotal: guestQuestions,
   };
 }
 
@@ -82,40 +71,6 @@ function renderRoundTable(table, scores) {
   }
 }
 
-function renderMaths(mathSection, maths = {}, mathsAnswers = {}) {
-  const question = maths.question || "Jemima’s final question";
-  const correct = Number.isFinite(Number(maths.answer)) ? Number(maths.answer) : null;
-  const host = mathsAnswers.host || {};
-  const guest = mathsAnswers.guest || {};
-  mathSection.innerHTML = "";
-  mathSection.appendChild(el("div", { class: "mono final-maths__question" }, question));
-  if (Number.isFinite(correct)) {
-    mathSection.appendChild(el("div", { class: "mono final-maths__answer" }, `Correct answer: ${correct}`));
-  }
-  const table = el("table", { class: "final-maths__table" });
-  table.appendChild(el("thead", {}, el("tr", {}, [
-    el("th", { class: "mono" }, "Player"),
-    el("th", { class: "mono" }, "Answer"),
-    el("th", { class: "mono" }, "Δ"),
-    el("th", { class: "mono" }, "Points"),
-  ])));
-  const tbody = el("tbody");
-  tbody.appendChild(el("tr", {}, [
-    el("td", { class: "mono" }, "Daniel"),
-    el("td", { class: "mono" }, formatPoints(host.value)),
-    el("td", { class: "mono" }, formatDelta(host.delta)),
-    el("td", { class: "mono" }, formatPoints(host.points)),
-  ]));
-  tbody.appendChild(el("tr", {}, [
-    el("td", { class: "mono" }, "Jaime"),
-    el("td", { class: "mono" }, formatPoints(guest.value)),
-    el("td", { class: "mono" }, formatDelta(guest.delta)),
-    el("td", { class: "mono" }, formatPoints(guest.points)),
-  ]));
-  table.appendChild(tbody);
-  mathSection.appendChild(table);
-}
-
 export default {
   async mount(container) {
     await ensureAuth();
@@ -126,7 +81,7 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-final" });
     const card = el("div", { class: "card final-card" });
-    const heading = el("h1", { class: "title" }, "Jemima’s Maths — Final Results");
+    const heading = el("h1", { class: "title" }, "Final Results");
     const winnerBanner = el("div", { class: "mono final-winner" }, "");
 
     const totalsSummary = el("div", { class: "final-summary" });
@@ -139,11 +94,9 @@ export default {
     const questionsBody = el("tbody");
     questionsTable.appendChild(questionsBody);
 
-    const mathsSection = el("div", { class: "final-maths" });
-
     const totalsList = el("ul", { class: "final-totals mono" }, [
-      el("li", {}, "Daniel — Questions: 0, Maths: 0, Total: 0"),
-      el("li", {}, "Jaime — Questions: 0, Maths: 0, Total: 0"),
+      el("li", {}, "Daniel — Questions: 0"),
+      el("li", {}, "Jaime — Questions: 0"),
     ]);
 
     const backBtn = el("button", {
@@ -155,8 +108,6 @@ export default {
     card.appendChild(winnerBanner);
     card.appendChild(el("h2", { class: "mono section-heading" }, "Question rounds"));
     card.appendChild(questionsTable);
-    card.appendChild(el("h2", { class: "mono section-heading" }, "Maths challenge"));
-    card.appendChild(mathsSection);
     card.appendChild(el("h2", { class: "mono section-heading" }, "Totals"));
     card.appendChild(totalsSummary);
     totalsSummary.appendChild(totalsList);
@@ -167,15 +118,12 @@ export default {
 
     const updateView = (roomData = {}) => {
       const scores = roomData.scores || {};
-      const maths = roomData.maths || {};
-      const mathsAnswers = roomData.mathsAnswers || {};
-      const totals = computeTotals(scores, mathsAnswers);
+      const totals = computeTotals(scores);
       winnerBanner.textContent = winnerLabel(totals);
       renderRoundTable(questionsBody, scores);
-      renderMaths(mathsSection, maths, mathsAnswers);
       totalsList.innerHTML = "";
-      totalsList.appendChild(el("li", {}, `Daniel — Questions: ${totals.hostQuestions}, Maths: ${totals.hostMaths}, Total: ${totals.hostTotal}`));
-      totalsList.appendChild(el("li", {}, `Jaime — Questions: ${totals.guestQuestions}, Maths: ${totals.guestMaths}, Total: ${totals.guestTotal}`));
+      totalsList.appendChild(el("li", {}, `Daniel — Questions: ${totals.hostQuestions}`));
+      totalsList.appendChild(el("li", {}, `Jaime — Questions: ${totals.guestQuestions}`));
     };
 
     this._stop = onSnapshot(roomRef(code), (snap) => {

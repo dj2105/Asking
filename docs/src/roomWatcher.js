@@ -2,7 +2,7 @@
 // Central watcher that maps room.state -> route safely.
 // - Debounces transient/undefined states (no spurious hops to Lobby)
 // - Only navigates when target route actually changes
-// - Understands all phases: seeding, countdown, questions, marking, award, maths, final
+// - Understands all phases: seeding, countdown, questions, marking, award, final
 // - Works as a "view" at #/watcher?code=XYZ OR as a helper you can call from other views
 
 import { ensureAuth, db } from "./lib/firebase.js";
@@ -54,8 +54,6 @@ function targetForState(state, code, round) {
       return `#/award?code=${code}&round=${r}`;
     case "keyroom":
       return null; // stay put; guests shouldn’t be routed into the key room
-    case "maths":
-      return `#/maths?code=${code}`;
     case "final":
       return `#/final?code=${code}`;
     case "lobby":
