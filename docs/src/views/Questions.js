@@ -83,17 +83,7 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
-    const backBtn = el(
-      "button",
-      {
-        class: "btn subtle phase-header__back",
-        type: "button",
-      },
-      "BACK"
-    );
-    backBtn.style.display = "none";
-    headerRow.appendChild(backBtn);
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
     const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
     headerRow.appendChild(heading);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
@@ -112,6 +102,13 @@ export default {
     const chosen = ["", "", ""];
     let published = false;
     let submitting = false;
+    const historySupported =
+      typeof window !== "undefined" &&
+      typeof window.addEventListener === "function" &&
+      typeof history?.replaceState === "function" &&
+      typeof history?.pushState === "function";
+    let historyReady = false;
+    let historyListener = null;
 
     let waitMessageDefault = "Waiting…";
     const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
@@ -260,24 +257,43 @@ export default {
       return { question, options: [optA, optB], correct };
     });
 
-    const updateBackVisibility = () => {
-      const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
+    const clampIdx = (value) => {
+      if (!Number.isFinite(value)) return 0;
+      const max = Math.max(0, triplet.length - 1);
+      if (value < 0) return 0;
+      if (value > max) return max;
+      return value;
+    };
+
+    const historyStateFor = (questionIdx) => ({
+      view: "questions",
+      code,
+      round,
+      idx: clampIdx(questionIdx),
+    });
+
+    const syncHistory = (questionIdx, { replace = false } = {}) => {
+      if (!historySupported || published || submitting || triplet.length === 0) return;
+      try {
+        const state = historyStateFor(questionIdx);
+        if (replace || !historyReady) {
+          history.replaceState(state, "", location.href);
+          historyReady = true;
+        } else {
+          history.pushState(state, "", location.href);
+          historyReady = true;
+        }
+      } catch (err) {
+        console.warn("[questions] history sync failed:", err);
       }
     };
 
     const timerContext = { code, role: myRole, round };
 
-    const showQuestion = (targetIdx) => {
+    const renderQuestion = (targetIdx, { fromHistory = false, replaceHistory = false } = {}) => {
       if (triplet.length === 0) return;
-      if (targetIdx < 0) targetIdx = 0;
-      if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
-      idx = targetIdx;
+      const clamped = clampIdx(Number(targetIdx));
+      idx = clamped;
       const cur = triplet[idx];
       heading.textContent = `QUESTION ${Math.min(idx + 1, 3)}/3`;
       qText.textContent = cur?.question || "";
@@ -285,8 +301,10 @@ export default {
       btn2.textContent = cur?.options?.[1] || "";
       btnWrap.style.display = "flex";
       waitMsg.style.display = "none";
-      setButtonsEnabled(true);
-      updateBackVisibility();
+      setButtonsEnabled(!published && !submitting);
+      if (!fromHistory) {
+        syncHistory(idx, { replace: replaceHistory });
+      }
       resumeRoundTimer(timerContext);
     };
 
@@ -296,8 +314,6 @@ export default {
       waitMsg.style.display = "none";
       showWaitingOverlay();
       publishAnswers(false);
-      backBtn.style.display = "none";
-      backBtn.disabled = true;
     };
 
     const showWaitingState = (text) => {
@@ -330,12 +346,16 @@ export default {
         submitting = false;
         pauseRoundTimer(timerContext);
         showWaitingOverlay("Waiting for opponent");
+        if (historyListener) {
+          try { window.removeEventListener("popstate", historyListener); } catch {}
+          historyListener = null;
+        }
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
         hideOverlay();
         showWaitingState("Retrying…");
-        setButtonsEnabled(true);
+        setButtonsEnabled(!published);
       }
     }
 
@@ -346,16 +366,26 @@ export default {
       if (currentIndex >= triplet.length - 1) {
         finishRound();
       } else {
-        showQuestion(currentIndex + 1);
+        renderQuestion(currentIndex + 1);
       }
     }
 
     btn1.addEventListener("click", () => onPick(btn1.textContent));
     btn2.addEventListener("click", () => onPick(btn2.textContent));
-    backBtn.addEventListener("click", () => {
-      if (idx <= 0 || submitting || published) return;
-      showQuestion(idx - 1);
-    });
+
+    if (historySupported) {
+      historyListener = (event) => {
+        const state = event.state || {};
+        if (state.view !== "questions" || state.code !== code || state.round !== round) return;
+        if (published || submitting) {
+          try { history.replaceState(historyStateFor(idx), "", location.href); } catch {}
+          return;
+        }
+        const target = clampIdx(Number(state.idx));
+        renderQuestion(target, { fromHistory: true });
+      };
+      window.addEventListener("popstate", historyListener);
+    }
 
     const tripletReady = triplet.every((entry) =>
       entry.question && entry.options && entry.options.length === 2
@@ -373,8 +403,12 @@ export default {
       waitMsg.style.display = "none";
       pauseRoundTimer(timerContext);
       showWaitingOverlay();
+      if (historyListener) {
+        try { window.removeEventListener("popstate", historyListener); } catch {}
+        historyListener = null;
+      }
     } else {
-      showQuestion(0);
+      renderQuestion(0, { replaceHistory: true });
     }
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
@@ -436,6 +470,10 @@ export default {
     this.unmount = () => {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
+      if (historyListener) {
+        try { window.removeEventListener("popstate", historyListener); } catch {}
+        historyListener = null;
+      }
       pauseRoundTimer(timerContext);
     };
   },
