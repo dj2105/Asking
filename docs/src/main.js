@@ -159,6 +159,50 @@ const VIEW_MAP = {
   rejoin:    () => import("./views/Rejoin.js"),
 };
 
+const TOTAL_ROUNDS = 5;
+const ROUND_PHASE_SEQUENCE = ["countdown", "questions", "marking", "award"];
+const POST_GAME_SEQUENCE = ["maths", "final"];
+const STAGE_MAX_DARKNESS = 80;
+const STAGE_POINT_TOTAL = (TOTAL_ROUNDS * ROUND_PHASE_SEQUENCE.length) + POST_GAME_SEQUENCE.length;
+const STAGE_INCREMENT = STAGE_POINT_TOTAL > 1
+  ? STAGE_MAX_DARKNESS / (STAGE_POINT_TOTAL - 1)
+  : STAGE_MAX_DARKNESS;
+
+function clampRound(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 1;
+  if (n > TOTAL_ROUNDS) return TOTAL_ROUNDS;
+  return Math.floor(n);
+}
+
+function resolveStageIndex(route, qs) {
+  const key = (route || "").toLowerCase();
+  const round = clampRound(qs?.get?.("round"));
+  const perRoundIndex = ROUND_PHASE_SEQUENCE.indexOf(key);
+  if (perRoundIndex >= 0) {
+    return (round - 1) * ROUND_PHASE_SEQUENCE.length + perRoundIndex;
+  }
+
+  const postIndex = POST_GAME_SEQUENCE.indexOf(key);
+  if (postIndex >= 0) {
+    return (TOTAL_ROUNDS * ROUND_PHASE_SEQUENCE.length) + postIndex;
+  }
+
+  return 0;
+}
+
+function applyStageDarkness(route, qs) {
+  try {
+    const stageIndex = resolveStageIndex(route, qs);
+    const darkness = Math.max(0, Math.min(STAGE_MAX_DARKNESS, stageIndex * STAGE_INCREMENT));
+    if (document?.documentElement?.style) {
+      document.documentElement.style.setProperty("--stage-darkness", `${darkness}%`);
+    }
+  } catch (err) {
+    console.warn("[router] failed to set stage darkness:", err);
+  }
+}
+
 function parseHash() {
   const raw = location.hash || "#/lobby";
   const [path, q] = raw.split("?");
@@ -204,6 +248,8 @@ async function mountRoute() {
     if (!view || typeof view.mount !== "function") {
       throw new Error(`[router] ${route}: missing mount() export`);
     }
+
+    applyStageDarkness(actualRoute, qs);
 
     await view.mount(app, Object.fromEntries(qs.entries()));
     current.mod = view;

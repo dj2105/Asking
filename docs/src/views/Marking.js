@@ -28,6 +28,7 @@ import {
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
+const QUESTIONS_PER_ROUND = 3;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -246,11 +247,23 @@ export default {
       }, 140);
     };
 
+    const safeRound = () => {
+      const r = Number(round);
+      return Number.isFinite(r) && r > 0 ? r : 1;
+    };
+
+    const questionNumberAt = (index) => {
+      return (safeRound() - 1) * QUESTIONS_PER_ROUND + index + 1;
+    };
+
     const renderSteps = () => {
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", marks[i] !== null);
         btn.disabled = triplet.length === 0;
+        const labelNumber = questionNumberAt(i);
+        btn.textContent = String(labelNumber);
+        btn.setAttribute("aria-label", `Mark question ${labelNumber}`);
       });
     };
 
@@ -304,7 +317,9 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
-        setPrompt(`${idx + 1}. ${questionText}`, { status: false });
+        const labelNumber = questionNumberAt(idx);
+        setPrompt(`${labelNumber}. ${questionText}`, { status: false });
+        steps.classList.remove("is-hidden");
         answerValue.textContent = answerText;
         renderSteps();
         reflectVerdicts();
@@ -384,13 +399,23 @@ export default {
 
     answerLabel.textContent = `${oppName.toUpperCase()}’S ANSWER`;
 
+    const showWaitingNotice = () => {
+      stepButtons.forEach((btn) => btn.classList.remove("is-active"));
+      steps.classList.add("is-hidden");
+      btnRight.classList.remove("is-selected");
+      btnWrong.classList.remove("is-selected");
+      btnUnknown.classList.remove("is-selected");
+      setMarkingVisible(false);
+      setPrompt(waitingLabel, { status: true });
+    };
+
     const alreadyAck = Boolean(((roomData0.markingAck || {})[myRole] || {})[round]);
     if (alreadyAck && marks.every((value) => value !== null)) {
       published = true;
       submitBtn.disabled = true;
       submitBtn.textContent = waitingLabel;
       setVerdictsEnabled(false);
-      showMark(marks.length - 1, { animate: false });
+      showWaitingNotice();
       clearRoundTimer(timerContext);
     } else {
       showMark(0, { animate: false });
@@ -502,9 +527,7 @@ export default {
         submitting = false;
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
-        const lastIdx = marks.length > 0 ? marks.length - 1 : 0;
-        showMark(lastIdx, { animate: false });
-        reflectVerdicts();
+        showWaitingNotice();
         clearRoundTimer(timerContext);
       } catch (err) {
         console.warn("[marking] submit failed:", err);
@@ -548,6 +571,7 @@ export default {
         if (nextRound !== round) {
           round = nextRound;
           timerContext.round = round;
+          renderSteps();
         }
       }
 
@@ -580,11 +604,13 @@ export default {
         marks = marks.map((_, i) => markValue(incoming[i]));
         published = true;
         submitting = false;
+        renderSteps();
         reflectVerdicts();
         updateSubmitState();
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
         setVerdictsEnabled(false);
+        showWaitingNotice();
         clearRoundTimer(timerContext);
       }
 

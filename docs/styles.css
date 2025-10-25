@@ -8,7 +8,8 @@
   --ink-s: 62%;
   --ink-l: 18%;
   --ink: hsl(var(--ink-h), var(--ink-s), var(--ink-l));
-  --paper: hsl(var(--ink-h), 32%, 96%);
+  --stage-darkness: 0%;
+  --paper: hsl(var(--ink-h), 32%, calc(96% - var(--stage-darkness)));
   --card: rgba(255, 255, 255, 0.94);
   --muted: hsla(var(--ink-h), 18%, 34%, 0.72);
   --soft-line: hsla(var(--ink-h), 35%, 30%, 0.18);
@@ -177,10 +178,14 @@ body {
   gap: 14px;
 }
 
+.round-panel__steps.is-hidden {
+  display: none;
+}
+
 .round-panel__step {
   flex: 1;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
   background: rgba(255, 255, 255, 0.92);
   color: var(--muted);
   font-weight: 700;
@@ -195,8 +200,8 @@ body {
 .round-panel__step.is-active {
   color: var(--ink);
   background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 10px 20px rgba(14, 26, 48, 0.12);
-  border-color: rgba(14, 26, 48, 0.12);
+  box-shadow: 0 0 0 1.5px rgba(14, 26, 48, 0.22), 0 10px 20px rgba(14, 26, 48, 0.12);
+  border-color: rgba(14, 26, 48, 0.22);
 }
 
 .round-panel__step.is-answered:not(.is-active) {
