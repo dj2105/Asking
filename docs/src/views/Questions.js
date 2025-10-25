@@ -102,6 +102,7 @@ export default {
     const chosen = ["", "", ""];
     let published = false;
     let submitting = false;
+    let advanceTimer = null;
 
     let waitMessageDefault = "Waiting…";
     const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
@@ -187,12 +188,13 @@ export default {
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
     function refreshChoiceStyles() {
       const current = chosen[idx] || "";
-      const btn1Selected = !btn1.disabled && current && btn1.textContent === current;
-      const btn2Selected = !btn2.disabled && current && btn2.textContent === current;
-      btn1.classList.toggle("selected", Boolean(btn1Selected));
-      btn2.classList.toggle("selected", Boolean(btn2Selected));
-      btn1.classList.toggle("throb", !btn1.disabled && !btn1Selected);
-      btn2.classList.toggle("throb", !btn2.disabled && !btn2Selected);
+      const matches = (btn) => Boolean(current) && (btn.textContent || "") === current;
+      const btn1Selected = matches(btn1);
+      const btn2Selected = matches(btn2);
+      btn1.classList.toggle("selected", btn1Selected);
+      btn2.classList.toggle("selected", btn2Selected);
+      btn1.classList.toggle("throb", !btn1Selected && !btn1.disabled);
+      btn2.classList.toggle("throb", !btn2Selected && !btn2.disabled);
     }
     function setButtonsEnabled(enabled) {
       btn1.disabled = !enabled;
@@ -280,7 +282,15 @@ export default {
       }
     }
 
+    const clearAdvanceTimer = () => {
+      if (advanceTimer) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+      }
+    };
+
     function showQuestion(targetIdx, options = {}) {
+      clearAdvanceTimer();
       if (triplet.length === 0) return;
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
@@ -371,12 +381,18 @@ export default {
     function onPick(text) {
       if (published || submitting) return;
       const currentIndex = idx;
+      clearAdvanceTimer();
       chosen[currentIndex] = text;
-      if (currentIndex >= triplet.length - 1) {
-        finishRound();
-      } else {
-        showQuestion(currentIndex + 1);
-      }
+      refreshChoiceStyles();
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        if (published || submitting || !alive) return;
+        if (currentIndex >= triplet.length - 1) {
+          finishRound();
+        } else {
+          showQuestion(currentIndex + 1);
+        }
+      }, 500);
     }
 
     btn1.addEventListener("click", () => onPick(btn1.textContent));
@@ -460,6 +476,7 @@ export default {
 
     this.unmount = () => {
       alive = false;
+      clearAdvanceTimer();
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       try { removePopStateListener(); } catch {}

@@ -209,6 +209,7 @@ export default {
     let marks = new Array(totalMarks).fill(null);
     let published = false;
     let submitting = false;
+    let advanceTimer = null;
 
     const disableFns = [];
     const reflectFns = [];
@@ -221,6 +222,13 @@ export default {
 
     const showWaitingOverlay = (note) => {
       showOverlay(`Waiting for ${oppName}`, note || "Waiting for opponent");
+    };
+
+    const clearAdvanceTimer = () => {
+      if (advanceTimer) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+      }
     };
 
     const setVerdictsEnabled = (enabled) => {
@@ -248,6 +256,7 @@ export default {
     reflectFns.push(() => { reflect(); });
 
     const showMark = (targetIdx) => {
+      clearAdvanceTimer();
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= totalMarks) targetIdx = totalMarks - 1;
       idx = targetIdx;
@@ -267,6 +276,7 @@ export default {
       if (published || submitting) return;
       submitting = true;
       const safeMarks = marks.map((value) => markValue(value));
+      clearAdvanceTimer();
       setVerdictsEnabled(false);
       pauseRoundTimer(timerContext);
       const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
@@ -300,13 +310,18 @@ export default {
 
     const handleVerdict = (value) => {
       if (published || submitting) return;
+      clearAdvanceTimer();
       marks[idx] = markValue(value);
       reflect();
-      if (idx >= totalMarks - 1) {
-        submitMarks();
-      } else {
-        showMark(idx + 1);
-      }
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        if (published || submitting) return;
+        if (idx >= totalMarks - 1) {
+          submitMarks();
+        } else {
+          showMark(idx + 1);
+        }
+      }, 500);
     };
 
     btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT));
@@ -431,6 +446,7 @@ export default {
     });
 
     this.unmount = () => {
+      clearAdvanceTimer();
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       pauseRoundTimer(timerContext);
     };
