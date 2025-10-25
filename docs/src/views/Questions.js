@@ -22,6 +22,70 @@ import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
+const clampRoundIndex = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 1;
+  return Math.min(5, Math.max(1, numeric));
+};
+
+const formatQuestionText = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const words = raw.split(/\s+/);
+  if (words.length <= 4) return raw;
+  let split = Math.ceil(words.length / 2);
+  let secondCount = words.length - split;
+  if (secondCount < 2) {
+    const adjust = 2 - secondCount;
+    split = Math.max(2, split - adjust);
+    secondCount = words.length - split;
+  }
+  const firstLine = words.slice(0, split).join(" ");
+  const secondLine = words.slice(split).join(" ");
+  if (!secondLine) return firstLine;
+  return `${firstLine}\n${secondLine}`;
+};
+
+const createRoundPaletteSetter = (hue) => {
+  return (roundValue = 1) => {
+    const safeRound = clampRoundIndex(roundValue);
+    const depth = safeRound - 1;
+    const inkS = 76;
+    const inkL = 16;
+    const paperS = 38;
+    const basePaperL = 93;
+    const paperL = Math.max(80, basePaperL - depth * 2);
+    const accentSoftL = Math.min(98, paperL + 6);
+    const accentStrongL = Math.max(18, 28 - depth);
+    const softLineL = Math.max(24, 32 - depth * 2);
+    document.documentElement.style.setProperty("--ink-h", String(hue));
+    document.documentElement.style.setProperty("--ink-s", `${inkS}%`);
+    document.documentElement.style.setProperty("--ink-l", `${inkL}%`);
+    document.documentElement.style.setProperty("--paper-s", `${paperS}%`);
+    document.documentElement.style.setProperty("--paper-l", `${paperL}%`);
+    document.documentElement.style.setProperty(
+      "--accent-soft",
+      `hsl(${hue}, 58%, ${accentSoftL}%)`
+    );
+    document.documentElement.style.setProperty(
+      "--accent-strong",
+      `hsl(${hue}, 64%, ${accentStrongL}%)`
+    );
+    document.documentElement.style.setProperty(
+      "--card",
+      `hsla(${hue}, ${paperS}%, ${Math.min(99, paperL + 4)}%, 0.96)`
+    );
+    document.documentElement.style.setProperty(
+      "--muted",
+      `hsla(${hue}, 18%, ${Math.max(28, 34 - depth)}%, 0.72)`
+    );
+    document.documentElement.style.setProperty(
+      "--soft-line",
+      `hsla(${hue}, 28%, ${softLineL}%, 0.22)`
+    );
+  };
+};
+
 const FALLBACK_ITEMS = [
   {
     question: "In the sentence “She sang happily”, which part of speech is “happily”?",
@@ -71,10 +135,8 @@ export default {
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
     const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--accent-soft", `hsl(${accentHue}, 68%, 88%)`);
-    document.documentElement.style.setProperty("--accent-strong", `hsl(${accentHue}, 52%, 26%)`);
+    const applyPalette = createRoundPaletteSetter(hue);
+    applyPalette(round && round > 0 ? round : 1);
 
     container.innerHTML = "";
 
@@ -153,7 +215,9 @@ export default {
     container.appendChild(root);
 
     const setPrompt = (text, { status = false } = {}) => {
-      prompt.textContent = text || "";
+      const safe = String(text || "");
+      const display = status ? safe : formatQuestionText(safe);
+      prompt.textContent = display;
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
@@ -168,9 +232,10 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    const choiceBlinkTimers = new Map();
 
     const effectiveRound = () => {
-      return Number.isFinite(round) && round > 0 ? round : 1;
+      return clampRoundIndex(round || 1);
     };
 
     const questionOffset = () => (effectiveRound() - 1) * 3;
@@ -202,6 +267,23 @@ export default {
         clearTimeout(swapTimer);
         swapTimer = null;
       }
+    };
+
+    const triggerChoiceBlink = (btn) => {
+      if (!btn) return;
+      const previous = choiceBlinkTimers.get(btn);
+      if (previous) {
+        clearTimeout(previous);
+        choiceBlinkTimers.delete(btn);
+      }
+      btn.classList.remove("is-blinking");
+      void btn.offsetWidth;
+      btn.classList.add("is-blinking");
+      const timeout = setTimeout(() => {
+        btn.classList.remove("is-blinking");
+        choiceBlinkTimers.delete(btn);
+      }, 620);
+      choiceBlinkTimers.set(btn, timeout);
     };
 
     const animateSwap = (renderFn) => {
@@ -270,8 +352,7 @@ export default {
       idx = targetIdx;
       const render = () => {
         const current = triplet[idx] || {};
-        const questionNumber = questionOffset() + idx + 1;
-        const label = current.question ? `${questionNumber}. ${current.question}` : "";
+        const label = current.question || "";
         setPrompt(label, { status: false });
         setChoicesVisible(true);
         renderChoices();
@@ -305,7 +386,7 @@ export default {
           showQuestion(triplet.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 500);
+      }, 700);
     };
 
     const showWaitingPrompt = () => {
@@ -322,6 +403,7 @@ export default {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
     }
+    applyPalette(effectiveRound());
 
     renderSteps();
 
@@ -470,6 +552,7 @@ export default {
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
         });
         renderChoices();
+        triggerChoiceBlink(btn);
         renderSteps();
         updateSubmitState();
         scheduleAdvance(currentIndex);
@@ -540,6 +623,7 @@ export default {
       if (nextRound !== round) {
         round = nextRound;
         timerContext.round = round;
+        applyPalette(effectiveRound());
         renderSteps();
       }
 
@@ -591,6 +675,8 @@ export default {
       alive = false;
       clearAdvanceTimer();
       clearSwapTimer();
+      choiceBlinkTimers.forEach((timeout) => clearTimeout(timeout));
+      choiceBlinkTimers.clear();
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);

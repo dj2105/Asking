@@ -29,6 +29,70 @@ import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
 
+const clampRoundIndex = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 1;
+  return Math.min(5, Math.max(1, numeric));
+};
+
+const formatQuestionText = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const words = raw.split(/\s+/);
+  if (words.length <= 4) return raw;
+  let split = Math.ceil(words.length / 2);
+  let secondCount = words.length - split;
+  if (secondCount < 2) {
+    const adjust = 2 - secondCount;
+    split = Math.max(2, split - adjust);
+    secondCount = words.length - split;
+  }
+  const firstLine = words.slice(0, split).join(" ");
+  const secondLine = words.slice(split).join(" ");
+  if (!secondLine) return firstLine;
+  return `${firstLine}\n${secondLine}`;
+};
+
+const createRoundPaletteSetter = (hue) => {
+  return (roundValue = 1) => {
+    const safeRound = clampRoundIndex(roundValue);
+    const depth = safeRound - 1;
+    const inkS = 76;
+    const inkL = 16;
+    const paperS = 38;
+    const basePaperL = 93;
+    const paperL = Math.max(80, basePaperL - depth * 2);
+    const accentSoftL = Math.min(98, paperL + 6);
+    const accentStrongL = Math.max(18, 28 - depth);
+    const softLineL = Math.max(24, 32 - depth * 2);
+    document.documentElement.style.setProperty("--ink-h", String(hue));
+    document.documentElement.style.setProperty("--ink-s", `${inkS}%`);
+    document.documentElement.style.setProperty("--ink-l", `${inkL}%`);
+    document.documentElement.style.setProperty("--paper-s", `${paperS}%`);
+    document.documentElement.style.setProperty("--paper-l", `${paperL}%`);
+    document.documentElement.style.setProperty(
+      "--accent-soft",
+      `hsl(${hue}, 58%, ${accentSoftL}%)`
+    );
+    document.documentElement.style.setProperty(
+      "--accent-strong",
+      `hsl(${hue}, 64%, ${accentStrongL}%)`
+    );
+    document.documentElement.style.setProperty(
+      "--card",
+      `hsla(${hue}, ${paperS}%, ${Math.min(99, paperL + 4)}%, 0.96)`
+    );
+    document.documentElement.style.setProperty(
+      "--muted",
+      `hsla(${hue}, 18%, ${Math.max(28, 34 - depth)}%, 0.72)`
+    );
+    document.documentElement.style.setProperty(
+      "--soft-line",
+      `hsla(${hue}, 28%, ${softLineL}%, 0.22)`
+    );
+  };
+};
+
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
   for (const k in attrs) {
@@ -83,10 +147,8 @@ export default {
     let round = parseInt(params.get("round") || "1", 10) || 1;
 
     const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--accent-soft", `hsl(${accentHue}, 68%, 88%)`);
-    document.documentElement.style.setProperty("--accent-strong", `hsl(${accentHue}, 52%, 26%)`);
+    const applyPalette = createRoundPaletteSetter(hue);
+    applyPalette(round && round > 0 ? round : 1);
 
     container.innerHTML = "";
 
@@ -194,7 +256,9 @@ export default {
     container.appendChild(root);
 
     const setPrompt = (text, { status = false } = {}) => {
-      prompt.textContent = text || "";
+      const safe = String(text || "");
+      const display = status ? safe : formatQuestionText(safe);
+      prompt.textContent = display;
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
@@ -211,6 +275,7 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    const verdictBlinkTimers = new Map();
 
     let alive = true;
     let stopRoomWatch = null;
@@ -219,7 +284,7 @@ export default {
     const lockedHash = location.hash;
 
     const effectiveRound = () => {
-      return Number.isFinite(round) && round > 0 ? round : 1;
+      return clampRoundIndex(round || 1);
     };
 
     const markOffset = () => (effectiveRound() - 1) * 3;
@@ -245,6 +310,23 @@ export default {
         clearTimeout(swapTimer);
         swapTimer = null;
       }
+    };
+
+    const triggerVerdictBlink = (btn) => {
+      if (!btn) return;
+      const existing = verdictBlinkTimers.get(btn);
+      if (existing) {
+        clearTimeout(existing);
+        verdictBlinkTimers.delete(btn);
+      }
+      btn.classList.remove("is-blinking");
+      void btn.offsetWidth;
+      btn.classList.add("is-blinking");
+      const timeout = setTimeout(() => {
+        btn.classList.remove("is-blinking");
+        verdictBlinkTimers.delete(btn);
+      }, 620);
+      verdictBlinkTimers.set(btn, timeout);
     };
 
     const animateSwap = (renderFn) => {
@@ -320,8 +402,7 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
-        const questionNumber = markOffset() + idx + 1;
-        setPrompt(`${questionNumber}. ${questionText}`, { status: false });
+        setPrompt(questionText, { status: false });
         answerValue.textContent = answerText;
         renderSteps();
         reflectVerdicts();
@@ -355,7 +436,7 @@ export default {
           showMark(marks.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 500);
+      }, 700);
     };
 
     const showWaitingPrompt = () => {
@@ -551,6 +632,7 @@ export default {
       if (published || submitting) return;
       marks[idx] = markValue(value);
       if (sourceBtn) {
+        triggerVerdictBlink(sourceBtn);
         [btnRight, btnUnknown, btnWrong].forEach((btn) => {
           btn.classList.toggle("is-selected", btn === sourceBtn);
         });
@@ -587,6 +669,7 @@ export default {
         if (nextRound !== round) {
           round = nextRound;
           timerContext.round = round;
+          applyPalette(effectiveRound());
           renderSteps();
         }
       }
@@ -643,6 +726,8 @@ export default {
       alive = false;
       clearAdvanceTimer();
       clearSwapTimer();
+      verdictBlinkTimers.forEach((timeout) => clearTimeout(timeout));
+      verdictBlinkTimers.clear();
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);
