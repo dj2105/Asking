@@ -91,6 +91,7 @@
 // - Hue is set by each view; router leaves theme to the views.
 
 import ScoreStrip from "./lib/ScoreStrip.js";
+import NavigationGuard from "./lib/NavigationGuard.js";
 
 if ("scrollRestoration" in history) {
   try { history.scrollRestoration = "manual"; } catch {}
@@ -138,7 +139,8 @@ const ScrollReset = (() => {
 const app = document.getElementById("app");
 
 // Keep track of mounted view instance so we can unmount cleanly.
-let current = { route: "", mod: null, unmount: null };
+let current = { route: "", mod: null, unmount: null, hash: "" };
+let suppressHashChange = false;
 
 // Routes that should NOT show the score strip
 const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
@@ -171,8 +173,20 @@ function clearNode(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
 }
 
-async function mountRoute() {
-  const { route, qs } = parseHash();
+function buildHashString(route, qs) {
+  const cleanRoute = route || "lobby";
+  const entries = [];
+  if (qs && typeof qs.forEach === "function") {
+    qs.forEach((value, key) => {
+      entries.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+    });
+  }
+  const query = entries.length ? `?${entries.join("&")}` : "";
+  return `#/${cleanRoute}${query}`;
+}
+
+async function mountRoute(target) {
+  const { route, qs } = target || parseHash();
   // Guard unknown routes → lobby
   const load = VIEW_MAP[route];
 
@@ -191,7 +205,7 @@ async function mountRoute() {
   if (typeof current?.unmount === "function") {
     try { await current.unmount(); } catch {}
   }
-  current = { route: actualRoute, mod: null, unmount: null };
+  current = { route: actualRoute, mod: null, unmount: null, hash: buildHashString(actualRoute, qs), qs: new URLSearchParams(qs) };
 
   // Fresh container for the new view
   clearNode(app);
@@ -208,6 +222,8 @@ async function mountRoute() {
     await view.mount(app, Object.fromEntries(qs.entries()));
     current.mod = view;
     current.unmount = (typeof view.unmount === "function") ? view.unmount.bind(view) : null;
+    current.hash = location.hash || buildHashString(actualRoute, qs);
+    current.qs = new URLSearchParams(qs);
 
     // Conditionally mount the score strip (not in lobby/keyroom/seeding/final)
     if (!STRIP_EXCLUDE.has(actualRoute)) {
@@ -239,7 +255,50 @@ async function mountRoute() {
   }
 }
 
+async function handleHashChange() {
+  if (suppressHashChange) {
+    suppressHashChange = false;
+    return;
+  }
+
+  const target = parseHash();
+  const guard = NavigationGuard.getGuard();
+  if (guard && typeof guard.shouldBlock === "function") {
+    try {
+      const desiredHash = buildHashString(target.route, target.qs);
+      const shouldBlock = guard.shouldBlock({ route: target.route, qs: target.qs, hash: desiredHash });
+      if (shouldBlock) {
+        const previousHash = current.hash || buildHashString(current.route || "lobby", current.qs || new URLSearchParams());
+        if (previousHash && previousHash !== location.hash) {
+          suppressHashChange = true;
+          location.hash = previousHash;
+          setTimeout(() => { suppressHashChange = false; }, 0);
+        }
+        if (typeof guard.confirm === "function") {
+          const proceed = (overrideHash) => {
+            const targetHash = typeof overrideHash === "string" && overrideHash ? overrideHash : desiredHash;
+            suppressHashChange = true;
+            location.hash = targetHash;
+            setTimeout(() => { suppressHashChange = false; }, 0);
+          };
+          const stay = () => {};
+          guard.confirm({ route: target.route, qs: target.qs, hash: desiredHash }, proceed, stay);
+        }
+        return;
+      }
+    } catch (err) {
+      console.warn("[router] guard check failed:", err);
+    }
+  }
+
+  await mountRoute(target);
+}
+
 // Boot + navigation
-window.addEventListener("hashchange", mountRoute);
-window.addEventListener("load", mountRoute);
+window.addEventListener("hashchange", () => {
+  handleHashChange().catch((err) => console.error("[router] navigation failed:", err));
+});
+window.addEventListener("load", () => {
+  mountRoute().catch((err) => console.error("[router] initial mount failed:", err));
+});
 mountRoute().catch((err) => console.error("[router] initial mount failed:", err));
