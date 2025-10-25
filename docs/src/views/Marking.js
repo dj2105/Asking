@@ -26,6 +26,7 @@ import {
   clearRoundTimer,
 } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { toBalancedLines, setMultilineText, normaliseText } from "../lib/text.js";
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
 
@@ -85,6 +86,9 @@ export default {
     const hue = Math.floor(Math.random() * 360);
     const accentHue = (hue + 180) % 360;
     document.documentElement.style.setProperty("--ink-h", String(hue));
+    document.documentElement.style.setProperty("--ink", `hsl(${hue}, 72%, 16%)`);
+    document.documentElement.style.setProperty("--muted", `hsla(${hue}, 28%, 32%, 0.74)`);
+    document.documentElement.style.setProperty("--soft-line", `hsla(${hue}, 34%, 26%, 0.22)`);
     document.documentElement.style.setProperty("--accent-soft", `hsl(${accentHue}, 68%, 88%)`);
     document.documentElement.style.setProperty("--accent-strong", `hsl(${accentHue}, 52%, 26%)`);
 
@@ -193,8 +197,13 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
-    const setPrompt = (text, { status = false } = {}) => {
-      prompt.textContent = text || "";
+    const setPrompt = (content, { status = false } = {}) => {
+      const lines = Array.isArray(content)
+        ? content
+        : typeof content === "string"
+        ? [normaliseText(content)]
+        : [];
+      setMultilineText(prompt, lines);
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
@@ -276,8 +285,11 @@ export default {
       const isWrong = current === VERDICT.WRONG;
       const isUnknown = current === VERDICT.UNKNOWN;
       btnRight.classList.toggle("is-selected", isRight);
+      if (!isRight) btnRight.classList.remove("is-animating");
       btnWrong.classList.toggle("is-selected", isWrong);
+      if (!isWrong) btnWrong.classList.remove("is-animating");
       btnUnknown.classList.toggle("is-selected", isUnknown);
+      if (!isUnknown) btnUnknown.classList.remove("is-animating");
       btnRight.setAttribute("aria-pressed", isRight ? "true" : "false");
       btnWrong.setAttribute("aria-pressed", isWrong ? "true" : "false");
       btnUnknown.setAttribute("aria-pressed", isUnknown ? "true" : "false");
@@ -320,9 +332,10 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
-        const questionNumber = markOffset() + idx + 1;
-        setPrompt(`${questionNumber}. ${questionText}`, { status: false });
-        answerValue.textContent = answerText;
+        const questionLines = toBalancedLines(questionText, { minWordsPerLine: 2 });
+        setPrompt(questionLines, { status: false });
+        const answerLines = toBalancedLines(answerText, { minWordsPerLine: 1 });
+        setMultilineText(answerValue, answerLines);
         renderSteps();
         reflectVerdicts();
         highlightSubmitIfReady();
@@ -355,7 +368,7 @@ export default {
           showMark(marks.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 500);
+      }, 800);
     };
 
     const showWaitingPrompt = () => {
@@ -552,6 +565,13 @@ export default {
       marks[idx] = markValue(value);
       if (sourceBtn) {
         [btnRight, btnUnknown, btnWrong].forEach((btn) => {
+          if (btn === sourceBtn) {
+            btn.classList.remove("is-animating");
+            void btn.offsetWidth;
+            btn.classList.add("is-animating");
+          } else {
+            btn.classList.remove("is-animating");
+          }
           btn.classList.toggle("is-selected", btn === sourceBtn);
         });
       }
@@ -560,6 +580,12 @@ export default {
       updateSubmitState();
       scheduleAdvance(idx);
     };
+
+    [btnRight, btnWrong, btnUnknown].forEach((btn) => {
+      btn.addEventListener("animationend", () => {
+        btn.classList.remove("is-animating");
+      });
+    });
 
     btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT, btnRight));
     btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG, btnWrong));
