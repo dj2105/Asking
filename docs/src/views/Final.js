@@ -1,8 +1,8 @@
 // /src/views/Final.js
 //
-// Final summary — aggregates per-round scores and maths outcome.
+// Final summary — aggregates per-round scores and optional maths outcome.
 // • Shows round-by-round question totals.
-// • Displays maths answers, deltas, and awarded points.
+// • Displays maths answers when available.
 // • Highlights the overall winner (question totals + maths points).
 // • Offers a button to return to the lobby.
 
@@ -83,11 +83,19 @@ function renderRoundTable(table, scores) {
 }
 
 function renderMaths(mathSection, maths = {}, mathsAnswers = {}) {
-  const question = maths.question || "Jemima’s final question";
-  const correct = Number.isFinite(Number(maths.answer)) ? Number(maths.answer) : null;
+  mathSection.innerHTML = "";
   const host = mathsAnswers.host || {};
   const guest = mathsAnswers.guest || {};
-  mathSection.innerHTML = "";
+  const hostHas = Number.isFinite(host.value);
+  const guestHas = Number.isFinite(guest.value);
+
+  if (!hostHas && !guestHas) {
+    mathSection.appendChild(el("div", { class: "mono final-maths__note" }, "Maths challenge skipped this game."));
+    return;
+  }
+
+  const question = maths.question || "Jemima’s final question";
+  const correct = Number.isFinite(Number(maths.answer)) ? Number(maths.answer) : null;
   mathSection.appendChild(el("div", { class: "mono final-maths__question" }, question));
   if (Number.isFinite(correct)) {
     mathSection.appendChild(el("div", { class: "mono final-maths__answer" }, `Correct answer: ${correct}`));
@@ -102,15 +110,15 @@ function renderMaths(mathSection, maths = {}, mathsAnswers = {}) {
   const tbody = el("tbody");
   tbody.appendChild(el("tr", {}, [
     el("td", { class: "mono" }, "Daniel"),
-    el("td", { class: "mono" }, formatPoints(host.value)),
-    el("td", { class: "mono" }, formatDelta(host.delta)),
-    el("td", { class: "mono" }, formatPoints(host.points)),
+    el("td", { class: "mono" }, hostHas ? formatPoints(host.value) : "—"),
+    el("td", { class: "mono" }, hostHas ? formatDelta(host.delta) : "—"),
+    el("td", { class: "mono" }, hostHas ? formatPoints(host.points) : "0"),
   ]));
   tbody.appendChild(el("tr", {}, [
     el("td", { class: "mono" }, "Jaime"),
-    el("td", { class: "mono" }, formatPoints(guest.value)),
-    el("td", { class: "mono" }, formatDelta(guest.delta)),
-    el("td", { class: "mono" }, formatPoints(guest.points)),
+    el("td", { class: "mono" }, guestHas ? formatPoints(guest.value) : "—"),
+    el("td", { class: "mono" }, guestHas ? formatDelta(guest.delta) : "—"),
+    el("td", { class: "mono" }, guestHas ? formatPoints(guest.points) : "0"),
   ]));
   table.appendChild(tbody);
   mathSection.appendChild(table);
@@ -126,7 +134,7 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-final" });
     const card = el("div", { class: "card final-card" });
-    const heading = el("h1", { class: "title" }, "Jemima’s Maths — Final Results");
+    const heading = el("h1", { class: "title" }, "Final Results");
     const winnerBanner = el("div", { class: "mono final-winner" }, "");
 
     const totalsSummary = el("div", { class: "final-summary" });

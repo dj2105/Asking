@@ -8,13 +8,28 @@
   --ink-s: 62%;
   --ink-l: 18%;
   --ink: hsl(var(--ink-h), var(--ink-s), var(--ink-l));
+  --ink-comp-h: 30;
+  --ink-comp-s: 56%;
+  --ink-comp-l: 34%;
   --paper: hsl(var(--ink-h), 32%, 96%);
   --card: rgba(255, 255, 255, 0.94);
   --muted: hsla(var(--ink-h), 18%, 34%, 0.72);
   --soft-line: hsla(var(--ink-h), 35%, 30%, 0.18);
 
+  --choice-selected-bg: hsla(var(--ink-comp-h), 68%, 90%, 1);
+  --choice-selected-text: hsl(var(--ink-comp-h), 46%, 28%);
+  --chip-bg: hsla(var(--ink-h), 44%, 93%, 0.92);
+  --chip-active-bg: hsla(var(--ink-h), 56%, 88%, 1);
+  --chip-outline: hsla(var(--ink-h), 62%, 38%, 0.42);
+
   --ok: #207c4c;
   --bad: #b42a2a;
+  --mark-right-bg: #dff3e7;
+  --mark-right-text: #1f6c3d;
+  --mark-wrong-bg: #f8dada;
+  --mark-wrong-text: #a12f2f;
+  --mark-unknown-bg: hsla(var(--ink-h), 14%, 88%, 0.9);
+  --mark-unknown-text: hsla(var(--ink-h), 22%, 30%, 1);
 
   --radius: 18px;
   --shadow: 0 22px 46px rgba(14, 26, 48, 0.16);
@@ -139,6 +154,259 @@ body {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.round-card {
+  align-items: stretch;
+  text-align: left;
+  gap: 24px;
+}
+
+.round-card__heading {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.round-card__steps {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.round-step {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 999px;
+  border: 1px solid var(--chip-outline);
+  background: var(--chip-bg);
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.12s ease,
+    box-shadow 0.18s ease;
+}
+
+.round-step--active {
+  background: var(--chip-active-bg);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.round-step--answered:not(.round-step--active) {
+  opacity: 0.8;
+}
+
+.round-step:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.round-card__prompt {
+  font-weight: 700;
+  font-size: 1.18rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.round-card__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.round-card__choices--hidden {
+  display: none;
+}
+
+.round-choice {
+  width: 100%;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 2px solid hsla(var(--ink-h), 30%, 42%, 0.45);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+
+.round-choice:hover:not(:disabled),
+.round-choice:focus-visible {
+  background: hsla(var(--ink-h), 32%, 96%, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.1);
+}
+
+.round-choice:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.round-choice--selected {
+  background: var(--choice-selected-bg);
+  color: var(--choice-selected-text);
+  border-color: var(--choice-selected-text);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.14);
+  transform: translateY(-1px);
+}
+
+.round-card__status {
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: var(--muted);
+}
+
+.round-card__status--hidden {
+  display: none;
+}
+
+.round-card__submit {
+  align-self: center;
+  min-width: 220px;
+}
+
+.round-card__answer {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px dashed var(--soft-line);
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.round-card__answer-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.round-card__answer-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.round-card__verdicts {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.marking-choice {
+  flex: 1;
+  padding: 14px 12px;
+  border-radius: 16px;
+  border: 2px solid hsla(var(--ink-h), 30%, 42%, 0.38);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+
+.marking-choice:hover:not(:disabled) {
+  background: hsla(var(--ink-h), 28%, 96%, 1);
+  color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.1);
+}
+
+.marking-choice:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.marking-choice--selected {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.marking-choice--right {
+  background: var(--mark-right-bg);
+  color: var(--mark-right-text);
+  border-color: var(--mark-right-text);
+}
+
+.marking-choice--wrong {
+  background: var(--mark-wrong-bg);
+  color: var(--mark-wrong-text);
+  border-color: var(--mark-wrong-text);
+}
+
+.marking-choice--unknown {
+  background: var(--mark-unknown-bg);
+  color: var(--mark-unknown-text);
+  border-color: var(--mark-unknown-text);
+}
+
+.round-exit {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(6px);
+  z-index: 20;
+}
+
+.round-exit:not(.round-exit--hidden) {
+  display: flex;
+}
+
+.round-exit__title {
+  font-size: 1.05rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: 700;
+}
+
+.round-exit__actions {
+  display: flex;
+  gap: 16px;
+}
+
+.round-exit__btn {
+  min-width: 120px;
+}
+
+.round-exit--hidden {
+  display: none;
 }
 
 .card--tight { padding: 22px 26px; }
@@ -1342,4 +1610,10 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   font-style: italic;
   opacity: 0.75;
   margin-bottom: 6px;
+}
+.final-maths__note {
+  font-size: 0.95rem;
+  text-align: center;
+  opacity: 0.72;
+  padding: 12px 0;
 }

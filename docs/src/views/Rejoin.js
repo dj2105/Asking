@@ -57,7 +57,7 @@ function resolveRouteForState(stateRaw, code, round, role) {
     case "award":
       return `#/award?code=${code}&round=${r}`;
     case "maths":
-      return `#/maths?code=${code}`;
+      return `#/final?code=${code}`;
     case "final":
       return `#/final?code=${code}`;
     default:
