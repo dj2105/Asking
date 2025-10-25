@@ -22,6 +22,55 @@ import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
+function balanceQuestionText(input = "") {
+  const raw = String(input || "").replace(/\s+/g, " ").trim();
+  if (!raw) return "";
+  const words = raw.split(" ");
+  if (words.length < 4) return raw;
+  const firstCount = Math.ceil(words.length / 2);
+  const secondCount = words.length - firstCount;
+  if (secondCount <= 1) return raw;
+  const firstLine = words.slice(0, firstCount).join(" ");
+  const secondLine = words.slice(firstCount).join(" ");
+  if (!secondLine || secondLine.split(" ").length <= 1) return raw;
+  return `${firstLine}\n${secondLine}`;
+}
+
+function createPaletteApplier(hue, accentHue) {
+  return (roundNumber = 1) => {
+    const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
+    const inkLight = 12 + depth * 1.3;
+    const paperLight = 92 - depth * 1.6;
+    const accentSoftLight = 88 - depth * 1.0;
+    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
+    document.documentElement.style.setProperty("--ink-h", String(hue));
+    document.documentElement.style.setProperty("--ink-s", "64%");
+    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
+    document.documentElement.style.setProperty("--paper-s", "38%");
+    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
+    document.documentElement.style.setProperty(
+      "--muted",
+      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+    );
+    document.documentElement.style.setProperty(
+      "--soft-line",
+      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
+    );
+    document.documentElement.style.setProperty(
+      "--card",
+      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
+    );
+    document.documentElement.style.setProperty(
+      "--accent-soft",
+      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
+    );
+    document.documentElement.style.setProperty(
+      "--accent-strong",
+      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
+    );
+  };
+}
+
 const FALLBACK_ITEMS = [
   {
     question: "In the sentence “She sang happily”, which part of speech is “happily”?",
@@ -72,9 +121,8 @@ export default {
 
     const hue = Math.floor(Math.random() * 360);
     const accentHue = (hue + 180) % 360;
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--accent-soft", `hsl(${accentHue}, 68%, 88%)`);
-    document.documentElement.style.setProperty("--accent-strong", `hsl(${accentHue}, 52%, 26%)`);
+    const applyPalette = createPaletteApplier(hue, accentHue);
+    applyPalette(round || 1);
 
     container.innerHTML = "";
 
@@ -153,7 +201,8 @@ export default {
     container.appendChild(root);
 
     const setPrompt = (text, { status = false } = {}) => {
-      prompt.textContent = text || "";
+      const content = status ? String(text || "") : balanceQuestionText(text);
+      prompt.textContent = content;
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
@@ -270,10 +319,9 @@ export default {
       idx = targetIdx;
       const render = () => {
         const current = triplet[idx] || {};
-        const questionNumber = questionOffset() + idx + 1;
-        const label = current.question ? `${questionNumber}. ${current.question}` : "";
-        setPrompt(label, { status: false });
+        setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
+        choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
         highlightSubmitIfReady();
@@ -305,7 +353,7 @@ export default {
           showQuestion(triplet.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 500);
+      }, 700);
     };
 
     const showWaitingPrompt = () => {
@@ -322,6 +370,8 @@ export default {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
     }
+
+    applyPalette(effectiveRound());
 
     renderSteps();
 
@@ -468,7 +518,12 @@ export default {
         chosen[currentIndex] = text;
         choiceButtons.forEach((choiceBtn) => {
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
+          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
         });
+        btn.classList.add("is-blinking");
+        setTimeout(() => {
+          btn.classList.remove("is-blinking");
+        }, 900);
         renderChoices();
         renderSteps();
         updateSubmitState();
@@ -541,6 +596,7 @@ export default {
         round = nextRound;
         timerContext.round = round;
         renderSteps();
+        applyPalette(effectiveRound());
       }
 
       if (data.state === "marking") {
