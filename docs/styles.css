@@ -57,6 +57,7 @@ body {
   flex-direction: column;
   gap: 24px;
   position: relative;
+  padding-top: 32px;
 }
 
 .stage-center {
@@ -344,46 +345,53 @@ input[type="text"], input[type="number"], .input {
 .phase-header {
   align-self: stretch;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px;
   font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  text-align: left;
-}
-.phase-header--centered {
-  justify-content: center;
-  text-align: center;
-}
-.phase-header--centered .phase-header__title {
-  flex: 1;
-  text-align: center;
-}
-.phase-header--with-back {
-  position: relative;
-}
-.phase-header--with-back .phase-header__title {
-  flex: 1;
-}
-.phase-header__back {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.85em;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 10px 14px;
-}
-.phase-header__back:disabled {
-  pointer-events: none;
 }
 .phase-header__title {
+  flex: 1;
   font-size: inherit;
   font-weight: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
+  text-align: center;
+}
+.phase-header__nav,
+.phase-header__progress {
+  flex: 1;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+.phase-header__nav {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.phase-header__nav:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+.phase-header__nav--disabled,
+.phase-header__nav:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.phase-header__progress {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .phase-header__timer {
   font-size: inherit;
@@ -750,7 +758,7 @@ input[type="text"], input[type="number"], .input {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
 .verdict-row .verdict-btn:disabled {
-  opacity: 0.55;
+  opacity: 1;
   cursor: default;
   transform: none;
   box-shadow: none;
@@ -776,6 +784,12 @@ input[type="text"], input[type="number"], .input {
   background: rgba(10, 132, 255, 0.18);
   border-color: rgba(10, 132, 255, 0.85);
   color: #0a69d6;
+}
+
+.coderoom-card {
+  align-items: center;
+  text-align: center;
+  gap: 16px;
 }
 
 

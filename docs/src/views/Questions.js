@@ -83,19 +83,21 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
+    const headerRow = el("div", { class: "mono phase-header" });
     const backBtn = el(
       "button",
       {
-        class: "btn subtle phase-header__back",
+        class: "phase-header__nav phase-header__nav--disabled",
         type: "button",
       },
-      "BACK"
+      "<BACK"
     );
-    backBtn.style.display = "none";
+    backBtn.disabled = true;
     headerRow.appendChild(backBtn);
-    const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
+    const heading = el("div", { class: "phase-header__title" }, "QUESTION");
     headerRow.appendChild(heading);
+    const progress = el("div", { class: "phase-header__progress" }, "1/3");
+    headerRow.appendChild(progress);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
 
     card.appendChild(headerRow);
@@ -110,6 +112,7 @@ export default {
 
     let idx = 0;
     const chosen = ["", "", ""];
+    let selectionLock = false;
     let published = false;
     let submitting = false;
 
@@ -195,8 +198,8 @@ export default {
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
     function refreshChoiceStyles() {
       const current = chosen[idx] || "";
-      const btn1Selected = !btn1.disabled && current && btn1.textContent === current;
-      const btn2Selected = !btn2.disabled && current && btn2.textContent === current;
+      const btn1Selected = current && btn1.textContent === current;
+      const btn2Selected = current && btn2.textContent === current;
       btn1.classList.toggle("selected", Boolean(btn1Selected));
       btn2.classList.toggle("selected", Boolean(btn2Selected));
       btn1.classList.toggle("throb", !btn1.disabled && !btn1Selected);
@@ -260,15 +263,14 @@ export default {
       return { question, options: [optA, optB], correct };
     });
 
+    const setBackEnabled = (enabled) => {
+      backBtn.disabled = !enabled;
+      backBtn.classList.toggle("phase-header__nav--disabled", !enabled);
+    };
+
     const updateBackVisibility = () => {
-      const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
-      }
+      const canGoBack = idx > 0 && !published && !submitting && !selectionLock;
+      setBackEnabled(canGoBack);
     };
 
     const timerContext = { code, role: myRole, round };
@@ -279,7 +281,8 @@ export default {
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
       const cur = triplet[idx];
-      heading.textContent = `QUESTION ${Math.min(idx + 1, 3)}/3`;
+      heading.textContent = "QUESTION";
+      progress.textContent = `${Math.min(idx + 1, triplet.length)}/${triplet.length}`;
       qText.textContent = cur?.question || "";
       btn1.textContent = cur?.options?.[0] || "";
       btn2.textContent = cur?.options?.[1] || "";
@@ -296,8 +299,8 @@ export default {
       waitMsg.style.display = "none";
       showWaitingOverlay();
       publishAnswers(false);
-      backBtn.style.display = "none";
-      backBtn.disabled = true;
+      progress.textContent = `${triplet.length}/${triplet.length}`;
+      setBackEnabled(false);
     };
 
     const showWaitingState = (text) => {
@@ -306,6 +309,7 @@ export default {
       waitMsg.textContent = text || waitMessageDefault;
       waitMsg.style.display = "";
       setButtonsEnabled(false);
+      setBackEnabled(false);
     };
 
     async function publishAnswers() {
@@ -336,24 +340,36 @@ export default {
         hideOverlay();
         showWaitingState("Retrying…");
         setButtonsEnabled(true);
+        updateBackVisibility();
       }
     }
 
-    function onPick(text) {
-      if (published || submitting) return;
+    async function onPick(text) {
+      if (published || submitting || selectionLock) return;
       const currentIndex = idx;
       chosen[currentIndex] = text;
+      selectionLock = true;
+      setButtonsEnabled(false);
+      refreshChoiceStyles();
+      updateBackVisibility();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (!alive) {
+        selectionLock = false;
+        return;
+      }
       if (currentIndex >= triplet.length - 1) {
         finishRound();
       } else {
         showQuestion(currentIndex + 1);
       }
+      selectionLock = false;
+      updateBackVisibility();
     }
 
     btn1.addEventListener("click", () => onPick(btn1.textContent));
     btn2.addEventListener("click", () => onPick(btn2.textContent));
     backBtn.addEventListener("click", () => {
-      if (idx <= 0 || submitting || published) return;
+      if (idx <= 0 || submitting || published || selectionLock) return;
       showQuestion(idx - 1);
     });
 
@@ -373,6 +389,8 @@ export default {
       waitMsg.style.display = "none";
       pauseRoundTimer(timerContext);
       showWaitingOverlay();
+      progress.textContent = `${triplet.length}/${triplet.length}`;
+      setBackEnabled(false);
     } else {
       showQuestion(0);
     }

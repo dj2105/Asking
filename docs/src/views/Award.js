@@ -205,6 +205,7 @@ export default {
       hostAnswers: [],
       guestAnswers: []
     };
+    let lastReviewSignature = "";
 
     const resolveReveal = (r) => {
       if (revealMap && typeof revealMap[r] === "string") return revealMap[r];
@@ -297,6 +298,28 @@ export default {
     };
 
     const refreshReviews = () => {
+      const signature = JSON.stringify({
+        round,
+        hostItems: reviewData.hostItems,
+        guestItems: reviewData.guestItems,
+        hostAnswers: reviewData.hostAnswers,
+        guestAnswers: reviewData.guestAnswers,
+      });
+      if (signature === lastReviewSignature) {
+        updateRoundScores();
+        return;
+      }
+      lastReviewSignature = signature;
+
+      const scrollElement = document.scrollingElement || document.body;
+      let prevScrollTop = 0;
+      let nearBottom = false;
+      if (scrollElement) {
+        prevScrollTop = scrollElement.scrollTop;
+        const maxScrollTop = scrollElement.scrollHeight - scrollElement.clientHeight;
+        nearBottom = maxScrollTop - prevScrollTop < 12;
+      }
+
       reviewWrap.innerHTML = "";
       const myItems = myRole === "host" ? reviewData.hostItems : reviewData.guestItems;
       const myAnswers = myRole === "host" ? reviewData.hostAnswers : reviewData.guestAnswers;
@@ -316,6 +339,12 @@ export default {
         round,
       }));
       updateRoundScores();
+
+      if (scrollElement) {
+        const nextMax = Math.max(0, scrollElement.scrollHeight - scrollElement.clientHeight);
+        const desired = nearBottom ? nextMax : Math.min(prevScrollTop, nextMax);
+        scrollElement.scrollTop = desired;
+      }
     };
 
     const refreshSummary = () => {

@@ -82,19 +82,21 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
+    const headerRow = el("div", { class: "mono phase-header" });
     const backBtn = el(
       "button",
       {
-        class: "btn subtle phase-header__back",
+        class: "phase-header__nav phase-header__nav--disabled",
         type: "button",
       },
-      "BACK"
+      "<BACK"
     );
-    backBtn.style.display = "none";
+    backBtn.disabled = true;
     headerRow.appendChild(backBtn);
-    const heading = el("div", { class: "phase-header__title" }, "MARKING 1/3");
+    const heading = el("div", { class: "phase-header__title" }, "MARKING");
     headerRow.appendChild(heading);
+    const progress = el("div", { class: "phase-header__progress" }, "1/3");
+    headerRow.appendChild(progress);
 
     const list = el("div", { class: "qa-list" });
     const markRow = el("div", { class: "mark-row" });
@@ -140,8 +142,8 @@ export default {
       "I DUNNO"
     );
     pair.appendChild(btnRight);
-    pair.appendChild(btnWrong);
     pair.appendChild(btnUnknown);
+    pair.appendChild(btnWrong);
     markRow.appendChild(pair);
 
     list.appendChild(markRow);
@@ -217,6 +219,7 @@ export default {
 
     let idx = 0;
     let marks = new Array(totalMarks).fill(null);
+    let verdictLock = false;
     let published = false;
     let submitting = false;
 
@@ -239,15 +242,14 @@ export default {
       btnUnknown.disabled = !enabled;
     };
 
+    const setBackEnabled = (enabled) => {
+      backBtn.disabled = !enabled;
+      backBtn.classList.toggle("phase-header__nav--disabled", !enabled);
+    };
+
     const updateBackVisibility = () => {
-      const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
-      }
+      const canGoBack = idx > 0 && !published && !submitting && !verdictLock;
+      setBackEnabled(canGoBack);
     };
 
     const reflect = () => {
@@ -265,8 +267,7 @@ export default {
 
     disableFns.push(() => {
       setVerdictsEnabled(false);
-      backBtn.style.display = "none";
-      backBtn.disabled = true;
+      setBackEnabled(false);
     });
     reflectFns.push(() => { reflect(); });
 
@@ -279,7 +280,8 @@ export default {
       const chosenAnswer = oppAnswers[idx] || "";
       questionNode.textContent = `${idx + 1}. ${questionText || "(missing question)"}`;
       answerText.textContent = chosenAnswer || "(no answer recorded)";
-      heading.textContent = `MARKING ${Math.min(idx + 1, 3)}/3`;
+      heading.textContent = "MARKING";
+      progress.textContent = `${Math.min(idx + 1, totalMarks)}/${totalMarks}`;
       setVerdictsEnabled(true);
       reflect();
       updateBackVisibility();
@@ -311,6 +313,7 @@ export default {
         marks = safeMarks;
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         showWaitingOverlay("Review submitted");
+        progress.textContent = `${totalMarks}/${totalMarks}`;
         clearRoundTimer(timerContext);
       } catch (err) {
         console.warn("[marking] submit failed:", err);
@@ -324,22 +327,31 @@ export default {
       }
     };
 
-    const handleVerdict = (value) => {
-      if (published || submitting) return;
+    const handleVerdict = async (value) => {
+      if (published || submitting || verdictLock) return;
       marks[idx] = markValue(value);
       reflect();
+      verdictLock = true;
+      setVerdictsEnabled(false);
+      updateBackVisibility();
+      await new Promise((resolve) => setTimeout(resolve, 500));
       if (idx >= totalMarks - 1) {
-        submitMarks();
+        await submitMarks();
       } else {
         showMark(idx + 1);
       }
+      verdictLock = false;
+      if (!published) {
+        setVerdictsEnabled(true);
+      }
+      updateBackVisibility();
     };
 
     btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT));
     btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG));
     btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN));
     backBtn.addEventListener("click", () => {
-      if (idx <= 0 || submitting || published) return;
+      if (idx <= 0 || submitting || published || verdictLock) return;
       showMark(idx - 1);
     });
 
@@ -350,6 +362,8 @@ export default {
       reflectFns.forEach((fn) => { try { fn(); } catch {} });
       disableFns.forEach((fn) => { try { fn(); } catch {} });
       showWaitingOverlay("Review submitted");
+      progress.textContent = `${totalMarks}/${totalMarks}`;
+      setBackEnabled(false);
       pauseRoundTimer(timerContext);
       clearRoundTimer(timerContext);
     } else {
@@ -449,6 +463,7 @@ export default {
         reflectFns.forEach((fn) => { try { fn(); } catch {} });
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         showWaitingOverlay(ackOpp ? "Waiting for opponent" : "Review submitted");
+        progress.textContent = `${totalMarks}/${totalMarks}`;
         pauseRoundTimer(timerContext);
         clearRoundTimer(timerContext);
       }
