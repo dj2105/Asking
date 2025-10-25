@@ -297,6 +297,11 @@ input[type="text"], input[type="number"], .input {
   text-align: left;
   gap: 24px;
 }
+.mark-card__prompt {
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
 .mark-row { padding: 16px 0; border-bottom: 1px dashed rgba(0,0,0,.12); }
 .mark-row:last-child { border-bottom: none; }
 .q { font-weight: 600; line-height: 1.45; white-space: pre-wrap; }
@@ -335,6 +340,174 @@ input[type="text"], input[type="number"], .input {
   padding: 16px 20px;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+/* Tabbed round cards */
+.tabbed-box {
+  --tab-base: #f5f1ff;
+  --tab-accent: #e2d9ff;
+  --tab-strong: #cdbdff;
+  --tab-ink: #26194b;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  background: var(--tab-base);
+  box-shadow: 0 20px 34px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  transition: background 180ms ease, box-shadow 180ms ease;
+}
+
+.tabbed-box.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.tabbed-card--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tabbed-box__tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.tabbed-box__tab {
+  flex: 1;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 0;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  background: var(--tab-color, rgba(255, 255, 255, 0.7));
+  color: rgba(28, 30, 38, 0.56);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease,
+    color 160ms ease;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.tabbed-box__tab:focus-visible {
+  outline: 2px solid var(--tab-ink, rgba(28, 30, 38, 0.9));
+  outline-offset: 2px;
+}
+
+.tabbed-box__tab.is-active {
+  background: var(--tab-base, #f5f1ff);
+  color: var(--tab-ink, #181524);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.tabbed-box__tab.is-answered::after {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--tab-color-strong, rgba(0, 0, 0, 0.25));
+  vertical-align: middle;
+}
+
+.tabbed-box__body {
+  padding: 24px 20px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: var(--tab-base, #f5f1ff);
+  color: var(--tab-ink, #181524);
+}
+
+.tabbed-box__prompt {
+  color: inherit;
+}
+
+.tabbed-box__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tabbed-choice-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 16px;
+  color: var(--tab-ink, #181524);
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease,
+    box-shadow 160ms ease, transform 160ms ease;
+}
+
+.tabbed-choice-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.tabbed-choice-btn:disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.tabbed-choice-btn.is-selected {
+  background: var(--tab-strong, rgba(0, 0, 0, 0.15));
+  border-color: var(--tab-strong, rgba(0, 0, 0, 0.15));
+  color: rgba(18, 16, 24, 0.96);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+}
+
+.tabbed-box__submit {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+.tabbed-verdicts {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tabbed-verdict-btn {
+  min-width: 68px;
+  min-height: 68px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--tab-ink, #181524);
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease,
+    box-shadow 160ms ease, transform 160ms ease;
+}
+
+.tabbed-verdict-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+}
+
+.tabbed-verdict-btn:disabled {
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.tabbed-verdict-btn.is-selected {
+  background: var(--tab-strong, rgba(0, 0, 0, 0.15));
+  border-color: var(--tab-strong, rgba(0, 0, 0, 0.15));
+  color: rgba(18, 16, 24, 0.96);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
 }
 
 .question-card {
