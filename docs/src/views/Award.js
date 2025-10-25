@@ -2,7 +2,7 @@
 //
 // Award phase — review both players' answers and confirm before next round.
 // • Shows cumulative scores and six Q&As (host + guest) with correctness markers.
-// • Both players must tap Continue; host then advances to countdown for the next round (or maths after R5).
+// • Both players must tap Continue; host then advances to countdown for the next round (or final after R5).
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import {
@@ -190,7 +190,7 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    const computeReadyLabel = (r) => (r >= 5 ? "I'M READY FOR MATHS" : `I'M READY FOR ROUND ${r + 1}`);
+    const computeReadyLabel = (r) => (r >= 5 ? "I'M READY FOR FINAL" : `I'M READY FOR ROUND ${r + 1}`);
     let readyLabel = computeReadyLabel(round);
     let waitingLabel = `WAITING FOR ${oppName.toUpperCase()}`;
     continueBtn.textContent = readyLabel;
@@ -361,9 +361,9 @@ export default {
 
           const currentRound = Number(data.round) || round;
           if (currentRound >= 5) {
-            console.log(`[flow] award -> maths | code=${code} round=${currentRound}`);
+            console.log(`[flow] award -> final | code=${code} round=${currentRound}`);
             tx.update(rRef, {
-              state: "maths",
+              state: "final",
               "countdown.startAt": null,
               "timestamps.updatedAt": serverTimestamp(),
             });
@@ -468,11 +468,6 @@ export default {
 
       if (stateName === "marking") {
         setTimeout(() => { location.hash = `#/marking?code=${code}&round=${round}`; }, 80);
-        return;
-      }
-
-      if (stateName === "maths") {
-        setTimeout(() => { location.hash = `#/maths?code=${code}`; }, 80);
         return;
       }
 
