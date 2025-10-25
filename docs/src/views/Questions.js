@@ -36,38 +36,23 @@ function balanceQuestionText(input = "") {
   return `${firstLine}\n${secondLine}`;
 }
 
-function createPaletteApplier(hue, accentHue) {
+function createPaletteApplier() {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
-    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty(
-      "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
-    );
-    document.documentElement.style.setProperty(
-      "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
-    );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
-    );
+    const cardAlpha = Math.min(0.86, 0.68 + depth * 0.025);
+    const strongAlpha = Math.min(0.92, 0.8 + depth * 0.03);
+    const mutedAlpha = Math.max(0.52, 0.68 - depth * 0.03);
+    const accentLight = Math.max(42, 58 - depth * 2.4);
+    const accentSoftLight = Math.min(82, accentLight + 18);
+    const uvLight = Math.max(48, 62 - depth * 2.2);
+    document.documentElement.style.setProperty("--card", `rgba(38, 56, 94, ${cardAlpha.toFixed(2)})`);
+    document.documentElement.style.setProperty("--card-strong", `rgba(28, 44, 78, ${strongAlpha.toFixed(2)})`);
+    document.documentElement.style.setProperty("--muted", `rgba(255, 255, 255, ${mutedAlpha.toFixed(2)})`);
+    document.documentElement.style.setProperty("--soft-line", `rgba(255, 255, 255, 0.22)`);
+    document.documentElement.style.setProperty("--accent-soft", `hsla(228, 80%, ${accentSoftLight.toFixed(1)}%, 0.28)`);
+    document.documentElement.style.setProperty("--accent-strong", `hsl(228, 86%, ${accentLight.toFixed(1)}%)`);
+    document.documentElement.style.setProperty("--accent-strong-soft", `hsla(228, 86%, ${accentSoftLight.toFixed(1)}%, 0.28)`);
+    document.documentElement.style.setProperty("--uv-bold", `hsl(262, 88%, ${uvLight.toFixed(1)}%)`);
   };
 }
 
@@ -119,9 +104,7 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
+    const applyPalette = createPaletteApplier();
     applyPalette(round || 1);
 
     container.innerHTML = "";
@@ -200,13 +183,31 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
+    const clearFreezeState = () => {
+      content.classList.remove("is-settling");
+      choicesWrap.classList.remove("is-settling");
+      prompt.classList.remove("is-fading");
+      choiceButtons.forEach((btn) => btn.classList.remove("is-dimmed"));
+    };
+
+    const beginFreezeState = (selectedButton) => {
+      content.classList.add("is-settling");
+      prompt.classList.add("is-fading");
+      choiceButtons.forEach((btn) => {
+        if (btn === selectedButton) btn.classList.remove("is-dimmed");
+        else btn.classList.add("is-dimmed");
+      });
+    };
+
     const setPrompt = (text, { status = false } = {}) => {
       const content = status ? String(text || "") : balanceQuestionText(text);
       prompt.textContent = content;
       prompt.classList.toggle("round-panel__question--status", status);
+      if (status) prompt.classList.remove("is-fading");
     };
 
     const setChoicesVisible = (visible) => {
+      if (!visible) clearFreezeState();
       choicesWrap.classList.toggle("is-hidden", !visible);
     };
 
@@ -279,12 +280,14 @@ export default {
     const renderChoices = () => {
       const current = triplet[idx] || {};
       const currentSelection = chosen[idx] || "";
+      const freezeActive = content.classList.contains("is-settling");
       choiceButtons.forEach((btn, i) => {
         const option = current.options?.[i] || "";
         btn.textContent = option;
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
-        btn.disabled = !option || published || submitting;
+        btn.classList.toggle("is-dimmed", freezeActive && !isSelected && Boolean(option));
+        btn.disabled = !option || published || submitting || freezeActive;
       });
     };
 
@@ -317,11 +320,11 @@ export default {
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
+      clearFreezeState();
       const render = () => {
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
-        choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
         highlightSubmitIfReady();
@@ -353,10 +356,11 @@ export default {
           showQuestion(triplet.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 700);
+      }, 780);
     };
 
     const showWaitingPrompt = () => {
+      clearFreezeState();
       setPrompt(waitingLabel, { status: true });
       setChoicesVisible(false);
       clearAdvanceTimer();
@@ -389,6 +393,7 @@ export default {
 
     const setLoadingState = (text) => {
       pauseRoundTimer(timerContext);
+      clearFreezeState();
       setPrompt(text, { status: true });
       setChoicesVisible(false);
       renderSteps();
@@ -516,14 +521,7 @@ export default {
         const currentIndex = idx;
         if (!text) return;
         chosen[currentIndex] = text;
-        choiceButtons.forEach((choiceBtn) => {
-          choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
-          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
-        });
-        btn.classList.add("is-blinking");
-        setTimeout(() => {
-          btn.classList.remove("is-blinking");
-        }, 900);
+        beginFreezeState(btn);
         renderChoices();
         renderSteps();
         updateSubmitState();

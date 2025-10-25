@@ -88,38 +88,23 @@ function balanceQuestionText(input = "") {
   return `${firstLine}\n${secondLine}`;
 }
 
-function createPaletteApplier(hue, accentHue) {
+function createPaletteApplier() {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
-    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty(
-      "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
-    );
-    document.documentElement.style.setProperty(
-      "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
-    );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
-    );
+    const cardAlpha = Math.min(0.86, 0.68 + depth * 0.025);
+    const strongAlpha = Math.min(0.92, 0.8 + depth * 0.03);
+    const mutedAlpha = Math.max(0.52, 0.68 - depth * 0.03);
+    const accentLight = Math.max(42, 58 - depth * 2.4);
+    const accentSoftLight = Math.min(82, accentLight + 18);
+    const uvLight = Math.max(48, 62 - depth * 2.2);
+    document.documentElement.style.setProperty("--card", `rgba(38, 56, 94, ${cardAlpha.toFixed(2)})`);
+    document.documentElement.style.setProperty("--card-strong", `rgba(28, 44, 78, ${strongAlpha.toFixed(2)})`);
+    document.documentElement.style.setProperty("--muted", `rgba(255, 255, 255, ${mutedAlpha.toFixed(2)})`);
+    document.documentElement.style.setProperty("--soft-line", `rgba(255, 255, 255, 0.22)`);
+    document.documentElement.style.setProperty("--accent-soft", `hsla(228, 80%, ${accentSoftLight.toFixed(1)}%, 0.28)`);
+    document.documentElement.style.setProperty("--accent-strong", `hsl(228, 86%, ${accentLight.toFixed(1)}%)`);
+    document.documentElement.style.setProperty("--accent-strong-soft", `hsla(228, 86%, ${accentSoftLight.toFixed(1)}%, 0.28)`);
+    document.documentElement.style.setProperty("--uv-bold", `hsl(262, 88%, ${uvLight.toFixed(1)}%)`);
   };
 }
 
@@ -131,9 +116,7 @@ export default {
     const code = clampCode(params.get("code") || "");
     let round = parseInt(params.get("round") || "1", 10) || 1;
 
-    const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
+    const applyPalette = createPaletteApplier();
     applyPalette(round || 1);
 
     container.innerHTML = "";
@@ -218,6 +201,23 @@ export default {
     panel.appendChild(submitBtn);
     root.appendChild(panel);
 
+    const clearVerdictFreeze = () => {
+      content.classList.remove("is-settling");
+      prompt.classList.remove("is-fading");
+      answerBox.classList.remove("is-fading");
+      [btnRight, btnUnknown, btnWrong].forEach((btn) => btn.classList.remove("is-dimmed"));
+    };
+
+    const beginVerdictFreeze = (selectedButton) => {
+      content.classList.add("is-settling");
+      prompt.classList.add("is-fading");
+      answerBox.classList.add("is-fading");
+      [btnRight, btnUnknown, btnWrong].forEach((btn) => {
+        if (btn === selectedButton) btn.classList.remove("is-dimmed");
+        else btn.classList.add("is-dimmed");
+      });
+    };
+
     const backOverlay = el("div", { class: "back-confirm" });
     const backPanel = el("div", { class: "back-confirm__panel mono" });
     const backTitle = el("div", { class: "back-confirm__title" }, "RETURN TO LOBBY?");
@@ -245,9 +245,11 @@ export default {
       const content = status ? String(text || "") : balanceQuestionText(text);
       prompt.textContent = content;
       prompt.classList.toggle("round-panel__question--status", status);
+      if (status) prompt.classList.remove("is-fading");
     };
 
     const setMarkingVisible = (visible) => {
+      if (!visible) clearVerdictFreeze();
       answerBox.classList.toggle("is-hidden", !visible);
       verdictRow.classList.toggle("is-hidden", !visible);
     };
@@ -324,12 +326,15 @@ export default {
       const isRight = current === VERDICT.RIGHT;
       const isWrong = current === VERDICT.WRONG;
       const isUnknown = current === VERDICT.UNKNOWN;
-      btnRight.classList.toggle("is-selected", isRight);
-      btnWrong.classList.toggle("is-selected", isWrong);
-      btnUnknown.classList.toggle("is-selected", isUnknown);
-      btnRight.setAttribute("aria-pressed", isRight ? "true" : "false");
-      btnWrong.setAttribute("aria-pressed", isWrong ? "true" : "false");
-      btnUnknown.setAttribute("aria-pressed", isUnknown ? "true" : "false");
+      const freezeActive = content.classList.contains("is-settling");
+      const applyState = (btn, isSelected) => {
+        btn.classList.toggle("is-selected", isSelected);
+        btn.classList.toggle("is-dimmed", freezeActive && !isSelected);
+        btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      };
+      applyState(btnRight, isRight);
+      applyState(btnWrong, isWrong);
+      applyState(btnUnknown, isUnknown);
     };
 
     const setVerdictsEnabled = (enabled) => {
@@ -365,6 +370,7 @@ export default {
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
       setVerdictsEnabled(!published && !submitting);
+      clearVerdictFreeze();
       const render = () => {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
@@ -372,7 +378,6 @@ export default {
         setPrompt(questionText, { status: false });
         answerValue.textContent = answerText;
         renderSteps();
-        [btnRight, btnUnknown, btnWrong].forEach((btn) => btn.classList.remove("is-blinking"));
         reflectVerdicts();
         highlightSubmitIfReady();
         setMarkingVisible(true);
@@ -404,10 +409,11 @@ export default {
           showMark(marks.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 700);
+      }, 780);
     };
 
     const showWaitingPrompt = () => {
+      clearVerdictFreeze();
       setPrompt(waitingLabel, { status: true });
       setMarkingVisible(false);
       clearAdvanceTimer();
@@ -431,6 +437,7 @@ export default {
 
     const setLoadingState = (text) => {
       pauseRoundTimer(timerContext);
+      clearVerdictFreeze();
       setPrompt(text, { status: true });
       setMarkingVisible(false);
       setVerdictsEnabled(false);
@@ -599,15 +606,8 @@ export default {
     const handleVerdict = (value, sourceBtn) => {
       if (published || submitting) return;
       marks[idx] = markValue(value);
-      if (sourceBtn) {
-        [btnRight, btnUnknown, btnWrong].forEach((btn) => {
-          if (btn !== sourceBtn) btn.classList.remove("is-blinking");
-        });
-        sourceBtn.classList.add("is-blinking");
-        setTimeout(() => {
-          sourceBtn.classList.remove("is-blinking");
-        }, 900);
-      }
+      if (sourceBtn) beginVerdictFreeze(sourceBtn);
+      setVerdictsEnabled(false);
       renderSteps();
       reflectVerdicts();
       updateSubmitState();
