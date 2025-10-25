@@ -398,13 +398,14 @@ input[type="text"], input[type="number"], .input {
   visibility: hidden;
 }
 .choice-row .btn.selected {
-  background: rgba(0, 0, 0, 0.9);
+  background: #0b6bff;
   color: #fff;
-  border-color: rgba(0, 0, 0, 0.9);
+  border-color: #0b6bff;
+  box-shadow: 0 14px 28px rgba(11, 107, 255, 0.35);
 }
 .choice-row .btn.selected:hover:not(:disabled) {
   transform: none;
-  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  box-shadow: 0 14px 28px rgba(11, 107, 255, 0.35);
 }
 .choice-row .btn.selected:disabled {
   opacity: 1;
@@ -417,6 +418,11 @@ input[type="text"], input[type="number"], .input {
   white-space: pre-wrap;
   text-align: center;
   font-size: 1.1rem;
+}
+
+.question-card__prompt--selected {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .question-card__clue,
