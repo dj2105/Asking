@@ -23,7 +23,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 PASSWORD = b"DEMO-ONLY"           # <-- replace in production
 PBKDF2_ROUNDS = 150_000
-ALLOWED_VERSIONS = {"jemima-maths-chain-2"}
+ALLOWED_VERSIONS = {"jemima-maths-chain-2", "jemima-maths-chain-1"}
 DEFAULT_VERSION = "jemima-maths-chain-2"
 
 # ------------------------- helpers & crypto -------------------------
@@ -150,27 +150,43 @@ def room_ok(s: str) -> bool:
     return bool(re.fullmatch(r"[A-Z]{3}", s or ""))
 
 def validate_chain_pack(p: dict):
-    must(p.get("version") == "jemima-maths-chain-2", "Wrong version for maths pack.")
+    version = p.get("version")
+    must(version in ALLOWED_VERSIONS, "Wrong version for maths pack.")
+
     maths = p.get("maths") or {}
-    clues = maths.get("clues")
-    reveals = maths.get("reveals")
-    must(isinstance(clues, list) and len(clues) == 5, "Maths: need exactly 5 clues.")
-    must(isinstance(reveals, list) and len(reveals) == 5, "Maths: need exactly 5 reveals.")
-    for idx, clue in enumerate(clues, start=1):
-        must(isinstance(clue, str) and clue.strip(), f"Maths: clue {idx} missing or empty.")
-    for idx, reveal in enumerate(reveals, start=1):
-        if isinstance(reveal, str):
-            must(reveal.strip(), f"Maths: reveal {idx} empty.")
-        elif isinstance(reveal, dict):
-            txt = (
-                (reveal.get("prompt") if isinstance(reveal.get("prompt"), str) else None)
-                or (reveal.get("text") if isinstance(reveal.get("text"), str) else None)
-                or (reveal.get("value") if isinstance(reveal.get("value"), str) else None)
-            )
-            must(txt and txt.strip(), f"Maths: reveal {idx} missing text.")
-        else:
-            must(False, f"Maths: reveal {idx} must be string or object.")
-    must(isinstance(maths.get("question"), str) and maths["question"].strip(), "Maths: question missing.")
+
+    if version == "jemima-maths-chain-2":
+        clues = maths.get("clues")
+        reveals = maths.get("reveals")
+        must(isinstance(clues, list) and len(clues) == 5, "Maths: need exactly 5 clues.")
+        must(isinstance(reveals, list) and len(reveals) == 5, "Maths: need exactly 5 reveals.")
+        for idx, clue in enumerate(clues, start=1):
+            must(isinstance(clue, str) and clue.strip(), f"Maths: clue {idx} missing or empty.")
+        for idx, reveal in enumerate(reveals, start=1):
+            if isinstance(reveal, str):
+                must(reveal.strip(), f"Maths: reveal {idx} empty.")
+            elif isinstance(reveal, dict):
+                txt = (
+                    (reveal.get("prompt") if isinstance(reveal.get("prompt"), str) else None)
+                    or (reveal.get("text") if isinstance(reveal.get("text"), str) else None)
+                    or (reveal.get("value") if isinstance(reveal.get("value"), str) else None)
+                )
+                must(txt and txt.strip(), f"Maths: reveal {idx} missing text.")
+            else:
+                must(False, f"Maths: reveal {idx} must be string or object.")
+    else:  # jemima-maths-chain-1
+        must(isinstance(maths.get("location"), str) and maths["location"].strip(), "Maths: location missing.")
+        beats = maths.get("beats")
+        must(isinstance(beats, list) and len(beats) == 5, "Maths: need exactly 5 beats.")
+        for idx, beat in enumerate(beats, start=1):
+            must(isinstance(beat, str) and beat.strip(), f"Maths: beat {idx} missing or empty.")
+            digit_count = sum(ch.isdigit() for ch in beat)
+            must(digit_count >= 1, f"Maths: beat {idx} must include at least one number.")
+
+    question = maths.get("question")
+    must(isinstance(question, str) and question.strip(), "Maths: question missing.")
+    if version == "jemima-maths-chain-1":
+        must("___" in question, "Maths: question must include blank ___.")
     must(isinstance(maths.get("answer"), int), "Maths: answer must be an integer.")
 
 # ------------------------------ main ------------------------------

@@ -1,0 +1,25 @@
+{
+  "version": "jemima-maths-chain-1",
+  "meta": {
+    "roomCode": "CRF",
+    "generatedAt": "2025-10-20T12:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "location": "Community Kitchen",
+    "beats": [
+      "I set aside 12 gleaming jars of plum chutney and take that dozen as my starting number.",
+      "Then I add 7 more jars I sterilised after supper, because backups matter.",
+      "Next I multiply the tally by 2 so every jar gets a label on its front and back.",
+      "I gift 5 jars to the neighbours across the landing and subtract them from my stash.",
+      "Finally, I stir in 60 minutes of simmering pride and add that to my running total."
+    ],
+    "question": "Tell me straight — what number am I admiring? ___",
+    "answer": 93
+  },
+  "integrity": {
+    "checksum": "will_be_filled_in_automatically",
+    "verified": true
+  }
+}
