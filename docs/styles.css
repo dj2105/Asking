@@ -8,7 +8,9 @@
   --ink-s: 62%;
   --ink-l: 18%;
   --ink: hsl(var(--ink-h), var(--ink-s), var(--ink-l));
-  --paper: hsl(var(--ink-h), 32%, 96%);
+  --paper-s: 32%;
+  --paper-l: 96%;
+  --paper: hsl(var(--ink-h), var(--paper-s), var(--paper-l));
   --card: rgba(255, 255, 255, 0.94);
   --muted: hsla(var(--ink-h), 18%, 34%, 0.72);
   --soft-line: hsla(var(--ink-h), 35%, 30%, 0.18);
@@ -22,6 +24,7 @@
   --radius: 18px;
   --shadow: 0 22px 46px rgba(14, 26, 48, 0.16);
   --shadow-soft: 0 12px 28px rgba(14, 26, 48, 0.12);
+  --bg-depth: 0;
 }
 
 html { background: var(--paper); }
@@ -196,7 +199,7 @@ body {
   color: var(--ink);
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 10px 20px rgba(14, 26, 48, 0.12);
-  border-color: rgba(14, 26, 48, 0.12);
+  border: 1.5px solid var(--muted);
 }
 
 .round-panel__step.is-answered:not(.is-active) {

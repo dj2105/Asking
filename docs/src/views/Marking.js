@@ -218,6 +218,21 @@ export default {
     let guardReverting = false;
     const lockedHash = location.hash;
 
+    const effectiveRound = () => {
+      return Number.isFinite(round) && round > 0 ? round : 1;
+    };
+
+    const markOffset = () => (effectiveRound() - 1) * 3;
+
+    const refreshStepLabels = () => {
+      const base = markOffset();
+      stepButtons.forEach((btn, i) => {
+        const number = base + i + 1;
+        btn.textContent = String(number);
+        btn.setAttribute("aria-label", `Mark ${number}`);
+      });
+    };
+
     const clearAdvanceTimer = () => {
       if (advanceTimer) {
         clearTimeout(advanceTimer);
@@ -247,10 +262,11 @@ export default {
     };
 
     const renderSteps = () => {
+      refreshStepLabels();
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", marks[i] !== null);
-        btn.disabled = triplet.length === 0;
+        btn.disabled = triplet.length === 0 || published || submitting;
       });
     };
 
@@ -304,7 +320,8 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
-        setPrompt(`${idx + 1}. ${questionText}`, { status: false });
+        const questionNumber = markOffset() + idx + 1;
+        setPrompt(`${questionNumber}. ${questionText}`, { status: false });
         answerValue.textContent = answerText;
         renderSteps();
         reflectVerdicts();
@@ -339,6 +356,12 @@ export default {
         }
         highlightSubmitIfReady();
       }, 500);
+    };
+
+    const showWaitingPrompt = () => {
+      setPrompt(waitingLabel, { status: true });
+      setMarkingVisible(false);
+      clearAdvanceTimer();
     };
 
     const rRef = roomRef(code);
@@ -390,7 +413,10 @@ export default {
       submitBtn.disabled = true;
       submitBtn.textContent = waitingLabel;
       setVerdictsEnabled(false);
-      showMark(marks.length - 1, { animate: false });
+      showWaitingPrompt();
+      renderSteps();
+      reflectVerdicts();
+      updateSubmitState();
       clearRoundTimer(timerContext);
     } else {
       showMark(0, { animate: false });
@@ -479,12 +505,16 @@ export default {
     const submitMarks = async () => {
       if (published || submitting) return;
       if (!marks.every((value) => value !== null)) return;
+      const revertIdx = idx;
       submitting = true;
       updateSubmitState();
       submitBtn.textContent = "SUBMITTING…";
       clearAdvanceTimer();
       setVerdictsEnabled(false);
       pauseRoundTimer(timerContext);
+      showWaitingPrompt();
+      renderSteps();
+      reflectVerdicts();
       const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
       const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
       const payload = marks.map((value) => markValue(value));
@@ -502,9 +532,10 @@ export default {
         submitting = false;
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
-        const lastIdx = marks.length > 0 ? marks.length - 1 : 0;
-        showMark(lastIdx, { animate: false });
+        showWaitingPrompt();
+        renderSteps();
         reflectVerdicts();
+        updateSubmitState();
         clearRoundTimer(timerContext);
       } catch (err) {
         console.warn("[marking] submit failed:", err);
@@ -512,24 +543,32 @@ export default {
         updateSubmitState();
         setVerdictsEnabled(true);
         resumeRoundTimer(timerContext);
+        showMark(revertIdx, { animate: false });
       }
     };
 
-    const handleVerdict = (value) => {
+    const handleVerdict = (value, sourceBtn) => {
       if (published || submitting) return;
       marks[idx] = markValue(value);
+      if (sourceBtn) {
+        [btnRight, btnUnknown, btnWrong].forEach((btn) => {
+          btn.classList.toggle("is-selected", btn === sourceBtn);
+        });
+      }
+      renderSteps();
       reflectVerdicts();
       updateSubmitState();
       scheduleAdvance(idx);
     };
 
-    btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT));
-    btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG));
-    btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN));
+    btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT, btnRight));
+    btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG, btnWrong));
+    btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN, btnUnknown));
 
     stepButtons.forEach((btn, i) => {
       btn.addEventListener("click", () => {
         if (triplet.length === 0) return;
+        if (published || submitting) return;
         clearAdvanceTimer();
         showMark(i, { animate: true });
         reflectVerdicts();
@@ -548,6 +587,7 @@ export default {
         if (nextRound !== round) {
           round = nextRound;
           timerContext.round = round;
+          renderSteps();
         }
       }
 
@@ -580,6 +620,8 @@ export default {
         marks = marks.map((_, i) => markValue(incoming[i]));
         published = true;
         submitting = false;
+        showWaitingPrompt();
+        renderSteps();
         reflectVerdicts();
         updateSubmitState();
         submitBtn.disabled = true;
