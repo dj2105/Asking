@@ -83,10 +83,14 @@ export default {
     let round = parseInt(params.get("round") || "1", 10) || 1;
 
     const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--accent-soft", `hsl(${accentHue}, 68%, 88%)`);
-    document.documentElement.style.setProperty("--accent-strong", `hsl(${accentHue}, 52%, 26%)`);
+    const rootStyle = document.documentElement?.style;
+    if (rootStyle) {
+      rootStyle.setProperty("--ink-h", String(hue));
+      rootStyle.setProperty("--ink-s", "68%");
+      rootStyle.setProperty("--ink-l", "16%");
+      rootStyle.setProperty("--accent-soft", `hsl(${hue}, 62%, 88%)`);
+      rootStyle.setProperty("--accent-strong", `hsl(${hue}, 58%, 24%)`);
+    }
 
     container.innerHTML = "";
 
@@ -149,6 +153,27 @@ export default {
     verdictRow.appendChild(btnRight);
     verdictRow.appendChild(btnUnknown);
     verdictRow.appendChild(btnWrong);
+
+    const verdictButtons = [btnRight, btnUnknown, btnWrong];
+
+    const triggerVerdictBlink = (btn) => {
+      if (!btn) return;
+      btn.classList.remove("is-blinking");
+      void btn.offsetWidth;
+      btn.classList.add("is-blinking");
+    };
+
+    verdictButtons.forEach((btn) => {
+      btn.addEventListener("animationend", (event) => {
+        if (
+          event.animationName === "markingBlink" ||
+          event.animationName === "markingBlinkRed" ||
+          event.animationName === "markingBlinkBlue"
+        ) {
+          btn.classList.remove("is-blinking");
+        }
+      });
+    });
 
     content.appendChild(prompt);
     content.appendChild(answerBox);
@@ -320,8 +345,7 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
-        const questionNumber = markOffset() + idx + 1;
-        setPrompt(`${questionNumber}. ${questionText}`, { status: false });
+        setPrompt(`${questionText}`, { status: false });
         answerValue.textContent = answerText;
         renderSteps();
         reflectVerdicts();
@@ -355,7 +379,7 @@ export default {
           showMark(marks.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 500);
+      }, 700);
     };
 
     const showWaitingPrompt = () => {
@@ -558,6 +582,9 @@ export default {
       renderSteps();
       reflectVerdicts();
       updateSubmitState();
+      if (sourceBtn) {
+        triggerVerdictBlink(sourceBtn);
+      }
       scheduleAdvance(idx);
     };
 

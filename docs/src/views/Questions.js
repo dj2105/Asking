@@ -71,10 +71,14 @@ export default {
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
     const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--accent-soft", `hsl(${accentHue}, 68%, 88%)`);
-    document.documentElement.style.setProperty("--accent-strong", `hsl(${accentHue}, 52%, 26%)`);
+    const rootStyle = document.documentElement?.style;
+    if (rootStyle) {
+      rootStyle.setProperty("--ink-h", String(hue));
+      rootStyle.setProperty("--ink-s", "68%");
+      rootStyle.setProperty("--ink-l", "16%");
+      rootStyle.setProperty("--accent-soft", `hsl(${hue}, 62%, 88%)`);
+      rootStyle.setProperty("--accent-strong", `hsl(${hue}, 58%, 24%)`);
+    }
 
     container.innerHTML = "";
 
@@ -108,6 +112,22 @@ export default {
       );
       choicesWrap.appendChild(btn);
       return btn;
+    });
+
+    const triggerChoiceBlink = (btn) => {
+      if (!btn) return;
+      btn.classList.remove("is-blinking");
+      // Force reflow to restart animation
+      void btn.offsetWidth;
+      btn.classList.add("is-blinking");
+    };
+
+    choiceButtons.forEach((btn) => {
+      btn.addEventListener("animationend", (event) => {
+        if (event.animationName === "choiceBlink") {
+          btn.classList.remove("is-blinking");
+        }
+      });
     });
 
     content.appendChild(prompt);
@@ -270,8 +290,7 @@ export default {
       idx = targetIdx;
       const render = () => {
         const current = triplet[idx] || {};
-        const questionNumber = questionOffset() + idx + 1;
-        const label = current.question ? `${questionNumber}. ${current.question}` : "";
+        const label = current.question ? `${current.question}` : "";
         setPrompt(label, { status: false });
         setChoicesVisible(true);
         renderChoices();
@@ -305,7 +324,7 @@ export default {
           showQuestion(triplet.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 500);
+      }, 700);
     };
 
     const showWaitingPrompt = () => {
@@ -472,6 +491,7 @@ export default {
         renderChoices();
         renderSteps();
         updateSubmitState();
+        triggerChoiceBlink(btn);
         scheduleAdvance(currentIndex);
       });
     });
