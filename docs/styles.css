@@ -355,29 +355,11 @@ input[type="text"], input[type="number"], .input {
 .phase-header--centered {
   justify-content: center;
   text-align: center;
+  align-items: center;
 }
 .phase-header--centered .phase-header__title {
   flex: 1;
   text-align: center;
-}
-.phase-header--with-back {
-  position: relative;
-}
-.phase-header--with-back .phase-header__title {
-  flex: 1;
-}
-.phase-header__back {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.85em;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 10px 14px;
-}
-.phase-header__back:disabled {
-  pointer-events: none;
 }
 .phase-header__title {
   font-size: inherit;

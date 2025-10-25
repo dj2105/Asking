@@ -82,17 +82,7 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
-    const backBtn = el(
-      "button",
-      {
-        class: "btn subtle phase-header__back",
-        type: "button",
-      },
-      "BACK"
-    );
-    backBtn.style.display = "none";
-    headerRow.appendChild(backBtn);
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
     const heading = el("div", { class: "phase-header__title" }, "MARKING 1/3");
     headerRow.appendChild(heading);
 
@@ -219,6 +209,13 @@ export default {
     let marks = new Array(totalMarks).fill(null);
     let published = false;
     let submitting = false;
+    const historySupported =
+      typeof window !== "undefined" &&
+      typeof window.addEventListener === "function" &&
+      typeof history?.replaceState === "function" &&
+      typeof history?.pushState === "function";
+    let historyReady = false;
+    let historyListener = null;
 
     const disableFns = [];
     const reflectFns = [];
@@ -239,14 +236,34 @@ export default {
       btnUnknown.disabled = !enabled;
     };
 
-    const updateBackVisibility = () => {
-      const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
+    const clampIdx = (value) => {
+      if (!Number.isFinite(value)) return 0;
+      const max = Math.max(0, totalMarks - 1);
+      if (value < 0) return 0;
+      if (value > max) return max;
+      return value;
+    };
+
+    const historyStateFor = (markIdx) => ({
+      view: "marking",
+      code,
+      round,
+      idx: clampIdx(markIdx),
+    });
+
+    const syncHistory = (markIdx, { replace = false } = {}) => {
+      if (!historySupported || published || submitting || totalMarks <= 0) return;
+      try {
+        const state = historyStateFor(markIdx);
+        if (replace || !historyReady) {
+          history.replaceState(state, "", location.href);
+          historyReady = true;
+        } else {
+          history.pushState(state, "", location.href);
+          historyReady = true;
+        }
+      } catch (err) {
+        console.warn("[marking] history sync failed:", err);
       }
     };
 
@@ -265,24 +282,24 @@ export default {
 
     disableFns.push(() => {
       setVerdictsEnabled(false);
-      backBtn.style.display = "none";
-      backBtn.disabled = true;
     });
     reflectFns.push(() => { reflect(); });
 
-    const showMark = (targetIdx) => {
-      if (targetIdx < 0) targetIdx = 0;
-      if (targetIdx >= totalMarks) targetIdx = totalMarks - 1;
-      idx = targetIdx;
+    const showMark = (targetIdx, { fromHistory = false, replaceHistory = false } = {}) => {
+      if (totalMarks <= 0) return;
+      const clamped = clampIdx(Number(targetIdx));
+      idx = clamped;
       const currentItem = oppItems[idx] || {};
       const questionText = currentItem.question || "";
       const chosenAnswer = oppAnswers[idx] || "";
       questionNode.textContent = `${idx + 1}. ${questionText || "(missing question)"}`;
       answerText.textContent = chosenAnswer || "(no answer recorded)";
       heading.textContent = `MARKING ${Math.min(idx + 1, 3)}/3`;
-      setVerdictsEnabled(true);
+      setVerdictsEnabled(!published && !submitting);
       reflect();
-      updateBackVisibility();
+      if (!fromHistory) {
+        syncHistory(idx, { replace: replaceHistory });
+      }
       resumeRoundTimer(timerContext);
       hideOverlay();
     };
@@ -292,7 +309,6 @@ export default {
       submitting = true;
       const safeMarks = marks.map((value) => markValue(value));
       setVerdictsEnabled(false);
-      updateBackVisibility();
       pauseRoundTimer(timerContext);
       const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
       const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
@@ -312,14 +328,17 @@ export default {
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         showWaitingOverlay("Review submitted");
         clearRoundTimer(timerContext);
+        if (historyListener) {
+          try { window.removeEventListener("popstate", historyListener); } catch {}
+          historyListener = null;
+        }
       } catch (err) {
         console.warn("[marking] submit failed:", err);
         submitting = false;
         if (!published) {
           hideOverlay();
           resumeRoundTimer(timerContext);
-          setVerdictsEnabled(true);
-          updateBackVisibility();
+          setVerdictsEnabled(!published && !submitting);
         }
       }
     };
@@ -338,10 +357,19 @@ export default {
     btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT));
     btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG));
     btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN));
-    backBtn.addEventListener("click", () => {
-      if (idx <= 0 || submitting || published) return;
-      showMark(idx - 1);
-    });
+    if (historySupported) {
+      historyListener = (event) => {
+        const state = event.state || {};
+        if (state.view !== "marking" || state.code !== code || state.round !== round) return;
+        if (published || submitting) {
+          try { history.replaceState(historyStateFor(idx), "", location.href); } catch {}
+          return;
+        }
+        const target = clampIdx(Number(state.idx));
+        showMark(target, { fromHistory: true });
+      };
+      window.addEventListener("popstate", historyListener);
+    }
 
     const existingMarks = (((roomData0.marking || {})[myRole] || {})[round] || []);
     if (Array.isArray(existingMarks) && existingMarks.length === 3) {
@@ -352,8 +380,12 @@ export default {
       showWaitingOverlay("Review submitted");
       pauseRoundTimer(timerContext);
       clearRoundTimer(timerContext);
+      if (historyListener) {
+        try { window.removeEventListener("popstate", historyListener); } catch {}
+        historyListener = null;
+      }
     } else {
-      showMark(0);
+      showMark(0, { replaceHistory: true });
     }
 
     let stopRoomWatch = null;
@@ -462,6 +494,10 @@ export default {
 
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
+      if (historyListener) {
+        try { window.removeEventListener("popstate", historyListener); } catch {}
+        historyListener = null;
+      }
       pauseRoundTimer(timerContext);
     };
   },
