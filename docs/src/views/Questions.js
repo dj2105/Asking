@@ -27,6 +27,7 @@ const mountMathsPane =
    null);
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
+const ADVANCE_DELAY_MS = 520;
 
 const FALLBACK_ITEMS = [
   {
@@ -102,6 +103,7 @@ export default {
     const chosen = ["", "", ""];
     let published = false;
     let submitting = false;
+    let advanceTimer = null;
 
     let waitMessageDefault = "Waiting…";
     const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
@@ -187,18 +189,26 @@ export default {
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
     function refreshChoiceStyles() {
       const current = chosen[idx] || "";
-      const btn1Selected = !btn1.disabled && current && btn1.textContent === current;
-      const btn2Selected = !btn2.disabled && current && btn2.textContent === current;
+      const btn1Selected = current && btn1.textContent === current;
+      const btn2Selected = current && btn2.textContent === current;
+      const hasSelection = Boolean(current);
       btn1.classList.toggle("selected", Boolean(btn1Selected));
       btn2.classList.toggle("selected", Boolean(btn2Selected));
-      btn1.classList.toggle("throb", !btn1.disabled && !btn1Selected);
-      btn2.classList.toggle("throb", !btn2.disabled && !btn2Selected);
+      btn1.classList.toggle("throb", !btn1.disabled && !btn1Selected && !hasSelection);
+      btn2.classList.toggle("throb", !btn2.disabled && !btn2Selected && !hasSelection);
     }
     function setButtonsEnabled(enabled) {
       btn1.disabled = !enabled;
       btn2.disabled = !enabled;
       refreshChoiceStyles();
     }
+
+    const clearAdvanceTimer = () => {
+      if (advanceTimer) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+      }
+    };
 
     const waitForRoundData = async () => {
       let firstWait = true;
@@ -281,6 +291,7 @@ export default {
     }
 
     function showQuestion(targetIdx, options = {}) {
+      clearAdvanceTimer();
       if (triplet.length === 0) return;
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
@@ -322,6 +333,7 @@ export default {
     }
 
     const finishRound = () => {
+      clearAdvanceTimer();
       pauseRoundTimer(timerContext);
       setButtonsEnabled(false);
       waitMsg.style.display = "none";
@@ -330,6 +342,7 @@ export default {
     };
 
     const showWaitingState = (text) => {
+      clearAdvanceTimer();
       hideOverlay();
       btnWrap.style.display = "none";
       waitMsg.textContent = text || waitMessageDefault;
@@ -340,6 +353,7 @@ export default {
     async function publishAnswers() {
       if (submitting || published) return;
       submitting = true;
+      clearAdvanceTimer();
 
       const payload = triplet.map((entry, idx) => ({
         question: entry.question || "",
@@ -372,10 +386,26 @@ export default {
       if (published || submitting) return;
       const currentIndex = idx;
       chosen[currentIndex] = text;
+      refreshChoiceStyles();
+
+      const scheduleAdvance = (cb) => {
+        clearAdvanceTimer();
+        advanceTimer = setTimeout(() => {
+          advanceTimer = null;
+          if (!alive || published || submitting) return;
+          if (idx !== currentIndex) return;
+          cb();
+        }, ADVANCE_DELAY_MS);
+      };
+
       if (currentIndex >= triplet.length - 1) {
-        finishRound();
+        scheduleAdvance(() => {
+          finishRound();
+        });
       } else {
-        showQuestion(currentIndex + 1);
+        scheduleAdvance(() => {
+          showQuestion(currentIndex + 1);
+        });
       }
     }
 
@@ -463,6 +493,7 @@ export default {
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       try { removePopStateListener(); } catch {}
+      clearAdvanceTimer();
     };
   },
 
