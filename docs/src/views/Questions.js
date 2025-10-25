@@ -22,6 +22,8 @@ import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
+const QUESTIONS_PER_ROUND = 3;
+
 const FALLBACK_ITEMS = [
   {
     question: "In the sentence “She sang happily”, which part of speech is “happily”?",
@@ -203,11 +205,23 @@ export default {
       }, 140);
     };
 
+    const safeRound = () => {
+      const r = Number(round);
+      return Number.isFinite(r) && r > 0 ? r : 1;
+    };
+
+    const questionNumberAt = (index) => {
+      return (safeRound() - 1) * QUESTIONS_PER_ROUND + index + 1;
+    };
+
     const renderSteps = () => {
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
         btn.disabled = triplet.length === 0;
+        const labelNumber = questionNumberAt(i);
+        btn.textContent = String(labelNumber);
+        btn.setAttribute("aria-label", `Question ${labelNumber}`);
       });
     };
 
@@ -217,6 +231,8 @@ export default {
       choiceButtons.forEach((btn, i) => {
         const option = current.options?.[i] || "";
         btn.textContent = option;
+        if (option) btn.dataset.choiceValue = option;
+        else delete btn.dataset.choiceValue;
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
         btn.disabled = !option || published || submitting;
@@ -254,7 +270,8 @@ export default {
       idx = targetIdx;
       const render = () => {
         const current = triplet[idx] || {};
-        const label = current.question ? `${idx + 1}. ${current.question}` : "";
+        const qNumber = questionNumberAt(idx);
+        const label = current.question ? `${qNumber}. ${current.question}` : "";
         setPrompt(label, { status: false });
         setChoicesVisible(true);
         renderChoices();
@@ -373,14 +390,19 @@ export default {
       }
     }
 
+    const showWaitingNotice = () => {
+      stepButtons.forEach((btn) => btn.classList.remove("is-active"));
+      steps.classList.add("is-hidden");
+      choiceButtons.forEach((btn) => btn.classList.remove("is-selected"));
+      setChoicesVisible(false);
+      setPrompt(waitingLabel, { status: true });
+    };
+
     if (submittedAlready) {
       published = true;
-      const lastIdx = triplet.length > 0 ? triplet.length - 1 : 0;
-      showQuestion(lastIdx, { animate: false });
       submitBtn.disabled = true;
       submitBtn.textContent = waitingLabel;
-      renderChoices();
-      renderSteps();
+      showWaitingNotice();
       pauseRoundTimer(timerContext);
     } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
       showQuestion(0, { animate: false });
@@ -438,10 +460,14 @@ export default {
       btn.addEventListener("click", () => {
         if (triplet.length === 0) return;
         if (published || submitting) return;
-        const text = btn.textContent || "";
+        const text = btn.dataset.choiceValue || "";
         const currentIndex = idx;
         if (!text) return;
         chosen[currentIndex] = text;
+        choiceButtons.forEach((choiceBtn) => {
+          const value = choiceBtn.dataset.choiceValue || "";
+          choiceBtn.classList.toggle("is-selected", value && value === text);
+        });
         renderChoices();
         renderSteps();
         updateSubmitState();
@@ -487,10 +513,7 @@ export default {
         submitting = false;
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
-        const lastIdx = triplet.length > 0 ? triplet.length - 1 : 0;
-        showQuestion(lastIdx, { animate: false });
-        renderChoices();
-        renderSteps();
+        showWaitingNotice();
         clearAdvanceTimer();
         pauseRoundTimer(timerContext);
       } catch (err) {
@@ -508,6 +531,7 @@ export default {
       if (nextRound !== round) {
         round = nextRound;
         timerContext.round = round;
+        renderSteps();
       }
 
       if (data.state === "marking") {
