@@ -82,17 +82,7 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
-    const backBtn = el(
-      "button",
-      {
-        class: "btn subtle phase-header__back",
-        type: "button",
-      },
-      "BACK"
-    );
-    backBtn.style.display = "none";
-    headerRow.appendChild(backBtn);
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
     const heading = el("div", { class: "phase-header__title" }, "MARKING 1/3");
     headerRow.appendChild(heading);
 
@@ -219,6 +209,7 @@ export default {
     let marks = new Array(totalMarks).fill(null);
     let published = false;
     let submitting = false;
+    let advanceTimer = null;
 
     const disableFns = [];
     const reflectFns = [];
@@ -233,21 +224,17 @@ export default {
       showOverlay(`Waiting for ${oppName}`, note || "Waiting for opponent");
     };
 
+    const clearAdvanceTimer = () => {
+      if (advanceTimer) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+      }
+    };
+
     const setVerdictsEnabled = (enabled) => {
       btnRight.disabled = !enabled;
       btnWrong.disabled = !enabled;
       btnUnknown.disabled = !enabled;
-    };
-
-    const updateBackVisibility = () => {
-      const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
-      }
     };
 
     const reflect = () => {
@@ -265,12 +252,11 @@ export default {
 
     disableFns.push(() => {
       setVerdictsEnabled(false);
-      backBtn.style.display = "none";
-      backBtn.disabled = true;
     });
     reflectFns.push(() => { reflect(); });
 
     const showMark = (targetIdx) => {
+      clearAdvanceTimer();
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= totalMarks) targetIdx = totalMarks - 1;
       idx = targetIdx;
@@ -282,7 +268,6 @@ export default {
       heading.textContent = `MARKING ${Math.min(idx + 1, 3)}/3`;
       setVerdictsEnabled(true);
       reflect();
-      updateBackVisibility();
       resumeRoundTimer(timerContext);
       hideOverlay();
     };
@@ -291,8 +276,8 @@ export default {
       if (published || submitting) return;
       submitting = true;
       const safeMarks = marks.map((value) => markValue(value));
+      clearAdvanceTimer();
       setVerdictsEnabled(false);
-      updateBackVisibility();
       pauseRoundTimer(timerContext);
       const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
       const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
@@ -319,29 +304,29 @@ export default {
           hideOverlay();
           resumeRoundTimer(timerContext);
           setVerdictsEnabled(true);
-          updateBackVisibility();
         }
       }
     };
 
     const handleVerdict = (value) => {
       if (published || submitting) return;
+      clearAdvanceTimer();
       marks[idx] = markValue(value);
       reflect();
-      if (idx >= totalMarks - 1) {
-        submitMarks();
-      } else {
-        showMark(idx + 1);
-      }
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        if (published || submitting) return;
+        if (idx >= totalMarks - 1) {
+          submitMarks();
+        } else {
+          showMark(idx + 1);
+        }
+      }, 500);
     };
 
     btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT));
     btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG));
     btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN));
-    backBtn.addEventListener("click", () => {
-      if (idx <= 0 || submitting || published) return;
-      showMark(idx - 1);
-    });
 
     const existingMarks = (((roomData0.marking || {})[myRole] || {})[round] || []);
     if (Array.isArray(existingMarks) && existingMarks.length === 3) {
@@ -461,6 +446,7 @@ export default {
     });
 
     this.unmount = () => {
+      clearAdvanceTimer();
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       pauseRoundTimer(timerContext);
     };

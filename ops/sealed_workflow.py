@@ -19,8 +19,8 @@ from typing import Any
 PASSWORD = "DEMO-ONLY"
 PBKDF2_ITERATIONS = 150_000
 
-QUESTION_TEMPLATE = Path("millionaire-questionpack.json")
-MATHS_TEMPLATE = Path("jemima-maths-chain-guidance-1.json")
+QUESTION_TEMPLATE = Path("AAA-questions.json")
+MATHS_TEMPLATE = Path("AAA-maths.json")
 
 QUESTIONS_PREFIX = "QPACK"
 MATHS_PREFIX = "MPACK"
@@ -644,6 +644,8 @@ def _seed_firestore(pack: dict[str, Any], seed_source: dict[str, Any]) -> None:
                     "timestamps.updatedAt": fb_firestore.SERVER_TIMESTAMP,
                 },
             )
+
+    txn()
 
     rounds_ref = room_ref.collection("rounds")
     for entry in pack.get("rounds", []):
