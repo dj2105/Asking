@@ -19,6 +19,7 @@ import {
 
 import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { toBalancedLines, setMultilineText, normaliseText } from "../lib/text.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
@@ -73,6 +74,9 @@ export default {
     const hue = Math.floor(Math.random() * 360);
     const accentHue = (hue + 180) % 360;
     document.documentElement.style.setProperty("--ink-h", String(hue));
+    document.documentElement.style.setProperty("--ink", `hsl(${hue}, 72%, 16%)`);
+    document.documentElement.style.setProperty("--muted", `hsla(${hue}, 28%, 32%, 0.74)`);
+    document.documentElement.style.setProperty("--soft-line", `hsla(${hue}, 34%, 26%, 0.22)`);
     document.documentElement.style.setProperty("--accent-soft", `hsl(${accentHue}, 68%, 88%)`);
     document.documentElement.style.setProperty("--accent-strong", `hsl(${accentHue}, 52%, 26%)`);
 
@@ -152,8 +156,13 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
-    const setPrompt = (text, { status = false } = {}) => {
-      prompt.textContent = text || "";
+    const setPrompt = (content, { status = false } = {}) => {
+      const lines = Array.isArray(content)
+        ? content
+        : typeof content === "string"
+        ? [normaliseText(content)]
+        : [];
+      setMultilineText(prompt, lines);
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
@@ -232,9 +241,14 @@ export default {
       const currentSelection = chosen[idx] || "";
       choiceButtons.forEach((btn, i) => {
         const option = current.options?.[i] || "";
-        btn.textContent = option;
+        btn.dataset.value = option;
+        const optionLines = toBalancedLines(option, { minWordsPerLine: 1 });
+        setMultilineText(btn, optionLines);
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
+        if (!isSelected) {
+          btn.classList.remove("is-animating");
+        }
         btn.disabled = !option || published || submitting;
       });
     };
@@ -270,9 +284,8 @@ export default {
       idx = targetIdx;
       const render = () => {
         const current = triplet[idx] || {};
-        const questionNumber = questionOffset() + idx + 1;
-        const label = current.question ? `${questionNumber}. ${current.question}` : "";
-        setPrompt(label, { status: false });
+        const questionLines = toBalancedLines(current.question || "", { minWordsPerLine: 2 });
+        setPrompt(questionLines, { status: false });
         setChoicesVisible(true);
         renderChoices();
         renderSteps();
@@ -305,7 +318,7 @@ export default {
           showQuestion(triplet.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 500);
+      }, 800);
     };
 
     const showWaitingPrompt = () => {
@@ -459,14 +472,24 @@ export default {
     };
 
     choiceButtons.forEach((btn) => {
+      btn.addEventListener("animationend", () => {
+        btn.classList.remove("is-animating");
+      });
       btn.addEventListener("click", () => {
         if (triplet.length === 0) return;
         if (published || submitting) return;
-        const text = btn.textContent || "";
+        const text = btn.dataset.value || "";
         const currentIndex = idx;
         if (!text) return;
         chosen[currentIndex] = text;
         choiceButtons.forEach((choiceBtn) => {
+          if (choiceBtn === btn) {
+            choiceBtn.classList.remove("is-animating");
+            void choiceBtn.offsetWidth;
+            choiceBtn.classList.add("is-animating");
+          } else {
+            choiceBtn.classList.remove("is-animating");
+          }
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
         });
         renderChoices();
