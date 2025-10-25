@@ -22,6 +22,12 @@ import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
+const PRIMARY_ACCENTS = [
+  { strong: "#0057ff", soft: "#e6ecff", shadow: "rgba(0, 34, 122, 0.45)" },
+  { strong: "#ff184d", soft: "#ffe3ec", shadow: "rgba(167, 16, 55, 0.45)" },
+  { strong: "#ffb400", soft: "#fff4d6", shadow: "rgba(173, 118, 0, 0.45)" },
+];
+
 function balanceQuestionText(input = "") {
   const raw = String(input || "").replace(/\s+/g, " ").trim();
   if (!raw) return "";
@@ -36,38 +42,17 @@ function balanceQuestionText(input = "") {
   return `${firstLine}\n${secondLine}`;
 }
 
-function createPaletteApplier(hue, accentHue) {
+function createPaletteApplier() {
+  document.documentElement.style.setProperty("--muted", "#3b4660");
+  document.documentElement.style.setProperty("--soft-line", "rgba(13, 18, 32, 0.18)");
+  document.documentElement.style.setProperty("--card", "#ffffff");
+  document.documentElement.style.setProperty("--paper", "#ffffff");
   return (roundNumber = 1) => {
-    const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
-    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty(
-      "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
-    );
-    document.documentElement.style.setProperty(
-      "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
-    );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
-    );
+    const paletteIndex = Math.max(0, (roundNumber || 1) - 1) % PRIMARY_ACCENTS.length;
+    const accent = PRIMARY_ACCENTS[paletteIndex];
+    document.documentElement.style.setProperty("--accent-soft", accent.soft);
+    document.documentElement.style.setProperty("--accent-strong", accent.strong);
+    document.documentElement.style.setProperty("--accent-shadow", accent.shadow);
   };
 }
 
@@ -119,9 +104,7 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
+    const applyPalette = createPaletteApplier();
     applyPalette(round || 1);
 
     container.innerHTML = "";
