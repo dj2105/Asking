@@ -83,17 +83,7 @@ export default {
     const root = el("div", { class: "view view-questions stage-center" });
 
     const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
-    const backBtn = el(
-      "button",
-      {
-        class: "btn subtle phase-header__back",
-        type: "button",
-      },
-      "BACK"
-    );
-    backBtn.style.display = "none";
-    headerRow.appendChild(backBtn);
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
     const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
     headerRow.appendChild(heading);
     const qText = el("div", { class: "mono question-card__prompt" }, "");
@@ -154,9 +144,11 @@ export default {
 
     let stopWatcher = null;
     let alive = true;
+    let removePopStateListener = () => {};
     this.unmount = () => {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
+      try { removePopStateListener(); } catch {}
     };
 
     const rRef = roomRef(code);
@@ -260,20 +252,35 @@ export default {
       return { question, options: [optA, optB], correct };
     });
 
-    const updateBackVisibility = () => {
-      const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
-      }
-    };
-
     const timerContext = { code, role: myRole, round };
 
-    const showQuestion = (targetIdx) => {
+    const historySupported =
+      typeof window !== "undefined" &&
+      window.history &&
+      typeof window.history.pushState === "function" &&
+      typeof window.history.replaceState === "function";
+    const historyKey = "jemimaQuestions";
+    let historyIndex = null;
+
+    function recordHistoryIndex(nextIndex, { replace = false } = {}) {
+      historyIndex = nextIndex;
+      if (!historySupported) return;
+      const baseState = window.history.state && typeof window.history.state === "object"
+        ? { ...window.history.state }
+        : {};
+      baseState[historyKey] = { idx: nextIndex, code };
+      try {
+        if (replace) {
+          window.history.replaceState(baseState, document.title);
+        } else {
+          window.history.pushState(baseState, document.title);
+        }
+      } catch (err) {
+        console.warn("[questions] history state update failed:", err);
+      }
+    }
+
+    function showQuestion(targetIdx, options = {}) {
       if (triplet.length === 0) return;
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
@@ -286,18 +293,40 @@ export default {
       btnWrap.style.display = "flex";
       waitMsg.style.display = "none";
       setButtonsEnabled(true);
-      updateBackVisibility();
+      if (!options.skipHistory) {
+        const shouldReplace = historyIndex === null || options.forceReplace;
+        recordHistoryIndex(idx, { replace: shouldReplace });
+      } else {
+        historyIndex = idx;
+      }
       resumeRoundTimer(timerContext);
+    }
+
+    const handlePopState = (event) => {
+      if (published || submitting) return;
+      const state = event?.state;
+      const payload = state && typeof state === "object" ? state[historyKey] : null;
+      if (!payload || payload.code !== code) return;
+      const target = Number(payload.idx);
+      if (!Number.isFinite(target)) return;
+      showQuestion(target, { skipHistory: true });
     };
+    if (historySupported) {
+      window.addEventListener("popstate", handlePopState);
+      removePopStateListener = () => {
+        try {
+          window.removeEventListener("popstate", handlePopState);
+        } catch {}
+        removePopStateListener = () => {};
+      };
+    }
 
     const finishRound = () => {
       pauseRoundTimer(timerContext);
       setButtonsEnabled(false);
       waitMsg.style.display = "none";
       showWaitingOverlay();
-      publishAnswers(false);
-      backBtn.style.display = "none";
-      backBtn.disabled = true;
+      publishAnswers();
     };
 
     const showWaitingState = (text) => {
@@ -352,10 +381,6 @@ export default {
 
     btn1.addEventListener("click", () => onPick(btn1.textContent));
     btn2.addEventListener("click", () => onPick(btn2.textContent));
-    backBtn.addEventListener("click", () => {
-      if (idx <= 0 || submitting || published) return;
-      showQuestion(idx - 1);
-    });
 
     const tripletReady = triplet.every((entry) =>
       entry.question && entry.options && entry.options.length === 2
@@ -437,6 +462,7 @@ export default {
       alive = false;
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
+      try { removePopStateListener(); } catch {}
     };
   },
 

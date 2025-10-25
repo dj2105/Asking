@@ -82,17 +82,7 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
-    const backBtn = el(
-      "button",
-      {
-        class: "btn subtle phase-header__back",
-        type: "button",
-      },
-      "BACK"
-    );
-    backBtn.style.display = "none";
-    headerRow.appendChild(backBtn);
+    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
     const heading = el("div", { class: "phase-header__title" }, "MARKING 1/3");
     headerRow.appendChild(heading);
 
@@ -239,17 +229,6 @@ export default {
       btnUnknown.disabled = !enabled;
     };
 
-    const updateBackVisibility = () => {
-      const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
-      }
-    };
-
     const reflect = () => {
       const mark = marks[idx];
       const isRight = mark === VERDICT.RIGHT;
@@ -265,8 +244,6 @@ export default {
 
     disableFns.push(() => {
       setVerdictsEnabled(false);
-      backBtn.style.display = "none";
-      backBtn.disabled = true;
     });
     reflectFns.push(() => { reflect(); });
 
@@ -282,7 +259,6 @@ export default {
       heading.textContent = `MARKING ${Math.min(idx + 1, 3)}/3`;
       setVerdictsEnabled(true);
       reflect();
-      updateBackVisibility();
       resumeRoundTimer(timerContext);
       hideOverlay();
     };
@@ -292,7 +268,6 @@ export default {
       submitting = true;
       const safeMarks = marks.map((value) => markValue(value));
       setVerdictsEnabled(false);
-      updateBackVisibility();
       pauseRoundTimer(timerContext);
       const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
       const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
@@ -319,7 +294,6 @@ export default {
           hideOverlay();
           resumeRoundTimer(timerContext);
           setVerdictsEnabled(true);
-          updateBackVisibility();
         }
       }
     };
@@ -338,10 +312,6 @@ export default {
     btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT));
     btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG));
     btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN));
-    backBtn.addEventListener("click", () => {
-      if (idx <= 0 || submitting || published) return;
-      showMark(idx - 1);
-    });
 
     const existingMarks = (((roomData0.marking || {})[myRole] || {})[round] || []);
     if (Array.isArray(existingMarks) && existingMarks.length === 3) {
