@@ -88,37 +88,38 @@ function balanceQuestionText(input = "") {
   return `${firstLine}\n${secondLine}`;
 }
 
-function createPaletteApplier(hue, accentHue) {
+function createPaletteApplier() {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
-    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
+    const cardOpacity = Math.min(0.92, 0.82 + depth * 0.015);
+    const cardStrongOpacity = Math.min(0.96, 0.9 + depth * 0.02);
+    const mutedAlpha = Math.max(0.52, 0.74 - depth * 0.035);
+    const softLineAlpha = Math.max(0.22, 0.38 - depth * 0.03);
+    const uvLight = Math.max(52, 66 - depth * 2.2);
+    const uvStrongLight = Math.max(44, uvLight - 6);
+    document.documentElement.style.setProperty(
+      "--card",
+      `rgba(22, 41, 67, ${cardOpacity.toFixed(2)})`
+    );
+    document.documentElement.style.setProperty(
+      "--card-strong",
+      `rgba(28, 52, 82, ${cardStrongOpacity.toFixed(2)})`
+    );
     document.documentElement.style.setProperty(
       "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+      `rgba(210, 224, 255, ${mutedAlpha.toFixed(2)})`
     );
     document.documentElement.style.setProperty(
       "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
+      `rgba(136, 167, 219, ${softLineAlpha.toFixed(2)})`
     );
     document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
+      "--uv",
+      `hsl(258, 88%, ${uvLight.toFixed(1)}%)`
     );
     document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
+      "--uv-strong",
+      `hsl(258, 82%, ${uvStrongLight.toFixed(1)}%)`
     );
   };
 }
@@ -131,9 +132,7 @@ export default {
     const code = clampCode(params.get("code") || "");
     let round = parseInt(params.get("round") || "1", 10) || 1;
 
-    const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
+    const applyPalette = createPaletteApplier();
     applyPalette(round || 1);
 
     container.innerHTML = "";
@@ -242,14 +241,9 @@ export default {
     container.appendChild(root);
 
     const setPrompt = (text, { status = false } = {}) => {
-      const content = status ? String(text || "") : balanceQuestionText(text);
-      prompt.textContent = content;
+      const contentText = status ? String(text || "") : balanceQuestionText(text);
+      prompt.textContent = contentText;
       prompt.classList.toggle("round-panel__question--status", status);
-    };
-
-    const setMarkingVisible = (visible) => {
-      answerBox.classList.toggle("is-hidden", !visible);
-      verdictRow.classList.toggle("is-hidden", !visible);
     };
 
     let idx = 0;
@@ -258,8 +252,35 @@ export default {
     let answers = [];
     let published = false;
     let submitting = false;
+    let freezeVerdictIndex = null;
+    let verdictsInteractable = true;
     let advanceTimer = null;
     let swapTimer = null;
+
+    const applyVerdictButtonState = () => {
+      const locking = freezeVerdictIndex === idx;
+      verdictRow.classList.toggle("is-locking", locking);
+      const allow = verdictsInteractable && !published && !submitting && !locking;
+      [btnRight, btnUnknown, btnWrong].forEach((btn) => {
+        const isSelected = btn.classList.contains("is-selected");
+        btn.disabled = !allow;
+        btn.classList.toggle("is-dimmed", locking && !isSelected);
+      });
+    };
+
+    const releaseVerdictFreeze = () => {
+      freezeVerdictIndex = null;
+      applyVerdictButtonState();
+    };
+
+    const setMarkingVisible = (visible) => {
+      answerBox.classList.toggle("is-hidden", !visible);
+      verdictRow.classList.toggle("is-hidden", !visible);
+      if (!visible) {
+        releaseVerdictFreeze();
+      }
+      applyVerdictButtonState();
+    };
 
     let alive = true;
     let stopRoomWatch = null;
@@ -315,7 +336,11 @@ export default {
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", marks[i] !== null);
-        btn.disabled = triplet.length === 0 || published || submitting;
+        btn.disabled =
+          triplet.length === 0 ||
+          published ||
+          submitting ||
+          freezeVerdictIndex !== null;
       });
     };
 
@@ -330,12 +355,12 @@ export default {
       btnRight.setAttribute("aria-pressed", isRight ? "true" : "false");
       btnWrong.setAttribute("aria-pressed", isWrong ? "true" : "false");
       btnUnknown.setAttribute("aria-pressed", isUnknown ? "true" : "false");
+      applyVerdictButtonState();
     };
 
     const setVerdictsEnabled = (enabled) => {
-      btnRight.disabled = !enabled;
-      btnWrong.disabled = !enabled;
-      btnUnknown.disabled = !enabled;
+      verdictsInteractable = enabled;
+      applyVerdictButtonState();
     };
 
     const updateSubmitState = () => {
@@ -366,13 +391,13 @@ export default {
       idx = targetIdx;
       setVerdictsEnabled(!published && !submitting);
       const render = () => {
+        releaseVerdictFreeze();
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
         setPrompt(questionText, { status: false });
         answerValue.textContent = answerText;
         renderSteps();
-        [btnRight, btnUnknown, btnWrong].forEach((btn) => btn.classList.remove("is-blinking"));
         reflectVerdicts();
         highlightSubmitIfReady();
         setMarkingVisible(true);
@@ -596,27 +621,19 @@ export default {
       }
     };
 
-    const handleVerdict = (value, sourceBtn) => {
+    const handleVerdict = (value) => {
       if (published || submitting) return;
       marks[idx] = markValue(value);
-      if (sourceBtn) {
-        [btnRight, btnUnknown, btnWrong].forEach((btn) => {
-          if (btn !== sourceBtn) btn.classList.remove("is-blinking");
-        });
-        sourceBtn.classList.add("is-blinking");
-        setTimeout(() => {
-          sourceBtn.classList.remove("is-blinking");
-        }, 900);
-      }
+      freezeVerdictIndex = idx;
       renderSteps();
       reflectVerdicts();
       updateSubmitState();
       scheduleAdvance(idx);
     };
 
-    btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT, btnRight));
-    btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG, btnWrong));
-    btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN, btnUnknown));
+    btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT));
+    btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG));
+    btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN));
 
     stepButtons.forEach((btn, i) => {
       btn.addEventListener("click", () => {

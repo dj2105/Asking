@@ -36,37 +36,38 @@ function balanceQuestionText(input = "") {
   return `${firstLine}\n${secondLine}`;
 }
 
-function createPaletteApplier(hue, accentHue) {
+function createPaletteApplier() {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
-    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
+    const cardOpacity = Math.min(0.92, 0.82 + depth * 0.015);
+    const cardStrongOpacity = Math.min(0.96, 0.9 + depth * 0.02);
+    const mutedAlpha = Math.max(0.52, 0.74 - depth * 0.035);
+    const softLineAlpha = Math.max(0.22, 0.38 - depth * 0.03);
+    const uvLight = Math.max(52, 66 - depth * 2.2);
+    const uvStrongLight = Math.max(44, uvLight - 6);
+    document.documentElement.style.setProperty(
+      "--card",
+      `rgba(22, 41, 67, ${cardOpacity.toFixed(2)})`
+    );
+    document.documentElement.style.setProperty(
+      "--card-strong",
+      `rgba(28, 52, 82, ${cardStrongOpacity.toFixed(2)})`
+    );
     document.documentElement.style.setProperty(
       "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+      `rgba(210, 224, 255, ${mutedAlpha.toFixed(2)})`
     );
     document.documentElement.style.setProperty(
       "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
+      `rgba(136, 167, 219, ${softLineAlpha.toFixed(2)})`
     );
     document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
+      "--uv",
+      `hsl(258, 88%, ${uvLight.toFixed(1)}%)`
     );
     document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
+      "--uv-strong",
+      `hsl(258, 82%, ${uvStrongLight.toFixed(1)}%)`
     );
   };
 }
@@ -119,9 +120,7 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
+    const applyPalette = createPaletteApplier();
     applyPalette(round || 1);
 
     container.innerHTML = "";
@@ -200,14 +199,26 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
+    let freezeSelectionIndex = null;
+
+    const releaseSelectionFreeze = () => {
+      freezeSelectionIndex = null;
+      choicesWrap.classList.remove("is-locking");
+      content.classList.remove("is-locking");
+      choiceButtons.forEach((btn) => btn.classList.remove("is-dimmed"));
+    };
+
     const setPrompt = (text, { status = false } = {}) => {
-      const content = status ? String(text || "") : balanceQuestionText(text);
-      prompt.textContent = content;
+      const contentText = status ? String(text || "") : balanceQuestionText(text);
+      prompt.textContent = contentText;
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
     const setChoicesVisible = (visible) => {
       choicesWrap.classList.toggle("is-hidden", !visible);
+      if (!visible) {
+        releaseSelectionFreeze();
+      }
     };
 
     let idx = 0;
@@ -272,20 +283,28 @@ export default {
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
-        btn.disabled = triplet.length === 0 || published || submitting;
+        btn.disabled =
+          triplet.length === 0 ||
+          published ||
+          submitting ||
+          freezeSelectionIndex !== null;
       });
     };
 
     const renderChoices = () => {
       const current = triplet[idx] || {};
       const currentSelection = chosen[idx] || "";
+      const locking = freezeSelectionIndex === idx;
       choiceButtons.forEach((btn, i) => {
         const option = current.options?.[i] || "";
         btn.textContent = option;
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
-        btn.disabled = !option || published || submitting;
+        btn.classList.toggle("is-dimmed", locking && !isSelected);
+        btn.disabled = !option || published || submitting || locking;
       });
+      choicesWrap.classList.toggle("is-locking", locking);
+      content.classList.toggle("is-locking", locking);
     };
 
     const updateSubmitState = () => {
@@ -318,10 +337,10 @@ export default {
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
       const render = () => {
+        releaseSelectionFreeze();
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
-        choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
         highlightSubmitIfReady();
@@ -516,14 +535,7 @@ export default {
         const currentIndex = idx;
         if (!text) return;
         chosen[currentIndex] = text;
-        choiceButtons.forEach((choiceBtn) => {
-          choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
-          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
-        });
-        btn.classList.add("is-blinking");
-        setTimeout(() => {
-          btn.classList.remove("is-blinking");
-        }, 900);
+        freezeSelectionIndex = currentIndex;
         renderChoices();
         renderSteps();
         updateSubmitState();
