@@ -57,6 +57,7 @@ body {
   flex-direction: column;
   gap: 24px;
   position: relative;
+  padding-top: 24px;
 }
 
 .stage-center {
@@ -343,47 +344,42 @@ input[type="text"], input[type="number"], .input {
 
 .phase-header {
   align-self: stretch;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 18px;
   font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  text-align: left;
-}
-.phase-header--centered {
-  justify-content: center;
-  text-align: center;
-}
-.phase-header--centered .phase-header__title {
-  flex: 1;
-  text-align: center;
-}
-.phase-header--with-back {
-  position: relative;
-}
-.phase-header--with-back .phase-header__title {
-  flex: 1;
 }
 .phase-header__back {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.85em;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 10px 14px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  appearance: none;
+  -webkit-appearance: none;
 }
-.phase-header__back:disabled {
-  pointer-events: none;
+.phase-header__back:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
 }
 .phase-header__title {
   font-size: inherit;
   font-weight: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
+  text-align: center;
 }
 .phase-header__timer {
   font-size: inherit;
@@ -393,6 +389,18 @@ input[type="text"], input[type="number"], .input {
   text-align: right;
   min-width: 3ch;
   font-variant-numeric: tabular-nums;
+}
+.phase-header__progress {
+  font-size: 0.9em;
+  letter-spacing: 0.1em;
+  text-transform: inherit;
+  justify-self: end;
+  text-align: right;
+  min-width: 4ch;
+}
+.phase-header__back--hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 .phase-header__timer--hidden {
   visibility: hidden;
@@ -776,6 +784,46 @@ input[type="text"], input[type="number"], .input {
   background: rgba(10, 132, 255, 0.18);
   border-color: rgba(10, 132, 255, 0.85);
   color: #0a69d6;
+}
+
+.coderoom-card {
+  padding: 20px 24px;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+}
+
+.coderoom-code {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-align: center;
+}
+
+.coderoom-status {
+  min-height: 20px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.coderoom-back {
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  align-self: center;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.coderoom-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.coderoom-guest {
+  font-size: 0.95rem;
+  opacity: 0.75;
+  text-align: center;
 }
 
 

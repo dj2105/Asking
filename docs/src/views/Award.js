@@ -297,6 +297,16 @@ export default {
     };
 
     const refreshReviews = () => {
+      const docEl = document.documentElement;
+      const body = document.body;
+      const prevScroll =
+        typeof window?.scrollY === "number"
+          ? window.scrollY
+          : docEl && typeof docEl.scrollTop === "number"
+            ? docEl.scrollTop
+            : body && typeof body.scrollTop === "number"
+              ? body.scrollTop
+              : 0;
       reviewWrap.innerHTML = "";
       const myItems = myRole === "host" ? reviewData.hostItems : reviewData.guestItems;
       const myAnswers = myRole === "host" ? reviewData.hostAnswers : reviewData.guestAnswers;
@@ -316,6 +326,19 @@ export default {
         round,
       }));
       updateRoundScores();
+      const target = Math.max(0, prevScroll);
+      const restore = () => {
+        try {
+          window.scrollTo({ top: target, left: 0, behavior: "instant" });
+        } catch {
+          window.scrollTo(0, target);
+        }
+      };
+      if (typeof window?.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(restore);
+      } else {
+        setTimeout(restore, 0);
+      }
     };
 
     const refreshSummary = () => {

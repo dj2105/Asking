@@ -82,19 +82,19 @@ export default {
     const root = el("div", { class: "view view-marking stage-center" });
 
     const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered phase-header--with-back" });
+    const headerRow = el("div", { class: "mono phase-header" });
     const backBtn = el(
       "button",
       {
-        class: "btn subtle phase-header__back",
+        class: "phase-header__back phase-header__back--hidden",
         type: "button",
       },
-      "BACK"
+      "<BACK"
     );
-    backBtn.style.display = "none";
     headerRow.appendChild(backBtn);
-    const heading = el("div", { class: "phase-header__title" }, "MARKING 1/3");
-    headerRow.appendChild(heading);
+    headerRow.appendChild(el("div", { class: "phase-header__title" }, "MARKING"));
+    const progress = el("div", { class: "phase-header__progress" }, "1/3");
+    headerRow.appendChild(progress);
 
     const list = el("div", { class: "qa-list" });
     const markRow = el("div", { class: "mark-row" });
@@ -137,11 +137,11 @@ export default {
         title: "Mark as unsure",
         "aria-pressed": "false",
       },
-      "I DUNNO"
+      "i dunno"
     );
     pair.appendChild(btnRight);
-    pair.appendChild(btnWrong);
     pair.appendChild(btnUnknown);
+    pair.appendChild(btnWrong);
     markRow.appendChild(pair);
 
     list.appendChild(markRow);
@@ -219,6 +219,7 @@ export default {
     let marks = new Array(totalMarks).fill(null);
     let published = false;
     let submitting = false;
+    let advancing = false;
 
     const disableFns = [];
     const reflectFns = [];
@@ -237,17 +238,13 @@ export default {
       btnRight.disabled = !enabled;
       btnWrong.disabled = !enabled;
       btnUnknown.disabled = !enabled;
+      updateBackVisibility();
     };
 
     const updateBackVisibility = () => {
       const canGoBack = idx > 0 && !published && !submitting;
-      if (canGoBack) {
-        backBtn.style.display = "";
-        backBtn.disabled = false;
-      } else {
-        backBtn.style.display = "none";
-        backBtn.disabled = true;
-      }
+      backBtn.disabled = !canGoBack;
+      backBtn.classList.toggle("phase-header__back--hidden", !canGoBack);
     };
 
     const reflect = () => {
@@ -265,10 +262,16 @@ export default {
 
     disableFns.push(() => {
       setVerdictsEnabled(false);
-      backBtn.style.display = "none";
       backBtn.disabled = true;
+      backBtn.classList.add("phase-header__back--hidden");
     });
     reflectFns.push(() => { reflect(); });
+
+    const updateProgress = () => {
+      const total = totalMarks || 3;
+      const current = Math.min(idx + 1, total);
+      progress.textContent = `${current}/${total}`;
+    };
 
     const showMark = (targetIdx) => {
       if (targetIdx < 0) targetIdx = 0;
@@ -279,7 +282,7 @@ export default {
       const chosenAnswer = oppAnswers[idx] || "";
       questionNode.textContent = `${idx + 1}. ${questionText || "(missing question)"}`;
       answerText.textContent = chosenAnswer || "(no answer recorded)";
-      heading.textContent = `MARKING ${Math.min(idx + 1, 3)}/3`;
+      updateProgress();
       setVerdictsEnabled(true);
       reflect();
       updateBackVisibility();
@@ -290,6 +293,7 @@ export default {
     const submitMarks = async () => {
       if (published || submitting) return;
       submitting = true;
+      updateBackVisibility();
       const safeMarks = marks.map((value) => markValue(value));
       setVerdictsEnabled(false);
       updateBackVisibility();
@@ -312,6 +316,7 @@ export default {
         disableFns.forEach((fn) => { try { fn(); } catch {} });
         showWaitingOverlay("Review submitted");
         clearRoundTimer(timerContext);
+        updateBackVisibility();
       } catch (err) {
         console.warn("[marking] submit failed:", err);
         submitting = false;
@@ -324,14 +329,21 @@ export default {
       }
     };
 
-    const handleVerdict = (value) => {
-      if (published || submitting) return;
-      marks[idx] = markValue(value);
+    const handleVerdict = async (value) => {
+      if (published || submitting || advancing) return;
+      const currentIndex = idx;
+      marks[currentIndex] = markValue(value);
       reflect();
-      if (idx >= totalMarks - 1) {
+      setVerdictsEnabled(false);
+      advancing = true;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      advancing = false;
+      if (published || submitting) return;
+      if (idx !== currentIndex) return;
+      if (currentIndex >= totalMarks - 1) {
         submitMarks();
       } else {
-        showMark(idx + 1);
+        showMark(currentIndex + 1);
       }
     };
 
@@ -347,11 +359,14 @@ export default {
     if (Array.isArray(existingMarks) && existingMarks.length === 3) {
       marks = new Array(totalMarks).fill(null).map((_, i) => markValue(existingMarks[i]));
       published = true;
+      idx = totalMarks - 1;
       reflectFns.forEach((fn) => { try { fn(); } catch {} });
       disableFns.forEach((fn) => { try { fn(); } catch {} });
       showWaitingOverlay("Review submitted");
       pauseRoundTimer(timerContext);
       clearRoundTimer(timerContext);
+      updateProgress();
+      updateBackVisibility();
     } else {
       showMark(0);
     }

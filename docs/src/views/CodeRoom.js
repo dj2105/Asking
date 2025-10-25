@@ -45,16 +45,11 @@ export default {
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-coderoom" });
-    const card = el("div", { class: "card" });
+    const card = el("div", { class: "card card--soft coderoom-card" });
     root.appendChild(card);
     container.appendChild(root);
 
-    card.appendChild(el("h1", { class: "title" }, "Code Room"));
-
-    const codeBlock = el("div", {
-      class: "mono",
-      style: "font-size:42px;font-weight:700;margin-top:10px;text-align:center;letter-spacing:6px;",
-    }, code);
+    const codeBlock = el("div", { class: "mono coderoom-code" }, code);
     card.appendChild(codeBlock);
 
     const copyLink = el(
@@ -69,18 +64,20 @@ export default {
       },
       "Copy join link"
     );
-    card.appendChild(el("div", { style: "text-align:center;margin-top:8px;" }, copyLink));
+    const actions = el("div", { class: "coderoom-actions" });
+    actions.appendChild(copyLink);
+    card.appendChild(actions);
 
     const status = el(
       "div",
-      { class: "mono", style: "margin-top:20px;min-height:20px;text-align:center;" },
+      { class: "mono coderoom-status" },
       "Waiting for Jaime…"
     );
     card.appendChild(status);
 
     const guestBadge = el(
       "div",
-      { class: "mono small", style: "margin-top:6px;text-align:center;opacity:0.8;" },
+      { class: "mono small coderoom-guest" },
       ""
     );
     card.appendChild(guestBadge);
@@ -88,9 +85,8 @@ export default {
     const backBtn = el(
       "button",
       {
-        class: "btn outline",
+        class: "btn outline coderoom-back",
         type: "button",
-        style: "margin-top:24px;",
         onclick: async () => {
           if (currentState === "coderoom") {
             try {
