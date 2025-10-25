@@ -1,0 +1,385 @@
+{
+  "version": "jemima-pack-spec-wwtbam-1",
+  "meta": {
+    "title": "Jemima’s Asking — Millionaire-Ladder Pack",
+    "language": "en-GB",
+    "players": ["host", "guest"],
+    "questions_per_player": 15,
+    "total_questions": 30,
+    "ladder_reference": "Who Wants to Be a Millionaire? (cash ladder metaphor)",
+    "cash_ladder": ["£100","£200","£300","£500","£1,000","£2,000","£4,000","£8,000","£16,000","£32,000","£64,000","£125,000","£250,000","£500,000","£1,000,000"]
+  },
+
+  "category_catalog": [
+    { "category": "British Monarchy", "sample_question": "Who succeeded Elizabeth I in 1603?", "answer": "James VI & I" },
+    { "category": "Cats", "sample_question": "What is a group of kittens called?", "answer": "A litter" },
+    { "category": "American TV Sitcoms", "sample_question": "Which city is Frasier set in?", "answer": "Seattle" },
+    { "category": "Irish History", "sample_question": "In which year did the Easter Rising occur?", "answer": "1916" },
+    { "category": "’90s Pop", "sample_question": "Which band released 'Wannabe' in 1996?", "answer": "Spice Girls" },
+    { "category": "World Capitals", "sample_question": "Capital of Canada?", "answer": "Ottawa" },
+    { "category": "Ancient Greece", "sample_question": "Which city-state won the Peloponnesian War?", "answer": "Sparta" },
+    { "category": "Roman Empire", "sample_question": "Who crossed the Rubicon in 49 BC?", "answer": "Julius Caesar" },
+    { "category": "Medieval Europe", "sample_question": "Where was the Magna Carta sealed?", "answer": "Runnymede" },
+    { "category": "Renaissance Art", "sample_question": "Who painted The Last Supper?", "answer": "Leonardo da Vinci" },
+    { "category": "Baroque Music", "sample_question": "Who composed the Brandenburg Concertos?", "answer": "J. S. Bach" },
+    { "category": "Classical Mythology", "sample_question": "Messenger of the gods?", "answer": "Hermes" },
+    { "category": "Norse Myth", "sample_question": "Name Odin’s spear.", "answer": "Gungnir" },
+    { "category": "World War I", "sample_question": "Year WWI began?", "answer": "1914" },
+    { "category": "World War II", "sample_question": "Operation Overlord was the invasion of which country?", "answer": "France" },
+    { "category": "Modern Politics", "sample_question": "Who signed the Good Friday Agreement for the UK?", "answer": "Tony Blair" },
+    { "category": "Geography — Rivers", "sample_question": "Longest river in Africa?", "answer": "Nile" },
+    { "category": "Geography — Mountains", "sample_question": "K2 lies on which border?", "answer": "Pakistan–China" },
+    { "category": "Flags", "sample_question": "Which flag features a maple leaf?", "answer": "Canada" },
+    { "category": "UNESCO Sites", "sample_question": "Angkor Wat is in which country?", "answer": "Cambodia" },
+    { "category": "Architecture", "sample_question": "Who designed the Sydney Opera House?", "answer": "Jørn Utzon" },
+    { "category": "Design Icons", "sample_question": "Who designed the iPod’s click wheel interface lead?", "answer": "Tony Fadell" },
+    { "category": "Photography", "sample_question": "What does DSLR stand for?", "answer": "Digital Single-Lens Reflex" },
+    { "category": "Cinema — Oscars", "sample_question": "Best Picture winner 1994 (ceremony 1995)?", "answer": "Forrest Gump" },
+    { "category": "Film Scores", "sample_question": "Who scored The Lord of the Rings trilogy?", "answer": "Howard Shore" },
+    { "category": "Literature — Shakespeare", "sample_question": "Hamlet is Prince of which country?", "answer": "Denmark" },
+    { "category": "Poetry", "sample_question": "Who wrote 'Do not go gentle into that good night'?", "answer": "Dylan Thomas" },
+    { "category": "Children’s Books", "sample_question": "Author of 'Matilda'?", "answer": "Roald Dahl" },
+    { "category": "Logic Puzzles", "sample_question": "What is the next prime after 19?", "answer": "23" },
+    { "category": "Mathematics — Number Theory", "sample_question": "Smallest perfect number?", "answer": "6" },
+    { "category": "Mathematics — Geometry", "sample_question": "Sum of interior angles of a triangle?", "answer": "180°" },
+    { "category": "Physics — Mechanics", "sample_question": "Unit of force?", "answer": "Newton" },
+    { "category": "Physics — Thermodynamics", "sample_question": "Absolute zero in Kelvin?", "answer": "0 K" },
+    { "category": "Chemistry — Elements", "sample_question": "Symbol for sodium?", "answer": "Na" },
+    { "category": "Chemistry — Organic", "sample_question": "Simplest alkane?", "answer": "Methane" },
+    { "category": "Biology — Cells", "sample_question": "Powerhouse of the cell?", "answer": "Mitochondrion" },
+    { "category": "Biology — Human Body", "sample_question": "Bone protecting the brain?", "answer": "Skull" },
+    { "category": "Medicine — Anatomy", "sample_question": "Nerve for vision?", "answer": "Optic nerve (II)" },
+    { "category": "Medicine — Conditions", "sample_question": "Insulin regulates which level?", "answer": "Blood glucose" },
+    { "category": "Computing — Algorithms", "sample_question": "Dijkstra finds what?", "answer": "Shortest paths" },
+    { "category": "Computing — Internet", "sample_question": "HTTP stands for?", "answer": "HyperText Transfer Protocol" },
+    { "category": "Space — Planets", "sample_question": "Largest planet?", "answer": "Jupiter" },
+    { "category": "Space — Missions", "sample_question": "First manned Moon landing mission?", "answer": "Apollo 11" },
+    { "category": "Aviation", "sample_question": "What does 'VOR' stand for?", "answer": "VHF Omnidirectional Range" },
+    { "category": "Navigation & Maps", "sample_question": "Greenwich meridian is longitude 0° of which system?", "answer": "WGS84" },
+    { "category": "Economics", "sample_question": "CPI measures what?", "answer": "Consumer price inflation" },
+    { "category": "Business Founders", "sample_question": "Who founded Amazon?", "answer": "Jeff Bezos" },
+    { "category": "Law — UK", "sample_question": "Supreme Court replaced which body in 2009?", "answer": "Appellate Committee of the House of Lords" },
+    { "category": "Philosophy", "sample_question": "Author of 'Meditations' (Stoic Emperor)?", "answer": "Marcus Aurelius" },
+    { "category": "Psychology", "sample_question": "The 'Stroop effect' involves interference between what?", "answer": "Word meaning and ink colour" },
+    { "category": "Sociology", "sample_question": "Durkheim studied what social phenomenon in 1897?", "answer": "Suicide" },
+    { "category": "Anthropology", "sample_question": "Bronisław Malinowski is famous for fieldwork where?", "answer": "Trobriand Islands" },
+    { "category": "Linguistics", "sample_question": "What is a morpheme?", "answer": "Smallest meaningful unit" },
+    { "category": "Etymology", "sample_question": "Origin language of 'algebra'?", "answer": "Arabic" },
+    { "category": "Music Theory", "sample_question": "How many semitones in an octave?", "answer": "12" },
+    { "category": "Instruments", "sample_question": "Which family is the oboe in?", "answer": "Woodwind" },
+    { "category": "Opera", "sample_question": "Who composed 'Carmen'?", "answer": "Georges Bizet" },
+    { "category": "Ballet", "sample_question": "Choreographer of 'The Rite of Spring' 1913 premiere?", "answer": "Vaslav Nijinsky" },
+    { "category": "Painting", "sample_question": "'Starry Night' painter?", "answer": "Vincent van Gogh" },
+    { "category": "Sculpture", "sample_question": "'The Thinker' sculptor?", "answer": "Auguste Rodin" },
+    { "category": "Photography History", "sample_question": "Process used by Daguerre?", "answer": "Daguerreotype" },
+    { "category": "Architecture Styles", "sample_question": "Pointed arches are typical of what?", "answer": "Gothic" },
+    { "category": "Transport — Rail", "sample_question": "First underground railway opened where in 1863?", "answer": "London" },
+    { "category": "Transport — Maritime", "sample_question": "RMS in ship names stands for?", "answer": "Royal Mail Ship" },
+    { "category": "Sports — Football", "sample_question": "Country that won 1966 FIFA World Cup?", "answer": "England" },
+    { "category": "Sports — Rugby", "sample_question": "How many players per side in rugby union?", "answer": "15" },
+    { "category": "Sports — Athletics", "sample_question": "400 m equals how many laps of a standard track?", "answer": "1" },
+    { "category": "Cricket", "sample_question": "How many balls in an over?", "answer": "6" },
+    { "category": "Tennis", "sample_question": "Surface of Roland Garros?", "answer": "Clay" },
+    { "category": "Board Games", "sample_question": "How many squares on a chessboard?", "answer": "64" },
+    { "category": "Video Games", "sample_question": "Company behind the Switch?", "answer": "Nintendo" },
+    { "category": "Food — Baking", "sample_question": "Raising agent in classic scones?", "answer": "Baking powder" },
+    { "category": "Food — World Cuisines", "sample_question": "Kimchi originates from which country?", "answer": "Korea" },
+    { "category": "Beverages — Tea", "sample_question": "Earl Grey is flavoured with?", "answer": "Bergamot" },
+    { "category": "Coffee", "sample_question": "Espresso + steamed milk microfoam?", "answer": "Cappuccino" },
+    { "category": "Gardening", "sample_question": "Latin name for rose genus?", "answer": "Rosa" },
+    { "category": "Horticulture", "sample_question": "pH < 7 soil is called?", "answer": "Acidic" },
+    { "category": "Astronomy — Stars", "sample_question": "Nearest star system?", "answer": "Alpha Centauri" },
+    { "category": "Meteorology", "sample_question": "Nimbus indicates what?", "answer": "Rain-bearing cloud" },
+    { "category": "Geology", "sample_question": "Rock formed from cooling magma?", "answer": "Igneous" },
+    { "category": "Oceanography", "sample_question": "Salinity is measured in?", "answer": "PSU (practical salinity units)" },
+    { "category": "Ecology", "sample_question": "Keystone species definition?", "answer": "Species with disproportionately large effect" },
+    { "category": "Zoology", "sample_question": "Young of a frog is called?", "answer": "Tadpole" },
+    { "category": "Botany", "sample_question": "Photosynthesis mainly occurs in which organelle?", "answer": "Chloroplast" },
+    { "category": "Microbiology", "sample_question": "Bacteria without a cell wall are called?", "answer": "Mycoplasma" },
+    { "category": "Genetics", "sample_question": "DNA stands for?", "answer": "Deoxyribonucleic Acid" },
+    { "category": "Space History", "sample_question": "First human in space?", "answer": "Yuri Gagarin" },
+    { "category": "Explorers", "sample_question": "First to reach the South Pole (1911)?", "answer": "Roald Amundsen" },
+    { "category": "Cartography", "sample_question": "Projection preserving angles is called?", "answer": "Conformal" },
+    { "category": "Timekeeping", "sample_question": "UTC replaced which time standard?", "answer": "GMT (as a standard reference)" },
+    { "category": "Myth & Legend — Irish", "sample_question": "Hero of the Cattle Raid of Cooley?", "answer": "Cú Chulainn" },
+    { "category": "Folklore — British", "sample_question": "Green-clad outlaw of Sherwood?", "answer": "Robin Hood" },
+    { "category": "Language — Grammar", "sample_question": "What is a past participle of 'write'?", "answer": "Written" },
+    { "category": "Language — Punctuation", "sample_question": "Symbol for an em dash?", "answer": "—" },
+    { "category": "Printing & Type", "sample_question": "Times New Roman was commissioned by which newspaper?", "answer": "The Times" },
+    { "category": "Comics", "sample_question": "Publisher of Spider-Man?", "answer": "Marvel" },
+    { "category": "Anime", "sample_question": "Studio behind 'Spirited Away'?", "answer": "Studio Ghibli" },
+    { "category": "TV — British", "sample_question": "Detective of 221B Baker Street in 1984 Granada series?", "answer": "Sherlock Holmes" },
+    { "category": "TV — American Drama", "sample_question": "Setting city of 'The Wire'?", "answer": "Baltimore" },
+    { "category": "Sitcom — British", "sample_question": "Main setting of 'Fawlty Towers'?", "answer": "A Torquay hotel" },
+    { "category": "Pop Culture — Memes", "sample_question": "Rickrolling uses which song?", "answer": "Never Gonna Give You Up" },
+    { "category": "’80s Pop", "sample_question": "Singer of 'Like a Prayer'?", "answer": "Madonna" },
+    { "category": "’00s Pop", "sample_question": "Artist behind 'Hips Don’t Lie'?", "answer": "Shakira" },
+    { "category": "’10s Pop", "sample_question": "Singer of 'Rolling in the Deep'?", "answer": "Adele" },
+    { "category": "Gameshow Lore", "sample_question": "Phone-a-Friend is a lifeline in which show?", "answer": "Who Wants to Be a Millionaire?" }
+  ],
+
+  "pack": {
+    "version": "jemima-pack-1",
+    "meta": {
+      "roomCode": "LAD",
+      "generatedAt": "2025-10-16T21:00:00Z",
+      "hostUid": "demo-host",
+      "guestUid": "demo-guest"
+    },
+    "ladder": {
+      "per_player_15": ["£100","£200","£300","£500","£1,000","£2,000","£4,000","£8,000","£16,000","£32,000","£64,000","£125,000","£250,000","£500,000","£1,000,000"]
+    },
+    "rounds": [
+      {
+        "round": 1,
+        "interlude": "Warm-up purrs and easy wins. Don’t spill your tea.",
+        "hostItems": [
+          {
+            "subject": "World Capitals",
+            "prize": "£100",
+            "question": "What is the capital of France?",
+            "correct_answer": "Paris",
+            "distractors": { "easy": "Lyon", "medium": "Marseille", "hard": "Brussels" }
+          },
+          {
+            "subject": "Cats",
+            "prize": "£200",
+            "question": "Which sense organ do cats use in their whiskers to detect air movement and nearby objects?",
+            "correct_answer": "Vibrissae",
+            "distractors": { "easy": "Nictitating membrane", "medium": "Jacobson’s organ", "hard": "Uropygial gland" }
+          },
+          {
+            "subject": "British Monarchy",
+            "prize": "£300",
+            "question": "Who was the first monarch of the House of Tudor?",
+            "correct_answer": "Henry VII",
+            "distractors": { "easy": "Henry VIII", "medium": "Edward IV", "hard": "Richard III" }
+          }
+        ],
+        "guestItems": [
+          {
+            "subject": "American TV Sitcoms",
+            "prize": "£100",
+            "question": "In Friends, what is the name of Ross’s second wife?",
+            "correct_answer": "Emily",
+            "distractors": { "easy": "Carol", "medium": "Rachel", "hard": "Janice" }
+          },
+          {
+            "subject": "’90s Pop",
+            "prize": "£200",
+            "question": "Which group sang 'Bye Bye Bye' in 2000 after rising in the late ’90s?",
+            "correct_answer": "*NSYNC",
+            "distractors": { "easy": "Backstreet Boys", "medium": "Five", "hard": "Westlife" }
+          },
+          {
+            "subject": "Irish History",
+            "prize": "£300",
+            "question": "What treaty ended the Irish War of Independence and led to the Free State?",
+            "correct_answer": "Anglo-Irish Treaty (1921)",
+            "distractors": { "easy": "Treaty of Versailles", "medium": "Sunningdale Agreement", "hard": "Good Friday Agreement" }
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "interlude": "Now the kettle’s on; questions heat up.",
+        "hostItems": [
+          {
+            "subject": "Flags",
+            "prize": "£500",
+            "question": "Which country’s flag depicts a red circle centred on a white field?",
+            "correct_answer": "Japan",
+            "distractors": { "easy": "Bangladesh", "medium": "Greenland", "hard": "Indonesia" }
+          },
+          {
+            "subject": "Astronomy — Missions",
+            "prize": "£1,000",
+            "question": "Which mission first landed humans on the Moon?",
+            "correct_answer": "Apollo 11",
+            "distractors": { "easy": "Apollo 12", "medium": "Apollo 8", "hard": "Luna 2" }
+          },
+          {
+            "subject": "Biology — Human Body",
+            "prize": "£2,000",
+            "question": "Which organ primarily detoxifies blood and produces bile?",
+            "correct_answer": "Liver",
+            "distractors": { "easy": "Kidney", "medium": "Spleen", "hard": "Pancreas" }
+          }
+        ],
+        "guestItems": [
+          {
+            "subject": "Geography — Rivers",
+            "prize": "£500",
+            "question": "The Danube flows into which sea?",
+            "correct_answer": "Black Sea",
+            "distractors": { "easy": "Mediterranean Sea", "medium": "Baltic Sea", "hard": "Caspian Sea" }
+          },
+          {
+            "subject": "Computing — Internet",
+            "prize": "£1,000",
+            "question": "What does the 'S' in HTTPS denote?",
+            "correct_answer": "Secure (TLS/SSL)",
+            "distractors": { "easy": "Server", "medium": "Socket", "hard": "Service" }
+          },
+          {
+            "subject": "Chemistry — Elements",
+            "prize": "£2,000",
+            "question": "Which element has the chemical symbol Fe?",
+            "correct_answer": "Iron",
+            "distractors": { "easy": "Fluorine", "medium": "Fermium", "hard": "Francium" }
+          }
+        ]
+      },
+      {
+        "round": 3,
+        "interlude": "Halfway to glory; keep your nerve.",
+        "hostItems": [
+          {
+            "subject": "World War II",
+            "prize": "£4,000",
+            "question": "Operation Overlord began with landings on which French region?",
+            "correct_answer": "Normandy",
+            "distractors": { "easy": "Brittany", "medium": "Provence", "hard": "Aquitaine" }
+          },
+          {
+            "subject": "Mathematics — Geometry",
+            "prize": "£8,000",
+            "question": "In Euclidean geometry, the angles opposite equal sides are what?",
+            "correct_answer": "Equal",
+            "distractors": { "easy": "Complementary", "medium": "Supplementary", "hard": "Right angles" }
+          },
+          {
+            "subject": "Literature — Shakespeare",
+            "prize": "£16,000",
+            "question": "Which play features the line “Out, damned spot!”?",
+            "correct_answer": "Macbeth",
+            "distractors": { "easy": "Othello", "medium": "Hamlet", "hard": "King Lear" }
+          }
+        ],
+        "guestItems": [
+          {
+            "subject": "Architecture",
+            "prize": "£4,000",
+            "question": "Which architect designed Fallingwater?",
+            "correct_answer": "Frank Lloyd Wright",
+            "distractors": { "easy": "Mies van der Rohe", "medium": "Le Corbusier", "hard": "Eero Saarinen" }
+          },
+          {
+            "subject": "Biology — Cells",
+            "prize": "£8,000",
+            "question": "Which organelle contains chlorophyll in plants?",
+            "correct_answer": "Chloroplast",
+            "distractors": { "easy": "Mitochondrion", "medium": "Ribosome", "hard": "Golgi apparatus" }
+          },
+          {
+            "subject": "Music Theory",
+            "prize": "£16,000",
+            "question": "A perfect fifth spans how many semitones?",
+            "correct_answer": "7",
+            "distractors": { "easy": "6", "medium": "8", "hard": "9" }
+          }
+        ]
+      },
+      {
+        "round": 4,
+        "interlude": "High rungs now; breathe, guess never.",
+        "hostItems": [
+          {
+            "subject": "Irish History",
+            "prize": "£32,000",
+            "question": "The 1998 agreement widely known as the Good Friday Agreement is also called what?",
+            "correct_answer": "Belfast Agreement",
+            "distractors": { "easy": "St Andrews Agreement", "medium": "Hillsborough Agreement", "hard": "Downing Street Declaration" }
+          },
+          {
+            "subject": "Physics — Thermodynamics",
+            "prize": "£64,000",
+            "question": "Which law states entropy of an isolated system never decreases?",
+            "correct_answer": "Second law of thermodynamics",
+            "distractors": { "easy": "Zeroth law", "medium": "First law", "hard": "Third law" }
+          },
+          {
+            "subject": "Opera",
+            "prize": "£125,000",
+            "question": "In 'The Magic Flute', who is the Queen of the Night’s daughter?",
+            "correct_answer": "Pamina",
+            "distractors": { "easy": "Papagena", "medium": "Konstanze", "hard": "Donna Anna" }
+          }
+        ],
+        "guestItems": [
+          {
+            "subject": "British Monarchy",
+            "prize": "£32,000",
+            "question": "Which monarch reigned immediately after George II?",
+            "correct_answer": "George III",
+            "distractors": { "easy": "George IV", "medium": "William IV", "hard": "Edward VII" }
+          },
+          {
+            "subject": "Computing — Algorithms",
+            "prize": "£64,000",
+            "question": "Dijkstra’s algorithm fails with negative edges because it assumes what?",
+            "correct_answer": "Non-decreasing tentative distances",
+            "distractors": { "easy": "Acyclic graphs", "medium": "Uniform weights", "hard": "Tree topology" }
+          },
+          {
+            "subject": "Film Scores",
+            "prize": "£125,000",
+            "question": "Who composed 'The Good, the Bad and the Ugly' theme?",
+            "correct_answer": "Ennio Morricone",
+            "distractors": { "easy": "John Williams", "medium": "James Horner", "hard": "Hans Zimmer" }
+          }
+        ]
+      },
+      {
+        "round": 5,
+        "interlude": "Only the million left; paws steady.",
+        "hostItems": [
+          {
+            "subject": "’90s Pop",
+            "prize": "£250,000",
+            "question": "Which artist released 'Ray of Light' in 1998 blending electronica with pop?",
+            "correct_answer": "Madonna",
+            "distractors": { "easy": "Kylie Minogue", "medium": "Cher", "hard": "Alanis Morissette" }
+          },
+          {
+            "subject": "American TV Sitcoms",
+            "prize": "£500,000",
+            "question": "In Seinfeld, what is Kramer’s first name?",
+            "correct_answer": "Cosmo",
+            "distractors": { "easy": "Carl", "medium": "Calvin", "hard": "Conrad" }
+          },
+          {
+            "subject": "Irish Mythology",
+            "prize": "£1,000,000",
+            "question": "Who is the Dagda’s daughter famed for prophecy and poetry?",
+            "correct_answer": "Brigid",
+            "distractors": { "easy": "Medb", "medium": "Ériu", "hard": "Macha" }
+          }
+        ],
+        "guestItems": [
+          {
+            "subject": "Cats",
+            "prize": "£250,000",
+            "question": "Which cat breed is known for colourpoint fur and blue eyes, derived from Siam?",
+            "correct_answer": "Siamese",
+            "distractors": { "easy": "Maine Coon", "medium": "British Shorthair", "hard": "Chartreux" }
+          },
+          {
+            "subject": "World War II",
+            "prize": "£500,000",
+            "question": "The Enigma messages were chiefly decrypted at which UK site?",
+            "correct_answer": "Bletchley Park",
+            "distractors": { "easy": "Porton Down", "medium": "GCHQ Cheltenham", "hard": "Aldermaston" }
+          },
+          {
+            "subject": "British Monarchy",
+            "prize": "£1,000,000",
+            "question": "Which Act in 1701 arranged Protestant succession leading to the Hanoverians?",
+            "correct_answer": "Act of Settlement",
+            "distractors": { "easy": "Bill of Rights 1689", "medium": "Act of Union 1707", "hard": "Triennial Act 1694" }
+          }
+        ]
+      }
+    }
+  }
+}
