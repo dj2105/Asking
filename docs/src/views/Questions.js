@@ -36,38 +36,36 @@ function balanceQuestionText(input = "") {
   return `${firstLine}\n${secondLine}`;
 }
 
-function createPaletteApplier(hue, accentHue) {
+function createPaletteApplier() {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
-    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
+    const panelAlpha = Math.min(0.88, 0.78 + depth * 0.02);
+    const glow = Math.min(0.34, 0.22 + depth * 0.02);
+    const mutedOpacity = Math.min(0.82, 0.68 + depth * 0.02);
+    const accentSoft = Math.min(0.36, 0.22 + depth * 0.018);
+
+    document.documentElement.style.setProperty("--ink-h", "232");
+    document.documentElement.style.setProperty("--ink-s", "36%");
+    document.documentElement.style.setProperty("--ink-l", "95%");
+    document.documentElement.style.setProperty("--panel-alpha", panelAlpha.toFixed(2));
+    document.documentElement.style.setProperty("--panel-glow", glow.toFixed(2));
+    document.documentElement.style.setProperty(
+      "--card",
+      `rgba(22, 34, 58, ${panelAlpha.toFixed(2)})`
+    );
     document.documentElement.style.setProperty(
       "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+      `rgba(235, 240, 255, ${mutedOpacity.toFixed(2)})`
     );
     document.documentElement.style.setProperty(
       "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
-    );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
+      `rgba(255, 255, 255, ${(0.16 + depth * 0.01).toFixed(2)})`
     );
     document.documentElement.style.setProperty(
       "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
+      `rgba(123, 97, 240, ${accentSoft.toFixed(2)})`
     );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
-    );
+    document.documentElement.style.setProperty("--accent-strong", "#7b61ff");
   };
 }
 
@@ -119,9 +117,7 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
+    const applyPalette = createPaletteApplier();
     applyPalette(round || 1);
 
     container.innerHTML = "";
@@ -206,8 +202,18 @@ export default {
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
+    let advancing = false;
+
+    const resetAdvanceVisuals = () => {
+      choicesWrap.classList.remove("is-freezing");
+      content.classList.remove("is-advancing");
+      choiceButtons.forEach((btn) => btn.classList.remove("is-dimmed"));
+      advancing = false;
+    };
+
     const setChoicesVisible = (visible) => {
       choicesWrap.classList.toggle("is-hidden", !visible);
+      if (!visible) resetAdvanceVisuals();
     };
 
     let idx = 0;
@@ -272,7 +278,7 @@ export default {
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
-        btn.disabled = triplet.length === 0 || published || submitting;
+        btn.disabled = triplet.length === 0 || published || submitting || advancing;
       });
     };
 
@@ -284,7 +290,8 @@ export default {
         btn.textContent = option;
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
-        btn.disabled = !option || published || submitting;
+        btn.classList.toggle("is-dimmed", advancing && !isSelected);
+        btn.disabled = !option || published || submitting || advancing;
       });
     };
 
@@ -321,7 +328,7 @@ export default {
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
-        choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
+        resetAdvanceVisuals();
         renderChoices();
         renderSteps();
         highlightSubmitIfReady();
@@ -512,19 +519,20 @@ export default {
       btn.addEventListener("click", () => {
         if (triplet.length === 0) return;
         if (published || submitting) return;
+        if (advancing) return;
         const text = btn.textContent || "";
         const currentIndex = idx;
         if (!text) return;
         chosen[currentIndex] = text;
+        advancing = true;
         choiceButtons.forEach((choiceBtn) => {
-          choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
-          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
+          const isSelected = choiceBtn === btn;
+          choiceBtn.classList.toggle("is-selected", isSelected);
+          choiceBtn.classList.toggle("is-dimmed", !isSelected);
+          choiceBtn.disabled = true;
         });
-        btn.classList.add("is-blinking");
-        setTimeout(() => {
-          btn.classList.remove("is-blinking");
-        }, 900);
-        renderChoices();
+        choicesWrap.classList.add("is-freezing");
+        content.classList.add("is-advancing");
         renderSteps();
         updateSubmitState();
         scheduleAdvance(currentIndex);
@@ -535,6 +543,7 @@ export default {
       btn.addEventListener("click", () => {
         if (triplet.length === 0) return;
         if (published || submitting) return;
+        if (advancing) return;
         clearAdvanceTimer();
         showQuestion(i, { animate: true });
         renderChoices();
