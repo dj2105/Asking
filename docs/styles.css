@@ -5,15 +5,13 @@
 /* Palette driven by a single hue per view. */
 :root {
   --ink-h: 210; /* each view sets this randomly */
-  --ink-s: 62%;
+  --ink-s: 64%;
   --ink-l: 18%;
   --ink: hsl(var(--ink-h), var(--ink-s), var(--ink-l));
-  --paper-s: 32%;
-  --paper-l: 96%;
-  --paper: hsl(var(--ink-h), var(--paper-s), var(--paper-l));
-  --card: rgba(255, 255, 255, 0.94);
-  --muted: hsla(var(--ink-h), 18%, 34%, 0.72);
-  --soft-line: hsla(var(--ink-h), 35%, 30%, 0.18);
+  --paper: #eee8dd;
+  --card: rgba(249, 247, 241, 0.96);
+  --muted: hsla(var(--ink-h), 24%, 34%, 0.76);
+  --soft-line: hsla(var(--ink-h), 26%, 32%, 0.18);
 
   --accent-soft: hsl(210, 62%, 88%);
   --accent-strong: hsl(210, 52%, 26%);
@@ -34,7 +32,7 @@ html { background: var(--paper); }
 html, body { height: 100%; }
 body {
   margin: 0;
-  background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 42%, rgba(255,255,255,0) 70%), var(--paper);
+  background: radial-gradient(120% 120% at 50% 0%, rgba(255, 255, 250, 0.72) 0%, rgba(255, 255, 245, 0.58) 46%, rgba(238, 232, 221, 0.38) 100%), var(--paper);
   color: var(--ink);
   font-family: Courier, "Courier New", ui-monospace, Menlo, Consolas, monospace;
   -webkit-font-smoothing: antialiased;
@@ -48,7 +46,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.72) 26%, rgba(255,255,255,0.42) 100%), var(--paper);
+  background: linear-gradient(180deg, rgba(255, 255, 250, 0.86) 0%, rgba(248, 245, 236, 0.64) 32%, rgba(238, 232, 221, 0.46) 100%), var(--paper);
 }
 
 #app > .view:first-child { margin-top: 0; }
@@ -164,6 +162,15 @@ body {
   gap: 28px;
 }
 
+.round-panel__stage {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
 .round-panel__heading {
   margin: 0;
   width: 100%;
@@ -184,8 +191,8 @@ body {
   flex: 1;
   border-radius: 999px;
   border: 1.5px solid hsla(var(--ink-h), 24%, 34%, 0.38);
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--muted);
+  background: rgba(248, 245, 236, 0.9);
+  color: hsla(var(--ink-h), 22%, 30%, 0.78);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -208,7 +215,7 @@ body {
   color: hsla(var(--ink-h), 24%, 34%, 0.46);
   border-style: dotted;
   border-color: hsla(var(--ink-h), 24%, 34%, 0.4);
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(246, 242, 230, 0.84);
   box-shadow: none;
 }
 
@@ -217,6 +224,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 22px;
+  position: relative;
+  z-index: 2;
   transition: opacity 0.24s ease, transform 0.24s ease;
 }
 
@@ -229,6 +238,21 @@ body {
 .round-panel__content.is-entering {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.round-panel__content[data-transition="fade"] {
+  transition: opacity 0.16s ease;
+}
+
+.round-panel__content[data-transition="fade"].is-leaving,
+.round-panel__content[data-transition="fade"].is-entering {
+  transform: none;
+}
+
+.round-panel__content.is-dormant {
+  opacity: 0;
+  transform: scale(0.98);
+  pointer-events: none;
 }
 
 .round-panel__question {
@@ -263,8 +287,8 @@ body {
   width: 100%;
   border-radius: 16px;
   border: 1.5px solid var(--muted);
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--muted);
+  background: rgba(249, 247, 241, 0.92);
+  color: hsla(var(--ink-h), 22%, 26%, 0.82);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 18px 20px;
@@ -274,10 +298,10 @@ body {
   justify-content: center;
   line-height: 1.45;
   text-wrap: balance;
-  --choice-selected-bg: #dff3e8;
-  --choice-selected-border: #2f7b52;
-  --choice-selected-text: #1f4b34;
-  --choice-flash-bg: #2f7b52;
+  --choice-selected-bg: #d8e7ff;
+  --choice-selected-border: #1f4271;
+  --choice-selected-text: #142c4b;
+  --choice-flash-bg: #1f4271;
   --choice-flash-text: #ffffff;
   transition:
     background 0.18s ease,
@@ -305,7 +329,7 @@ body {
 }
 
 .round-panel__choice.is-selected.is-blinking {
-  animation: choiceBlink 0.9s ease forwards;
+  animation: choiceBlink 0.48s ease forwards;
 }
 
 .round-panel__choice:disabled {
@@ -319,17 +343,7 @@ body {
     color: var(--choice-selected-text);
     border-color: var(--choice-selected-border);
   }
-  22% {
-    background: var(--choice-flash-bg);
-    color: var(--choice-flash-text);
-    border-color: var(--choice-flash-bg);
-  }
-  50% {
-    background: var(--choice-selected-bg);
-    color: var(--choice-selected-text);
-    border-color: var(--choice-selected-border);
-  }
-  72% {
+  42% {
     background: var(--choice-flash-bg);
     color: var(--choice-flash-text);
     border-color: var(--choice-flash-bg);
@@ -342,27 +356,48 @@ body {
 }
 
 .round-panel__submit {
-  align-self: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.94);
+  z-index: 1;
   min-width: 240px;
   padding: 18px 24px;
   font-weight: 700;
   letter-spacing: 0.12em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .round-panel__submit.round-panel__submit--ready {
   box-shadow: 0 16px 34px rgba(14, 26, 48, 0.2);
 }
 
-.round-panel__submit:disabled {
-  opacity: 0.5;
+.round-panel__submit.is-revealed {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.round-panel__submit.is-waiting {
   box-shadow: none;
+}
+
+.round-panel__submit:disabled {
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.round-panel__submit.is-revealed:disabled {
+  opacity: 0.58;
 }
 
 .round-panel__answer {
   width: 100%;
   border-radius: 14px;
   border: 1px dashed rgba(0, 0, 0, 0.14);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(249, 247, 241, 0.92);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -406,8 +441,8 @@ body {
   flex: 1;
   border-radius: 16px;
   border: 1.5px solid var(--muted);
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--muted);
+  background: rgba(249, 247, 241, 0.92);
+  color: hsla(var(--ink-h), 22%, 26%, 0.82);
   font-weight: 700;
   font-size: 1.2rem;
   padding: 16px 0;
@@ -458,7 +493,7 @@ body {
 }
 
 .marking-button.is-selected.is-blinking {
-  animation: markBlink 0.9s ease forwards;
+  animation: markBlink 0.48s ease forwards;
 }
 
 .marking-button:disabled {
@@ -474,17 +509,7 @@ body {
     color: var(--mark-selected-text);
     border-color: var(--mark-selected-border);
   }
-  22% {
-    background: var(--mark-flash-bg);
-    color: var(--mark-flash-text);
-    border-color: var(--mark-flash-bg);
-  }
-  50% {
-    background: var(--mark-selected-bg);
-    color: var(--mark-selected-text);
-    border-color: var(--mark-selected-border);
-  }
-  72% {
+  42% {
     background: var(--mark-flash-bg);
     color: var(--mark-flash-text);
     border-color: var(--mark-flash-bg);

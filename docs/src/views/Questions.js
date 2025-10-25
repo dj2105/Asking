@@ -40,25 +40,18 @@ function createPaletteApplier(hue, accentHue) {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
     const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
     const accentSoftLight = 88 - depth * 1.0;
     const accentStrongLight = Math.max(22, 26 - depth * 0.6);
     document.documentElement.style.setProperty("--ink-h", String(hue));
     document.documentElement.style.setProperty("--ink-s", "64%");
     document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
     document.documentElement.style.setProperty(
       "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+      `hsla(${hue}, 26%, ${Math.max(inkLight + 18, 34).toFixed(1)}%, 0.78)`
     );
     document.documentElement.style.setProperty(
       "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
-    );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
+      `hsla(${hue}, 28%, ${Math.max(inkLight + 8, 26).toFixed(1)}%, 0.22)`
     );
     document.documentElement.style.setProperty(
       "--accent-soft",
@@ -161,6 +154,9 @@ export default {
     content.appendChild(prompt);
     content.appendChild(choicesWrap);
 
+    const stage = el("div", { class: "round-panel__stage" });
+    stage.appendChild(content);
+
     const submitBtn = el(
       "button",
       {
@@ -171,11 +167,38 @@ export default {
       "SUBMIT"
     );
 
+    stage.appendChild(submitBtn);
+
     panel.appendChild(heading);
     panel.appendChild(steps);
-    panel.appendChild(content);
-    panel.appendChild(submitBtn);
+    panel.appendChild(stage);
     root.appendChild(panel);
+
+    const StageMode = Object.freeze({
+      QUESTIONS: "questions",
+      SUBMIT: "submit",
+      WAITING: "waiting",
+    });
+
+    let stageMode = StageMode.QUESTIONS;
+    let holdSubmitReveal = false;
+
+    const applyStageMode = () => {
+      const showSubmit = stageMode !== StageMode.QUESTIONS;
+      content.classList.toggle("is-dormant", showSubmit);
+      submitBtn.classList.toggle("is-revealed", showSubmit);
+      submitBtn.classList.toggle("is-waiting", stageMode === StageMode.WAITING);
+      if (!showSubmit) {
+        try { submitBtn.blur(); } catch {}
+      }
+    };
+
+    const setStageMode = (mode) => {
+      stageMode = mode || StageMode.QUESTIONS;
+      applyStageMode();
+    };
+
+    applyStageMode();
 
     const backOverlay = el("div", { class: "back-confirm" });
     const backPanel = el("div", { class: "back-confirm__panel mono" });
@@ -251,11 +274,17 @@ export default {
         clearTimeout(swapTimer);
         swapTimer = null;
       }
+      content.classList.remove("is-leaving");
+      content.classList.remove("is-entering");
+      delete content.dataset.transition;
     };
 
-    const animateSwap = (renderFn) => {
+    const animateSwap = (mode, renderFn) => {
+      const transition = mode === "fade" ? "fade" : "bump";
       clearSwapTimer();
+      content.dataset.transition = transition;
       content.classList.add("is-leaving");
+      const delay = transition === "fade" ? 100 : 140;
       swapTimer = setTimeout(() => {
         swapTimer = null;
         renderFn();
@@ -263,8 +292,11 @@ export default {
         content.classList.add("is-entering");
         requestAnimationFrame(() => {
           content.classList.remove("is-entering");
+          if (content.dataset.transition === transition) {
+            delete content.dataset.transition;
+          }
         });
-      }, 140);
+      }, delay);
     };
 
     const renderSteps = () => {
@@ -293,26 +325,40 @@ export default {
       const allAnswered = triplet.length > 0 && answeredCount >= triplet.length;
       const ready = allAnswered && !published && !submitting;
       submitBtn.disabled = !ready;
-      submitBtn.classList.toggle("round-panel__submit--ready", ready);
-      submitBtn.classList.toggle("throb", ready);
-      if (!ready) {
+      if (!published && !submitting) {
+        submitBtn.textContent = "SUBMIT";
+        if (ready && !holdSubmitReveal) {
+          setStageMode(StageMode.SUBMIT);
+        } else if ((!ready || holdSubmitReveal) && stageMode !== StageMode.WAITING) {
+          setStageMode(StageMode.QUESTIONS);
+        }
+      }
+      const shouldGlow = ready && !holdSubmitReveal && stageMode === StageMode.SUBMIT;
+      if (shouldGlow) {
+        submitBtn.classList.add("round-panel__submit--ready");
+        submitBtn.classList.add("throb");
+      } else {
         submitBtn.classList.remove("round-panel__submit--ready");
         submitBtn.classList.remove("throb");
-      }
-      if (!published) {
-        submitBtn.textContent = "SUBMIT";
       }
     };
 
     const highlightSubmitIfReady = () => {
       const answeredCount = chosen.filter((value) => value).length;
-      if (triplet.length > 0 && answeredCount >= triplet.length && !published && !submitting) {
+      if (
+        triplet.length > 0 &&
+        answeredCount >= triplet.length &&
+        !published &&
+        !submitting &&
+        stageMode === StageMode.SUBMIT &&
+        !submitBtn.disabled
+      ) {
         submitBtn.classList.add("round-panel__submit--ready");
         submitBtn.classList.add("throb");
       }
     };
 
-    const showQuestion = (targetIdx, { animate = true } = {}) => {
+    const showQuestion = (targetIdx, { animation = "bump" } = {}) => {
       if (triplet.length === 0) return;
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
@@ -326,8 +372,11 @@ export default {
         renderSteps();
         highlightSubmitIfReady();
       };
-      if (animate) animateSwap(render);
-      else render();
+      if (animation) animateSwap(animation, render);
+      else {
+        clearSwapTimer();
+        render();
+      }
       if (!published && !submitting) resumeRoundTimer(timerContext);
     };
 
@@ -347,18 +396,21 @@ export default {
         advanceTimer = null;
         if (!alive || submitting || published) return;
         const next = findNextUnanswered(currentIndex);
+        holdSubmitReveal = false;
         if (next !== null && next !== undefined) {
-          showQuestion(next, { animate: true });
-        } else if (triplet.length > 0) {
-          showQuestion(triplet.length - 1, { animate: true });
+          setStageMode(StageMode.QUESTIONS);
+          showQuestion(next, { animation: "fade" });
         }
+        updateSubmitState();
         highlightSubmitIfReady();
-      }, 700);
+      }, 480);
     };
 
     const showWaitingPrompt = () => {
       setPrompt(waitingLabel, { status: true });
       setChoicesVisible(false);
+      holdSubmitReveal = false;
+      setStageMode(StageMode.WAITING);
       clearAdvanceTimer();
     };
 
@@ -389,6 +441,8 @@ export default {
 
     const setLoadingState = (text) => {
       pauseRoundTimer(timerContext);
+      holdSubmitReveal = false;
+      setStageMode(StageMode.QUESTIONS);
       setPrompt(text, { status: true });
       setChoicesVisible(false);
       renderSteps();
@@ -457,7 +511,7 @@ export default {
       renderChoices();
       pauseRoundTimer(timerContext);
     } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
-      showQuestion(0, { animate: false });
+      showQuestion(0, { animation: null });
       updateSubmitState();
     } else {
       setLoadingState("Preparing questions…");
@@ -515,6 +569,7 @@ export default {
         const text = btn.textContent || "";
         const currentIndex = idx;
         if (!text) return;
+        holdSubmitReveal = true;
         chosen[currentIndex] = text;
         choiceButtons.forEach((choiceBtn) => {
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
@@ -523,7 +578,7 @@ export default {
         btn.classList.add("is-blinking");
         setTimeout(() => {
           btn.classList.remove("is-blinking");
-        }, 900);
+        }, 480);
         renderChoices();
         renderSteps();
         updateSubmitState();
@@ -536,9 +591,9 @@ export default {
         if (triplet.length === 0) return;
         if (published || submitting) return;
         clearAdvanceTimer();
-        showQuestion(i, { animate: true });
-        renderChoices();
-        renderSteps();
+        holdSubmitReveal = true;
+        setStageMode(StageMode.QUESTIONS);
+        showQuestion(i, { animation: "bump" });
         updateSubmitState();
       });
     });
@@ -582,7 +637,9 @@ export default {
         console.warn("[questions] publish failed:", err);
         submitting = false;
         submitBtn.textContent = "SUBMIT";
-        showQuestion(revertIdx, { animate: false });
+        holdSubmitReveal = true;
+        setStageMode(StageMode.QUESTIONS);
+        showQuestion(revertIdx, { animation: null });
         updateSubmitState();
         resumeRoundTimer(timerContext);
       }
