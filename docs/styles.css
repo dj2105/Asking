@@ -1343,3 +1343,200 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   opacity: 0.75;
   margin-bottom: 6px;
 }
+
+/* Questions & Marking neutral layout */
+.qa-stage {
+  --qa-ink-strong: hsl(var(--ink-h), 64%, 18%);
+  --qa-outline: hsla(var(--ink-h), 42%, 36%, 0.32);
+  --qa-chip-idle: hsla(var(--ink-h), 58%, 90%, 0.58);
+  --qa-chip-answered: hsla(var(--ink-h), 58%, 84%, 0.78);
+  --qa-chip-active: hsla(var(--ink-h), 62%, 94%, 0.95);
+  --qa-shadow: hsla(var(--ink-h), 52%, 24%, 0.25);
+  --qa-answer-selected-bg: hsla(var(--ink-h), 70%, 92%, 0.96);
+  --qa-answer-selected-text: hsl(var(--ink-h), 64%, 18%);
+}
+
+.qa-shell {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+
+.qa-heading {
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: 0.16em;
+  text-align: center;
+}
+
+.qa-switcher {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.qa-switcher__btn {
+  border: 1.5px solid var(--qa-outline);
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: var(--qa-chip-idle);
+  color: var(--qa-ink-strong);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.qa-switcher__btn.is-active {
+  background: var(--qa-chip-active);
+  box-shadow: 0 12px 26px var(--qa-shadow);
+  transform: translateY(-1px);
+}
+
+.qa-switcher__btn.is-answered:not(.is-active) {
+  background: var(--qa-chip-answered);
+}
+
+.qa-question {
+  font-size: 1.28rem;
+  line-height: 1.6;
+  text-align: center;
+  min-height: 96px;
+  padding: 0 6px;
+}
+
+.qa-answer-detail {
+  text-align: center;
+  font-size: 0.96rem;
+  letter-spacing: 0.06em;
+  opacity: 0.78;
+}
+
+.qa-answer-detail--hidden {
+  display: none;
+}
+
+.qa-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.qa-answer {
+  border: 1.5px solid var(--qa-outline);
+  background: transparent;
+  color: var(--qa-ink-strong);
+  border-radius: 18px;
+  padding: 18px 20px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-align: center;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.qa-answer:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px var(--qa-shadow);
+  background: hsla(var(--ink-h), 70%, 96%, 0.74);
+}
+
+.qa-answer.selected {
+  background: var(--qa-answer-selected-bg);
+  color: var(--qa-answer-selected-text);
+  box-shadow: 0 14px 26px var(--qa-shadow);
+  transform: translateY(-1px);
+}
+
+.qa-answer:disabled {
+  opacity: 0.58;
+  pointer-events: none;
+}
+
+.qa-submit {
+  align-self: center;
+  min-width: 200px;
+  padding: 16px 28px;
+  border-radius: 999px;
+  border: 1.5px solid var(--qa-outline);
+  background: transparent;
+  color: var(--qa-ink-strong);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.qa-submit--ready {
+  background: hsl(var(--ink-h), 68%, 32%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 16px 32px var(--qa-shadow);
+  transform: translateY(-1px);
+}
+
+.qa-submit--waiting {
+  background: var(--qa-chip-active);
+  border-color: transparent;
+}
+
+.qa-submit:disabled {
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.mark-choices {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mark-choice {
+  border-radius: 999px;
+  padding: 14px 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border: 1.5px solid transparent;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.mark-choice--right {
+  background: rgba(32, 124, 76, 0.18);
+  color: #1f6b43;
+  border-color: rgba(32, 124, 76, 0.32);
+}
+
+.mark-choice--unknown {
+  background: var(--qa-answer-selected-bg);
+  color: var(--qa-answer-selected-text);
+  border-color: var(--qa-outline);
+}
+
+.mark-choice--wrong {
+  background: rgba(180, 42, 42, 0.18);
+  color: #8f2525;
+  border-color: rgba(180, 42, 42, 0.3);
+}
+
+.mark-choice.selected {
+  box-shadow: 0 12px 26px var(--qa-shadow);
+  transform: translateY(-1px);
+}
+
+.mark-choice:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+@media (max-width: 520px) {
+  .qa-question {
+    font-size: 1.18rem;
+  }
+
+  .qa-submit {
+    width: 100%;
+  }
+}
