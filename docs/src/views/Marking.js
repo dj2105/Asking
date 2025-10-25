@@ -250,6 +250,10 @@ export default {
     const setMarkingVisible = (visible) => {
       answerBox.classList.toggle("is-hidden", !visible);
       verdictRow.classList.toggle("is-hidden", !visible);
+      if (visible) {
+        content.classList.remove("is-transitioning");
+        verdictRow.classList.remove("is-transitioning");
+      }
     };
 
     let idx = 0;
@@ -369,10 +373,11 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
+        content.classList.remove("is-transitioning");
+        verdictRow.classList.remove("is-transitioning");
         setPrompt(questionText, { status: false });
         answerValue.textContent = answerText;
         renderSteps();
-        [btnRight, btnUnknown, btnWrong].forEach((btn) => btn.classList.remove("is-blinking"));
         reflectVerdicts();
         highlightSubmitIfReady();
         setMarkingVisible(true);
@@ -410,6 +415,8 @@ export default {
     const showWaitingPrompt = () => {
       setPrompt(waitingLabel, { status: true });
       setMarkingVisible(false);
+      content.classList.remove("is-transitioning");
+      verdictRow.classList.remove("is-transitioning");
       clearAdvanceTimer();
     };
 
@@ -600,13 +607,8 @@ export default {
       if (published || submitting) return;
       marks[idx] = markValue(value);
       if (sourceBtn) {
-        [btnRight, btnUnknown, btnWrong].forEach((btn) => {
-          if (btn !== sourceBtn) btn.classList.remove("is-blinking");
-        });
-        sourceBtn.classList.add("is-blinking");
-        setTimeout(() => {
-          sourceBtn.classList.remove("is-blinking");
-        }, 900);
+        content.classList.add("is-transitioning");
+        verdictRow.classList.add("is-transitioning");
       }
       renderSteps();
       reflectVerdicts();

@@ -208,6 +208,10 @@ export default {
 
     const setChoicesVisible = (visible) => {
       choicesWrap.classList.toggle("is-hidden", !visible);
+      if (visible) {
+        content.classList.remove("is-transitioning");
+        choicesWrap.classList.remove("is-transitioning");
+      }
     };
 
     let idx = 0;
@@ -319,9 +323,10 @@ export default {
       idx = targetIdx;
       const render = () => {
         const current = triplet[idx] || {};
+        content.classList.remove("is-transitioning");
+        choicesWrap.classList.remove("is-transitioning");
         setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
-        choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
         highlightSubmitIfReady();
@@ -359,6 +364,8 @@ export default {
     const showWaitingPrompt = () => {
       setPrompt(waitingLabel, { status: true });
       setChoicesVisible(false);
+      content.classList.remove("is-transitioning");
+      choicesWrap.classList.remove("is-transitioning");
       clearAdvanceTimer();
     };
 
@@ -518,12 +525,9 @@ export default {
         chosen[currentIndex] = text;
         choiceButtons.forEach((choiceBtn) => {
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
-          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
         });
-        btn.classList.add("is-blinking");
-        setTimeout(() => {
-          btn.classList.remove("is-blinking");
-        }, 900);
+        content.classList.add("is-transitioning");
+        choicesWrap.classList.add("is-transitioning");
         renderChoices();
         renderSteps();
         updateSubmitState();
