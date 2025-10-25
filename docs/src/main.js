@@ -92,59 +92,11 @@
 
 import ScoreStrip from "./lib/ScoreStrip.js";
 
-const GAME_ROUNDS = 5;
-const PRE_STAGE_ROUTES = ["lobby", "keyroom", "coderoom", "seeding"];
-const ROUND_STAGE_ROUTES = ["countdown", "questions", "marking", "award"];
-const POST_STAGE_ROUTES = ["maths", "final"];
-const FINAL_STAGE_INDEX =
-  PRE_STAGE_ROUTES.length + GAME_ROUNDS * ROUND_STAGE_ROUTES.length + POST_STAGE_ROUTES.length - 1;
-const MAX_BG_DEPTH = 0.8;
-
-function clampRoundIndex(raw) {
-  const num = Number(raw);
-  if (!Number.isFinite(num) || num <= 0) return 1;
-  if (num > GAME_ROUNDS) return GAME_ROUNDS;
-  return Math.round(num);
-}
-
-function stageIndexForRoute(route, qs) {
-  const name = (route || "").toLowerCase();
-  if (name === "watcher" || name === "rejoin") return 0;
-  const round = clampRoundIndex(qs.get("round"));
-
-  const preIdx = PRE_STAGE_ROUTES.indexOf(name);
-  if (preIdx !== -1) return preIdx;
-
-  const roundIdx = ROUND_STAGE_ROUTES.indexOf(name);
-  if (roundIdx !== -1) {
-    const roundBase = (round - 1) * ROUND_STAGE_ROUTES.length;
-    return PRE_STAGE_ROUTES.length + roundBase + roundIdx;
-  }
-
-  if (name === "maths") {
-    return PRE_STAGE_ROUTES.length + GAME_ROUNDS * ROUND_STAGE_ROUTES.length;
-  }
-
-  if (name === "final") {
-    return FINAL_STAGE_INDEX;
-  }
-
-  return 0;
-}
-
-function applyBackgroundDepth(route, qs) {
-  const index = stageIndexForRoute(route, qs);
-  const clampedIndex = Math.max(0, Math.min(FINAL_STAGE_INDEX, index));
-  const ratio = FINAL_STAGE_INDEX > 0 ? clampedIndex / FINAL_STAGE_INDEX : 0;
-  const depth = Math.min(MAX_BG_DEPTH, ratio * MAX_BG_DEPTH);
-  const lightness = 96 - ratio * (96 - 20);
-  const saturation = 32 - ratio * 32;
-
+function applyBackgroundDepth() {
   const root = document.documentElement;
   if (!root) return;
-  root.style.setProperty("--paper-l", `${lightness.toFixed(2)}%`);
-  root.style.setProperty("--paper-s", `${Math.max(0, saturation).toFixed(2)}%`);
-  root.style.setProperty("--bg-depth", depth.toFixed(4));
+  root.style.setProperty("--paper", "hsl(42, 36%, 92%)");
+  root.style.setProperty("--paper-soft", "hsl(46, 48%, 97%)");
 }
 
 if ("scrollRestoration" in history) {
@@ -251,7 +203,7 @@ async function mountRoute() {
   // Fresh container for the new view
   clearNode(app);
 
-  applyBackgroundDepth(actualRoute, qs);
+  applyBackgroundDepth();
 
   // Load and mount the view
   try {
