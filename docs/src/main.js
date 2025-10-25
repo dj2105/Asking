@@ -17,7 +17,6 @@
     "questions",
     "marking",
     "award",
-    "maths",
     "final",
     "watcher",
     "rejoin",
@@ -82,7 +81,6 @@
 //   #/questions?code=ABC&round=N
 //   #/marking?code=ABC&round=N
 //   #/award?code=ABC&round=N
-//   #/maths?code=ABC
 //   #/final?code=ABC
 //
 // Notes:
@@ -153,7 +151,6 @@ const VIEW_MAP = {
   questions: () => import("./views/Questions.js"),
   marking:   () => import("./views/Marking.js"),
   award:     () => import("./views/Award.js"),
-  maths:     () => import("./views/Maths.js"),
   final:     () => import("./views/Final.js"),
   watcher:   () => import("./roomWatcher.js"),
   rejoin:    () => import("./views/Rejoin.js"),

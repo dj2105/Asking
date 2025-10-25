@@ -1,10 +1,9 @@
 // /src/views/Marking.js
 //
-// Marking phase — judge opponent answers while a hidden timer keeps running.
-// • Shows opponent questions + chosen answers with ✓/✕/I DUNNO toggles.
-// • No visible countdown; the round timer resumes when marking begins and stops on submission.
-// • Submission writes marking.{role}.{round}, timings.{role}.{round}, markingAck.{role}.{round} = true.
-// • Host advances to Award once both acknowledgements are present.
+// Marking phase — award-style review with single panel.
+// • Presents opponent answers sequentially with numbered chips for navigation.
+// • Verdict buttons remain neutral until selected, then adopt green/grey/red feedback tones.
+// • Submit activates once every question has a verdict and waits for the opponent before advancing.
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import {
@@ -17,28 +16,24 @@ import {
   runTransaction,
 } from "firebase/firestore";
 
-import * as MathsPaneMod from "../lib/MathsPane.js";
 import { resumeRoundTimer, pauseRoundTimer, getRoundTimerTotal, clearRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
-const mountMathsPane =
-  (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
-   typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
-   typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
-   null);
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
-  for (const k in attrs) {
-    const v = attrs[k];
-    if (k === "class") node.className = v;
-    else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
-    else node.setAttribute(k, v);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value === undefined || value === null) continue;
+    if (key === "class") node.className = value;
+    else if (key.startsWith("on") && typeof value === "function") node.addEventListener(key.slice(2), value);
+    else if (key === "text") node.textContent = value;
+    else node.setAttribute(key, value);
   }
-  (Array.isArray(kids) ? kids : [kids]).forEach((child) =>
-    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child)
-  );
+  (Array.isArray(kids) ? kids : [kids]).forEach((child) => {
+    if (child === undefined || child === null) return;
+    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+  });
   return node;
 }
 
@@ -67,6 +62,12 @@ function countCorrectAnswers(answers = [], items = []) {
 const roomRef = (code) => doc(db, "rooms", code);
 const roundSubColRef = (code) => collection(roomRef(code), "rounds");
 
+function setHueVariables(hue) {
+  const compHue = (hue + 180) % 360;
+  document.documentElement.style.setProperty("--ink-h", String(hue));
+  document.documentElement.style.setProperty("--ink-comp-h", String(compHue));
+}
+
 export default {
   async mount(container) {
     const me = await ensureAuth();
@@ -76,101 +77,271 @@ export default {
     let round = parseInt(params.get("round") || "1", 10) || 1;
 
     const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    setHueVariables(hue);
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-marking stage-center" });
+    const card = el("div", { class: "card round-card" });
 
-    const card = el("div", { class: "card card--center mark-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
-    const heading = el("div", { class: "phase-header__title" }, "MARKING 1/3");
-    headerRow.appendChild(heading);
-
-    const list = el("div", { class: "qa-list" });
-    const markRow = el("div", { class: "mark-row" });
-    const questionNode = el("div", { class: "q mono" }, "");
-    markRow.appendChild(questionNode);
-
-    const answerBox = el("div", { class: "a mono mark-answer" });
-    const answerLabel = el("div", { class: "mark-answer__label mono small" }, "");
-    const answerText = el("div", { class: "mark-answer__text" }, "");
-    answerBox.appendChild(answerLabel);
-    answerBox.appendChild(answerText);
-    markRow.appendChild(answerBox);
-
-    const pair = el("div", { class: "verdict-row" });
-    const btnRight = el(
-      "button",
-      {
-        class: "btn verdict-btn verdict-tick",
+    const heading = el("div", { class: "mono round-card__heading" }, "MARKING");
+    const stepRow = el("div", { class: "round-card__steps" });
+    const chips = [0, 1, 2].map((index) => {
+      const chip = el("button", {
+        class: "round-step",
         type: "button",
-        title: "Mark as correct",
-        "aria-pressed": "false",
-      },
-      "✓"
-    );
-    const btnWrong = el(
-      "button",
-      {
-        class: "btn verdict-btn verdict-cross",
-        type: "button",
-        title: "Mark as incorrect",
-        "aria-pressed": "false",
-      },
-      "✕"
-    );
-    const btnUnknown = el(
-      "button",
-      {
-        class: "btn verdict-btn verdict-idk",
-        type: "button",
-        title: "Mark as unsure",
-        "aria-pressed": "false",
-      },
-      "I DUNNO"
-    );
-    pair.appendChild(btnRight);
-    pair.appendChild(btnWrong);
-    pair.appendChild(btnUnknown);
-    markRow.appendChild(pair);
+        "data-index": String(index),
+      }, String(index + 1));
+      stepRow.appendChild(chip);
+      return chip;
+    });
 
-    list.appendChild(markRow);
+    const prompt = el("div", { class: "mono round-card__prompt" }, "");
+    const answerBlock = el("div", { class: "round-card__answer" });
+    const answerLabel = el("div", { class: "mono round-card__answer-label" }, "");
+    const answerText = el("div", { class: "mono round-card__answer-text" }, "");
+    answerBlock.appendChild(answerLabel);
+    answerBlock.appendChild(answerText);
 
-    card.appendChild(headerRow);
-    card.appendChild(list);
+    const verdictRow = el("div", { class: "round-card__verdicts" });
+    const btnRight = el("button", {
+      class: "marking-choice",
+      type: "button",
+      title: "Mark as correct",
+      "aria-pressed": "false",
+      "data-verdict": VERDICT.RIGHT,
+    }, "✓");
+    const btnUnknown = el("button", {
+      class: "marking-choice",
+      type: "button",
+      title: "Mark as unsure",
+      "aria-pressed": "false",
+      "data-verdict": VERDICT.UNKNOWN,
+    }, "I DUNNO");
+    const btnWrong = el("button", {
+      class: "marking-choice",
+      type: "button",
+      title: "Mark as incorrect",
+      "aria-pressed": "false",
+      "data-verdict": VERDICT.WRONG,
+    }, "✕");
+    verdictRow.appendChild(btnRight);
+    verdictRow.appendChild(btnUnknown);
+    verdictRow.appendChild(btnWrong);
+
+    const statusText = el("div", { class: "mono round-card__status round-card__status--hidden" }, "");
+    const submitBtn = el("button", {
+      class: "btn round-card__submit",
+      type: "button",
+      disabled: "",
+    }, "SUBMIT MARKING");
+
+    card.appendChild(heading);
+    card.appendChild(stepRow);
+    card.appendChild(prompt);
+    card.appendChild(answerBlock);
+    card.appendChild(verdictRow);
+    card.appendChild(statusText);
+    card.appendChild(submitBtn);
+
+    const exitPrompt = (() => {
+      const title = el("div", { class: "mono round-exit__title" }, "RETURN TO LOBBY?");
+      const actions = el("div", { class: "round-exit__actions" });
+      const yesBtn = el("button", { class: "btn round-exit__btn" }, "YES");
+      const noBtn = el("button", { class: "btn outline round-exit__btn" }, "NO");
+      actions.appendChild(yesBtn);
+      actions.appendChild(noBtn);
+      return { node: el("div", { class: "round-exit round-exit--hidden" }, [title, actions]), yesBtn, noBtn };
+    })();
 
     root.appendChild(card);
-
-    const mathsMount = el("div", { class: "jemima-maths-pinned" });
-    root.appendChild(mathsMount);
-
-    const overlay = el("div", { class: "stage-overlay stage-overlay--hidden" });
-    const overlayTitle = el("div", { class: "mono stage-overlay__title" }, "");
-    const overlayNote = el("div", { class: "mono small stage-overlay__note" }, "");
-    overlay.appendChild(overlayTitle);
-    overlay.appendChild(overlayNote);
-    root.appendChild(overlay);
-
+    root.appendChild(exitPrompt.node);
     container.appendChild(root);
 
-    const showOverlay = (title, note) => {
-      overlayTitle.textContent = title || "";
-      overlayNote.textContent = note || "";
-      overlay.classList.add("stage-overlay--with-maths");
-      overlay.appendChild(mathsMount);
-      overlay.classList.remove("stage-overlay--hidden");
-      card.style.display = "none";
+    let idx = 0;
+    let marks = [null, null, null];
+    let published = false;
+    let submitting = false;
+    let advanceTimer = null;
+    let stopRoomWatch = null;
+    let alive = true;
+    let waitMessageDefault = "Waiting…";
+    let guardActive = true;
+    let chipsEnabled = false;
+    let oppItems = [];
+    let oppAnswers = [];
+
+    const historySupported = typeof window !== "undefined" && "addEventListener" in window && window.history;
+
+    const timerContext = { code, role: "", round };
+
+    const clearAdvanceTimer = () => {
+      if (advanceTimer) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+      }
     };
 
-    const hideOverlay = () => {
-      overlay.classList.remove("stage-overlay--with-maths");
-      overlay.classList.add("stage-overlay--hidden");
-      card.style.display = "";
-      if (root.contains(overlay)) {
-        root.insertBefore(mathsMount, overlay);
-      } else {
-        root.appendChild(mathsMount);
+    const setStatus = (message) => {
+      const text = message || "";
+      statusText.textContent = text;
+      statusText.classList.toggle("round-card__status--hidden", !text);
+    };
+
+    const setVerdictsEnabled = (enabled) => {
+      const allowed = enabled && !published && !submitting;
+      [btnRight, btnUnknown, btnWrong].forEach((btn) => {
+        btn.disabled = !allowed;
+      });
+    };
+
+    const setChipNavigation = (enabled) => {
+      chipsEnabled = enabled;
+      chips.forEach((chip) => {
+        chip.disabled = !enabled || published || submitting;
+      });
+    };
+
+    setVerdictsEnabled(false);
+    setChipNavigation(false);
+    setStatus("Preparing review…");
+
+    const updateChips = () => {
+      chips.forEach((chip, index) => {
+        chip.classList.toggle("round-step--active", index === idx);
+        chip.classList.toggle("round-step--answered", marks[index] !== null && marks[index] !== undefined);
+        chip.disabled = !chipsEnabled || published || submitting;
+      });
+    };
+
+    const refreshVerdictStyles = () => {
+      const mark = marks[idx];
+      const applyState = (btn, isActive, type) => {
+        btn.classList.toggle("marking-choice--selected", Boolean(isActive));
+        btn.classList.toggle("marking-choice--right", isActive && type === VERDICT.RIGHT);
+        btn.classList.toggle("marking-choice--wrong", isActive && type === VERDICT.WRONG);
+        btn.classList.toggle("marking-choice--unknown", isActive && type === VERDICT.UNKNOWN);
+        if (!isActive) {
+          btn.classList.remove("marking-choice--right", "marking-choice--wrong", "marking-choice--unknown");
+        }
+        btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+      };
+      applyState(btnRight, mark === VERDICT.RIGHT, VERDICT.RIGHT);
+      applyState(btnWrong, mark === VERDICT.WRONG, VERDICT.WRONG);
+      applyState(btnUnknown, mark === VERDICT.UNKNOWN, VERDICT.UNKNOWN);
+    };
+
+    const updateSubmitState = () => {
+      const ready = marks.every((value) => value !== null && value !== undefined) && !published && !submitting;
+      submitBtn.disabled = !ready;
+      submitBtn.classList.toggle("throb", ready);
+    };
+
+    const markValue = (value) => {
+      if (value === VERDICT.RIGHT) return VERDICT.RIGHT;
+      if (value === VERDICT.WRONG) return VERDICT.WRONG;
+      return VERDICT.UNKNOWN;
+    };
+
+    const findNextUnmarked = (start) => {
+      for (let i = start + 1; i < marks.length; i += 1) {
+        if (marks[i] === null || marks[i] === undefined) return i;
       }
+      for (let i = 0; i < marks.length; i += 1) {
+        if (marks[i] === null || marks[i] === undefined) return i;
+      }
+      return null;
+    };
+
+    const showMark = (targetIdx) => {
+      clearAdvanceTimer();
+      const clamped = Math.max(0, Math.min(targetIdx, Math.max(oppItems.length, marks.length) - 1));
+      idx = clamped;
+      const currentItem = oppItems[idx] || {};
+      const questionText = currentItem.question || "(missing question)";
+      const chosenAnswer = oppAnswers[idx] || "(no answer recorded)";
+      prompt.textContent = `${idx + 1}. ${questionText}`;
+      answerText.textContent = chosenAnswer;
+      setVerdictsEnabled(true);
+      setChipNavigation(true);
+      setStatus("");
+      updateChips();
+      refreshVerdictStyles();
+      updateSubmitState();
+      resumeRoundTimer(timerContext);
+    };
+
+    const handleVerdict = (value) => {
+      if (published || submitting) return;
+      clearAdvanceTimer();
+      marks[idx] = markValue(value);
+      refreshVerdictStyles();
+      updateChips();
+      updateSubmitState();
+      const nextIdx = findNextUnmarked(idx);
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        if (!alive || published || submitting) return;
+        if (nextIdx === null || nextIdx === idx) {
+          showMark(idx);
+        } else {
+          showMark(nextIdx);
+        }
+      }, 500);
+    };
+
+    [btnRight, btnUnknown, btnWrong].forEach((btn) => {
+      btn.addEventListener("click", () => handleVerdict(btn.getAttribute("data-verdict")));
+    });
+
+    chips.forEach((chip, index) => {
+      chip.addEventListener("click", () => {
+        if (!chipsEnabled || published || submitting) return;
+        showMark(index);
+      });
+    });
+
+    let backPromptVisible = false;
+    const showExitPrompt = () => {
+      if (backPromptVisible) return;
+      backPromptVisible = true;
+      exitPrompt.node.classList.remove("round-exit--hidden");
+    };
+
+    const hideExitPrompt = () => {
+      if (!backPromptVisible) return;
+      backPromptVisible = false;
+      exitPrompt.node.classList.add("round-exit--hidden");
+    };
+
+    const handleBackAttempt = () => {
+      if (!guardActive) return;
+      showExitPrompt();
+      if (historySupported && typeof window.history.go === "function") {
+        try { window.history.go(1); } catch {}
+      } else {
+        setTimeout(() => {
+          location.hash = `#/marking?code=${code}&round=${round}`;
+        }, 0);
+      }
+    };
+
+    if (historySupported) {
+      window.addEventListener("popstate", handleBackAttempt);
+    }
+
+    exitPrompt.yesBtn.addEventListener("click", () => {
+      guardActive = false;
+      hideExitPrompt();
+      location.hash = "#/lobby";
+    });
+
+    exitPrompt.noBtn.addEventListener("click", () => {
+      hideExitPrompt();
+    });
+
+    const releaseGuard = () => {
+      guardActive = false;
+      hideExitPrompt();
     };
 
     const rRef = roomRef(code);
@@ -185,102 +356,40 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-
-    const timerContext = { code, role: myRole, round };
-
-    try {
-      if (mountMathsPane && roomData0.maths) {
-        mountMathsPane(mathsMount, { maths: roomData0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
-      }
-    } catch (err) {
-      console.warn("[marking] MathsPane mount failed:", err);
-    }
+    const answerOwner = oppRole === "host" ? "Daniel" : "Jaime";
+    waitMessageDefault = `Waiting for ${oppName}…`;
+    timerContext.role = myRole;
 
     const rdSnap = await getDoc(rdRef);
     const rd = rdSnap.data() || {};
-    const oppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
-    const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
+    oppItems = (oppRole === "host" ? rd.hostItems : rd.guestItems) || [];
+    oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
     const totalMarks = Math.max(3, oppItems.length || 0);
-    const markingMeta = roomData0.marking || {};
+    marks = new Array(totalMarks).fill(null);
 
-    answerLabel.textContent = `${oppName}’s answer`;
+    answerLabel.textContent = `${answerOwner}’s answer`;
 
-    let idx = 0;
-    let marks = new Array(totalMarks).fill(null);
-    let published = false;
-    let submitting = false;
-    let advanceTimer = null;
-
-    const disableFns = [];
-    const reflectFns = [];
-
-    const markValue = (value) => {
-      if (value === VERDICT.RIGHT) return VERDICT.RIGHT;
-      if (value === VERDICT.WRONG) return VERDICT.WRONG;
-      return VERDICT.UNKNOWN;
-    };
-
-    const showWaitingOverlay = (note) => {
-      showOverlay(`Waiting for ${oppName}`, note || "Waiting for opponent");
-    };
-
-    const clearAdvanceTimer = () => {
-      if (advanceTimer) {
-        clearTimeout(advanceTimer);
-        advanceTimer = null;
-      }
-    };
-
-    const setVerdictsEnabled = (enabled) => {
-      btnRight.disabled = !enabled;
-      btnWrong.disabled = !enabled;
-      btnUnknown.disabled = !enabled;
-    };
-
-    const reflect = () => {
-      const mark = marks[idx];
-      const isRight = mark === VERDICT.RIGHT;
-      const isWrong = mark === VERDICT.WRONG;
-      const isUnknown = mark === VERDICT.UNKNOWN;
-      btnRight.classList.toggle("active", isRight);
-      btnWrong.classList.toggle("active", isWrong);
-      btnUnknown.classList.toggle("active", isUnknown);
-      btnRight.setAttribute("aria-pressed", isRight ? "true" : "false");
-      btnWrong.setAttribute("aria-pressed", isWrong ? "true" : "false");
-      btnUnknown.setAttribute("aria-pressed", isUnknown ? "true" : "false");
-    };
-
-    disableFns.push(() => {
-      setVerdictsEnabled(false);
-    });
-    reflectFns.push(() => { reflect(); });
-
-    const showMark = (targetIdx) => {
-      clearAdvanceTimer();
-      if (targetIdx < 0) targetIdx = 0;
-      if (targetIdx >= totalMarks) targetIdx = totalMarks - 1;
-      idx = targetIdx;
-      const currentItem = oppItems[idx] || {};
-      const questionText = currentItem.question || "";
-      const chosenAnswer = oppAnswers[idx] || "";
-      questionNode.textContent = `${idx + 1}. ${questionText || "(missing question)"}`;
-      answerText.textContent = chosenAnswer || "(no answer recorded)";
-      heading.textContent = `MARKING ${Math.min(idx + 1, 3)}/3`;
-      setVerdictsEnabled(true);
-      reflect();
-      resumeRoundTimer(timerContext);
-      hideOverlay();
+    const applyExistingMarks = (incoming) => {
+      marks = new Array(totalMarks).fill(null).map((_, i) => {
+        const value = incoming[i];
+        if (value === VERDICT.RIGHT) return VERDICT.RIGHT;
+        if (value === VERDICT.WRONG) return VERDICT.WRONG;
+        if (value === VERDICT.UNKNOWN) return VERDICT.UNKNOWN;
+        return null;
+      });
     };
 
     const submitMarks = async () => {
       if (published || submitting) return;
       submitting = true;
-      const safeMarks = marks.map((value) => markValue(value));
+      updateSubmitState();
       clearAdvanceTimer();
       setVerdictsEnabled(false);
+      setChipNavigation(false);
       pauseRoundTimer(timerContext);
       const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
       const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
+      const safeMarks = marks.map((value) => markValue(value));
       const patch = {
         [`marking.${myRole}.${round}`]: safeMarks,
         [`markingAck.${myRole}.${round}`]: true,
@@ -289,64 +398,54 @@ export default {
       };
 
       try {
-        showWaitingOverlay("Submitting review…");
+        setStatus("Submitting review…");
         await updateDoc(rRef, patch);
         published = true;
         submitting = false;
         marks = safeMarks;
-        disableFns.forEach((fn) => { try { fn(); } catch {} });
-        showWaitingOverlay("Review submitted");
+        setStatus(waitMessageDefault);
+        updateSubmitState();
         clearRoundTimer(timerContext);
       } catch (err) {
         console.warn("[marking] submit failed:", err);
         submitting = false;
-        if (!published) {
-          hideOverlay();
-          resumeRoundTimer(timerContext);
-          setVerdictsEnabled(true);
-        }
+        setStatus("Retrying…");
+        setVerdictsEnabled(true);
+        setChipNavigation(true);
+        resumeRoundTimer(timerContext);
+        updateSubmitState();
       }
     };
 
-    const handleVerdict = (value) => {
+    submitBtn.addEventListener("click", () => {
       if (published || submitting) return;
-      clearAdvanceTimer();
-      marks[idx] = markValue(value);
-      reflect();
-      advanceTimer = setTimeout(() => {
-        advanceTimer = null;
-        if (published || submitting) return;
-        if (idx >= totalMarks - 1) {
-          submitMarks();
-        } else {
-          showMark(idx + 1);
-        }
-      }, 500);
-    };
-
-    btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT));
-    btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG));
-    btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN));
+      submitMarks();
+    });
 
     const existingMarks = (((roomData0.marking || {})[myRole] || {})[round] || []);
-    if (Array.isArray(existingMarks) && existingMarks.length === 3) {
-      marks = new Array(totalMarks).fill(null).map((_, i) => markValue(existingMarks[i]));
+    if (Array.isArray(existingMarks) && existingMarks.length === totalMarks) {
+      applyExistingMarks(existingMarks);
       published = true;
-      reflectFns.forEach((fn) => { try { fn(); } catch {} });
-      disableFns.forEach((fn) => { try { fn(); } catch {} });
-      showWaitingOverlay("Review submitted");
+      setVerdictsEnabled(false);
+      setChipNavigation(false);
+      setStatus(waitMessageDefault);
       pauseRoundTimer(timerContext);
       clearRoundTimer(timerContext);
-    } else {
-      showMark(0);
     }
 
-    let stopRoomWatch = null;
-    let finalizing = false;
+    if (!published) {
+      showMark(0);
+    } else {
+      showMark(0);
+      setVerdictsEnabled(false);
+      setChipNavigation(false);
+      setStatus(waitMessageDefault);
+      pauseRoundTimer(timerContext);
+      clearRoundTimer(timerContext);
+      updateSubmitState();
+    }
 
     const finalizeRound = async () => {
-      if (finalizing) return;
-      finalizing = true;
       try {
         await runTransaction(db, async (tx) => {
           const roomSnapCur = await tx.get(rRef);
@@ -379,8 +478,6 @@ export default {
         });
       } catch (err) {
         console.warn("[marking] finalize failed:", err);
-      } finally {
-        finalizing = false;
       }
     };
 
@@ -397,6 +494,7 @@ export default {
       }
 
       if (stateName === "countdown") {
+        releaseGuard();
         setTimeout(() => {
           location.hash = `#/countdown?code=${code}&round=${data.round || round}`;
         }, 80);
@@ -404,6 +502,7 @@ export default {
       }
 
       if (stateName === "questions") {
+        releaseGuard();
         setTimeout(() => {
           location.hash = `#/questions?code=${code}&round=${data.round || round}`;
         }, 80);
@@ -411,14 +510,16 @@ export default {
       }
 
       if (stateName === "award") {
+        releaseGuard();
         setTimeout(() => {
           location.hash = `#/award?code=${code}&round=${data.round || round}`;
         }, 80);
         return;
       }
 
-      if (stateName === "maths") {
-        setTimeout(() => { location.hash = `#/maths?code=${code}`; }, 80);
+      if (stateName === "final") {
+        releaseGuard();
+        setTimeout(() => { location.hash = `#/final?code=${code}`; }, 80);
         return;
       }
 
@@ -428,14 +529,17 @@ export default {
 
       if (ackMine && !published) {
         const incomingMarks = (((data.marking || {})[myRole] || {})[round] || marks);
-        marks = new Array(totalMarks).fill(null).map((_, i) => markValue(incomingMarks[i]));
+        applyExistingMarks(incomingMarks);
         published = true;
         submitting = false;
-        reflectFns.forEach((fn) => { try { fn(); } catch {} });
-        disableFns.forEach((fn) => { try { fn(); } catch {} });
-        showWaitingOverlay(ackOpp ? "Waiting for opponent" : "Review submitted");
+        setStatus(waitMessageDefault);
+        setVerdictsEnabled(false);
+        setChipNavigation(false);
         pauseRoundTimer(timerContext);
         clearRoundTimer(timerContext);
+        updateSubmitState();
+        refreshVerdictStyles();
+        updateChips();
       }
 
       if (myRole === "host" && stateName === "marking" && ackMine && ackOpp) {
@@ -445,12 +549,21 @@ export default {
       console.warn("[marking] room snapshot error:", err);
     });
 
-    this.unmount = () => {
+    this._cleanup = () => {
+      alive = false;
       clearAdvanceTimer();
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       pauseRoundTimer(timerContext);
+      if (historySupported) {
+        try { window.removeEventListener("popstate", handleBackAttempt); } catch {}
+      }
     };
   },
 
-  async unmount() { /* instance handles cleanup */ }
+  async unmount() {
+    if (typeof this._cleanup === "function") {
+      try { this._cleanup(); } catch {}
+      this._cleanup = null;
+    }
+  },
 };

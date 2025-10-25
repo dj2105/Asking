@@ -103,7 +103,6 @@ export default {
         if (data.state === "questions") target = `#/questions?code=${code}&round=${round}`;
         else if (data.state === "marking") target = `#/marking?code=${code}&round=${round}`;
         else if (data.state === "award") target = `#/award?code=${code}&round=${round}`;
-        else if (data.state === "maths") target = `#/maths?code=${code}`;
         else if (data.state === "final") target = `#/final?code=${code}`;
         if (target) {
           setTimeout(() => { location.hash = target; }, 150);

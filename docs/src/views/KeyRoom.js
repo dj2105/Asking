@@ -477,7 +477,7 @@ function computeHostHash(stage, code, round) {
     case "award":
       return `#/award?code=${code}&round=${round}`;
     case "maths":
-      return `#/maths?code=${code}`;
+      return `#/final?code=${code}`;
     case "final":
       return `#/final?code=${code}`;
     default:
