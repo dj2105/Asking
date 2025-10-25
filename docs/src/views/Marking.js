@@ -74,6 +74,55 @@ const markValue = (value) => {
   return VERDICT.UNKNOWN;
 };
 
+function balanceQuestionText(input = "") {
+  const raw = String(input || "").replace(/\s+/g, " ").trim();
+  if (!raw) return "";
+  const words = raw.split(" ");
+  if (words.length < 4) return raw;
+  const firstCount = Math.ceil(words.length / 2);
+  const secondCount = words.length - firstCount;
+  if (secondCount <= 1) return raw;
+  const firstLine = words.slice(0, firstCount).join(" ");
+  const secondLine = words.slice(firstCount).join(" ");
+  if (!secondLine || secondLine.split(" ").length <= 1) return raw;
+  return `${firstLine}\n${secondLine}`;
+}
+
+function createPaletteApplier(hue, accentHue) {
+  return (roundNumber = 1) => {
+    const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
+    const inkLight = 12 + depth * 1.3;
+    const paperLight = 92 - depth * 1.6;
+    const accentSoftLight = 88 - depth * 1.0;
+    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
+    document.documentElement.style.setProperty("--ink-h", String(hue));
+    document.documentElement.style.setProperty("--ink-s", "64%");
+    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
+    document.documentElement.style.setProperty("--paper-s", "38%");
+    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
+    document.documentElement.style.setProperty(
+      "--muted",
+      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+    );
+    document.documentElement.style.setProperty(
+      "--soft-line",
+      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
+    );
+    document.documentElement.style.setProperty(
+      "--card",
+      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
+    );
+    document.documentElement.style.setProperty(
+      "--accent-soft",
+      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
+    );
+    document.documentElement.style.setProperty(
+      "--accent-strong",
+      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
+    );
+  };
+}
+
 export default {
   async mount(container) {
     const me = await ensureAuth();
@@ -84,9 +133,8 @@ export default {
 
     const hue = Math.floor(Math.random() * 360);
     const accentHue = (hue + 180) % 360;
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--accent-soft", `hsl(${accentHue}, 68%, 88%)`);
-    document.documentElement.style.setProperty("--accent-strong", `hsl(${accentHue}, 52%, 26%)`);
+    const applyPalette = createPaletteApplier(hue, accentHue);
+    applyPalette(round || 1);
 
     container.innerHTML = "";
 
@@ -194,7 +242,8 @@ export default {
     container.appendChild(root);
 
     const setPrompt = (text, { status = false } = {}) => {
-      prompt.textContent = text || "";
+      const content = status ? String(text || "") : balanceQuestionText(text);
+      prompt.textContent = content;
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
@@ -320,10 +369,10 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
-        const questionNumber = markOffset() + idx + 1;
-        setPrompt(`${questionNumber}. ${questionText}`, { status: false });
+        setPrompt(questionText, { status: false });
         answerValue.textContent = answerText;
         renderSteps();
+        [btnRight, btnUnknown, btnWrong].forEach((btn) => btn.classList.remove("is-blinking"));
         reflectVerdicts();
         highlightSubmitIfReady();
         setMarkingVisible(true);
@@ -355,7 +404,7 @@ export default {
           showMark(marks.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 500);
+      }, 700);
     };
 
     const showWaitingPrompt = () => {
@@ -552,8 +601,12 @@ export default {
       marks[idx] = markValue(value);
       if (sourceBtn) {
         [btnRight, btnUnknown, btnWrong].forEach((btn) => {
-          btn.classList.toggle("is-selected", btn === sourceBtn);
+          if (btn !== sourceBtn) btn.classList.remove("is-blinking");
         });
+        sourceBtn.classList.add("is-blinking");
+        setTimeout(() => {
+          sourceBtn.classList.remove("is-blinking");
+        }, 900);
       }
       renderSteps();
       reflectVerdicts();
@@ -588,6 +641,7 @@ export default {
           round = nextRound;
           timerContext.round = round;
           renderSteps();
+          applyPalette(effectiveRound());
         }
       }
 
