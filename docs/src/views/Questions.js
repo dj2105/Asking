@@ -169,6 +169,21 @@ export default {
     let advanceTimer = null;
     let swapTimer = null;
 
+    const effectiveRound = () => {
+      return Number.isFinite(round) && round > 0 ? round : 1;
+    };
+
+    const questionOffset = () => (effectiveRound() - 1) * 3;
+
+    const refreshStepLabels = () => {
+      const base = questionOffset();
+      stepButtons.forEach((btn, i) => {
+        const number = base + i + 1;
+        btn.textContent = String(number);
+        btn.setAttribute("aria-label", `Question ${number}`);
+      });
+    };
+
     let stopWatcher = null;
     let alive = true;
     let guardAllowNavigation = false;
@@ -204,10 +219,11 @@ export default {
     };
 
     const renderSteps = () => {
+      refreshStepLabels();
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
-        btn.disabled = triplet.length === 0;
+        btn.disabled = triplet.length === 0 || published || submitting;
       });
     };
 
@@ -254,7 +270,8 @@ export default {
       idx = targetIdx;
       const render = () => {
         const current = triplet[idx] || {};
-        const label = current.question ? `${idx + 1}. ${current.question}` : "";
+        const questionNumber = questionOffset() + idx + 1;
+        const label = current.question ? `${questionNumber}. ${current.question}` : "";
         setPrompt(label, { status: false });
         setChoicesVisible(true);
         renderChoices();
@@ -291,6 +308,12 @@ export default {
       }, 500);
     };
 
+    const showWaitingPrompt = () => {
+      setPrompt(waitingLabel, { status: true });
+      setChoicesVisible(false);
+      clearAdvanceTimer();
+    };
+
     const rRef = roomRef(code);
 
     const roomSnap0 = await getDoc(rRef);
@@ -299,6 +322,8 @@ export default {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
     }
+
+    renderSteps();
 
     const rdRef = doc(roundSubColRef(code), String(round));
     const { hostUid, guestUid } = room0.meta || {};
@@ -375,12 +400,11 @@ export default {
 
     if (submittedAlready) {
       published = true;
-      const lastIdx = triplet.length > 0 ? triplet.length - 1 : 0;
-      showQuestion(lastIdx, { animate: false });
       submitBtn.disabled = true;
       submitBtn.textContent = waitingLabel;
-      renderChoices();
+      showWaitingPrompt();
       renderSteps();
+      renderChoices();
       pauseRoundTimer(timerContext);
     } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
       showQuestion(0, { animate: false });
@@ -442,6 +466,9 @@ export default {
         const currentIndex = idx;
         if (!text) return;
         chosen[currentIndex] = text;
+        choiceButtons.forEach((choiceBtn) => {
+          choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
+        });
         renderChoices();
         renderSteps();
         updateSubmitState();
@@ -452,6 +479,7 @@ export default {
     stepButtons.forEach((btn, i) => {
       btn.addEventListener("click", () => {
         if (triplet.length === 0) return;
+        if (published || submitting) return;
         clearAdvanceTimer();
         showQuestion(i, { animate: true });
         renderChoices();
@@ -464,9 +492,12 @@ export default {
       if (published || submitting) return;
       const answeredCount = chosen.filter((value) => value).length;
       if (answeredCount < triplet.length) return;
+      const revertIdx = idx;
       submitting = true;
       updateSubmitState();
       submitBtn.textContent = "SUBMITTING…";
+      showWaitingPrompt();
+      renderSteps();
 
       const payload = triplet.map((entry, i) => ({
         question: entry.question || "",
@@ -487,17 +518,18 @@ export default {
         submitting = false;
         submitBtn.disabled = true;
         submitBtn.textContent = waitingLabel;
-        const lastIdx = triplet.length > 0 ? triplet.length - 1 : 0;
-        showQuestion(lastIdx, { animate: false });
-        renderChoices();
+        showWaitingPrompt();
         renderSteps();
-        clearAdvanceTimer();
+        renderChoices();
+        updateSubmitState();
         pauseRoundTimer(timerContext);
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
         submitBtn.textContent = "SUBMIT";
+        showQuestion(revertIdx, { animate: false });
         updateSubmitState();
+        resumeRoundTimer(timerContext);
       }
     });
 
@@ -508,6 +540,7 @@ export default {
       if (nextRound !== round) {
         round = nextRound;
         timerContext.round = round;
+        renderSteps();
       }
 
       if (data.state === "marking") {
@@ -526,12 +559,11 @@ export default {
       }
 
       if (published && alive) {
-        const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
-        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
-        if (myDone && !oppDone) {
-          submitBtn.disabled = true;
-          submitBtn.textContent = waitingLabel;
-        }
+        showWaitingPrompt();
+        renderSteps();
+        renderChoices();
+        submitBtn.disabled = true;
+        submitBtn.textContent = waitingLabel;
       }
 
       if (myRole === "host" && data.state === "questions") {
