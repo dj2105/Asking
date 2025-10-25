@@ -91,6 +91,7 @@
 // - Hue is set by each view; router leaves theme to the views.
 
 import ScoreStrip from "./lib/ScoreStrip.js";
+import { registerStage } from "./lib/StageBackground.js";
 
 if ("scrollRestoration" in history) {
   try { history.scrollRestoration = "manual"; } catch {}
@@ -184,6 +185,9 @@ async function mountRoute() {
 
   const actualRoute = load ? route : "lobby";
   const importer = load || VIEW_MAP.lobby;
+  const paramsObj = Object.fromEntries(qs.entries());
+
+  registerStage(actualRoute, paramsObj);
 
   console.log(`[router] mount ${actualRoute}`);
 
@@ -205,7 +209,7 @@ async function mountRoute() {
       throw new Error(`[router] ${route}: missing mount() export`);
     }
 
-    await view.mount(app, Object.fromEntries(qs.entries()));
+    await view.mount(app, paramsObj);
     current.mod = view;
     current.unmount = (typeof view.unmount === "function") ? view.unmount.bind(view) : null;
 
