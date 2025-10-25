@@ -17,14 +17,9 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-import * as MathsPaneMod from "../lib/MathsPane.js";
 import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
-const mountMathsPane =
-  (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
-   typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
-   typeof MathsPaneMod?.default?.mount === "function" ? MathsPaneMod.default.mount :
-   null);
+import { applyPastelTheme } from "../lib/palette.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
@@ -68,6 +63,7 @@ const roomRef = (code) => doc(db, "rooms", code);
 const roundSubColRef = (code) => collection(roomRef(code), "rounds");
 
 export default {
+
   async mount(container) {
     const me = await ensureAuth();
 
@@ -76,81 +72,220 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    const resetTheme = applyPastelTheme();
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-questions stage-center" });
-
-    const card = el("div", { class: "card card--soft card--center question-card" });
-    const headerRow = el("div", { class: "mono phase-header phase-header--centered" });
-    const heading = el("div", { class: "phase-header__title" }, "QUESTION 1/3");
-    headerRow.appendChild(heading);
-    const qText = el("div", { class: "mono question-card__prompt" }, "");
-
-    card.appendChild(headerRow);
-    card.appendChild(qText);
-
-    const btnWrap = el("div", { class: "choice-row" });
-    const btn1 = el("button", { class: "btn big outline" }, "");
-    const btn2 = el("button", { class: "btn big outline" }, "");
-    btnWrap.appendChild(btn1);
-    btnWrap.appendChild(btn2);
-    card.appendChild(btnWrap);
 
     let idx = 0;
+    let triplet = [];
     const chosen = ["", "", ""];
     let published = false;
     let submitting = false;
+    let waitingForOpponent = false;
     let advanceTimer = null;
 
-    let waitMessageDefault = "Waiting…";
-    const waitMsg = el("div", { class: "mono small wait-note" }, waitMessageDefault);
-    waitMsg.style.display = "none";
-    card.appendChild(waitMsg);
+    const root = el("div", { class: "view view-questions qa-stage" });
+    const title = el("h1", { class: "qa-title mono" }, "Questions");
+    const chipRow = el("div", { class: "qa-chip-row" });
+    const panel = el("div", { class: "qa-panel" });
+    const qText = el("div", { class: "mono qa-panel__prompt" }, "Loading…");
+    const divider = el("div", { class: "qa-divider" });
+    const answersWrap = el("div", { class: "qa-answers" });
+    const btn1 = el("button", { class: "qa-answer", type: "button" }, "");
+    const btn2 = el("button", { class: "qa-answer", type: "button" }, "");
+    answersWrap.appendChild(btn1);
+    answersWrap.appendChild(btn2);
+    panel.appendChild(qText);
+    panel.appendChild(divider);
+    panel.appendChild(answersWrap);
 
-    root.appendChild(card);
+    const submitRow = el("div", { class: "qa-submit" });
+    const submitBtn = el(
+      "button",
+      { class: "qa-submit-btn", type: "button", disabled: "disabled" },
+      "Submit Answers"
+    );
+    submitRow.appendChild(submitBtn);
 
-    const mathsMount = el("div", { class: "jemima-maths-pinned" });
-    root.appendChild(mathsMount);
-
-    const overlay = el("div", { class: "stage-overlay stage-overlay--hidden" });
-    const overlayTitle = el("div", { class: "mono stage-overlay__title" }, "");
-    const overlayNote = el("div", { class: "mono small stage-overlay__note" }, "");
-    overlay.appendChild(overlayTitle);
-    overlay.appendChild(overlayNote);
-    root.appendChild(overlay);
+    root.appendChild(title);
+    root.appendChild(chipRow);
+    root.appendChild(panel);
+    root.appendChild(submitRow);
 
     container.appendChild(root);
 
-    const showOverlay = (title, note) => {
-      overlayTitle.textContent = title || "";
-      overlayNote.textContent = note || "";
-      overlay.classList.add("stage-overlay--with-maths");
-      overlay.appendChild(mathsMount);
-      overlay.classList.remove("stage-overlay--hidden");
-      card.style.display = "none";
+    const chipButtons = [0, 1, 2].map((position) => {
+      const chip = el(
+        "button",
+        {
+          class: "qa-chip",
+          type: "button",
+          "aria-label": `Question ${position + 1}`,
+          "aria-pressed": "false",
+        },
+        String(position + 1)
+      );
+      chip.addEventListener("click", () => {
+        if (submitting || published) return;
+        showQuestion(position);
+      });
+      chipRow.appendChild(chip);
+      return chip;
+    });
+
+    const setPanelLoading = (loading) => {
+      panel.classList.toggle("qa-panel--loading", loading);
     };
 
-    const hideOverlay = () => {
-      overlay.classList.remove("stage-overlay--with-maths");
-      overlay.classList.add("stage-overlay--hidden");
-      card.style.display = "";
-      if (root.contains(overlay)) {
-        root.insertBefore(mathsMount, overlay);
-      } else {
-        root.appendChild(mathsMount);
+    const applySelectionStyles = () => {
+      const currentValue = chosen[idx] || "";
+      [btn1, btn2].forEach((button) => {
+        const text = button.textContent || "";
+        const isSelected = currentValue && text === currentValue;
+        button.classList.toggle("qa-answer--selected", Boolean(isSelected));
+      });
+    };
+
+    const setButtonsEnabled = (enabled) => {
+      btn1.disabled = !enabled;
+      btn2.disabled = !enabled;
+      panel.classList.toggle("qa-panel--locked", !enabled);
+      applySelectionStyles();
+    };
+
+    const setChipsEnabled = (enabled) => {
+      chipButtons.forEach((chip) => {
+        chip.disabled = !enabled;
+      });
+    };
+
+    const clearAdvanceTimer = () => {
+      if (advanceTimer) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
       }
     };
 
+    const updateChipStates = () => {
+      chipButtons.forEach((chip, position) => {
+        const isActive = position === idx;
+        const isDone = Boolean(chosen[position]);
+        chip.classList.toggle("qa-chip--active", isActive);
+        chip.classList.toggle("qa-chip--done", isDone);
+        chip.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+    };
+
+    const refreshSubmitState = () => {
+      const ready = chosen.every((value) => Boolean(value));
+      let label = "Submit Answers";
+      let disabled = false;
+      const isReady = ready && !published && !submitting;
+      if (submitting) {
+        label = "Submitting…";
+        disabled = true;
+      } else if (published) {
+        disabled = true;
+        label = waitingForOpponent ? "Submitted — waiting…" : "Submitted";
+      } else if (!ready) {
+        disabled = true;
+      }
+      submitBtn.disabled = disabled;
+      submitBtn.classList.toggle("is-ready", isReady);
+      submitBtn.textContent = label;
+    };
+
+    const nextUnanswered = (fromIndex) => {
+      for (let i = fromIndex + 1; i < triplet.length; i += 1) {
+        if (!chosen[i]) return i;
+      }
+      for (let i = 0; i < triplet.length; i += 1) {
+        if (!chosen[i]) return i;
+      }
+      return null;
+    };
+
+    const historySupported =
+      typeof window !== "undefined" &&
+      window.history &&
+      typeof window.history.pushState === "function" &&
+      typeof window.history.replaceState === "function";
+    const historyKey = "jemimaQuestions";
+    let historyIndex = null;
+
+    let timerContext = { code, role: "guest", round: round || 1 };
+
+    const recordHistoryIndex = (nextIndex, { replace = false } = {}) => {
+      historyIndex = nextIndex;
+      if (!historySupported) return;
+      const baseState =
+        window.history.state && typeof window.history.state === "object"
+          ? { ...window.history.state }
+          : {};
+      baseState[historyKey] = { idx: nextIndex, code };
+      try {
+        if (replace) {
+          window.history.replaceState(baseState, document.title);
+        } else {
+          window.history.pushState(baseState, document.title);
+        }
+      } catch (err) {
+        console.warn("[questions] history state update failed:", err);
+      }
+    };
+
+    const showQuestion = (targetIdx, options = {}) => {
+      clearAdvanceTimer();
+      if (triplet.length === 0) return;
+      if (targetIdx < 0) targetIdx = 0;
+      if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
+      idx = targetIdx;
+      const current = triplet[idx] || {};
+      qText.textContent = current.question || "";
+      btn1.textContent = current.options?.[0] || "";
+      btn2.textContent = current.options?.[1] || "";
+      applySelectionStyles();
+      updateChipStates();
+      if (!options.skipHistory) {
+        const shouldReplace = historyIndex === null || options.forceReplace;
+        recordHistoryIndex(idx, { replace: shouldReplace });
+      } else {
+        historyIndex = idx;
+      }
+      if (!published && !submitting) {
+        setButtonsEnabled(true);
+        setChipsEnabled(true);
+        setPanelLoading(false);
+        resumeRoundTimer(timerContext);
+      } else {
+        pauseRoundTimer(timerContext);
+      }
+      refreshSubmitState();
+    };
+
+    const handlePopState = (event) => {
+      if (published || submitting) return;
+      const state = event?.state;
+      const payload = state && typeof state === "object" ? state[historyKey] : null;
+      if (!payload || payload.code !== code) return;
+      const target = Number(payload.idx);
+      if (!Number.isFinite(target)) return;
+      showQuestion(target, { skipHistory: true });
+    };
+
+    let removePopStateListener = () => {};
+    if (historySupported) {
+      window.addEventListener("popstate", handlePopState);
+      removePopStateListener = () => {
+        try {
+          window.removeEventListener("popstate", handlePopState);
+        } catch {}
+        removePopStateListener = () => {};
+      };
+    }
+
     let stopWatcher = null;
     let alive = true;
-    let removePopStateListener = () => {};
-    this.unmount = () => {
-      alive = false;
-      try { stopWatcher && stopWatcher(); } catch {}
-      try { removePopStateListener(); } catch {}
-    };
 
     const rRef = roomRef(code);
 
@@ -159,48 +294,22 @@ export default {
     if (!round) {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
+      timerContext.round = round;
     }
 
     const rdRef = doc(roundSubColRef(code), String(round));
     const { hostUid, guestUid } = room0.meta || {};
     const storedRole = getStoredRole(code);
-    const myRole = storedRole === "host" || storedRole === "guest"
-      ? storedRole
-      : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
+    const myRole =
+      storedRole === "host" || storedRole === "guest"
+        ? storedRole
+        : hostUid === me.uid
+          ? "host"
+          : guestUid === me.uid
+            ? "guest"
+            : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
-    const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    waitMessageDefault = `Waiting for ${oppName}…`;
-    waitMsg.textContent = waitMessageDefault;
-
-    const overlayWaiting = () => `Waiting for ${oppName}`;
-    const showWaitingOverlay = (note) => {
-      showOverlay(overlayWaiting(), note || "Waiting for opponent");
-    };
-
-    try {
-      if (mountMathsPane && room0.maths) {
-        mountMathsPane(mathsMount, { maths: room0.maths, round, mode: "inline", roomCode: code, userUid: me.uid });
-      }
-    } catch (err) {
-      console.warn("[questions] MathsPane mount failed:", err);
-    }
-
-    const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
-    function refreshChoiceStyles() {
-      const current = chosen[idx] || "";
-      const matches = (btn) => Boolean(current) && (btn.textContent || "") === current;
-      const btn1Selected = matches(btn1);
-      const btn2Selected = matches(btn2);
-      btn1.classList.toggle("selected", btn1Selected);
-      btn2.classList.toggle("selected", btn2Selected);
-      btn1.classList.toggle("throb", !btn1Selected && !btn1.disabled);
-      btn2.classList.toggle("throb", !btn2Selected && !btn2.disabled);
-    }
-    function setButtonsEnabled(enabled) {
-      btn1.disabled = !enabled;
-      btn2.disabled = !enabled;
-      refreshChoiceStyles();
-    }
+    timerContext.role = myRole;
 
     const waitForRoundData = async () => {
       let firstWait = true;
@@ -215,10 +324,13 @@ export default {
           console.warn("[questions] failed to load round doc:", err);
         }
         if (firstWait) {
-          waitMsg.textContent = "Waiting for round data…";
-          waitMsg.style.display = "";
-          btnWrap.style.display = "none";
+          setPanelLoading(true);
           setButtonsEnabled(false);
+          setChipsEnabled(false);
+          qText.textContent = "Waiting for round data…";
+          btn1.textContent = "";
+          btn2.textContent = "";
+          refreshSubmitState();
           firstWait = false;
         }
         if (attempts >= MAX_ATTEMPTS) break;
@@ -228,12 +340,16 @@ export default {
     };
 
     const rd = await waitForRoundData();
-    if (!alive) return;
+    if (!alive) {
+      resetTheme();
+      removePopStateListener();
+      return;
+    }
 
     const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
 
     const tier = roundTier(round);
-    const triplet = [0, 1, 2].map((i) => {
+    triplet = [0, 1, 2].map((i) => {
       const it = myItems[i] || {};
       const fallback = FALLBACK_ITEMS[i % FALLBACK_ITEMS.length];
       const rawQuestion = typeof it.question === "string" ? it.question.trim() : "";
@@ -254,210 +370,178 @@ export default {
       return { question, options: [optA, optB], correct };
     });
 
-    const timerContext = { code, role: myRole, round };
-
-    const historySupported =
-      typeof window !== "undefined" &&
-      window.history &&
-      typeof window.history.pushState === "function" &&
-      typeof window.history.replaceState === "function";
-    const historyKey = "jemimaQuestions";
-    let historyIndex = null;
-
-    function recordHistoryIndex(nextIndex, { replace = false } = {}) {
-      historyIndex = nextIndex;
-      if (!historySupported) return;
-      const baseState = window.history.state && typeof window.history.state === "object"
-        ? { ...window.history.state }
-        : {};
-      baseState[historyKey] = { idx: nextIndex, code };
-      try {
-        if (replace) {
-          window.history.replaceState(baseState, document.title);
-        } else {
-          window.history.pushState(baseState, document.title);
-        }
-      } catch (err) {
-        console.warn("[questions] history state update failed:", err);
-      }
+    const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
+    for (let i = 0; i < chosen.length; i += 1) {
+      const entry = existingAns[i] || {};
+      chosen[i] = typeof entry.chosen === "string" ? entry.chosen : "";
     }
 
-    const clearAdvanceTimer = () => {
-      if (advanceTimer) {
-        clearTimeout(advanceTimer);
-        advanceTimer = null;
-      }
-    };
+    updateChipStates();
 
-    function showQuestion(targetIdx, options = {}) {
-      clearAdvanceTimer();
-      if (triplet.length === 0) return;
-      if (targetIdx < 0) targetIdx = 0;
-      if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
-      idx = targetIdx;
-      const cur = triplet[idx];
-      heading.textContent = `QUESTION ${Math.min(idx + 1, 3)}/3`;
-      qText.textContent = cur?.question || "";
-      btn1.textContent = cur?.options?.[0] || "";
-      btn2.textContent = cur?.options?.[1] || "";
-      btnWrap.style.display = "flex";
-      waitMsg.style.display = "none";
-      setButtonsEnabled(true);
-      if (!options.skipHistory) {
-        const shouldReplace = historyIndex === null || options.forceReplace;
-        recordHistoryIndex(idx, { replace: shouldReplace });
-      } else {
-        historyIndex = idx;
-      }
-      resumeRoundTimer(timerContext);
-    }
+    const submittedData = room0.submitted || {};
+    const mySubmittedInitial = Boolean((submittedData[myRole] || {})[round]);
+    const oppSubmittedInitial = Boolean((submittedData[oppRole] || {})[round]) ||
+      (Array.isArray((((room0.answers || {})[oppRole] || {})[round])) &&
+        (((room0.answers || {})[oppRole] || {})[round]).length === 3);
 
-    const handlePopState = (event) => {
-      if (published || submitting) return;
-      const state = event?.state;
-      const payload = state && typeof state === "object" ? state[historyKey] : null;
-      if (!payload || payload.code !== code) return;
-      const target = Number(payload.idx);
-      if (!Number.isFinite(target)) return;
-      showQuestion(target, { skipHistory: true });
-    };
-    if (historySupported) {
-      window.addEventListener("popstate", handlePopState);
-      removePopStateListener = () => {
-        try {
-          window.removeEventListener("popstate", handlePopState);
-        } catch {}
-        removePopStateListener = () => {};
-      };
-    }
-
-    const finishRound = () => {
+    if (mySubmittedInitial && existingAns.length === 3) {
+      published = true;
+      waitingForOpponent = !oppSubmittedInitial;
+      setButtonsEnabled(false);
+      setChipsEnabled(false);
       pauseRoundTimer(timerContext);
-      setButtonsEnabled(false);
-      waitMsg.style.display = "none";
-      showWaitingOverlay();
-      publishAnswers();
-    };
-
-    const showWaitingState = (text) => {
-      hideOverlay();
-      btnWrap.style.display = "none";
-      waitMsg.textContent = text || waitMessageDefault;
-      waitMsg.style.display = "";
-      setButtonsEnabled(false);
-    };
-
-    async function publishAnswers() {
-      if (submitting || published) return;
-      submitting = true;
-
-      const payload = triplet.map((entry, idx) => ({
-        question: entry.question || "",
-        chosen: chosen[idx] || "",
-        correct: entry.correct || "",
-      }));
-      const patch = {
-        [`answers.${myRole}.${round}`]: payload,
-        [`submitted.${myRole}.${round}`]: true,
-        "timestamps.updatedAt": serverTimestamp()
-      };
-
-      try {
-        console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
-        await updateDoc(rRef, patch);
-        published = true;
-        submitting = false;
-        pauseRoundTimer(timerContext);
-        showWaitingOverlay("Waiting for opponent");
-      } catch (err) {
-        console.warn("[questions] publish failed:", err);
-        submitting = false;
-        hideOverlay();
-        showWaitingState("Retrying…");
-        setButtonsEnabled(true);
-      }
     }
-
-    function onPick(text) {
-      if (published || submitting) return;
-      const currentIndex = idx;
-      clearAdvanceTimer();
-      chosen[currentIndex] = text;
-      refreshChoiceStyles();
-      advanceTimer = setTimeout(() => {
-        advanceTimer = null;
-        if (published || submitting || !alive) return;
-        if (currentIndex >= triplet.length - 1) {
-          finishRound();
-        } else {
-          showQuestion(currentIndex + 1);
-        }
-      }, 500);
-    }
-
-    btn1.addEventListener("click", () => onPick(btn1.textContent));
-    btn2.addEventListener("click", () => onPick(btn2.textContent));
 
     const tripletReady = triplet.every((entry) =>
       entry.question && entry.options && entry.options.length === 2
     );
 
+    const firstUnanswered = nextUnanswered(-1);
     if (!tripletReady) {
-      btnWrap.style.display = "none";
-      waitMsg.textContent = "Preparing questions…";
-      waitMsg.style.display = "";
+      setPanelLoading(true);
+      setButtonsEnabled(false);
+      setChipsEnabled(false);
+      qText.textContent = "Preparing questions…";
+      btn1.textContent = "";
+      btn2.textContent = "";
       pauseRoundTimer(timerContext);
-    } else if (existingAns.length === 3) {
-      published = true;
-      idx = 3;
-      btnWrap.style.display = "none";
-      waitMsg.style.display = "none";
-      pauseRoundTimer(timerContext);
-      showWaitingOverlay();
+    } else if (published) {
+      const targetIndex = Math.min(triplet.length - 1, 2);
+      showQuestion(targetIndex, { forceReplace: true });
+      setChipsEnabled(false);
+      setButtonsEnabled(false);
     } else {
-      showQuestion(0);
+      const targetIndex = firstUnanswered !== null ? firstUnanswered : 0;
+      showQuestion(targetIndex, { forceReplace: true });
+      setChipsEnabled(true);
+      setButtonsEnabled(true);
     }
+
+    refreshSubmitState();
+
+    const onPick = (text) => {
+      if (published || submitting) return;
+      const currentIndex = idx;
+      clearAdvanceTimer();
+      chosen[currentIndex] = text;
+      applySelectionStyles();
+      updateChipStates();
+      refreshSubmitState();
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        if (published || submitting || !alive) return;
+        const nextIndex = nextUnanswered(currentIndex);
+        if (nextIndex === null) return;
+        showQuestion(nextIndex);
+      }, 500);
+    };
+
+    btn1.addEventListener("click", () => {
+      if (!btn1.textContent) return;
+      onPick(btn1.textContent);
+    });
+    btn2.addEventListener("click", () => {
+      if (!btn2.textContent) return;
+      onPick(btn2.textContent);
+    });
+
+    const publishAnswers = async () => {
+      if (submitting || published) return;
+      if (!tripletReady) return;
+      const ready = chosen.every((value) => Boolean(value));
+      if (!ready) return;
+
+      submitting = true;
+      setButtonsEnabled(false);
+      setChipsEnabled(false);
+      pauseRoundTimer(timerContext);
+      refreshSubmitState();
+
+      const payload = triplet.map((entry, pos) => ({
+        question: entry.question || "",
+        chosen: chosen[pos] || "",
+        correct: entry.correct || "",
+      }));
+
+      const patch = {
+        [`answers.${myRole}.${round}`]: payload,
+        [`submitted.${myRole}.${round}`]: true,
+        "timestamps.updatedAt": serverTimestamp(),
+      };
+
+      try {
+        console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
+        await updateDoc(rRef, patch);
+        submitting = false;
+        published = true;
+        waitingForOpponent = true;
+        refreshSubmitState();
+      } catch (err) {
+        console.warn("[questions] publish failed:", err);
+        submitting = false;
+        published = false;
+        setButtonsEnabled(true);
+        setChipsEnabled(true);
+        resumeRoundTimer(timerContext);
+        refreshSubmitState();
+      }
+    };
+
+    submitBtn.addEventListener("click", () => {
+      if (submitBtn.disabled) return;
+      publishAnswers();
+    });
 
     stopWatcher = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
 
-      const nextRound = Number(data.round) || round;
-      if (nextRound !== round) {
+      const nextRound = Number(data.round);
+      if (Number.isFinite(nextRound) && nextRound !== round) {
         round = nextRound;
+        timerContext.round = round;
       }
 
-      if (data.state === "marking") {
+      const stateName = (data.state || "").toLowerCase();
+
+      if (stateName === "marking") {
         setTimeout(() => {
           location.hash = `#/marking?code=${code}&round=${round}`;
         }, 80);
         return;
       }
 
-      if (data.state === "countdown") {
+      if (stateName === "countdown") {
         setTimeout(() => {
           location.hash = `#/countdown?code=${code}&round=${data.round || round}`;
         }, 80);
         return;
       }
 
-      if (data.state === "award") {
+      if (stateName === "award") {
         setTimeout(() => {
           location.hash = `#/award?code=${code}&round=${round}`;
         }, 80);
+        return;
       }
 
       if (published && alive) {
-        const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
-        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
-        if (myDone && !oppDone) {
-          showWaitingOverlay();
-        }
+        const submittedInfo = data.submitted || {};
+        const answersInfo = data.answers || {};
+        const myDone = Boolean((submittedInfo[myRole] || {})[round]) ||
+          (Array.isArray((answersInfo[myRole] || {})[round]) && ((answersInfo[myRole] || {})[round]).length === 3);
+        const oppDone = Boolean((submittedInfo[oppRole] || {})[round]) ||
+          (Array.isArray((answersInfo[oppRole] || {})[round]) && ((answersInfo[oppRole] || {})[round]).length === 3);
+        waitingForOpponent = myDone && !oppDone;
+        refreshSubmitState();
       }
 
-      // Host monitors opponent completion to flip state (idempotent)
-      if (myRole === "host" && data.state === "questions") {
-        const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
-        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
+      if (myRole === "host" && stateName === "questions") {
+        const submittedInfo = data.submitted || {};
+        const answersInfo = data.answers || {};
+        const myDone = Boolean((submittedInfo[myRole] || {})[round]) ||
+          (Array.isArray((answersInfo[myRole] || {})[round]) && ((answersInfo[myRole] || {})[round]).length === 3);
+        const oppDone = Boolean((submittedInfo[oppRole] || {})[round]) ||
+          (Array.isArray((answersInfo[oppRole] || {})[round]) && ((answersInfo[oppRole] || {})[round]).length === 3);
         if (myDone && oppDone) {
           try {
             console.log(`[flow] questions -> marking | code=${code} round=${round} role=${myRole}`);
@@ -479,9 +563,9 @@ export default {
       clearAdvanceTimer();
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
-      try { removePopStateListener(); } catch {}
+      removePopStateListener();
+      resetTheme();
     };
   },
-
   async unmount() { /* instance handles cleanup */ }
 };
