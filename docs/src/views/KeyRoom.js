@@ -18,6 +18,7 @@ import {
   PACK_VERSION_FULL,
 } from "../lib/seedUnsealer.js";
 import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import { createViewPalette } from "../lib/palette.js";
 import { runCodexTask } from "../lib/codexBridge.js";
 
 function el(tag, attrs = {}, kids = []) {
@@ -784,8 +785,8 @@ export default {
   async mount(container) {
     await ensureAuth();
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    const { apply: applyPalette } = createViewPalette();
+    applyPalette();
 
     const params = getHashParams();
     const hintedCode = clampCode(params.get("code") || "");

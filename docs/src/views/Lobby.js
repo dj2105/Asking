@@ -9,6 +9,7 @@ import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 import { clampCode as clampCodeShared, setStoredRole, getLastRoomCode } from "../lib/util.js";
+import { createViewPalette } from "../lib/palette.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -33,11 +34,8 @@ export default {
   async mount(container) {
     await ensureAuth();
 
-    // Theme (random ink hue)
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "70%");
-    document.documentElement.style.setProperty("--ink-l", "18%");
+    const { apply: applyPalette } = createViewPalette();
+    applyPalette();
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-lobby stage-center stage-center--solo" });

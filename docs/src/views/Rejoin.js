@@ -11,6 +11,7 @@ import {
   getLastRoomCode,
   setLastRoomCode,
 } from "../lib/util.js";
+import { createViewPalette } from "../lib/palette.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -79,9 +80,8 @@ export default {
     const roleParamRaw = (params.get("role") || "").toLowerCase();
     const queryRole = roleParamRaw === "host" || roleParamRaw === "guest" ? roleParamRaw : "";
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "72%");
+    const { apply: applyPalette } = createViewPalette();
+    applyPalette();
 
     container.innerHTML = "";
     const view = el("div", { class: "view view-rejoin" });

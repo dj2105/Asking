@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { createViewPalette } from "../lib/palette.js";
 
 const CONTINUE_LEAD_MS = 3_000;
 
@@ -154,8 +155,8 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    const { apply: applyPalette } = createViewPalette();
+    applyPalette(round || 1);
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
