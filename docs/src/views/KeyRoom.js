@@ -18,6 +18,12 @@ import {
   PACK_VERSION_FULL,
 } from "../lib/seedUnsealer.js";
 import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import {
+  buildRandomQuestionRounds,
+  pickRandomMathsChain,
+  HAS_FALLBACK_QUESTIONS,
+  HAS_FALLBACK_MATHS,
+} from "../lib/fallbackContent.js";
 import { runCodexTask } from "../lib/codexBridge.js";
 
 function el(tag, attrs = {}, kids = []) {
@@ -933,7 +939,7 @@ export default {
       status.textContent = "Seeding Firestore…";
 
       try {
-        const pack = assemblePack(code);
+        const pack = await assemblePack(code);
         await seedFirestoreFromPack(db, pack);
         const prepared = prepareStageState(pack, stageName, roundValue);
         prepared.roomPatch["timestamps.updatedAt"] = serverTimestamp();
@@ -1208,7 +1214,7 @@ export default {
       }
     }
 
-    function assemblePack(code) {
+    async function assemblePack(code) {
       const normalizedCode = clampCode(code);
       const rounds = {};
       for (let i = 1; i <= 5; i += 1) {
@@ -1256,17 +1262,62 @@ export default {
         }
       }
 
+      const fallbackRounds = HAS_FALLBACK_QUESTIONS ? buildRandomQuestionRounds() : [];
+      const fallbackRoundMap = new Map();
+      fallbackRounds.forEach((entry, index) => {
+        const key = Number(entry?.round) || index + 1;
+        const hostItems = Array.isArray(entry?.hostItems) ? entry.hostItems : [];
+        const guestItems = Array.isArray(entry?.guestItems) ? entry.guestItems : [];
+        fallbackRoundMap.set(key, {
+          hostItems: hostItems.map((item) => clone(item)),
+          guestItems: guestItems.map((item) => clone(item)),
+        });
+      });
+
+      const needsFallback = (item) => {
+        if (!item || typeof item !== "object") return true;
+        const question = typeof item.question === "string" ? item.question.trim() : "";
+        const correct = typeof item.correct_answer === "string" ? item.correct_answer.trim() : "";
+        if (!question || question === PLACEHOLDER) return true;
+        if (!correct || correct === PLACEHOLDER) return true;
+        const distractors = item.distractors || {};
+        const wrongValues = [distractors.easy, distractors.medium, distractors.hard]
+          .map((value) => (typeof value === "string" ? value.trim() : ""));
+        if (wrongValues.every((value) => !value || value === PLACEHOLDER)) return true;
+        return false;
+      };
+
       const assembledRounds = [];
       for (let i = 1; i <= 5; i += 1) {
+        const hostItems = padItems(rounds[i].hostItems);
+        const guestItems = padItems(rounds[i].guestItems);
+        const fallback = fallbackRoundMap.get(i) || {};
+        const fallbackHost = Array.isArray(fallback.hostItems) ? fallback.hostItems : [];
+        const fallbackGuest = Array.isArray(fallback.guestItems) ? fallback.guestItems : [];
+        const resolvedHost = hostItems.map((item, idx) => {
+          if (!needsFallback(item)) return item;
+          const replacement = fallbackHost[idx] || fallbackHost[0] || buildEmptyItem();
+          return clone(replacement);
+        });
+        const resolvedGuest = guestItems.map((item, idx) => {
+          if (!needsFallback(item)) return item;
+          const replacement = fallbackGuest[idx] || fallbackGuest[0] || buildEmptyItem();
+          return clone(replacement);
+        });
         assembledRounds.push({
           round: i,
-          hostItems: padItems(rounds[i].hostItems),
-          guestItems: padItems(rounds[i].guestItems),
+          hostItems: resolvedHost,
+          guestItems: resolvedGuest,
         });
       }
 
       let maths = normalizeMaths(stage.mathsOverride?.maths || stage.base?.maths || null);
-      if (stage.mathsOverride?.maths) {
+      if (!stage.mathsOverride?.maths && !stage.base?.maths && HAS_FALLBACK_MATHS) {
+        const fallbackMaths = pickRandomMathsChain();
+        if (fallbackMaths) {
+          maths = normalizeMaths(fallbackMaths);
+        }
+      } else if (stage.mathsOverride?.maths) {
         maths = normalizeMaths(stage.mathsOverride.maths);
       }
 
@@ -1300,7 +1351,7 @@ export default {
     }
 
     async function manualSeedAndStart(code) {
-      const pack = assemblePack(code);
+      const pack = await assemblePack(code);
       await seedFirestoreFromPack(db, pack);
       await updateDoc(roomRef(code), {
         state: "coderoom",

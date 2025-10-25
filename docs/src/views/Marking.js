@@ -27,6 +27,7 @@ const mountMathsPane =
    null);
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
+const PREVIEW_DELAY_MS = 520;
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -209,6 +210,7 @@ export default {
     let marks = new Array(totalMarks).fill(null);
     let published = false;
     let submitting = false;
+    let advanceTimer = null;
 
     const disableFns = [];
     const reflectFns = [];
@@ -247,7 +249,15 @@ export default {
     });
     reflectFns.push(() => { reflect(); });
 
+    const clearAdvanceTimer = () => {
+      if (advanceTimer) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+      }
+    };
+
     const showMark = (targetIdx) => {
+      clearAdvanceTimer();
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= totalMarks) targetIdx = totalMarks - 1;
       idx = targetIdx;
@@ -266,6 +276,7 @@ export default {
     const submitMarks = async () => {
       if (published || submitting) return;
       submitting = true;
+      clearAdvanceTimer();
       const safeMarks = marks.map((value) => markValue(value));
       setVerdictsEnabled(false);
       pauseRoundTimer(timerContext);
@@ -298,14 +309,29 @@ export default {
       }
     };
 
+    const scheduleAdvance = (currentIndex, cb) => {
+      clearAdvanceTimer();
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        if (published || submitting) return;
+        if (idx !== currentIndex) return;
+        cb();
+      }, PREVIEW_DELAY_MS);
+    };
+
     const handleVerdict = (value) => {
       if (published || submitting) return;
-      marks[idx] = markValue(value);
+      const currentIndex = idx;
+      marks[currentIndex] = markValue(value);
       reflect();
-      if (idx >= totalMarks - 1) {
-        submitMarks();
+      if (currentIndex >= totalMarks - 1) {
+        scheduleAdvance(currentIndex, () => {
+          submitMarks();
+        });
       } else {
-        showMark(idx + 1);
+        scheduleAdvance(currentIndex, () => {
+          showMark(currentIndex + 1);
+        });
       }
     };
 
@@ -433,6 +459,7 @@ export default {
     this.unmount = () => {
       try { stopRoomWatch && stopRoomWatch(); } catch {}
       pauseRoundTimer(timerContext);
+      clearAdvanceTimer();
     };
   },
 
