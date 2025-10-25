@@ -5,8 +5,8 @@
 /* Palette driven by a single hue per view. */
 :root {
   --ink-h: 210; /* each view sets this randomly */
-  --ink-s: 62%;
-  --ink-l: 18%;
+  --ink-s: 68%;
+  --ink-l: 16%;
   --ink: hsl(var(--ink-h), var(--ink-s), var(--ink-l));
   --paper-s: 32%;
   --paper-l: 96%;
@@ -186,7 +186,7 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.1);
   background: rgba(255, 255, 255, 0.92);
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-size: 0.92rem;
@@ -200,10 +200,19 @@ body {
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 10px 20px rgba(14, 26, 48, 0.12);
   border: 1.5px solid var(--muted);
+  font-weight: 800;
+}
+
+.round-panel__step.is-answered {
+  border-style: dotted;
 }
 
 .round-panel__step.is-answered:not(.is-active) {
-  color: rgba(0, 0, 0, 0.55);
+  color: rgba(0, 0, 0, 0.48);
+}
+
+.round-panel__step.is-active.is-answered {
+  border-style: solid;
 }
 
 .round-panel__content {
@@ -227,11 +236,12 @@ body {
 
 .round-panel__question {
   width: 100%;
-  text-align: left;
+  text-align: center;
   font-size: 1.2rem;
   line-height: 1.55;
   font-weight: 600;
   white-space: pre-wrap;
+  text-wrap: balance;
 }
 
 .round-panel__question.round-panel__question--status {
@@ -239,6 +249,7 @@ body {
   color: var(--muted);
   font-weight: 700;
   letter-spacing: 0.12em;
+  text-wrap: balance;
 }
 
 .round-panel__choices {
@@ -246,6 +257,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  align-items: stretch;
 }
 
 .round-panel__choices.is-hidden {
@@ -261,7 +273,8 @@ body {
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 18px 20px;
-  text-align: left;
+  text-align: center;
+  text-wrap: balance;
   transition:
     background 0.18s ease,
     color 0.18s ease,
@@ -273,19 +286,22 @@ body {
 .round-panel__choice:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(14, 26, 48, 0.12);
-  background: rgba(255, 255, 255, 1);
 }
 
 .round-panel__choice.is-selected {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  border-color: var(--accent-strong);
-  box-shadow: 0 16px 34px rgba(14, 26, 48, 0.14);
+  background: #dff3e8;
+  color: #215739;
+  border-color: #2f7b52;
+  box-shadow: 0 16px 34px rgba(14, 26, 48, 0.16);
 }
 
 .round-panel__choice.is-selected:hover:not(:disabled) {
   transform: none;
   box-shadow: 0 16px 34px rgba(14, 26, 48, 0.14);
+}
+
+.round-panel__choice.is-blinking {
+  animation: choiceBlink 0.68s ease-out forwards;
 }
 
 .round-panel__choice:disabled {
@@ -319,6 +335,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: center;
+  text-align: center;
 }
 
 .round-panel__answer.is-hidden {
@@ -330,11 +348,14 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted);
+  text-align: center;
 }
 
 .round-panel__answer-value {
   font-size: 1.1rem;
   font-weight: 700;
+  text-align: center;
+  text-wrap: balance;
 }
 
 .marking-buttons {
@@ -370,7 +391,6 @@ body {
 .marking-button:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(14, 26, 48, 0.12);
-  background: rgba(255, 255, 255, 1);
 }
 
 .marking-button.is-selected {
@@ -384,15 +404,27 @@ body {
 }
 
 .marking-button--cross.is-selected {
-  background: #f7dddd;
+  background: #f9e1e1;
   border-color: #b63232;
   color: #842121;
 }
 
 .marking-button--unknown.is-selected {
-  background: #f1f1f1;
-  border-color: rgba(0, 0, 0, 0.18);
-  color: rgba(0, 0, 0, 0.74);
+  background: #e1ecfa;
+  border-color: #2f5f93;
+  color: #23466c;
+}
+
+.marking-button.is-blinking {
+  animation: markingBlink 0.68s ease-out forwards;
+}
+
+.marking-button--cross.is-blinking {
+  animation-name: markingBlinkRed;
+}
+
+.marking-button--unknown.is-blinking {
+  animation-name: markingBlinkBlue;
 }
 
 .marking-button:disabled {
@@ -400,6 +432,118 @@ body {
   opacity: 0.92;
   transform: none;
   box-shadow: none;
+}
+
+@keyframes choiceBlink {
+  0% {
+    background: #dff3e8;
+    border-color: #2f7b52;
+    color: #215739;
+  }
+  25% {
+    background: #bfe8d2;
+    border-color: #2f7b52;
+    color: #18492d;
+  }
+  50% {
+    background: #dff3e8;
+    border-color: #2f7b52;
+    color: #215739;
+  }
+  75% {
+    background: #bfe8d2;
+    border-color: #2f7b52;
+    color: #18492d;
+  }
+  100% {
+    background: #dff3e8;
+    border-color: #2f7b52;
+    color: #215739;
+  }
+}
+
+@keyframes markingBlink {
+  0% {
+    background: #dff3e8;
+    border-color: #2f7b52;
+    color: #215739;
+  }
+  25% {
+    background: #bfe8d2;
+    border-color: #2f7b52;
+    color: #18492d;
+  }
+  50% {
+    background: #dff3e8;
+    border-color: #2f7b52;
+    color: #215739;
+  }
+  75% {
+    background: #bfe8d2;
+    border-color: #2f7b52;
+    color: #18492d;
+  }
+  100% {
+    background: #dff3e8;
+    border-color: #2f7b52;
+    color: #215739;
+  }
+}
+
+@keyframes markingBlinkRed {
+  0% {
+    background: #f9e1e1;
+    border-color: #b63232;
+    color: #842121;
+  }
+  25% {
+    background: #f2c7c7;
+    border-color: #b63232;
+    color: #6b1a1a;
+  }
+  50% {
+    background: #f9e1e1;
+    border-color: #b63232;
+    color: #842121;
+  }
+  75% {
+    background: #f2c7c7;
+    border-color: #b63232;
+    color: #6b1a1a;
+  }
+  100% {
+    background: #f9e1e1;
+    border-color: #b63232;
+    color: #842121;
+  }
+}
+
+@keyframes markingBlinkBlue {
+  0% {
+    background: #e1ecfa;
+    border-color: #2f5f93;
+    color: #23466c;
+  }
+  25% {
+    background: #c8dcf4;
+    border-color: #2f5f93;
+    color: #1c3652;
+  }
+  50% {
+    background: #e1ecfa;
+    border-color: #2f5f93;
+    color: #23466c;
+  }
+  75% {
+    background: #c8dcf4;
+    border-color: #2f5f93;
+    color: #1c3652;
+  }
+  100% {
+    background: #e1ecfa;
+    border-color: #2f5f93;
+    color: #23466c;
+  }
 }
 
 .back-confirm {

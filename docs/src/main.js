@@ -137,8 +137,12 @@ function applyBackgroundDepth(route, qs) {
   const clampedIndex = Math.max(0, Math.min(FINAL_STAGE_INDEX, index));
   const ratio = FINAL_STAGE_INDEX > 0 ? clampedIndex / FINAL_STAGE_INDEX : 0;
   const depth = Math.min(MAX_BG_DEPTH, ratio * MAX_BG_DEPTH);
-  const lightness = 96 - ratio * (96 - 20);
-  const saturation = 32 - ratio * 32;
+  const maxLightness = 96;
+  const minLightness = 72;
+  const maxSaturation = 32;
+  const minSaturation = 18;
+  const lightness = maxLightness - ratio * (maxLightness - minLightness);
+  const saturation = maxSaturation - ratio * (maxSaturation - minSaturation);
 
   const root = document.documentElement;
   if (!root) return;
