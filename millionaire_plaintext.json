@@ -1,0 +1,381 @@
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "LAD",
+    "generatedAt": "2025-01-15T12:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "interlude": "Host and guest warm up with quick-fire openers.",
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "prize": "£100",
+          "question": "Which British monarch was crowned inside Westminster Abbey on 2 June 1953?",
+          "correct_answer": "Queen Elizabeth II",
+          "distractors": {
+            "easy": "Queen Victoria",
+            "medium": "King George VI",
+            "hard": "Princess Margaret"
+          }
+        },
+        {
+          "subject": "Cats",
+          "prize": "£200",
+          "question": "What is the common term for an adult male domestic cat?",
+          "correct_answer": "Tom",
+          "distractors": {
+            "easy": "Pup",
+            "medium": "Queen",
+            "hard": "Stud"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "prize": "£300",
+          "question": "Which city serves as the capital of Portugal?",
+          "correct_answer": "Lisbon",
+          "distractors": {
+            "easy": "Porto",
+            "medium": "Madrid",
+            "hard": "Braga"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Sitcom — British",
+          "prize": "£100",
+          "question": "Which actor portrays Basil Fawlty in the sitcom 'Fawlty Towers'?",
+          "correct_answer": "John Cleese",
+          "distractors": {
+            "easy": "Rowan Atkinson",
+            "medium": "Andrew Sachs",
+            "hard": "Richard Wilson"
+          }
+        },
+        {
+          "subject": "Pop Culture — Memes",
+          "prize": "£200",
+          "question": "Which internet meme depicts a man turning away from his girlfriend to glance at another woman?",
+          "correct_answer": "Distracted Boyfriend",
+          "distractors": {
+            "easy": "Grumpy Cat",
+            "medium": "Success Kid",
+            "hard": "Hide the Pain Harold"
+          }
+        },
+        {
+          "subject": "American TV Sitcoms",
+          "prize": "£300",
+          "question": "In 'Brooklyn Nine-Nine', the main characters serve in which NYPD precinct?",
+          "correct_answer": "99th Precinct",
+          "distractors": {
+            "easy": "12th Precinct",
+            "medium": "21st Precinct",
+            "hard": "84th Precinct"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "interlude": "Momentum builds as the ladder starts to climb.",
+      "hostItems": [
+        {
+          "subject": "Irish History",
+          "prize": "£500",
+          "question": "Which Dublin building served as headquarters for the leaders of the 1916 Easter Rising?",
+          "correct_answer": "General Post Office",
+          "distractors": {
+            "easy": "Trinity College",
+            "medium": "Dublin Castle",
+            "hard": "Four Courts"
+          }
+        },
+        {
+          "subject": "Ancient Greece",
+          "prize": "£1,000",
+          "question": "Which festival in ancient Olympia honoured Zeus with athletic contests every four years?",
+          "correct_answer": "Olympic Games",
+          "distractors": {
+            "easy": "Panathenaic Games",
+            "medium": "Pythian Games",
+            "hard": "Isthmian Games"
+          }
+        },
+        {
+          "subject": "American TV Sitcoms",
+          "prize": "£2,000",
+          "question": "Which fictional Indiana town provides the main setting for 'Parks and Recreation'?",
+          "correct_answer": "Pawnee",
+          "distractors": {
+            "easy": "Scranton",
+            "medium": "Eagleton",
+            "hard": "Bloomington"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Language — Punctuation",
+          "prize": "£500",
+          "question": "What is the name of the punctuation mark that combines a question mark with an exclamation point?",
+          "correct_answer": "Interrobang",
+          "distractors": {
+            "easy": "Ellipsis",
+            "medium": "Interpunct",
+            "hard": "Pilcrow"
+          }
+        },
+        {
+          "subject": "’80s Pop",
+          "prize": "£1,000",
+          "question": "Which band released the 1983 single 'Karma Chameleon'?",
+          "correct_answer": "Culture Club",
+          "distractors": {
+            "easy": "Duran Duran",
+            "medium": "Spandau Ballet",
+            "hard": "A Flock of Seagulls"
+          }
+        },
+        {
+          "subject": "Anime",
+          "prize": "£2,000",
+          "question": "Which director helmed the 1997 Studio Ghibli film 'Princess Mononoke'?",
+          "correct_answer": "Hayao Miyazaki",
+          "distractors": {
+            "easy": "Satoshi Kon",
+            "medium": "Isao Takahata",
+            "hard": "Mamoru Hosoda"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "interlude": "Players settle in as mid-ladder pressure arrives.",
+      "hostItems": [
+        {
+          "subject": "’90s Pop",
+          "prize": "£4,000",
+          "question": "Which Swedish group topped charts with the 1993 single 'All That She Wants'?",
+          "correct_answer": "Ace of Base",
+          "distractors": {
+            "easy": "ABBA",
+            "medium": "Roxette",
+            "hard": "Aqua"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "prize": "£8,000",
+          "question": "Which major German port city stands on the River Elbe before it reaches the North Sea?",
+          "correct_answer": "Hamburg",
+          "distractors": {
+            "easy": "Munich",
+            "medium": "Bremen",
+            "hard": "Kiel"
+          }
+        },
+        {
+          "subject": "Roman Empire",
+          "prize": "£16,000",
+          "question": "Which emperor ordered the construction of the defensive wall across northern Britain that bears his name?",
+          "correct_answer": "Hadrian",
+          "distractors": {
+            "easy": "Nero",
+            "medium": "Marcus Aurelius",
+            "hard": "Antoninus Pius"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Geography — Rivers",
+          "prize": "£4,000",
+          "question": "Which river forms much of the border between Texas and Mexico?",
+          "correct_answer": "Rio Grande",
+          "distractors": {
+            "easy": "Colorado River",
+            "medium": "Mississippi River",
+            "hard": "Usumacinta River"
+          }
+        },
+        {
+          "subject": "World War II",
+          "prize": "£8,000",
+          "question": "Operation Dynamo evacuated Allied forces from which French port in 1940?",
+          "correct_answer": "Dunkirk",
+          "distractors": {
+            "easy": "Calais",
+            "medium": "Cherbourg",
+            "hard": "Le Havre"
+          }
+        },
+        {
+          "subject": "Comics",
+          "prize": "£16,000",
+          "question": "Which writer created the character Jessica Jones for Marvel's 2001 comic series 'Alias'?",
+          "correct_answer": "Brian Michael Bendis",
+          "distractors": {
+            "easy": "Mark Millar",
+            "medium": "Brian K. Vaughan",
+            "hard": "Gail Simone"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "interlude": "High-stakes decisions loom as the ladder steepens.",
+      "hostItems": [
+        {
+          "subject": "World War I",
+          "prize": "£32,000",
+          "question": "Which 1917 battle is noted for the first large-scale use of tanks by the British Army?",
+          "correct_answer": "Battle of Cambrai",
+          "distractors": {
+            "easy": "Battle of the Bulge",
+            "medium": "Battle of Passchendaele",
+            "hard": "Battle of the Somme"
+          }
+        },
+        {
+          "subject": "Renaissance Art",
+          "prize": "£64,000",
+          "question": "Which Florentine painter created the fresco 'The Tribute Money' in the Brancacci Chapel?",
+          "correct_answer": "Masaccio",
+          "distractors": {
+            "easy": "Michelangelo",
+            "medium": "Sandro Botticelli",
+            "hard": "Fra Angelico"
+          }
+        },
+        {
+          "subject": "Modern Politics",
+          "prize": "£125,000",
+          "question": "Which UK Prime Minister launched the 'Big Society' initiative in 2010?",
+          "correct_answer": "David Cameron",
+          "distractors": {
+            "easy": "Gordon Brown",
+            "medium": "Theresa May",
+            "hard": "Nick Clegg"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Ancient Greece",
+          "prize": "£32,000",
+          "question": "Which philosopher founded the school known as the Lyceum in Athens?",
+          "correct_answer": "Aristotle",
+          "distractors": {
+            "easy": "Socrates",
+            "medium": "Plato",
+            "hard": "Zeno of Citium"
+          }
+        },
+        {
+          "subject": "Geography — Mountains",
+          "prize": "£64,000",
+          "question": "Mount Elbrus lies within which mountain range?",
+          "correct_answer": "Caucasus Mountains",
+          "distractors": {
+            "easy": "Alps",
+            "medium": "Ural Mountains",
+            "hard": "Carpathian Mountains"
+          }
+        },
+        {
+          "subject": "Roman Empire",
+          "prize": "£125,000",
+          "question": "Which Roman general earned the title 'Africanus' after defeating Hannibal at the Battle of Zama?",
+          "correct_answer": "Scipio Africanus",
+          "distractors": {
+            "easy": "Julius Caesar",
+            "medium": "Pompey Magnus",
+            "hard": "Lucius Cornelius Sulla"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "interlude": "Only the bravest climb the final rungs to the million.",
+      "hostItems": [
+        {
+          "subject": "Geography — Mountains",
+          "prize": "£250,000",
+          "question": "Which Asian mountain range includes the peak Nanga Parbat?",
+          "correct_answer": "Himalayas",
+          "distractors": {
+            "easy": "Andes",
+            "medium": "Karakoram",
+            "hard": "Hindu Kush"
+          }
+        },
+        {
+          "subject": "Folklore — Irish",
+          "prize": "£500,000",
+          "question": "Which hero of the Ulster Cycle is famed for entering the ríastrad battle frenzy to defend Ulster single-handedly?",
+          "correct_answer": "Cú Chulainn",
+          "distractors": {
+            "easy": "Fionn mac Cumhaill",
+            "medium": "Diarmuid Ua Duibhne",
+            "hard": "Ferdiad"
+          }
+        },
+        {
+          "subject": "Printing & Type",
+          "prize": "£1,000,000",
+          "question": "Which designer collaborated with Margaret Calvert to create the Transport typeface used on UK road signs in the 1960s?",
+          "correct_answer": "Jock Kinneir",
+          "distractors": {
+            "easy": "Eric Gill",
+            "medium": "Stanley Morison",
+            "hard": "Edward Johnston"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "World Capitals",
+          "prize": "£250,000",
+          "question": "Which African capital city was known as Léopoldville until 1966?",
+          "correct_answer": "Kinshasa",
+          "distractors": {
+            "easy": "Brazzaville",
+            "medium": "Luanda",
+            "hard": "Libreville"
+          }
+        },
+        {
+          "subject": "Folklore — British",
+          "prize": "£500,000",
+          "question": "Which legendary Cornish giant was slain by Jack in tales linked to St Michael's Mount?",
+          "correct_answer": "Cormoran",
+          "distractors": {
+            "easy": "Goliath",
+            "medium": "Blunderbore",
+            "hard": "Gogmagog"
+          }
+        },
+        {
+          "subject": "Modern Politics",
+          "prize": "£1,000,000",
+          "question": "Who became the first female Speaker of the UK House of Commons in 1992?",
+          "correct_answer": "Betty Boothroyd",
+          "distractors": {
+            "easy": "Harriet Harman",
+            "medium": "Theresa May",
+            "hard": "Shirley Williams"
+          }
+        }
+      ]
+    }
+  ]
+}
