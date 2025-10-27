@@ -1,0 +1,395 @@
+{
+  "version": "jemima-pack-1",
+  "meta": {
+    "roomCode": "LAD",
+    "generatedAt": "2025-01-15T12:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "ladder": {
+    "per_player_15": [
+      "£100",
+      "£200",
+      "£300",
+      "£500",
+      "£1,000",
+      "£2,000",
+      "£4,000",
+      "£8,000",
+      "£16,000",
+      "£32,000",
+      "£64,000",
+      "£125,000",
+      "£250,000",
+      "£500,000",
+      "£1,000,000"
+    ]
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "British Monarchy",
+          "prize": "£100",
+          "question": "Which monarch was crowned at Westminster Abbey on 2 June 1953?",
+          "correct_answer": "Elizabeth II",
+          "distractors": {
+            "easy": "Mary II",
+            "medium": "Victoria",
+            "hard": "Elizabeth I"
+          }
+        },
+        {
+          "subject": "Cats",
+          "prize": "£200",
+          "question": "Which domestic cat breed is distinguished by natural folds in its ears?",
+          "correct_answer": "Scottish Fold",
+          "distractors": {
+            "easy": "Persian",
+            "medium": "Siamese",
+            "hard": "Maine Coon"
+          }
+        },
+        {
+          "subject": "American TV Sitcoms",
+          "prize": "£300",
+          "question": "Ron Swanson is a main character in which American sitcom set in Indiana?",
+          "correct_answer": "Parks and Recreation",
+          "distractors": {
+            "easy": "The Office",
+            "medium": "Brooklyn Nine-Nine",
+            "hard": "Community"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Modern Politics",
+          "prize": "£100",
+          "question": "Who became UK Prime Minister in July 2016 following David Cameron's resignation?",
+          "correct_answer": "Theresa May",
+          "distractors": {
+            "easy": "Boris Johnson",
+            "medium": "David Cameron",
+            "hard": "Gordon Brown"
+          }
+        },
+        {
+          "subject": "Geography — Rivers",
+          "prize": "£200",
+          "question": "Which European river flows through the centre of Paris?",
+          "correct_answer": "Seine",
+          "distractors": {
+            "easy": "Loire",
+            "medium": "Garonne",
+            "hard": "Rhône"
+          }
+        },
+        {
+          "subject": "Geography — Mountains",
+          "prize": "£300",
+          "question": "Mont Blanc is the highest peak in which mountain range?",
+          "correct_answer": "Alps",
+          "distractors": {
+            "easy": "Pyrenees",
+            "medium": "Carpathians",
+            "hard": "Apennines"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "Irish History",
+          "prize": "£500",
+          "question": "Douglas Hyde served as the first president of which republic in 1938?",
+          "correct_answer": "Ireland",
+          "distractors": {
+            "easy": "Scotland",
+            "medium": "Northern Ireland",
+            "hard": "Isle of Man"
+          }
+        },
+        {
+          "subject": "’90s Pop",
+          "prize": "£1,000",
+          "question": "Which singer released the debut single \"...Baby One More Time\" in 1998?",
+          "correct_answer": "Britney Spears",
+          "distractors": {
+            "easy": "Christina Aguilera",
+            "medium": "Jessica Simpson",
+            "hard": "Mandy Moore"
+          }
+        },
+        {
+          "subject": "World Capitals",
+          "prize": "£2,000",
+          "question": "What is the capital city of New Zealand?",
+          "correct_answer": "Wellington",
+          "distractors": {
+            "easy": "Auckland",
+            "medium": "Christchurch",
+            "hard": "Hamilton"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Literature — Shakespeare",
+          "prize": "£500",
+          "question": "Which Shakespeare play contains the line \"A horse! My kingdom for a horse!\"?",
+          "correct_answer": "Richard III",
+          "distractors": {
+            "easy": "Henry V",
+            "medium": "Macbeth",
+            "hard": "Julius Caesar"
+          }
+        },
+        {
+          "subject": "Poetry",
+          "prize": "£1,000",
+          "question": "Who wrote the 1922 poem \"The Waste Land\"?",
+          "correct_answer": "T. S. Eliot",
+          "distractors": {
+            "easy": "W. B. Yeats",
+            "medium": "Ezra Pound",
+            "hard": "Alfred Tennyson"
+          }
+        },
+        {
+          "subject": "Children’s Books",
+          "prize": "£2,000",
+          "question": "Which author created the heroine Lyra Belacqua in \"Northern Lights\"?",
+          "correct_answer": "Philip Pullman",
+          "distractors": {
+            "easy": "C. S. Lewis",
+            "medium": "J. K. Rowling",
+            "hard": "Diana Wynne Jones"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "Ancient Greece",
+          "prize": "£4,000",
+          "question": "Which philosopher founded the Academy in Athens around 387 BC?",
+          "correct_answer": "Plato",
+          "distractors": {
+            "easy": "Aristotle",
+            "medium": "Socrates",
+            "hard": "Pythagoras"
+          }
+        },
+        {
+          "subject": "Roman Empire",
+          "prize": "£8,000",
+          "question": "Which emperor ordered the construction of a defensive wall across northern Britain in AD 122?",
+          "correct_answer": "Hadrian",
+          "distractors": {
+            "easy": "Nero",
+            "medium": "Trajan",
+            "hard": "Claudius"
+          }
+        },
+        {
+          "subject": "Medieval Europe",
+          "prize": "£16,000",
+          "question": "Which 1415 battle gave Henry V a decisive victory in the Hundred Years' War?",
+          "correct_answer": "Battle of Agincourt",
+          "distractors": {
+            "easy": "Battle of Bannockburn",
+            "medium": "Battle of Bosworth Field",
+            "hard": "Battle of Hastings"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Logic Puzzles",
+          "prize": "£4,000",
+          "question": "In classic knights-and-knaves puzzles, what is always true of knights?",
+          "correct_answer": "They always tell the truth",
+          "distractors": {
+            "easy": "They always lie",
+            "medium": "They alternate truth and lies",
+            "hard": "They answer with riddles"
+          }
+        },
+        {
+          "subject": "Mathematics — Number Theory",
+          "prize": "£8,000",
+          "question": "What is the smallest prime number greater than 50?",
+          "correct_answer": "53",
+          "distractors": {
+            "easy": "51",
+            "medium": "55",
+            "hard": "57"
+          }
+        },
+        {
+          "subject": "Mathematics — Geometry",
+          "prize": "£16,000",
+          "question": "How many diagonals does a convex pentagon have?",
+          "correct_answer": "5",
+          "distractors": {
+            "easy": "4",
+            "medium": "6",
+            "hard": "8"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "Renaissance Art",
+          "prize": "£32,000",
+          "question": "Which artist carved the marble statue of David between 1501 and 1504?",
+          "correct_answer": "Michelangelo",
+          "distractors": {
+            "easy": "Donatello",
+            "medium": "Gian Lorenzo Bernini",
+            "hard": "Lorenzo Ghiberti"
+          }
+        },
+        {
+          "subject": "Baroque Music",
+          "prize": "£64,000",
+          "question": "Who composed the English-language oratorio \"Messiah\" first performed in 1742?",
+          "correct_answer": "George Frideric Handel",
+          "distractors": {
+            "easy": "Antonio Vivaldi",
+            "medium": "Henry Purcell",
+            "hard": "Domenico Scarlatti"
+          }
+        },
+        {
+          "subject": "Classical Mythology",
+          "prize": "£125,000",
+          "question": "Which Greek hero is famed for completing twelve labours as penance?",
+          "correct_answer": "Heracles",
+          "distractors": {
+            "easy": "Perseus",
+            "medium": "Theseus",
+            "hard": "Jason"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Physics — Mechanics",
+          "prize": "£32,000",
+          "question": "In physics, what term denotes the rate of change of velocity?",
+          "correct_answer": "Acceleration",
+          "distractors": {
+            "easy": "Momentum",
+            "medium": "Force",
+            "hard": "Displacement"
+          }
+        },
+        {
+          "subject": "Chemistry — Elements",
+          "prize": "£64,000",
+          "question": "Which chemical element has the symbol Sn?",
+          "correct_answer": "Tin",
+          "distractors": {
+            "easy": "Antimony",
+            "medium": "Silver",
+            "hard": "Indium"
+          }
+        },
+        {
+          "subject": "Biology — Human Body",
+          "prize": "£125,000",
+          "question": "Which organ of the human body produces insulin?",
+          "correct_answer": "Pancreas",
+          "distractors": {
+            "easy": "Liver",
+            "medium": "Spleen",
+            "hard": "Gallbladder"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "Norse Myth",
+          "prize": "£250,000",
+          "question": "What is the name of Odin's hall where he welcomes warriors slain in battle?",
+          "correct_answer": "Valhalla",
+          "distractors": {
+            "easy": "Folkvangr",
+            "medium": "Helheim",
+            "hard": "Ginnungagap"
+          }
+        },
+        {
+          "subject": "World War I",
+          "prize": "£500,000",
+          "question": "Whose assassination in Sarajevo on 28 June 1914 set off the July Crisis?",
+          "correct_answer": "Archduke Franz Ferdinand",
+          "distractors": {
+            "easy": "Kaiser Wilhelm II",
+            "medium": "Gavrilo Princip",
+            "hard": "Tsar Nicholas II"
+          }
+        },
+        {
+          "subject": "World War II",
+          "prize": "£1,000,000",
+          "question": "Which 1945 meeting of Churchill, Roosevelt, and Stalin planned the final stages against Germany?",
+          "correct_answer": "Yalta Conference",
+          "distractors": {
+            "easy": "Potsdam Conference",
+            "medium": "Tehran Conference",
+            "hard": "Casablanca Conference"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Computing — Algorithms",
+          "prize": "£250,000",
+          "question": "What is the time complexity of binary search on a sorted list of n entries?",
+          "correct_answer": "O(log n)",
+          "distractors": {
+            "easy": "O(n)",
+            "medium": "O(n log n)",
+            "hard": "O(1)"
+          }
+        },
+        {
+          "subject": "Space — Missions",
+          "prize": "£500,000",
+          "question": "Which space agency launched the Rosetta mission that rendezvoused with comet 67P?",
+          "correct_answer": "European Space Agency",
+          "distractors": {
+            "easy": "NASA",
+            "medium": "Roscosmos",
+            "hard": "JAXA"
+          }
+        },
+        {
+          "subject": "Gameshow Lore",
+          "prize": "£1,000,000",
+          "question": "Which lifeline was added to the UK revival of Millionaire in 2018 allowing contestants to consult the host?",
+          "correct_answer": "Ask the Host",
+          "distractors": {
+            "easy": "Switch the Question",
+            "medium": "Double Dip",
+            "hard": "Ask the Producer"
+          }
+        }
+      ]
+    }
+  ]
+}
