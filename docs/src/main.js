@@ -253,6 +253,19 @@ async function mountRoute() {
 
   applyBackgroundDepth(actualRoute, qs);
 
+  const flightWrap = document.createElement("div");
+  flightWrap.className = "pov-flight";
+  const flightStream = document.createElement("div");
+  flightStream.className = "pov-flight__stream";
+  const flightStars = document.createElement("div");
+  flightStars.className = "pov-flight__stars";
+  const flightObject = document.createElement("div");
+  flightObject.className = "pov-flight__object";
+  flightWrap.appendChild(flightStream);
+  flightWrap.appendChild(flightStars);
+  flightWrap.appendChild(flightObject);
+  app.appendChild(flightWrap);
+
   // Load and mount the view
   try {
     const mod = await importer();
@@ -262,9 +275,13 @@ async function mountRoute() {
       throw new Error(`[router] ${route}: missing mount() export`);
     }
 
-    await view.mount(app, Object.fromEntries(qs.entries()));
+    await view.mount(flightObject, Object.fromEntries(qs.entries()));
     current.mod = view;
     current.unmount = (typeof view.unmount === "function") ? view.unmount.bind(view) : null;
+
+    requestAnimationFrame(() => {
+      flightWrap.classList.add("is-active");
+    });
 
     // Conditionally mount the score strip (not in lobby/keyroom/seeding/final)
     if (!STRIP_EXCLUDE.has(actualRoute)) {
