@@ -25,7 +25,12 @@ import {
   getRoundTimerTotal,
   clearRoundTimer,
 } from "../lib/RoundTimer.js";
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import {
+  clampCode,
+  getHashParams,
+  getStoredRole,
+  activateFlight,
+} from "../lib/util.js";
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
 
@@ -138,8 +143,15 @@ export default {
 
     container.innerHTML = "";
 
-    const root = el("div", { class: "view view-marking stage-center" });
-    const panel = el("div", { class: "round-panel" });
+    const root = el("div", { class: "view view-marking pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const panel = el("div", { class: "round-panel flight-item flight-item--main" });
+    items.appendChild(panel);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    root.appendChild(layer);
     const heading = el("h2", { class: "round-panel__heading mono" }, "MARKING");
 
     const steps = el("div", { class: "round-panel__steps" });
@@ -216,7 +228,6 @@ export default {
     panel.appendChild(steps);
     panel.appendChild(content);
     panel.appendChild(submitBtn);
-    root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
     const backPanel = el("div", { class: "back-confirm__panel mono" });
@@ -240,6 +251,7 @@ export default {
 
     root.appendChild(backOverlay);
     container.appendChild(root);
+    activateFlight(panel, { delay: 240, tight: true });
 
     const setPrompt = (text, { status = false } = {}) => {
       const content = status ? String(text || "") : balanceQuestionText(text);

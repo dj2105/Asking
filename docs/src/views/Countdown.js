@@ -30,6 +30,7 @@ import {
   getHashParams,
   timeUntil,
   getStoredRole,
+  activateFlight,
 } from "../lib/util.js";
 
 function el(tag, attrs = {}, kids = []) {
@@ -62,10 +63,19 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-countdown stage-center stage-center--solo" });
+    const root = el("div", { class: "view view-countdown pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const timerWrap = el("div", { class: "flight-item flight-item--main is-tight countdown-flight" });
     const timer = el("div", { class: "mono countdown-big" }, "3");
-    root.appendChild(timer);
+    timerWrap.appendChild(timer);
+    items.appendChild(timerWrap);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    root.appendChild(layer);
     container.appendChild(root);
+    activateFlight(timerWrap, { delay: 120, tight: true });
 
     const rRef = roomRef(code);
     const snap0 = await getDoc(rRef);

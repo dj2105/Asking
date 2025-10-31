@@ -8,7 +8,12 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
-import { clampCode as clampCodeShared, setStoredRole, getLastRoomCode } from "../lib/util.js";
+import {
+  clampCode as clampCodeShared,
+  setStoredRole,
+  getLastRoomCode,
+  activateFlight,
+} from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -40,10 +45,17 @@ export default {
     document.documentElement.style.setProperty("--ink-l", "18%");
 
     container.innerHTML = "";
-    const view = el("div", { class: "view view-lobby stage-center stage-center--solo" });
-    const card = el("div", { class: "card lobby-card" });
-    view.appendChild(card);
+    const view = el("div", { class: "view view-lobby pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const card = el("div", { class: "card lobby-card flight-item flight-item--main" });
+    items.appendChild(card);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    view.appendChild(layer);
     container.appendChild(view);
+    activateFlight(card, { delay: 160 });
 
     card.appendChild(el("h1", { class: "lobby-title" }, "Jemima’s Asking"));
     card.appendChild(el("p", { class: "lobby-prompt" }, "What’s the code?"));

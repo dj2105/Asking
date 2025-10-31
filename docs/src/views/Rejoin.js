@@ -10,6 +10,7 @@ import {
   setStoredRole,
   getLastRoomCode,
   setLastRoomCode,
+  activateFlight,
 } from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
@@ -84,10 +85,17 @@ export default {
     document.documentElement.style.setProperty("--ink-s", "72%");
 
     container.innerHTML = "";
-    const view = el("div", { class: "view view-rejoin" });
-    const card = el("div", { class: "card" });
-    view.appendChild(card);
+    const view = el("div", { class: "view view-rejoin pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const card = el("div", { class: "card flight-item flight-item--main" });
+    items.appendChild(card);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    view.appendChild(layer);
     container.appendChild(view);
+    activateFlight(card, { delay: 160 });
 
     card.appendChild(el("h1", { class: "title" }, "Rejoin a Room"));
 

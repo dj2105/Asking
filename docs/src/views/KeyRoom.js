@@ -17,7 +17,13 @@ import {
   DEMO_PACK_PASSWORD,
   PACK_VERSION_FULL,
 } from "../lib/seedUnsealer.js";
-import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import {
+  clampCode,
+  copyToClipboard,
+  getHashParams,
+  setStoredRole,
+  activateFlight,
+} from "../lib/util.js";
 import { runCodexTask } from "../lib/codexBridge.js";
 
 function el(tag, attrs = {}, kids = []) {
@@ -792,10 +798,17 @@ export default {
     const seededCode = hintedCode || generateRandomCode();
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-keyroom" });
-    const card = el("div", { class: "card" });
-    root.appendChild(card);
+    const root = el("div", { class: "view view-keyroom pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const card = el("div", { class: "card flight-item flight-item--main" });
+    items.appendChild(card);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    root.appendChild(layer);
     container.appendChild(root);
+    activateFlight(card, { delay: 220 });
 
     const headerRow = el("div", {
       style: "display:flex;justify-content:space-between;align-items:center;gap:10px;",

@@ -18,7 +18,13 @@ import {
 } from "firebase/firestore";
 
 import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import {
+  clampCode,
+  getHashParams,
+  getStoredRole,
+  activateFlight,
+  flyPast,
+} from "../lib/util.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
@@ -103,8 +109,13 @@ function el(tag, attrs = {}, kids = []) {
   return node;
 }
 
-function shuffle2(a, b) {
-  return Math.random() < 0.5 ? [a, b] : [b, a];
+function shuffleOptions(options = []) {
+  const arr = [...options];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 const roomRef = (code) => doc(db, "rooms", code);
@@ -126,8 +137,11 @@ export default {
 
     container.innerHTML = "";
 
-    const root = el("div", { class: "view view-questions stage-center" });
-    const panel = el("div", { class: "round-panel" });
+    const root = el("div", { class: "view view-questions pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const panel = el("div", { class: "round-panel flight-item flight-item--main" });
     const heading = el("h2", { class: "round-panel__heading mono" }, "QUESTIONS");
 
     const steps = el("div", { class: "round-panel__steps" });
@@ -146,20 +160,22 @@ export default {
     });
 
     const content = el("div", { class: "round-panel__content" });
-    const prompt = el("div", { class: "round-panel__question mono" }, "");
-    const choicesWrap = el("div", { class: "round-panel__choices" });
-    const choiceButtons = [0, 1].map(() => {
-      const btn = el(
-        "button",
-        { class: "round-panel__choice mono", type: "button" },
-        ""
-      );
-      choicesWrap.appendChild(btn);
-      return btn;
+    const prompt = el("div", { class: "round-panel__question mono questions-prompt" }, "");
+    const choicesField = el("div", { class: "flight-choices" });
+    const DIRECTION_SEQUENCE = ["left", "right", "up"];
+    const choiceNodes = DIRECTION_SEQUENCE.map((direction) => {
+      const wrap = el("div", { class: "flight-choice", "data-direction": direction });
+      const button = el("button", { class: "mono", type: "button" });
+      const label = el("span", { class: "flight-choice__label" }, direction.toUpperCase());
+      const text = el("span", { class: "flight-choice__text" }, "");
+      button.appendChild(label);
+      button.appendChild(text);
+      wrap.appendChild(button);
+      choicesField.appendChild(wrap);
+      return { direction, wrap, button, text };
     });
 
     content.appendChild(prompt);
-    content.appendChild(choicesWrap);
 
     const submitBtn = el(
       "button",
@@ -171,11 +187,22 @@ export default {
       "SUBMIT"
     );
 
+    const guidance = el(
+      "div",
+      { class: "mono small questions-guidance" },
+      "Steer left, right, or up to choose."
+    );
+
     panel.appendChild(heading);
     panel.appendChild(steps);
     panel.appendChild(content);
+    panel.appendChild(guidance);
     panel.appendChild(submitBtn);
-    root.appendChild(panel);
+    items.appendChild(panel);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    layer.appendChild(choicesField);
+    root.appendChild(layer);
 
     const backOverlay = el("div", { class: "back-confirm" });
     const backPanel = el("div", { class: "back-confirm__panel mono" });
@@ -199,6 +226,10 @@ export default {
 
     root.appendChild(backOverlay);
     container.appendChild(root);
+    activateFlight(panel, { delay: 200, tight: true });
+    choiceNodes.forEach((node, idx) => {
+      activateFlight(node.wrap, { delay: 260 + idx * 60, tight: true });
+    });
 
     const setPrompt = (text, { status = false } = {}) => {
       const content = status ? String(text || "") : balanceQuestionText(text);
@@ -207,7 +238,16 @@ export default {
     };
 
     const setChoicesVisible = (visible) => {
-      choicesWrap.classList.toggle("is-hidden", !visible);
+      choicesField.classList.toggle("is-hidden", !visible);
+      if (visible) {
+        choiceNodes.forEach((node, i) => {
+          activateFlight(node.wrap, { delay: 120 + i * 60, tight: true });
+        });
+      } else {
+        choiceNodes.forEach((node, i) => {
+          flyPast(node.wrap, { delay: i * 80 });
+        });
+      }
     };
 
     let idx = 0;
@@ -279,12 +319,21 @@ export default {
     const renderChoices = () => {
       const current = triplet[idx] || {};
       const currentSelection = chosen[idx] || "";
-      choiceButtons.forEach((btn, i) => {
+      choiceNodes.forEach((node, i) => {
         const option = current.options?.[i] || "";
-        btn.textContent = option;
-        const isSelected = option && currentSelection === option;
-        btn.classList.toggle("is-selected", isSelected);
-        btn.disabled = !option || published || submitting;
+        node.text.textContent = option || "";
+        node.button.disabled = !option || published || submitting;
+        const isSelected = Boolean(option && currentSelection === option);
+        node.button.classList.toggle("is-selected", isSelected);
+        node.wrap.classList.toggle("is-selected", isSelected);
+        node.wrap.classList.toggle("is-empty", !option);
+        if (option) {
+          node.button.dataset.value = option;
+          node.wrap.dataset.value = option;
+        } else {
+          delete node.button.dataset.value;
+          delete node.wrap.dataset.value;
+        }
       });
     };
 
@@ -321,7 +370,9 @@ export default {
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
-        choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
+        choiceNodes.forEach((node) => {
+          node.button.classList.remove("is-blinking");
+        });
         renderChoices();
         renderSteps();
         highlightSubmitIfReady();
@@ -425,19 +476,42 @@ export default {
       const rawQuestion = typeof it.question === "string" ? it.question.trim() : "";
       const rawCorrect = typeof it.correct_answer === "string" ? it.correct_answer.trim() : "";
       const distractors = it.distractors || {};
-      const rawWrong = [
-        distractors[roundTier(round)],
-        distractors.medium,
-        distractors.easy,
-        distractors.hard,
-      ].find((opt) => typeof opt === "string" && opt.trim()) || "";
+      const wrongPool = [];
+      const addWrong = (value) => {
+        const str = typeof value === "string" ? value.trim() : "";
+        if (!str) return;
+        const normalized = str.toLowerCase();
+        const normalizedCorrect = (rawCorrect || "").toLowerCase();
+        if (normalized && normalized === normalizedCorrect) return;
+        if (!wrongPool.some((entry) => entry.toLowerCase() === normalized)) {
+          wrongPool.push(str);
+        }
+      };
 
-      const hasFullSet = rawQuestion && rawCorrect && rawWrong;
-      const question = hasFullSet ? rawQuestion : fallback.question;
-      const correct = hasFullSet ? rawCorrect : fallback.correct;
-      const wrong = hasFullSet ? rawWrong : fallback.wrong;
-      const [optA, optB] = shuffle2(correct, wrong);
-      return { question, options: [optA, optB], correct };
+      addWrong(distractors[roundTier(round)]);
+      addWrong(distractors.medium);
+      addWrong(distractors.hard);
+      addWrong(distractors.easy);
+
+      const hasFullQuestion = rawQuestion && rawCorrect;
+      const question = hasFullQuestion ? rawQuestion : fallback.question;
+      const correct = hasFullQuestion ? rawCorrect : fallback.correct;
+
+      if (!wrongPool.length) addWrong(fallback.wrong);
+      if (!wrongPool.length && fallback.correct) addWrong(`Not ${fallback.correct}`);
+      if (!wrongPool.length) addWrong(`None of these`);
+      if (wrongPool.length === 1) {
+        const base = wrongPool[0];
+        const alt = base && !/\?$/.test(base) ? `${base}?` : `${base} (alt)`;
+        if (!wrongPool.some((entry) => entry.toLowerCase() === alt.toLowerCase())) {
+          wrongPool.push(alt);
+        } else {
+          wrongPool.push(`${base}!!!`);
+        }
+      }
+
+      const optionSet = shuffleOptions([correct, wrongPool[0], wrongPool[1]]);
+      return { question, options: optionSet, correct };
     });
 
     const submittedAlready = Boolean(((room0.submitted || {})[myRole] || {})[round]);
@@ -456,7 +530,7 @@ export default {
       renderSteps();
       renderChoices();
       pauseRoundTimer(timerContext);
-    } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
+    } else if (triplet.every((entry) => entry.question && (entry.options?.length || 0) >= 3)) {
       showQuestion(0, { animate: false });
       updateSubmitState();
     } else {
@@ -508,21 +582,23 @@ export default {
       location.hash = hash;
     };
 
-    choiceButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
+    choiceNodes.forEach((node) => {
+      node.button.addEventListener("click", () => {
         if (triplet.length === 0) return;
         if (published || submitting) return;
-        const text = btn.textContent || "";
+        const text = node.button.dataset.value || "";
         const currentIndex = idx;
         if (!text) return;
         chosen[currentIndex] = text;
-        choiceButtons.forEach((choiceBtn) => {
-          choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
-          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
+        choiceNodes.forEach((other) => {
+          const match = other === node;
+          other.button.classList.toggle("is-selected", match);
+          other.wrap.classList.toggle("is-selected", match);
+          if (!match) other.button.classList.remove("is-blinking");
         });
-        btn.classList.add("is-blinking");
+        node.button.classList.add("is-blinking");
         setTimeout(() => {
-          btn.classList.remove("is-blinking");
+          node.button.classList.remove("is-blinking");
         }, 900);
         renderChoices();
         renderSteps();
@@ -530,6 +606,29 @@ export default {
         scheduleAdvance(currentIndex);
       });
     });
+
+    const directionKeyMap = {
+      arrowleft: "left",
+      a: "left",
+      arrowright: "right",
+      d: "right",
+      arrowup: "up",
+      w: "up",
+    };
+
+    const handleKey = (event) => {
+      if (!alive) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const key = String(event.key || "").toLowerCase();
+      const direction = directionKeyMap[key];
+      if (!direction) return;
+      const target = choiceNodes.find((node) => node.direction === direction);
+      if (!target || target.button.disabled) return;
+      event.preventDefault();
+      target.button.click();
+    };
+
+    window.addEventListener("keydown", handleKey);
 
     stepButtons.forEach((btn, i) => {
       btn.addEventListener("click", () => {
@@ -650,6 +749,7 @@ export default {
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("keydown", handleKey);
     };
   },
 

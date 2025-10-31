@@ -9,7 +9,7 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
 
-import { clampCode, getHashParams } from "../lib/util.js";
+import { clampCode, getHashParams, activateFlight } from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -124,8 +124,11 @@ export default {
     const code = clampCode(params.get("code") || "");
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-final" });
-    const card = el("div", { class: "card final-card" });
+    const root = el("div", { class: "view view-final pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const card = el("div", { class: "card final-card flight-item flight-item--main" });
     const heading = el("h1", { class: "title" }, "Jemima’s Maths — Final Results");
     const winnerBanner = el("div", { class: "mono final-winner" }, "");
 
@@ -162,8 +165,12 @@ export default {
     totalsSummary.appendChild(totalsList);
     card.appendChild(backBtn);
 
-    root.appendChild(card);
+    items.appendChild(card);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    root.appendChild(layer);
     container.appendChild(root);
+    activateFlight(card, { delay: 220, tight: true });
 
     const updateView = (roomData = {}) => {
       const scores = roomData.scores || {};
