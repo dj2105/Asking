@@ -25,6 +25,10 @@
   --shadow: 0 22px 46px rgba(14, 26, 48, 0.16);
   --shadow-soft: 0 12px 28px rgba(14, 26, 48, 0.12);
   --bg-depth: 0;
+  --flight-perspective: 1400px;
+  --flight-haze: rgba(255, 255, 255, 0.16);
+  --flight-trail: rgba(255, 255, 255, 0.08);
+  --flight-stars: rgba(255, 255, 255, 0.24);
 }
 
 html { background: var(--paper); }
@@ -34,7 +38,9 @@ html { background: var(--paper); }
 html, body { height: 100%; }
 body {
   margin: 0;
-  background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 42%, rgba(255,255,255,0) 70%), var(--paper);
+  background: radial-gradient(160% 100% at 50% 12%, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.52) 42%, rgba(255, 255, 255, 0.16) 70%),
+    linear-gradient(180deg, hsla(var(--ink-h), 48%, 86%, 0.4) 0%, hsla(var(--ink-h), 52%, 44%, 0.18) 100%),
+    var(--paper);
   color: var(--ink);
   font-family: Courier, "Courier New", ui-monospace, Menlo, Consolas, monospace;
   -webkit-font-smoothing: antialiased;
@@ -42,17 +48,204 @@ body {
 }
 
 #app {
-  padding: 0 18px 64px;
+  position: relative;
   min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  perspective: var(--flight-perspective);
+  perspective-origin: 50% calc(50% - 18vh);
+  background: radial-gradient(140% 120% at 50% 10%, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.12) 68%, rgba(255, 255, 255, 0.02) 96%),
+    linear-gradient(180deg, hsla(var(--ink-h), 45%, 88%, 0.34) 0%, hsla(var(--ink-h), 58%, 28%, 0.24) 40%, hsla(var(--ink-h), 68%, 18%, 0.38) 100%);
+}
+
+.flight-scene {
+  position: relative;
+  width: min(100%, 1100px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 140px 36px 120px;
+  transform-style: preserve-3d;
+}
+
+.flight-scene::before,
+.flight-scene::after {
+  content: "";
+  position: absolute;
+  inset: -40vh -60vw;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+  transform: translateZ(-1800px);
+}
+
+.flight-scene::after {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+  transform: translateZ(-2600px);
+}
+
+.flight-scene__stars {
+  position: absolute;
+  inset: -100vh -140vw;
+  background-image: radial-gradient(1px 1px at 20% 25%, var(--flight-stars) 0, transparent 50%),
+    radial-gradient(1px 1px at 80% 35%, var(--flight-stars) 0, transparent 50%),
+    radial-gradient(2px 2px at 60% 78%, rgba(255, 255, 255, 0.16) 0, transparent 60%);
+  background-size: 320px 320px, 280px 280px, 400px 400px;
+  animation: starsDrift 18s linear infinite;
+  transform: translateZ(-3200px);
+  pointer-events: none;
+}
+
+.flight-scene__trail {
+  position: absolute;
+  inset: auto 10% 0 10%;
+  height: 60vh;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.08) 30%, rgba(255, 255, 255, 0.32) 70%, transparent 100%);
+  filter: blur(22px);
+  transform: translateZ(-1200px);
+  pointer-events: none;
+}
+
+.flight-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flight-stage::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(82vw, 720px);
+  height: min(48vh, 320px);
+  border-radius: 46px;
+  border: 1.6px solid rgba(255, 255, 255, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+  transform: translate3d(-50%, -50%, -1700px) scale(0.66);
+  box-shadow: 0 0 140px rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+.flight-stage::after {
+  content: "";
+  position: absolute;
+  inset: auto auto -240px auto;
+  width: 70%;
+  height: 240px;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0) 65%);
+  transform: translateZ(-600px) rotateX(84deg);
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.flight-stage__approach {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.72) 26%, rgba(255,255,255,0.42) 100%), var(--paper);
+  gap: 24px;
+  transform-style: preserve-3d;
+  transform: translateZ(-1500px) scale(0.72);
+  animation: stageApproach 1.4s ease-out forwards;
+}
+
+.flight-stage--swerve-left {
+  transform: translate3d(-120px, 0, 0) rotateY(8deg);
+}
+
+.flight-stage--swerve-right {
+  transform: translate3d(120px, 0, 0) rotateY(-8deg);
+}
+
+.flight-stage--swerve-up {
+  transform: translate3d(0, -140px, 80px) rotateX(6deg);
+}
+
+.flight-stage__approach > .view {
+  transform-style: preserve-3d;
+  transform: translateZ(0);
+  animation: objectFloat 6s ease-in-out infinite;
+}
+
+.flight-stage__approach > .view.is-transitioning {
+  animation: objectSwap 0.6s ease-out forwards;
+}
+
+@keyframes stageApproach {
+  0% {
+    transform: translateZ(-1500px) scale(0.72);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.92;
+  }
+  100% {
+    transform: translateZ(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes starsDrift {
+  0% {
+    transform: translateZ(-3200px) rotateZ(0deg) translateY(0);
+  }
+  100% {
+    transform: translateZ(-3200px) rotateZ(1deg) translateY(140px);
+  }
+}
+
+@keyframes objectFloat {
+  0%, 100% {
+    transform: translateZ(0) translateY(0);
+  }
+  50% {
+    transform: translateZ(60px) translateY(-16px);
+  }
+}
+
+@keyframes objectSwap {
+  0% {
+    transform: translateZ(0) scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: translateZ(-240px) scale(0.92);
+    opacity: 0.1;
+  }
+  100% {
+    transform: translateZ(-240px) scale(0.92);
+    opacity: 0;
+  }
+}
+
+.score-strip {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translate3d(-50%, 0, 200px);
+  width: min(94%, 720px);
+  z-index: 20;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.82) 100%);
+  border-radius: 999px;
+  box-shadow: 0 20px 46px rgba(10, 20, 42, 0.18);
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.score-strip__inner {
+  padding: 10px 22px;
 }
 
 #app > .view:first-child { margin-top: 0; }
-.score-strip + .view { margin-top: 32px; }
 
 /* View layout */
 .view {
@@ -217,18 +410,19 @@ body {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  transition: opacity 0.24s ease, transform 0.24s ease;
+  transition: opacity 0.32s ease, transform 0.32s ease;
+  transform: translateZ(60px);
 }
 
 .round-panel__content.is-leaving {
   opacity: 0;
-  transform: translateY(14px);
+  transform: translate3d(0, 28px, -160px) scale(0.92);
   pointer-events: none;
 }
 
 .round-panel__content.is-entering {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translate3d(0, -24px, 120px) scale(1.06);
 }
 
 .round-panel__question {
@@ -250,67 +444,150 @@ body {
 
 .round-panel__choices {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  transform-style: preserve-3d;
 }
 
 .round-panel__choices.is-hidden {
-  display: none;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .round-panel__choice {
-  width: 100%;
-  border-radius: 16px;
-  border: 1.5px solid var(--muted);
-  background: rgba(255, 255, 255, 0.92);
+  position: relative;
+  border-radius: 24px;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.62) 100%);
   color: var(--muted);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 18px 20px;
+  letter-spacing: 0.08em;
+  padding: 22px 18px 28px;
   text-align: center;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   line-height: 1.45;
   text-wrap: balance;
-  --choice-selected-bg: #dff3e8;
-  --choice-selected-border: #2f7b52;
-  --choice-selected-text: #1f4b34;
-  --choice-flash-bg: #2f7b52;
+  --choice-selected-bg: rgba(214, 240, 224, 0.96);
+  --choice-selected-border: rgba(49, 139, 88, 0.9);
+  --choice-selected-text: rgba(34, 88, 62, 0.96);
+  --choice-flash-bg: rgba(49, 139, 88, 1);
   --choice-flash-text: #ffffff;
   transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+    transform 0.24s ease,
+    box-shadow 0.24s ease,
+    border-color 0.24s ease,
+    background 0.24s ease,
+    color 0.24s ease;
+  transform: translateZ(0) scale(0.96);
+  box-shadow: 0 18px 38px rgba(12, 24, 44, 0.18);
 }
 
 .round-panel__choice:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(14, 26, 48, 0.12);
+  transform: translate3d(0, -6px, 160px) scale(1.02);
+  box-shadow: 0 28px 56px rgba(12, 24, 44, 0.24);
 }
 
 .round-panel__choice.is-selected {
   background: var(--choice-selected-bg);
   color: var(--choice-selected-text);
   border-color: var(--choice-selected-border);
-  box-shadow: 0 16px 34px rgba(14, 26, 48, 0.18);
+  transform: translate3d(0, -8px, 220px) scale(1.04);
+  box-shadow: 0 34px 62px rgba(12, 24, 44, 0.32);
 }
 
 .round-panel__choice.is-selected:hover:not(:disabled) {
-  transform: none;
-  box-shadow: 0 16px 34px rgba(14, 26, 48, 0.18);
+  transform: translate3d(0, -8px, 220px) scale(1.04);
 }
 
 .round-panel__choice.is-selected.is-blinking {
   animation: choiceBlink 0.9s ease forwards;
 }
 
+.flight-choices {
+  position: relative;
+}
+
+.flight-lane {
+  --lane-hue: var(--ink-h);
+  position: relative;
+  overflow: hidden;
+  padding-top: 28px;
+  padding-bottom: 34px;
+  border: 1.4px solid hsla(var(--lane-hue), 42%, 42%, 0.4);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.68) 100%);
+}
+
+.flight-lane::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 18px;
+  border: 1px dashed hsla(var(--lane-hue), 38%, 42%, 0.26);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.flight-lane__beam {
+  position: absolute;
+  bottom: -120px;
+  left: 50%;
+  width: 18px;
+  height: 160px;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.1) 60%);
+  transform: translate3d(-50%, 0, -220px) rotateX(76deg);
+  opacity: 0.55;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+.flight-lane__direction {
+  font-size: 0.88rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  margin-bottom: 10px;
+}
+
+.flight-lane__option {
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.flight-lane.is-inactive {
+  opacity: 0.32;
+  transform: translate3d(0, 0, -260px) scale(0.92);
+  filter: grayscale(0.3);
+}
+
+.flight-lane.is-inactive .flight-lane__beam {
+  opacity: 0.18;
+}
+
+.flight-lane--left {
+  --lane-hue: calc((var(--ink-h) + 320) % 360);
+}
+
+.flight-lane--up {
+  --lane-hue: calc((var(--ink-h) + 40) % 360);
+}
+
+.flight-lane--right {
+  --lane-hue: calc((var(--ink-h) + 140) % 360);
+}
+
 .round-panel__choice:disabled {
   cursor: default;
   opacity: 0.92;
+}
+
+.flight-lane.is-inactive,
+.flight-lane.is-inactive:disabled {
+  opacity: 0.32;
 }
 
 @keyframes choiceBlink {
@@ -920,22 +1197,8 @@ input[type="text"], input[type="number"], .input {
 /* ===========================
    Score strip (global bar)
    =========================== */
-/* Full-bleed bar across the viewport, but mounted inside .view.
-   The margin calc trick makes it stretch edge-to-edge. */
-.score-strip {
-  background: linear-gradient(90deg, rgba(10,12,18,0.92) 0%, rgba(10,12,18,0.75) 60%, rgba(10,12,18,0.92) 100%);
-  color: #f9fbff;
-  padding: 10px 16px;
-  margin: 0 calc(50% - 50vw) 18px;
-  width: 100vw;
-  position: sticky;
-  top: 0;               /* sticks to the top on scroll */
-  z-index: 50;
-  border-bottom: 1px solid rgba(255,255,255,.18);
-  box-shadow: 0 16px 32px rgba(0,0,0,0.18);
-}
 .score-strip__inner {
-  max-width: 960px;     /* keep content tidy on large screens */
+  max-width: 960px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr auto;
