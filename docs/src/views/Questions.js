@@ -89,6 +89,9 @@ const FALLBACK_ITEMS = [
   },
 ];
 
+const FALLBACK_WRONG_POOL = FALLBACK_ITEMS.map((item) => item.wrong);
+const DIRECTION_ORDER = ["left", "up", "right"];
+
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
   for (const k in attrs) {
@@ -103,8 +106,40 @@ function el(tag, attrs = {}, kids = []) {
   return node;
 }
 
-function shuffle2(a, b) {
-  return Math.random() < 0.5 ? [a, b] : [b, a];
+function shuffleArray(list = []) {
+  const copy = Array.from(list);
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = copy[i];
+    copy[i] = copy[j];
+    copy[j] = temp;
+  }
+  return copy;
+}
+
+function cleanText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function collectOptions(item = {}, fallback = {}, roundNumber = 1) {
+  const question = cleanText(item.question) || fallback.question;
+  const correct = cleanText(item.correct_answer) || fallback.correct;
+  const distractors = item.distractors || {};
+  const tier = roundTier(roundNumber);
+  const preferredKeys = [tier, "medium", "hard", "easy", "bonus", "extra"];
+  const wrongPool = [];
+  preferredKeys.forEach((key) => {
+    const option = cleanText(distractors[key]);
+    if (option && option.toLowerCase() !== correct.toLowerCase()) wrongPool.push(option);
+  });
+  FALLBACK_WRONG_POOL.forEach((option) => {
+    if (option && option.toLowerCase() !== correct.toLowerCase()) wrongPool.push(option);
+  });
+  const uniqueWrong = Array.from(new Set(wrongPool));
+  if (!uniqueWrong.length) uniqueWrong.push(fallback.wrong);
+  while (uniqueWrong.length < 2) uniqueWrong.push(uniqueWrong[uniqueWrong.length - 1] || fallback.wrong);
+  const options = shuffleArray([correct, uniqueWrong[0], uniqueWrong[1]]);
+  return { question, correct, options: options.slice(0, DIRECTION_ORDER.length) };
 }
 
 const roomRef = (code) => doc(db, "rooms", code);
@@ -127,7 +162,26 @@ export default {
     container.innerHTML = "";
 
     const root = el("div", { class: "view view-questions stage-center" });
-    const panel = el("div", { class: "round-panel" });
+
+    const hud = el("div", { class: "flight-hud mono" });
+    const hudTop = el("div", { class: "flight-hud__row" });
+    const hudRound = el("span", { class: "flight-hud__round" }, "ROUND 1");
+    const hudProgress = el("div", { class: "flight-hud__progress" });
+    const hudProgressBar = el("span", { class: "flight-hud__progress-bar" });
+    hudProgress.appendChild(hudProgressBar);
+    const hudControl = el("span", { class: "flight-hud__control" }, "FLY ← ↑ →");
+    hudTop.appendChild(hudRound);
+    hudTop.appendChild(hudProgress);
+    hudTop.appendChild(hudControl);
+    const hudHint = el(
+      "div",
+      { class: "flight-hud__row flight-hud__hint" },
+      "Steer towards the glowing question ahead."
+    );
+    hud.appendChild(hudTop);
+    hud.appendChild(hudHint);
+
+    const panel = el("div", { class: "round-panel round-panel--flight" });
     const heading = el("h2", { class: "round-panel__heading mono" }, "QUESTIONS");
 
     const steps = el("div", { class: "round-panel__steps" });
@@ -148,14 +202,31 @@ export default {
     const content = el("div", { class: "round-panel__content" });
     const prompt = el("div", { class: "round-panel__question mono" }, "");
     const choicesWrap = el("div", { class: "round-panel__choices" });
-    const choiceButtons = [0, 1].map(() => {
-      const btn = el(
-        "button",
-        { class: "round-panel__choice mono", type: "button" },
-        ""
-      );
+
+    const directionLabels = {
+      left: "BANK LEFT",
+      up: "ASCEND",
+      right: "BANK RIGHT",
+    };
+    const choiceTextRefs = new Map();
+    const choiceButtons = DIRECTION_ORDER.map((direction) => {
+      const btn = el("button", {
+        class: "flight-choice mono",
+        type: "button",
+        "data-direction": direction,
+      });
+      const dirLabel = el("span", { class: "flight-choice__direction" }, directionLabels[direction] || direction.toUpperCase());
+      const text = el("span", { class: "flight-choice__text" }, "");
+      btn.appendChild(dirLabel);
+      btn.appendChild(text);
       choicesWrap.appendChild(btn);
+      choiceTextRefs.set(direction, text);
       return btn;
+    });
+    const directionToButton = new Map();
+    choiceButtons.forEach((btn, index) => {
+      const direction = DIRECTION_ORDER[index];
+      directionToButton.set(direction, btn);
     });
 
     content.appendChild(prompt);
@@ -175,6 +246,7 @@ export default {
     panel.appendChild(steps);
     panel.appendChild(content);
     panel.appendChild(submitBtn);
+    root.appendChild(hud);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -206,10 +278,6 @@ export default {
       prompt.classList.toggle("round-panel__question--status", status);
     };
 
-    const setChoicesVisible = (visible) => {
-      choicesWrap.classList.toggle("is-hidden", !visible);
-    };
-
     let idx = 0;
     const chosen = ["", "", ""];
     let triplet = [];
@@ -217,6 +285,7 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    let focusedDirection = null;
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -231,6 +300,47 @@ export default {
         btn.textContent = String(number);
         btn.setAttribute("aria-label", `Question ${number}`);
       });
+    };
+
+    const updateHud = () => {
+      const roundNumber = effectiveRound();
+      hudRound.textContent = `ROUND ${String(roundNumber).padStart(2, "0")}`;
+      const total = triplet.length || DIRECTION_ORDER.length;
+      const answeredCount = chosen.filter((value) => value).length;
+      const ratio = total > 0 ? answeredCount / total : 0;
+      const minScale = total > 0 ? 0.12 : 0.06;
+      const clamped = Math.max(minScale, Math.min(1, ratio));
+      hudProgressBar.style.transform = `scaleX(${clamped.toFixed(3)})`;
+    };
+
+    const setHudHint = (text) => {
+      hudHint.textContent = text || "";
+    };
+
+    const clearFocusedDirection = () => {
+      if (focusedDirection && directionToButton.has(focusedDirection)) {
+        const btn = directionToButton.get(focusedDirection);
+        if (btn) btn.classList.remove("is-focused");
+      }
+      focusedDirection = null;
+    };
+
+    const focusDirection = (direction) => {
+      if (!direction || !directionToButton.has(direction)) {
+        clearFocusedDirection();
+        return;
+      }
+      const btn = directionToButton.get(direction);
+      if (!btn || btn.disabled) return;
+      if (focusedDirection === direction) return;
+      clearFocusedDirection();
+      btn.classList.add("is-focused");
+      focusedDirection = direction;
+    };
+
+    const setChoicesVisible = (visible) => {
+      choicesWrap.classList.toggle("is-hidden", !visible);
+      if (!visible) clearFocusedDirection();
     };
 
     let stopWatcher = null;
@@ -253,12 +363,21 @@ export default {
       }
     };
 
+    const triggerApproach = () => {
+      panel.classList.remove("round-panel--departing");
+      panel.classList.remove("round-panel--flight");
+      void panel.offsetWidth;
+      panel.classList.add("round-panel--flight");
+    };
+
     const animateSwap = (renderFn) => {
       clearSwapTimer();
+      panel.classList.add("round-panel--departing");
       content.classList.add("is-leaving");
       swapTimer = setTimeout(() => {
         swapTimer = null;
         renderFn();
+        triggerApproach();
         content.classList.remove("is-leaving");
         content.classList.add("is-entering");
         requestAnimationFrame(() => {
@@ -274,18 +393,30 @@ export default {
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
         btn.disabled = triplet.length === 0 || published || submitting;
       });
+      updateHud();
     };
 
     const renderChoices = () => {
       const current = triplet[idx] || {};
       const currentSelection = chosen[idx] || "";
+      clearFocusedDirection();
       choiceButtons.forEach((btn, i) => {
+        const direction = DIRECTION_ORDER[i];
         const option = current.options?.[i] || "";
-        btn.textContent = option;
+        const textEl = choiceTextRefs.get(direction);
+        if (textEl) textEl.textContent = option || "";
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
         btn.disabled = !option || published || submitting;
+        if (option) {
+          btn.dataset.option = option;
+          btn.setAttribute("aria-label", `${directionLabels[direction] || direction} — ${option}`);
+        } else {
+          btn.dataset.option = "";
+          btn.setAttribute("aria-label", `${directionLabels[direction] || direction} — unavailable`);
+        }
       });
+      updateHud();
     };
 
     const updateSubmitState = () => {
@@ -302,6 +433,12 @@ export default {
       if (!published) {
         submitBtn.textContent = "SUBMIT";
       }
+      if (ready && !published) {
+        setHudHint("All answers locked — engage SUBMIT to continue.");
+      } else if (!published && !submitting) {
+        setHudHint("Use ← ↑ → to select an answer.");
+      }
+      updateHud();
     };
 
     const highlightSubmitIfReady = () => {
@@ -324,6 +461,9 @@ export default {
         choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
+        setHudHint("Use ← ↑ → to select an answer.");
+        const focusTarget = DIRECTION_ORDER.find((direction, index) => Boolean(current.options?.[index]));
+        if (focusTarget) focusDirection(focusTarget);
         highlightSubmitIfReady();
       };
       if (animate) animateSwap(render);
@@ -343,6 +483,7 @@ export default {
 
     const scheduleAdvance = (currentIndex) => {
       clearAdvanceTimer();
+      setHudHint("Answer locked — accelerating to next prompt…");
       advanceTimer = setTimeout(() => {
         advanceTimer = null;
         if (!alive || submitting || published) return;
@@ -359,7 +500,9 @@ export default {
     const showWaitingPrompt = () => {
       setPrompt(waitingLabel, { status: true });
       setChoicesVisible(false);
+      setHudHint(`Holding for ${oppName.toUpperCase()}`);
       clearAdvanceTimer();
+      triggerApproach();
     };
 
     const rRef = roomRef(code);
@@ -391,8 +534,10 @@ export default {
       pauseRoundTimer(timerContext);
       setPrompt(text, { status: true });
       setChoicesVisible(false);
+      setHudHint(text);
       renderSteps();
       updateSubmitState();
+      triggerApproach();
     };
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
@@ -422,22 +567,8 @@ export default {
     triplet = [0, 1, 2].map((i) => {
       const it = myItems[i] || {};
       const fallback = FALLBACK_ITEMS[i % FALLBACK_ITEMS.length];
-      const rawQuestion = typeof it.question === "string" ? it.question.trim() : "";
-      const rawCorrect = typeof it.correct_answer === "string" ? it.correct_answer.trim() : "";
-      const distractors = it.distractors || {};
-      const rawWrong = [
-        distractors[roundTier(round)],
-        distractors.medium,
-        distractors.easy,
-        distractors.hard,
-      ].find((opt) => typeof opt === "string" && opt.trim()) || "";
-
-      const hasFullSet = rawQuestion && rawCorrect && rawWrong;
-      const question = hasFullSet ? rawQuestion : fallback.question;
-      const correct = hasFullSet ? rawCorrect : fallback.correct;
-      const wrong = hasFullSet ? rawWrong : fallback.wrong;
-      const [optA, optB] = shuffle2(correct, wrong);
-      return { question, options: [optA, optB], correct };
+      const { question, correct, options } = collectOptions(it, fallback, round || 1);
+      return { question, options, correct };
     });
 
     const submittedAlready = Boolean(((room0.submitted || {})[myRole] || {})[round]);
@@ -456,8 +587,9 @@ export default {
       renderSteps();
       renderChoices();
       pauseRoundTimer(timerContext);
-    } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
+    } else if (triplet.every((entry) => entry.question && (entry.options?.length || 0) >= 2)) {
       showQuestion(0, { animate: false });
+      triggerApproach();
       updateSubmitState();
     } else {
       setLoadingState("Preparing questions…");
@@ -512,10 +644,12 @@ export default {
       btn.addEventListener("click", () => {
         if (triplet.length === 0) return;
         if (published || submitting) return;
-        const text = btn.textContent || "";
+        const option = btn.dataset.option || "";
+        if (!option) return;
         const currentIndex = idx;
-        if (!text) return;
-        chosen[currentIndex] = text;
+        chosen[currentIndex] = option;
+        const direction = btn.dataset.direction || "";
+        focusDirection(direction);
         choiceButtons.forEach((choiceBtn) => {
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
           if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
@@ -530,6 +664,31 @@ export default {
         scheduleAdvance(currentIndex);
       });
     });
+
+    const keyToDirection = (event) => {
+      const { key } = event;
+      if (key === "ArrowLeft" || key === "a" || key === "A") return "left";
+      if (key === "ArrowRight" || key === "d" || key === "D") return "right";
+      if (key === "ArrowUp" || key === "w" || key === "W") return "up";
+      return null;
+    };
+
+    const handleKeyDown = (event) => {
+      if (triplet.length === 0) return;
+      if (published || submitting) return;
+      const direction = keyToDirection(event);
+      if (!direction) return;
+      const btn = directionToButton.get(direction);
+      if (!btn) return;
+      event.preventDefault();
+      if (btn.disabled) {
+        focusDirection(direction);
+        return;
+      }
+      btn.click();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
 
     stepButtons.forEach((btn, i) => {
       btn.addEventListener("click", () => {
@@ -583,6 +742,7 @@ export default {
         submitting = false;
         submitBtn.textContent = "SUBMIT";
         showQuestion(revertIdx, { animate: false });
+        triggerApproach();
         updateSubmitState();
         resumeRoundTimer(timerContext);
       }
@@ -650,6 +810,7 @@ export default {
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   },
 
