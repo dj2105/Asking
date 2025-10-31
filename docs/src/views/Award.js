@@ -15,7 +15,12 @@ import {
   runTransaction,
 } from "firebase/firestore";
 
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import {
+  clampCode,
+  getHashParams,
+  getStoredRole,
+  activateFlight,
+} from "../lib/util.js";
 
 const CONTINUE_LEAD_MS = 3_000;
 
@@ -158,9 +163,12 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-award" });
+    const root = el("div", { class: "view view-award pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
 
-    const card = el("div", { class: "card award-card" });
+    const card = el("div", { class: "card award-card flight-item flight-item--main" });
     const scoreHeading = el("div", { class: "mono award-title" }, "");
     const timeLine = el("div", { class: "mono award-timeline" }, "");
     const revealBox = el("div", { class: "mono award-reveal award-reveal--hidden" }, "");
@@ -174,9 +182,12 @@ export default {
     const continueBtn = el("button", { class: "btn" }, "I'M READY");
     card.appendChild(continueBtn);
 
-    root.appendChild(card);
-
+    items.appendChild(card);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    root.appendChild(layer);
     container.appendChild(root);
+    activateFlight(card, { delay: 220, tight: true });
 
     const rRef = roomRef(code);
     const rdRef = doc(roundSubColRef(code), String(round));

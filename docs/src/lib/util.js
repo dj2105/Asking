@@ -90,6 +90,40 @@ export function downloadBlob(filename, blob) {
   }
 }
 
+export function activateFlight(node, { delay = 0, tight = false } = {}) {
+  if (!node) return;
+  node.classList.remove("is-past");
+  node.classList.remove("is-active");
+  if (!tight) node.classList.remove("is-tight");
+  requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      if (!node.isConnected) return;
+      if (tight) node.classList.add("is-tight");
+      node.classList.add("is-active");
+    }, Math.max(0, delay));
+  });
+}
+
+export function flyPast(node, { remove = false, delay = 0 } = {}) {
+  if (!node) return;
+  const apply = () => {
+    node.classList.remove("is-active");
+    node.classList.add("is-past");
+    if (remove) {
+      window.setTimeout(() => {
+        if (node.parentNode) {
+          try { node.parentNode.removeChild(node); } catch {}
+        }
+      }, 900);
+    }
+  };
+  if (delay > 0) {
+    window.setTimeout(apply, delay);
+  } else {
+    apply();
+  }
+}
+
 export function setStoredRole(code, role) {
   const safeCode = clampCode(code);
   const safeRole = role === "host" || role === "guest" ? role : "";
@@ -128,6 +162,8 @@ export default {
   canonicalJSONStringify,
   sha256Hex,
   downloadBlob,
+  activateFlight,
+  flyPast,
   setStoredRole,
   getStoredRole,
   setLastRoomCode,

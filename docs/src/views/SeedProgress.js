@@ -9,6 +9,7 @@ import {
   clampCode,
   getHashParams,
   timeUntil,
+  activateFlight,
 } from "../lib/util.js";
 
 function el(tag, attrs = {}, kids = []) {
@@ -37,10 +38,20 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-seeding" });
-    root.appendChild(el("h1", { class: "title" }, "Linking Jemima…"));
-
-    const card = el("div", { class: "card" });
+    const root = el("div", { class: "view view-seeding pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const title = el("h1", { class: "title flight-item flight-item--trace" }, "Linking Jemima…");
+    const card = el("div", { class: "card flight-item flight-item--main" });
+    items.appendChild(title);
+    items.appendChild(card);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    root.appendChild(layer);
+    container.appendChild(root);
+    activateFlight(title, { delay: 120 });
+    activateFlight(card, { delay: 220 });
     const heading = el("div", { class: "mono", style: "text-align:center;margin-bottom:8px;" },
       code ? `Room ${code}` : "Room unknown");
     card.appendChild(heading);
@@ -52,9 +63,6 @@ export default {
       class: "mono small", style: "margin-top:12px;background:rgba(0,0,0,0.05);padding:10px;border-radius:10px;min-height:120px;max-height:200px;overflow:auto;"
     });
     card.appendChild(logEl);
-
-    root.appendChild(card);
-    container.appendChild(root);
 
     const log = (line) => {
       const stamp = new Date().toISOString().split("T")[1].replace(/Z$/, "");

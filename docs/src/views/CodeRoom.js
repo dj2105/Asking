@@ -6,7 +6,12 @@
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
-import { clampCode, copyToClipboard, setStoredRole } from "../lib/util.js";
+import {
+  clampCode,
+  copyToClipboard,
+  setStoredRole,
+  activateFlight,
+} from "../lib/util.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -44,10 +49,17 @@ export default {
     setStoredRole(code, "host");
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-coderoom" });
-    const card = el("div", { class: "card" });
-    root.appendChild(card);
+    const root = el("div", { class: "view view-coderoom pov-flight" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+    const card = el("div", { class: "card flight-item flight-item--main" });
+    items.appendChild(card);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    root.appendChild(layer);
     container.appendChild(root);
+    activateFlight(card, { delay: 180 });
 
     card.appendChild(el("h1", { class: "title" }, "Code Room"));
 

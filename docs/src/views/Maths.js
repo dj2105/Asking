@@ -17,7 +17,12 @@ import {
 } from "firebase/firestore";
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import {
+  clampCode,
+  getHashParams,
+  getStoredRole,
+  activateFlight,
+} from "../lib/util.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -140,9 +145,13 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
-    const root = el("div", { class: "view view-maths" });
+    const root = el("div", { class: "view view-maths pov-flight" });
 
-    const card = el("div", { class: "card" });
+    const layer = el("div", { class: "flight-layer" });
+    const trails = el("div", { class: "flight-trails" });
+    const items = el("div", { class: "flight-items" });
+
+    const card = el("div", { class: "card flight-item flight-item--main" });
     const heading = el("h2", { class: "view-heading" }, "Jemima’s Maths");
     const questionText = el("div", { class: "mono maths-question__prompt maths-question__prompt--single" }, "");
     const answerLabel = el("label", { class: "mono maths-input-label" }, "Your answer");
@@ -168,12 +177,16 @@ export default {
     card.appendChild(done);
     card.appendChild(waitMsg);
 
-    root.appendChild(card);
+    items.appendChild(card);
+    layer.appendChild(trails);
+    layer.appendChild(items);
+    root.appendChild(layer);
 
     const mathsMount = el("div", { class: "jemima-maths-pinned" });
     root.appendChild(mathsMount);
 
     container.appendChild(root);
+    activateFlight(card, { delay: 220, tight: true });
 
     const rRef = roomRef(code);
     const roomSnap0 = await getDoc(rRef);
