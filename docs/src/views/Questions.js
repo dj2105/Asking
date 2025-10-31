@@ -20,6 +20,23 @@ import {
 import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
+const LANE_DIRECTIONS = ["left", "up", "right"];
+const LANE_META = {
+  left: { label: "Left Corridor", short: "LEFT", icon: "⇦" },
+  up: { label: "Ascend", short: "ASCEND", icon: "⇧" },
+  right: { label: "Right Corridor", short: "RIGHT", icon: "⇨" },
+};
+const KEY_DIRECTION_MAP = {
+  ArrowLeft: "left",
+  ArrowRight: "right",
+  ArrowUp: "up",
+  a: "left",
+  d: "right",
+  w: "up",
+};
+const FLIGHT_DURATION_MS = 950;
+const POST_FLIGHT_DELAY_MS = 260;
+
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
 function balanceQuestionText(input = "") {
@@ -148,18 +165,32 @@ export default {
     const content = el("div", { class: "round-panel__content" });
     const prompt = el("div", { class: "round-panel__question mono" }, "");
     const choicesWrap = el("div", { class: "round-panel__choices" });
-    const choiceButtons = [0, 1].map(() => {
-      const btn = el(
-        "button",
-        { class: "round-panel__choice mono", type: "button" },
-        ""
-      );
+    const choiceButtons = LANE_DIRECTIONS.map((direction) => {
+      const meta = LANE_META[direction];
+      const btn = el("button", {
+        class: "round-panel__choice mono",
+        type: "button",
+        "data-direction": direction,
+        "aria-live": "polite",
+      });
+      btn.innerHTML = `
+        <span class="pov-choice__icon" aria-hidden="true">${meta.icon}</span>
+        <span class="pov-choice__text"></span>
+        <span class="pov-choice__hint" aria-hidden="true">${meta.short}</span>
+      `;
+      btn.setAttribute("data-label", meta.label);
       choicesWrap.appendChild(btn);
       return btn;
     });
 
     content.appendChild(prompt);
     content.appendChild(choicesWrap);
+    const flightHint = el(
+      "div",
+      { class: "pov-flight-hint mono" },
+      "STEER \u2190 \u2191 \u2192 TO SELECT"
+    );
+    content.appendChild(flightHint);
 
     const submitBtn = el(
       "button",
@@ -200,6 +231,52 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
+    const flightWrap = container.closest(".pov-flight");
+    const laneAssignments = new Map();
+    let flightLock = false;
+    let flightTimer = null;
+
+    const markFlightTarget = (direction) => {
+      choiceButtons.forEach((btn) => {
+        const match = direction && btn.getAttribute("data-direction") === direction;
+        btn.classList.toggle("is-flight", Boolean(match));
+      });
+    };
+
+    const engageFlightDirection = (direction) => {
+      if (!flightWrap) return;
+      flightWrap.setAttribute("data-flight-direction", direction);
+      flightWrap.classList.add("is-engaged");
+      markFlightTarget(direction);
+    };
+
+    const releaseFlightDirection = () => {
+      if (!flightWrap) return;
+      flightWrap.classList.remove("is-engaged");
+      flightWrap.removeAttribute("data-flight-direction");
+      markFlightTarget(null);
+    };
+
+    const clearFlightTimer = () => {
+      if (flightTimer) {
+        clearTimeout(flightTimer);
+        flightTimer = null;
+      }
+    };
+
+    const deactivateApproach = () => {
+      if (!flightWrap) return;
+      flightWrap.classList.remove("is-active");
+      void flightWrap.offsetWidth;
+    };
+
+    const activateApproach = () => {
+      if (!flightWrap) return;
+      requestAnimationFrame(() => {
+        flightWrap.classList.add("is-active");
+      });
+    };
+
     const setPrompt = (text, { status = false } = {}) => {
       const content = status ? String(text || "") : balanceQuestionText(text);
       prompt.textContent = content;
@@ -207,7 +284,14 @@ export default {
     };
 
     const setChoicesVisible = (visible) => {
-      choicesWrap.classList.toggle("is-hidden", !visible);
+      const hidden = !visible;
+      choicesWrap.classList.toggle("is-hidden", hidden);
+      flightHint.classList.toggle("is-hidden", hidden);
+      if (hidden) {
+        clearFlightTimer();
+        flightLock = false;
+        releaseFlightDirection();
+      }
     };
 
     let idx = 0;
@@ -279,13 +363,42 @@ export default {
     const renderChoices = () => {
       const current = triplet[idx] || {};
       const currentSelection = chosen[idx] || "";
-      choiceButtons.forEach((btn, i) => {
-        const option = current.options?.[i] || "";
-        btn.textContent = option;
-        const isSelected = option && currentSelection === option;
-        btn.classList.toggle("is-selected", isSelected);
-        btn.disabled = !option || published || submitting;
+      laneAssignments.clear();
+      const rawOptions = Array.isArray(current.options) ? current.options : [];
+      const trimmed = rawOptions
+        .map((opt) => (typeof opt === "string" ? opt.trim() : ""))
+        .filter((opt) => opt);
+      const slotOrder =
+        trimmed.length === 1
+          ? ["up"]
+          : trimmed.length === 2
+          ? ["left", "right"]
+          : ["left", "up", "right"];
+      trimmed.forEach((optionText, optionIndex) => {
+        const slot = slotOrder[optionIndex] || "left";
+        if (!laneAssignments.has(slot)) laneAssignments.set(slot, optionText);
       });
+      choiceButtons.forEach((btn) => {
+        const direction = btn.getAttribute("data-direction") || "";
+        const optionText = laneAssignments.get(direction) || "";
+        const textNode = btn.querySelector(".pov-choice__text");
+        if (textNode) textNode.textContent = optionText;
+        const hasOption = Boolean(optionText);
+        btn.dataset.option = optionText;
+        btn.disabled = !hasOption || published || submitting;
+        btn.classList.toggle("is-empty", !hasOption);
+        btn.classList.remove("is-blinking");
+        const isSelected = hasOption && currentSelection === optionText;
+        btn.classList.toggle("is-selected", isSelected);
+        const meta = LANE_META[direction] || { label: direction };
+        btn.setAttribute(
+          "aria-label",
+          hasOption ? `${meta.label}: ${optionText}` : `${meta.label} unavailable`
+        );
+      });
+      if (!flightWrap || !flightWrap.classList.contains("is-engaged")) {
+        markFlightTarget(null);
+      }
     };
 
     const updateSubmitState = () => {
@@ -325,9 +438,15 @@ export default {
         renderChoices();
         renderSteps();
         highlightSubmitIfReady();
+        activateApproach();
       };
-      if (animate) animateSwap(render);
-      else render();
+      releaseFlightDirection();
+      if (animate) {
+        deactivateApproach();
+        animateSwap(render);
+      } else {
+        render();
+      }
       if (!published && !submitting) resumeRoundTimer(timerContext);
     };
 
@@ -341,8 +460,9 @@ export default {
       return null;
     };
 
-    const scheduleAdvance = (currentIndex) => {
+    const scheduleAdvance = (currentIndex, delay = 700) => {
       clearAdvanceTimer();
+      const wait = Math.max(0, Number(delay) || 0);
       advanceTimer = setTimeout(() => {
         advanceTimer = null;
         if (!alive || submitting || published) return;
@@ -353,13 +473,45 @@ export default {
           showQuestion(triplet.length - 1, { animate: true });
         }
         highlightSubmitIfReady();
-      }, 700);
+      }, wait);
     };
 
     const showWaitingPrompt = () => {
       setPrompt(waitingLabel, { status: true });
       setChoicesVisible(false);
       clearAdvanceTimer();
+    };
+
+    const attemptDirection = (direction) => {
+      if (!direction) return;
+      if (triplet.length === 0) return;
+      if (published || submitting) return;
+      if (choicesWrap.classList.contains("is-hidden")) return;
+      if (flightLock) return;
+      const assignment = laneAssignments.get(direction);
+      if (!assignment) {
+        const blink = choiceButtons.find((btn) => btn.getAttribute("data-direction") === direction);
+        if (blink) {
+          blink.classList.add("is-blinking");
+          setTimeout(() => blink.classList.remove("is-blinking"), 420);
+        }
+        return;
+      }
+      flightLock = true;
+      clearAdvanceTimer();
+      clearFlightTimer();
+      engageFlightDirection(direction);
+      const currentIndex = idx;
+      chosen[currentIndex] = assignment;
+      renderChoices();
+      renderSteps();
+      updateSubmitState();
+      highlightSubmitIfReady();
+      flightTimer = setTimeout(() => {
+        releaseFlightDirection();
+        flightLock = false;
+        scheduleAdvance(currentIndex, POST_FLIGHT_DELAY_MS);
+      }, FLIGHT_DURATION_MS);
     };
 
     const rRef = roomRef(code);
@@ -510,24 +662,8 @@ export default {
 
     choiceButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
-        if (triplet.length === 0) return;
-        if (published || submitting) return;
-        const text = btn.textContent || "";
-        const currentIndex = idx;
-        if (!text) return;
-        chosen[currentIndex] = text;
-        choiceButtons.forEach((choiceBtn) => {
-          choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
-          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
-        });
-        btn.classList.add("is-blinking");
-        setTimeout(() => {
-          btn.classList.remove("is-blinking");
-        }, 900);
-        renderChoices();
-        renderSteps();
-        updateSubmitState();
-        scheduleAdvance(currentIndex);
+        const direction = btn.getAttribute("data-direction");
+        attemptDirection(direction);
       });
     });
 
@@ -537,11 +673,19 @@ export default {
         if (published || submitting) return;
         clearAdvanceTimer();
         showQuestion(i, { animate: true });
-        renderChoices();
-        renderSteps();
-        updateSubmitState();
       });
     });
+
+    const handleKey = (event) => {
+      const rawKey = event?.key || "";
+      const lookup = KEY_DIRECTION_MAP[rawKey] || KEY_DIRECTION_MAP[String(rawKey).toLowerCase()];
+      if (!lookup) return;
+      if (event.repeat) return;
+      event.preventDefault();
+      attemptDirection(lookup);
+    };
+
+    window.addEventListener("keydown", handleKey);
 
     submitBtn.addEventListener("click", async () => {
       if (published || submitting) return;
@@ -647,9 +791,12 @@ export default {
       alive = false;
       clearAdvanceTimer();
       clearSwapTimer();
+      clearFlightTimer();
+      releaseFlightDirection();
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("keydown", handleKey);
     };
   },
 

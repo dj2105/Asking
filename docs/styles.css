@@ -21,6 +21,11 @@
   --ok: #207c4c;
   --bad: #b42a2a;
 
+  --flight-perspective: 1600px;
+  --flight-stream-color: rgba(255, 255, 255, 0.14);
+  --flight-star-color: rgba(255, 255, 255, 0.5);
+  --flight-reticle: hsla(var(--ink-h), 68%, 84%, 0.45);
+
   --radius: 18px;
   --shadow: 0 22px 46px rgba(14, 26, 48, 0.16);
   --shadow-soft: 0 12px 28px rgba(14, 26, 48, 0.12);
@@ -39,6 +44,30 @@ body {
   font-family: Courier, "Courier New", ui-monospace, Menlo, Consolas, monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  perspective: var(--flight-perspective);
+  perspective-origin: 50% 42%;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: -24vh -24vw;
+  pointer-events: none;
+  z-index: -2;
+  transform-style: preserve-3d;
+}
+
+body::before {
+  background: radial-gradient(70% 55% at 50% 18%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 78%);
+  transform: translateZ(-1200px) scale(2.2);
+}
+
+body::after {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 62%);
+  transform: translateZ(-900px) scale(2.6);
+  opacity: 0.65;
 }
 
 #app {
@@ -49,6 +78,99 @@ body {
   flex-direction: column;
   align-items: center;
   background: linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.72) 26%, rgba(255,255,255,0.42) 100%), var(--paper);
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+/* POV flight scaffold */
+.pov-flight {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 32px);
+  display: flex;
+  justify-content: center;
+  perspective: inherit;
+  transform-style: preserve-3d;
+  overflow: hidden;
+}
+
+.pov-flight__stream,
+.pov-flight__stars {
+  position: absolute;
+  inset: -30vh -30vw;
+  pointer-events: none;
+  z-index: 0;
+  transform-style: preserve-3d;
+}
+
+.pov-flight__stream {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    repeating-linear-gradient(0deg, transparent 0, transparent 24px, var(--flight-stream-color) 24px, var(--flight-stream-color) 26px);
+  background-size: 100% 420px, 100% 32px;
+  background-position: center 0, center 0;
+  opacity: 0.38;
+  transform: translateZ(-1200px) scale(2.2);
+  animation: flightStream 12s linear infinite;
+}
+
+.pov-flight__stars {
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 60%),
+    radial-gradient(circle at 70% 40%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 58%);
+  background-size: 120% 120%, 120% 120%, 120% 120%;
+  background-position: center 0, center -20px, center 20px;
+  opacity: 0.52;
+  transform: translateZ(-900px) scale(2.2);
+  mix-blend-mode: screen;
+  animation: flightStars 26s linear infinite;
+}
+
+.pov-flight__object {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  transform-style: preserve-3d;
+  padding: 10vh 0 12vh;
+  transform: translateZ(-980px) translateY(160px) scale(0.54);
+  opacity: 0;
+  transition:
+    transform 1.4s cubic-bezier(0.19, 1, 0.22, 1),
+    opacity 0.9s ease-out;
+}
+
+.pov-flight.is-active .pov-flight__object {
+  transform: translateZ(0) translateY(0) scale(1);
+  opacity: 1;
+}
+
+.pov-flight.is-engaged .pov-flight__object {
+  transition-duration: 0.9s;
+}
+
+.pov-flight.is-active[data-flight-direction="left"] .pov-flight__object {
+  transform: translateX(-28vw) translateY(-6vh) translateZ(-220px) rotateY(16deg) scale(0.94);
+}
+
+.pov-flight.is-active[data-flight-direction="right"] .pov-flight__object {
+  transform: translateX(28vw) translateY(-6vh) translateZ(-220px) rotateY(-16deg) scale(0.94);
+}
+
+.pov-flight.is-active[data-flight-direction="up"] .pov-flight__object {
+  transform: translateY(-18vh) translateZ(-160px) rotateX(-6deg) scale(0.96);
+}
+
+@keyframes flightStream {
+  from { background-position: center 0, center 0; }
+  to { background-position: center 420px, center 320px; }
+}
+
+@keyframes flightStars {
+  from { background-position: center 0, center -20px, center 20px; }
+  to { background-position: center 140px, center 120px, center 160px; }
 }
 
 #app > .view:first-child { margin-top: 0; }
@@ -250,94 +372,181 @@ body {
 
 .round-panel__choices {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 36px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.round-panel__choices::after {
+  content: "";
+  position: absolute;
+  inset: 18% 30%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 1px rgba(14, 26, 48, 0.08);
+  opacity: 0.3;
+  pointer-events: none;
+  transform: translateZ(-420px);
 }
 
 .round-panel__choices.is-hidden {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateZ(-520px) scale(0.74);
 }
 
 .round-panel__choice {
+  position: relative;
   width: 100%;
-  border-radius: 16px;
-  border: 1.5px solid var(--muted);
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 28px;
+  border: 1.5px solid hsla(var(--ink-h), 28%, 38%, 0.42);
+  background: rgba(255, 255, 255, 0.78);
   color: var(--muted);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 18px 20px;
+  letter-spacing: 0.05em;
+  padding: 38px 28px 46px;
   text-align: center;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  line-height: 1.45;
-  text-wrap: balance;
-  --choice-selected-bg: #dff3e8;
-  --choice-selected-border: #2f7b52;
-  --choice-selected-text: #1f4b34;
-  --choice-flash-bg: #2f7b52;
-  --choice-flash-text: #ffffff;
+  justify-content: space-between;
+  line-height: 1.4;
+  min-height: 170px;
+  transform-style: preserve-3d;
+  transform: translateZ(-340px) rotateX(12deg);
+  box-shadow: 0 32px 62px rgba(14, 26, 48, 0.18);
   transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+    transform 0.8s cubic-bezier(0.19, 1, 0.22, 1),
+    background 0.32s ease,
+    color 0.32s ease,
+    border-color 0.32s ease,
+    box-shadow 0.42s ease,
+    opacity 0.32s ease;
 }
 
-.round-panel__choice:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(14, 26, 48, 0.12);
+.round-panel__choice[data-direction="left"] {
+  transform: translateX(-12%) translateZ(-340px) rotateY(18deg) rotateX(10deg);
 }
 
-.round-panel__choice.is-selected {
-  background: var(--choice-selected-bg);
-  color: var(--choice-selected-text);
-  border-color: var(--choice-selected-border);
-  box-shadow: 0 16px 34px rgba(14, 26, 48, 0.18);
+.round-panel__choice[data-direction="right"] {
+  transform: translateX(12%) translateZ(-340px) rotateY(-18deg) rotateX(10deg);
 }
 
-.round-panel__choice.is-selected:hover:not(:disabled) {
-  transform: none;
-  box-shadow: 0 16px 34px rgba(14, 26, 48, 0.18);
-}
-
-.round-panel__choice.is-selected.is-blinking {
-  animation: choiceBlink 0.9s ease forwards;
+.round-panel__choice[data-direction="up"] {
+  transform: translateY(-10%) translateZ(-300px) rotateX(6deg);
 }
 
 .round-panel__choice:disabled {
   cursor: default;
-  opacity: 0.92;
+}
+
+.round-panel__choice.is-empty {
+  opacity: 0.25;
+  border-style: dashed;
+  transform: translateZ(-520px) rotateX(18deg) scale(0.82);
+  box-shadow: none;
+}
+
+.round-panel__choice:not(.is-empty):hover {
+  transform: translateZ(-160px) rotateX(4deg);
+  box-shadow: 0 36px 76px rgba(14, 26, 48, 0.22);
+}
+
+.round-panel__choice.is-selected,
+.pov-flight[data-flight-direction] .round-panel__choice.is-flight {
+  background: hsla(var(--ink-h), 62%, 88%, 0.92);
+  color: hsl(var(--ink-h), 52%, 26%);
+  border-color: hsla(var(--ink-h), 52%, 32%, 0.68);
+  box-shadow: 0 50px 110px rgba(14, 26, 48, 0.32);
+}
+
+.round-panel__choice.is-selected {
+  transform: translateZ(160px) rotateX(0deg) rotateY(0deg) scale(1.06);
+}
+
+.pov-flight[data-flight-direction="left"] .round-panel__choice[data-direction="left"],
+.pov-flight[data-flight-direction="right"] .round-panel__choice[data-direction="right"],
+.pov-flight[data-flight-direction="up"] .round-panel__choice[data-direction="up"] {
+  transform: translateZ(220px) rotateX(0deg) rotateY(0deg) scale(1.08);
+}
+
+.pov-flight.is-engaged .round-panel__choice:not(.is-flight) {
+  opacity: 0.32;
+}
+
+.round-panel__choice.is-flight::after {
+  animation: lanePulse 1.2s ease-in-out infinite alternate;
+}
+
+.pov-choice__icon {
+  font-size: 2.4rem;
+  margin-bottom: 16px;
+  opacity: 0.55;
+  transform: translateZ(40px);
+}
+
+.pov-choice__text {
+  display: block;
+  font-size: 1.05rem;
+  text-wrap: balance;
+  transform: translateZ(40px);
+}
+
+.pov-choice__hint {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  margin-top: 22px;
+  opacity: 0.52;
+  transform: translateZ(20px);
+}
+
+.round-panel__choice.is-selected .pov-choice__icon,
+.round-panel__choice.is-selected .pov-choice__hint,
+.round-panel__choice.is-selected .pov-choice__text {
+  opacity: 1;
+}
+
+.pov-flight-hint {
+  width: 100%;
+  text-align: center;
+  font-size: 0.82rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  transform: translateZ(-120px);
+  transition: opacity 0.3s ease;
+}
+
+.pov-flight-hint.is-hidden {
+  opacity: 0;
+}
+
+@keyframes lanePulse {
+  from { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.0); }
+  to { box-shadow: 0 0 24px 8px hsla(var(--ink-h), 68%, 80%, 0.35); }
 }
 
 @keyframes choiceBlink {
   0% {
-    background: var(--choice-selected-bg);
-    color: var(--choice-selected-text);
-    border-color: var(--choice-selected-border);
+    background: hsla(var(--ink-h), 62%, 88%, 0.92);
+    color: hsl(var(--ink-h), 52%, 26%);
+    border-color: hsla(var(--ink-h), 52%, 32%, 0.68);
   }
-  22% {
-    background: var(--choice-flash-bg);
-    color: var(--choice-flash-text);
-    border-color: var(--choice-flash-bg);
-  }
-  50% {
-    background: var(--choice-selected-bg);
-    color: var(--choice-selected-text);
-    border-color: var(--choice-selected-border);
-  }
-  72% {
-    background: var(--choice-flash-bg);
-    color: var(--choice-flash-text);
-    border-color: var(--choice-flash-bg);
+  45% {
+    background: hsla(var(--ink-h), 72%, 42%, 0.95);
+    color: #ffffff;
+    border-color: hsla(var(--ink-h), 72%, 42%, 0.95);
   }
   100% {
-    background: var(--choice-selected-bg);
-    color: var(--choice-selected-text);
-    border-color: var(--choice-selected-border);
+    background: hsla(var(--ink-h), 62%, 88%, 0.92);
+    color: hsl(var(--ink-h), 52%, 26%);
+    border-color: hsla(var(--ink-h), 52%, 32%, 0.68);
   }
 }
 
