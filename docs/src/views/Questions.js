@@ -147,16 +147,26 @@ export default {
 
     const content = el("div", { class: "round-panel__content" });
     const prompt = el("div", { class: "round-panel__question mono" }, "");
-    const choicesWrap = el("div", { class: "round-panel__choices" });
-    const choiceButtons = [0, 1].map(() => {
-      const btn = el(
-        "button",
-        { class: "round-panel__choice mono", type: "button" },
-        ""
-      );
+    const choicesWrap = el("div", { class: "round-panel__choices flight-choices" });
+    const directionOrder = ["left", "up", "right"];
+    const laneMeta = new Map();
+    const choiceButtons = directionOrder.map((dir) => {
+      const btn = el("button", {
+        class: `round-panel__choice flight-lane flight-lane--${dir} mono`,
+        type: "button",
+        "data-direction": dir,
+      });
+      const beam = el("span", { class: "flight-lane__beam" });
+      const directionLabel = el("span", { class: "flight-lane__direction mono" }, dir.toUpperCase());
+      const optionLabel = el("span", { class: "flight-lane__option mono" }, "");
+      btn.appendChild(beam);
+      btn.appendChild(directionLabel);
+      btn.appendChild(optionLabel);
       choicesWrap.appendChild(btn);
+      laneMeta.set(dir, { button: btn, label: optionLabel });
       return btn;
     });
+    const directionCycle = directionOrder.slice();
 
     content.appendChild(prompt);
     content.appendChild(choicesWrap);
@@ -200,6 +210,13 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
+    const stageShell = container.closest(".flight-stage");
+    const stageSwerveClasses = [
+      "flight-stage--swerve-left",
+      "flight-stage--swerve-right",
+      "flight-stage--swerve-up",
+    ];
+
     const setPrompt = (text, { status = false } = {}) => {
       const content = status ? String(text || "") : balanceQuestionText(text);
       prompt.textContent = content;
@@ -217,6 +234,7 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    let swerveTimer = null;
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -276,15 +294,55 @@ export default {
       });
     };
 
+    const directionsForQuestion = (questionIndex, optionCount) => {
+      if (!directionCycle.length || optionCount <= 0) return [];
+      const start = ((questionIndex % directionCycle.length) + directionCycle.length) % directionCycle.length;
+      const dirs = [];
+      for (let i = 0; i < optionCount; i += 1) {
+        dirs.push(directionCycle[(start + i) % directionCycle.length]);
+      }
+      return dirs;
+    };
+
     const renderChoices = () => {
       const current = triplet[idx] || {};
       const currentSelection = chosen[idx] || "";
-      choiceButtons.forEach((btn, i) => {
-        const option = current.options?.[i] || "";
-        btn.textContent = option;
-        const isSelected = option && currentSelection === option;
-        btn.classList.toggle("is-selected", isSelected);
-        btn.disabled = !option || published || submitting;
+      const options = Array.isArray(current.options) ? current.options : [];
+      const directions = directionsForQuestion(idx, options.length);
+
+      choiceButtons.forEach((btn) => {
+        const dir = btn.dataset.direction || "";
+        const lane = laneMeta.get(dir) || {};
+        if (lane.label) lane.label.textContent = "";
+        btn.dataset.optionIndex = "";
+        btn.dataset.optionValue = "";
+        btn.setAttribute("aria-label", `${dir.toUpperCase()} lane`);
+        btn.classList.remove("is-selected");
+        btn.classList.add("is-inactive");
+        btn.disabled = true;
+        btn.tabIndex = -1;
+      });
+
+      directions.forEach((dir, optionIndex) => {
+        const lane = laneMeta.get(dir);
+        if (!lane) return;
+        const option = options[optionIndex] || "";
+        const btn = lane.button;
+        const label = lane.label;
+        if (label) label.textContent = option;
+        btn.dataset.optionIndex = String(optionIndex);
+        btn.dataset.optionValue = option;
+        const available = Boolean(option);
+        btn.disabled = !available || published || submitting;
+        btn.tabIndex = available && !btn.disabled ? 0 : -1;
+        btn.classList.toggle("is-inactive", !available);
+        const selected = available && currentSelection === option;
+        btn.classList.toggle("is-selected", selected);
+        if (available) {
+          btn.setAttribute("aria-label", `${dir.toUpperCase()} lane: ${option}`);
+        } else {
+          btn.setAttribute("aria-label", `${dir.toUpperCase()} lane unavailable`);
+        }
       });
     };
 
@@ -508,28 +566,80 @@ export default {
       location.hash = hash;
     };
 
+    const triggerSwerve = (direction) => {
+      if (!stageShell || !direction) return;
+      stageSwerveClasses.forEach((cls) => stageShell.classList.remove(cls));
+      void stageShell.offsetWidth; // restart transition
+      const targetClass = `flight-stage--swerve-${direction}`;
+      if (stageSwerveClasses.includes(targetClass)) {
+        stageShell.classList.add(targetClass);
+      }
+      if (swerveTimer) clearTimeout(swerveTimer);
+      swerveTimer = setTimeout(() => {
+        stageSwerveClasses.forEach((cls) => stageShell.classList.remove(cls));
+        swerveTimer = null;
+      }, 620);
+    };
+
+    const handleLaneSelection = (btn, directionHint = "") => {
+      if (!btn) return;
+      if (triplet.length === 0) return;
+      if (published || submitting) return;
+      const text = btn.dataset.optionValue || "";
+      if (!text) return;
+      const currentIndex = idx;
+      chosen[currentIndex] = text;
+      choiceButtons.forEach((choiceBtn) => {
+        const isSame = choiceBtn === btn;
+        choiceBtn.classList.toggle("is-selected", isSame);
+        if (!isSame) choiceBtn.classList.remove("is-blinking");
+      });
+      btn.classList.add("is-blinking");
+      const swerveDirection = directionHint || btn.dataset.direction || "";
+      triggerSwerve(swerveDirection);
+      setTimeout(() => {
+        btn.classList.remove("is-blinking");
+      }, 900);
+      renderChoices();
+      renderSteps();
+      updateSubmitState();
+      scheduleAdvance(currentIndex);
+    };
+
     choiceButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
-        if (triplet.length === 0) return;
-        if (published || submitting) return;
-        const text = btn.textContent || "";
-        const currentIndex = idx;
-        if (!text) return;
-        chosen[currentIndex] = text;
-        choiceButtons.forEach((choiceBtn) => {
-          choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
-          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
-        });
-        btn.classList.add("is-blinking");
-        setTimeout(() => {
-          btn.classList.remove("is-blinking");
-        }, 900);
-        renderChoices();
-        renderSteps();
-        updateSubmitState();
-        scheduleAdvance(currentIndex);
+        handleLaneSelection(btn, btn.dataset.direction || "");
       });
     });
+
+    const directionKeyMap = {
+      ArrowLeft: "left",
+      ArrowRight: "right",
+      ArrowUp: "up",
+      a: "left",
+      A: "left",
+      d: "right",
+      D: "right",
+      w: "up",
+      W: "up",
+    };
+
+    const handleKeyDown = (event) => {
+      if (!alive) return;
+      const direction = directionKeyMap[event.key];
+      if (!direction) return;
+      if (event.repeat) return;
+      if (backOverlay.classList.contains("is-visible")) return;
+      if (choicesWrap.classList.contains("is-hidden")) return;
+      const lane = laneMeta.get(direction);
+      if (!lane) return;
+      const btn = lane.button;
+      if (!btn || btn.disabled || btn.classList.contains("is-inactive")) return;
+      event.preventDefault();
+      handleLaneSelection(btn, direction);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
 
     stepButtons.forEach((btn, i) => {
       btn.addEventListener("click", () => {
@@ -647,9 +757,17 @@ export default {
       alive = false;
       clearAdvanceTimer();
       clearSwapTimer();
+      if (swerveTimer) {
+        clearTimeout(swerveTimer);
+        swerveTimer = null;
+      }
+      if (stageShell) {
+        stageSwerveClasses.forEach((cls) => stageShell.classList.remove(cls));
+      }
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   },
 

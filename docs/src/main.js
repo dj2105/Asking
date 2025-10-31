@@ -253,6 +253,22 @@ async function mountRoute() {
 
   applyBackgroundDepth(actualRoute, qs);
 
+  const scene = document.createElement("div");
+  scene.className = "flight-scene";
+  const stars = document.createElement("div");
+  stars.className = "flight-scene__stars";
+  const trail = document.createElement("div");
+  trail.className = "flight-scene__trail";
+  const stage = document.createElement("div");
+  stage.className = "flight-stage";
+  const approach = document.createElement("div");
+  approach.className = "flight-stage__approach";
+  stage.appendChild(approach);
+  scene.appendChild(stars);
+  scene.appendChild(trail);
+  scene.appendChild(stage);
+  app.appendChild(scene);
+
   // Load and mount the view
   try {
     const mod = await importer();
@@ -262,7 +278,7 @@ async function mountRoute() {
       throw new Error(`[router] ${route}: missing mount() export`);
     }
 
-    await view.mount(app, Object.fromEntries(qs.entries()));
+    await view.mount(approach, Object.fromEntries(qs.entries()));
     current.mod = view;
     current.unmount = (typeof view.unmount === "function") ? view.unmount.bind(view) : null;
 
@@ -272,7 +288,7 @@ async function mountRoute() {
       const code = (qs.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
       if (code) {
         // Mount or update the strip at the top of the current view container
-        ScoreStrip.mount(app, { code });
+        ScoreStrip.mount(scene, { code });
       } else {
         // If no code present (edge case), hide to avoid stale display
         ScoreStrip.hide();
