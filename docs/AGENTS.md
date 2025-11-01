@@ -47,7 +47,12 @@ project-root/
 ├─ firestore.rules
 ├─ firebase.config             # injected at run/deploy; not committed
 └─ docs/
-   └─ pr-preview.md
+   ├─ index.html               # documentation microsite entry point (in-repo preview)
+   ├─ styles.css               # shared styling for documentation pages
+   ├─ documents/
+   │  └─ pr-preview.md         # persisted guidance for preparing preview deploy notes
+   ├─ packs/                   # static assets referenced from docs/index.html
+   └─ ops/                     # operational runbooks and supporting assets
 
 Keep new modules under /public/src/lib or /public/src/views. Use relative ESM imports.
 
