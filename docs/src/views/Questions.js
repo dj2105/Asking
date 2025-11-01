@@ -39,34 +39,40 @@ function balanceQuestionText(input = "") {
 function createPaletteApplier(hue, accentHue) {
   return (roundNumber = 1) => {
     const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
+    const inkLight = 18 + depth * 1.2;
+    const cardLight = 97 - depth * 1.6;
+    const accentSoftLight = 78 - depth * 1.4;
+    const accentStrongLight = Math.max(44, 56 - depth * 1.2);
     document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
+    document.documentElement.style.setProperty("--ink-s", "68%");
     document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
     document.documentElement.style.setProperty(
       "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
+      `hsla(${hue}, 32%, ${Math.min(cardLight - 26, 62).toFixed(1)}%, 0.78)`
     );
     document.documentElement.style.setProperty(
       "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
+      `hsla(${hue}, 36%, ${Math.max(inkLight + 4, 26).toFixed(1)}%, 0.24)`
     );
     document.documentElement.style.setProperty(
       "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
+      `hsla(${hue}, 34%, ${Math.min(cardLight, 98).toFixed(1)}%, 0.97)`
+    );
+    document.documentElement.style.setProperty(
+      "--card-outline",
+      `hsla(${hue}, 38%, ${Math.max(cardLight - 32, 32).toFixed(1)}%, 0.18)`
+    );
+    document.documentElement.style.setProperty(
+      "--card-highlight",
+      `hsla(${hue}, 62%, ${Math.min(cardLight + 8, 99).toFixed(1)}%, 0.22)`
     );
     document.documentElement.style.setProperty(
       "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
+      `hsla(${accentHue}, 88%, ${accentSoftLight.toFixed(1)}%, 0.24)`
     );
     document.documentElement.style.setProperty(
       "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
+      `hsl(${accentHue}, 88%, ${accentStrongLight.toFixed(1)}%)`
     );
   };
 }
