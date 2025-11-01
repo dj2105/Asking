@@ -97,6 +97,7 @@ export function mount(container, { code } = {}) {
   } else if (state.node.parentNode !== container) {
     container.prepend(state.node);
   }
+  document.body.classList.add("has-score-strip");
   bind(code);
 }
 
@@ -110,6 +111,7 @@ export function hide() {
   if (state.node && state.node.parentNode) {
     state.node.parentNode.removeChild(state.node);
   }
+  document.body.classList.remove("has-score-strip");
 }
 
 export default { mount, update, hide };
