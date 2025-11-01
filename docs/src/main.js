@@ -137,13 +137,8 @@ function applyBackgroundDepth(route, qs) {
   const clampedIndex = Math.max(0, Math.min(FINAL_STAGE_INDEX, index));
   const ratio = FINAL_STAGE_INDEX > 0 ? clampedIndex / FINAL_STAGE_INDEX : 0;
   const depth = Math.min(MAX_BG_DEPTH, ratio * MAX_BG_DEPTH);
-  const lightness = 96 - ratio * (96 - 20);
-  const saturation = 32 - ratio * 32;
-
   const root = document.documentElement;
   if (!root) return;
-  root.style.setProperty("--paper-l", `${lightness.toFixed(2)}%`);
-  root.style.setProperty("--paper-s", `${Math.max(0, saturation).toFixed(2)}%`);
   root.style.setProperty("--bg-depth", depth.toFixed(4));
 }
 
