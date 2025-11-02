@@ -21,6 +21,8 @@
   --ok: #4ade80;
   --bad: #f87171;
   --bg-depth: 0;
+  --score-strip-gap: 32px;
+  --score-strip-height: 0px;
 }
 
 html, body { height: 100%; }
@@ -35,27 +37,39 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
 #app {
   position: relative;
-  flex: 1;
   width: 100%;
-  min-height: 100vh;
-  padding: clamp(120px, 18vh, 220px) 24px 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 32px;
+  min-height: 100vh;
+  padding: 32px 24px;
 }
 
-body:not(.has-score-strip) #app {
-  padding-top: clamp(80px, 12vh, 160px);
+body.layout-centered {
+  overflow-y: hidden;
+  --center-padding: calc(var(--score-strip-gap, 32px) + var(--score-strip-height, 0px));
 }
 
-body.has-score-strip #app {
-  padding-top: clamp(120px, 18vh, 220px);
+body.layout-centered #app {
+  padding: var(--center-padding) 24px var(--center-padding);
+  justify-content: center;
+}
+
+body.layout-top {
+  overflow-y: auto;
+  --top-start-padding: calc(var(--score-strip-gap, 32px) + var(--score-strip-height, 0px) + var(--score-strip-gap, 32px));
+}
+
+body.layout-top #app {
+  padding: var(--top-start-padding) 24px max(96px, var(--score-strip-gap, 32px));
+  justify-content: flex-start;
 }
 
 /* View layout */
@@ -74,7 +88,6 @@ body.has-score-strip #app {
 .stage-center {
   position: relative;
   width: 100%;
-  min-height: clamp(360px, calc(100vh - 220px), 620px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -82,9 +95,22 @@ body.has-score-strip #app {
   gap: 28px;
 }
 
+body.layout-centered .stage-center {
+  min-height: clamp(320px, calc(100vh - (2 * var(--center-padding, 64px))), 620px);
+}
+
 .stage-center.stage-center--solo {
-  min-height: clamp(320px, calc(100vh - 220px), 560px);
   gap: 20px;
+}
+
+body.layout-centered .stage-center.stage-center--solo {
+  min-height: clamp(280px, calc(100vh - (2 * var(--center-padding, 64px))), 560px);
+}
+
+body.layout-top .stage-center {
+  align-items: center;
+  justify-content: flex-start;
+  min-height: auto;
 }
 
 .stage-center .card {

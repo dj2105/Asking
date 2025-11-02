@@ -62,6 +62,13 @@ function render() {
       <div class="score-strip__right">${rightHTML}</div>
     </div>
   `;
+
+  try {
+    const height = state.node.getBoundingClientRect().height;
+    if (Number.isFinite(height) && height >= 0 && document?.body) {
+      document.body.style.setProperty("--score-strip-height", `${Math.round(height)}px`);
+    }
+  } catch {}
 }
 
 async function bind(code) {
@@ -112,6 +119,9 @@ export function hide() {
     state.node.parentNode.removeChild(state.node);
   }
   document.body.classList.remove("has-score-strip");
+  try {
+    document.body?.style?.setProperty("--score-strip-height", "0px");
+  } catch {}
 }
 
 export default { mount, update, hide };
