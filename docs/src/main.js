@@ -208,8 +208,8 @@ function applyLayoutMode(route) {
   const topAligned = TOP_LAYOUT_ROUTES.has(route);
   body.classList.toggle("layout-top", topAligned);
   body.classList.toggle("layout-center", !topAligned);
-  body.classList.toggle("layout-scroll-lock", !topAligned);
-  if (root) root.classList.toggle("layout-scroll-lock", !topAligned);
+  if (root) root.classList.remove("layout-scroll-lock");
+  body.classList.remove("layout-scroll-lock");
   if (route) body.setAttribute("data-route", route);
   else body.removeAttribute("data-route");
 }
@@ -270,6 +270,20 @@ async function mountRoute() {
 
   applyBackgroundDepth(actualRoute, qs);
 
+  const stage = document.createElement("div");
+  stage.className = "route-stage";
+  app.appendChild(stage);
+
+  const wantsScoreStrip = !STRIP_EXCLUDE.has(actualRoute);
+  const codeParam = (qs.get("code") || "").toUpperCase();
+  const code = codeParam.replace(/[^A-Z0-9]/g, "").slice(0, 5);
+
+  if (wantsScoreStrip && code) {
+    ScoreStrip.mount(app, { code });
+  } else {
+    ScoreStrip.hide();
+  }
+
   // Load and mount the view
   try {
     const mod = await importer();
@@ -279,24 +293,12 @@ async function mountRoute() {
       throw new Error(`[router] ${route}: missing mount() export`);
     }
 
-    await view.mount(app, Object.fromEntries(qs.entries()));
+    await view.mount(stage, Object.fromEntries(qs.entries()));
     current.mod = view;
     current.unmount = (typeof view.unmount === "function") ? view.unmount.bind(view) : null;
 
-    // Conditionally mount the score strip (not in lobby/keyroom/seeding/final)
-    if (!STRIP_EXCLUDE.has(actualRoute)) {
-      // Prefer code from URL
-      const code = (qs.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
-      if (code) {
-        // Mount or update the strip at the top of the current view container
-        ScoreStrip.mount(app, { code });
-      } else {
-        // If no code present (edge case), hide to avoid stale display
-        ScoreStrip.hide();
-      }
-    } else {
-      // Explicitly hide for excluded routes
-      ScoreStrip.hide();
+    if (wantsScoreStrip && code) {
+      ScoreStrip.update({ code });
     }
 
     ScrollReset.reset(actualRoute, qs);
