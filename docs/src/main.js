@@ -197,6 +197,15 @@ let current = { route: "", mod: null, unmount: null };
 
 // Routes that should NOT show the score strip
 const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
+const TOP_LAYOUT_ROUTES = new Set(["keyroom", "award", "final"]);
+
+function applyLayoutMode(route) {
+  const body = document.body;
+  if (!body) return;
+  const useTop = TOP_LAYOUT_ROUTES.has(route);
+  body.classList.toggle("layout-top", useTop);
+  body.classList.toggle("layout-centered", !useTop);
+}
 
 // Map route -> dynamic import path
 const VIEW_MAP = {
@@ -252,6 +261,7 @@ async function mountRoute() {
   clearNode(app);
 
   applyBackgroundDepth(actualRoute, qs);
+  applyLayoutMode(actualRoute);
 
   // Load and mount the view
   try {
