@@ -30,6 +30,31 @@ const state = {
   roomData: null,
 };
 
+let resizeBound = false;
+
+function updateStripHeight() {
+  const body = document.body;
+  if (!body) return;
+  const height = state.node && state.node.isConnected
+    ? Math.round(state.node.getBoundingClientRect().height || 0)
+    : 0;
+  body.style.setProperty("--score-strip-height", `${height}px`);
+}
+
+function bindResizeListener() {
+  if (resizeBound) return;
+  if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
+  window.addEventListener("resize", updateStripHeight);
+  resizeBound = true;
+}
+
+function unbindResizeListener() {
+  if (!resizeBound) return;
+  if (typeof window === "undefined" || typeof window.removeEventListener !== "function") return;
+  window.removeEventListener("resize", updateStripHeight);
+  resizeBound = false;
+}
+
 function computeScores(roomData = {}) {
   const scores = roomData.scores || {};
   const hostRounds = scores.host || {};
@@ -62,6 +87,7 @@ function render() {
       <div class="score-strip__right">${rightHTML}</div>
     </div>
   `;
+  updateStripHeight();
 }
 
 async function bind(code) {
@@ -99,6 +125,8 @@ export function mount(container, { code } = {}) {
   }
   document.body.classList.add("has-score-strip");
   bind(code);
+  updateStripHeight();
+  bindResizeListener();
 }
 
 export function update({ code } = {}) {
@@ -112,6 +140,8 @@ export function hide() {
     state.node.parentNode.removeChild(state.node);
   }
   document.body.classList.remove("has-score-strip");
+  updateStripHeight();
+  unbindResizeListener();
 }
 
 export default { mount, update, hide };

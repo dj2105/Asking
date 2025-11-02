@@ -198,6 +198,9 @@ let current = { route: "", mod: null, unmount: null };
 // Routes that should NOT show the score strip
 const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
 
+const TOP_LAYOUT_ROUTES = new Set(["keyroom", "award", "final"]);
+const CENTER_LAYOUT_ROUTES = new Set(["lobby", "questions", "marking", "maths"]);
+
 // Map route -> dynamic import path
 const VIEW_MAP = {
   lobby:     () => import("./views/Lobby.js"),
@@ -241,6 +244,14 @@ async function mountRoute() {
   const importer = load || VIEW_MAP.lobby;
 
   console.log(`[router] mount ${actualRoute}`);
+
+  if (document && document.body) {
+    const topLayout = TOP_LAYOUT_ROUTES.has(actualRoute);
+    const centerLayout = CENTER_LAYOUT_ROUTES.has(actualRoute);
+    document.body.classList.toggle("layout-top", topLayout);
+    document.body.classList.toggle("layout-center", centerLayout);
+    document.body.classList.toggle("layout-scroll-lock", centerLayout);
+  }
 
   // Unmount old view (if any)
   if (typeof current?.unmount === "function") {

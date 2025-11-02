@@ -21,6 +21,10 @@
   --ok: #4ade80;
   --bad: #f87171;
   --bg-depth: 0;
+  --score-strip-gap: 32px;
+  --score-strip-height: 0px;
+  --score-strip-clear: calc(var(--score-strip-gap) + var(--score-strip-height));
+  --layout-top-offset: calc(var(--score-strip-clear) + var(--score-strip-gap));
 }
 
 html, body { height: 100%; }
@@ -42,20 +46,29 @@ body {
   flex: 1;
   width: 100%;
   min-height: 100vh;
-  padding: clamp(120px, 18vh, 220px) 24px 64px;
+  padding: var(--score-strip-gap) 24px max(var(--score-strip-gap), 72px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 32px;
 }
 
-body:not(.has-score-strip) #app {
-  padding-top: clamp(80px, 12vh, 160px);
+body.layout-scroll-lock {
+  overflow-y: hidden;
 }
 
-body.has-score-strip #app {
-  padding-top: clamp(120px, 18vh, 220px);
+body.layout-center #app {
+  min-height: max(0px, calc(100vh - var(--score-strip-clear) - var(--score-strip-gap)));
+  padding-top: var(--score-strip-clear);
+  padding-bottom: var(--score-strip-gap);
+  justify-content: center;
+}
+
+body.layout-top #app {
+  padding-top: var(--layout-top-offset);
+  padding-bottom: max(var(--score-strip-gap), 120px);
+  justify-content: flex-start;
 }
 
 /* View layout */
@@ -74,16 +87,16 @@ body.has-score-strip #app {
 .stage-center {
   position: relative;
   width: 100%;
-  min-height: clamp(360px, calc(100vh - 220px), 620px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 28px;
+  min-height: min(620px, max(240px, calc(100vh - var(--score-strip-clear) - var(--score-strip-gap))));
 }
 
 .stage-center.stage-center--solo {
-  min-height: clamp(320px, calc(100vh - 220px), 560px);
+  min-height: min(560px, max(220px, calc(100vh - var(--score-strip-clear) - var(--score-strip-gap))));
   gap: 20px;
 }
 
