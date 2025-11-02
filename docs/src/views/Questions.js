@@ -22,6 +22,9 @@ import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
+const DEFAULT_HEADING = "QUESTIONS";
+const JEMIMA_HEADING = "JEMIMA";
+
 function balanceQuestionText(input = "") {
   const raw = String(input || "").replace(/\s+/g, " ").trim();
   if (!raw) return "";
@@ -153,7 +156,7 @@ export default {
 
     const root = el("div", { class: "view view-questions stage-center" });
     const panel = el("div", { class: "round-panel" });
-    const heading = el("h2", { class: "round-panel__heading mono" }, "QUESTIONS");
+    const heading = el("h2", { class: "round-panel__heading mono" }, DEFAULT_HEADING);
 
     const steps = el("div", { class: "round-panel__steps" });
     const stepButtons = [0, 1, 2].map((i) => {
@@ -172,6 +175,11 @@ export default {
 
     const content = el("div", { class: "round-panel__content" });
     const prompt = el("div", { class: "round-panel__question mono" }, "");
+    const statusNote = el(
+      "div",
+      { class: "round-panel__status-note mono is-hidden" },
+      ""
+    );
     const choicesWrap = el("div", { class: "round-panel__choices" });
     const choiceButtons = [0, 1].map(() => {
       const btn = el(
@@ -184,6 +192,7 @@ export default {
     });
 
     content.appendChild(prompt);
+    content.appendChild(statusNote);
     content.appendChild(choicesWrap);
 
     const readyBtn = el(
@@ -225,11 +234,30 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
-    const setPrompt = (text, { status = false } = {}) => {
+    const setPrompt = (text, { status = false, variant = "question" } = {}) => {
       const displayText = status ? String(text || "") : balanceQuestionText(text);
       prompt.textContent = displayText;
+      const isClue = !status && variant === "clue";
       prompt.classList.toggle("round-panel__question--status", status);
+      prompt.classList.toggle("round-panel__question--clue", isClue);
       content.classList.toggle("round-panel__content--status", status);
+      content.classList.toggle("round-panel__content--comment", isClue);
+    };
+
+    const showStatusNote = (text) => {
+      statusNote.textContent = text || "";
+      statusNote.classList.remove("is-hidden");
+    };
+
+    const hideStatusNote = () => {
+      statusNote.textContent = "";
+      if (!statusNote.classList.contains("is-hidden")) {
+        statusNote.classList.add("is-hidden");
+      }
+    };
+
+    const setHeading = (value = DEFAULT_HEADING) => {
+      heading.textContent = value;
     };
 
     const setChoicesVisible = (visible) => {
@@ -336,6 +364,8 @@ export default {
         readyBtn.classList.add("btn-ready");
       }
       readyBtn.classList.remove("throb");
+      hideStatusNote();
+      setHeading(DEFAULT_HEADING);
     };
 
     const getClueText = () => {
@@ -347,7 +377,9 @@ export default {
       if (published || submitting) return;
       showingClue = true;
       const render = () => {
-        setPrompt(getClueText(), { status: false });
+        setHeading(DEFAULT_HEADING);
+        setPrompt(getClueText(), { status: false, variant: "clue" });
+        hideStatusNote();
         setChoicesVisible(false);
         readyBtn.style.display = "";
         readyBtn.disabled = false;
@@ -380,7 +412,9 @@ export default {
       hideReadyPrompt();
       const render = () => {
         const current = triplet[idx] || {};
-        setPrompt(current.question || "", { status: false });
+        setHeading(DEFAULT_HEADING);
+        setPrompt(current.question || "", { status: false, variant: "question" });
+        hideStatusNote();
         setChoicesVisible(true);
         choiceButtons.forEach((btn) => {
           btn.classList.remove("is-blinking");
@@ -422,9 +456,12 @@ export default {
 
     const showWaitingPrompt = () => {
       showingClue = false;
-      setPrompt(waitingLabel, { status: true });
+      const clueText = getClueText();
+      setHeading(JEMIMA_HEADING);
+      setPrompt(clueText, { status: false, variant: "clue" });
+      showStatusNote(waitingLabel);
       setChoicesVisible(false);
-      readyBtn.style.display = "";
+      readyBtn.style.display = "none";
       readyBtn.disabled = true;
       readyBtn.textContent = waitingLabel;
       readyBtn.classList.remove("btn-ready");
@@ -464,7 +501,9 @@ export default {
     const setLoadingState = (text) => {
       hideReadyPrompt();
       pauseRoundTimer(timerContext);
+      setHeading(DEFAULT_HEADING);
       setPrompt(text, { status: true });
+      hideStatusNote();
       setChoicesVisible(false);
       renderSteps();
     };
@@ -589,6 +628,15 @@ export default {
         const text = btn.textContent || "";
         const currentIndex = idx;
         if (!text) return;
+        const alreadySelected = chosen[currentIndex] === text;
+        if (alreadySelected) {
+          chosen[currentIndex] = "";
+          btn.classList.remove("is-blinking");
+          btn.classList.remove("is-blinking-fast");
+          renderChoices();
+          renderSteps();
+          return;
+        }
         chosen[currentIndex] = text;
         choiceButtons.forEach((choiceBtn) => {
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
