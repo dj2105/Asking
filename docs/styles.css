@@ -329,6 +329,7 @@ body.layout-top .stage-center.stage-center--solo {
   flex-direction: column;
   gap: 16px;
 }
+.round-panel__steps.is-hidden { display: none; }
 
 .round-panel__choices.is-hidden {
   display: none;
@@ -725,6 +726,16 @@ input[type="number"]:focus,
 .btn:hover { transform: translateY(-3px); box-shadow: 0 32px 60px rgba(79, 70, 229, 0.45); }
 .btn:active { transform: translateY(-1px); filter: brightness(1.02); }
 .btn:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.btn.ready-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+  box-shadow: 0 24px 46px rgba(21, 128, 61, 0.38);
+}
+.btn.ready-btn:hover:not(:disabled) {
+  box-shadow: 0 32px 60px rgba(22, 163, 74, 0.45);
+}
+.btn.ready-btn:active:not(:disabled) {
+  filter: brightness(1.05);
+}
 
 .btn.outline {
   background: #ffffff;
