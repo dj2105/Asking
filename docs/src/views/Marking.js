@@ -115,13 +115,20 @@ function createPaletteApplier(hue, accentHue) {
       "--card",
       `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
     );
+    const accentSoft = `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`;
+    const accentStrong = `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`;
+    const accentRingLight = Math.max(16, accentStrongLight - 12);
+    const accentInkLight = Math.max(12, Math.min(34, accentStrongLight - 10));
+    document.documentElement.style.setProperty("--accent-soft", accentSoft);
+    document.documentElement.style.setProperty("--accent-strong", accentStrong);
+    document.documentElement.style.setProperty("--accent", accentStrong);
     document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
+      "--accent-ring",
+      `hsl(${accentHue}, 54%, ${accentRingLight.toFixed(1)}%)`
     );
     document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
+      "--accent-ink",
+      `hsl(${accentHue}, 32%, ${accentInkLight.toFixed(1)}%)`
     );
   };
 }
