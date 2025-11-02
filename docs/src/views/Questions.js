@@ -3,8 +3,8 @@
 // Questions phase — floating award-style card with stepped navigation.
 // • Shows player’s three questions one at a time inside a centred panel.
 // • Selecting an option holds the highlight for 0.5s, then auto-advances to the next unanswered question.
-// • Once all three are answered the Submit button activates (styled like Award continue button).
-// • Submission writes answers.{role}.{round} = [{ chosen }, …] and timestamps.updatedAt.
+// • After all three answers are locked the panel swaps to Jemima’s clue with a throbbing READY button.
+// • READY publishes answers.{role}.{round} = [{ chosen }, …], sets submitted.{role}.{round}, and timestamps.updatedAt.
 // • Back navigation is guarded; attempting to leave prompts a Return to Lobby confirmation.
 
 import { ensureAuth, db } from "../lib/firebase.js";
@@ -21,6 +21,37 @@ import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
+
+const normaliseClue = (value) => {
+  if (typeof value === "string") return value.trim();
+  return "";
+};
+
+const clueFromMap = (map, round) => {
+  if (!map || typeof map !== "object") return "";
+  const direct = map[round];
+  return normaliseClue(direct);
+};
+
+const clueFromArray = (arr, round) => {
+  if (!Array.isArray(arr)) return "";
+  const idx = round - 1;
+  if (idx < 0 || idx >= arr.length) return "";
+  return normaliseClue(arr[idx]);
+};
+
+function resolveRoundClue(roomData = {}, fallbackMaths = {}, round = 1) {
+  const direct = clueFromMap(roomData.clues, round);
+  if (direct) return direct;
+
+  const fromMaths = clueFromArray(roomData.maths?.clues, round);
+  if (fromMaths) return fromMaths;
+
+  const fromFallback = clueFromArray(fallbackMaths?.clues, round);
+  if (fromFallback) return fromFallback;
+
+  return "";
+}
 
 function balanceQuestionText(input = "") {
   const raw = String(input || "").replace(/\s+/g, " ").trim();
@@ -161,20 +192,20 @@ export default {
     content.appendChild(prompt);
     content.appendChild(choicesWrap);
 
-    const submitBtn = el(
+    const readyBtn = el(
       "button",
       {
-        class: "btn round-panel__submit mono",
+        class: "btn round-panel__submit round-panel__ready mono",
         type: "button",
-        disabled: "disabled",
       },
-      "SUBMIT"
+      "READY"
     );
+    readyBtn.style.display = "none";
 
     panel.appendChild(heading);
     panel.appendChild(steps);
     panel.appendChild(content);
-    panel.appendChild(submitBtn);
+    panel.appendChild(readyBtn);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -215,8 +246,14 @@ export default {
     let triplet = [];
     let published = false;
     let submitting = false;
+    let readyMode = false;
+    let readyClicked = false;
     let advanceTimer = null;
     let swapTimer = null;
+    let draftSyncTimer = null;
+    let draftPending = false;
+    let latestRoomData = {};
+    let fallbackMaths = {};
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -269,10 +306,11 @@ export default {
 
     const renderSteps = () => {
       refreshStepLabels();
+      const disableSteps = triplet.length === 0 || submitting || published || readyClicked;
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
-        btn.disabled = triplet.length === 0 || published || submitting;
+        btn.disabled = disableSteps;
       });
     };
 
@@ -284,35 +322,99 @@ export default {
         btn.textContent = option;
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
-        btn.disabled = !option || published || submitting;
+        btn.disabled = !option || submitting || published || readyClicked;
       });
     };
 
-    const updateSubmitState = () => {
-      const answeredCount = chosen.filter((value) => value).length;
-      const allAnswered = triplet.length > 0 && answeredCount >= triplet.length;
-      const ready = allAnswered && !published && !submitting;
-      submitBtn.disabled = !ready;
-      submitBtn.classList.toggle("round-panel__submit--ready", ready);
-      submitBtn.classList.toggle("throb", ready);
-      if (!ready) {
-        submitBtn.classList.remove("round-panel__submit--ready");
-        submitBtn.classList.remove("throb");
+    const answeredCount = () => chosen.filter((value) => value).length;
+    const allAnswered = () => triplet.length > 0 && answeredCount() >= triplet.length;
+
+    const hideReadyButton = () => {
+      readyBtn.style.display = "none";
+      readyBtn.classList.remove("throb");
+      readyBtn.classList.remove("round-panel__ready--armed");
+      readyBtn.disabled = false;
+    };
+
+    const armReadyButton = () => {
+      readyBtn.textContent = "READY";
+      readyBtn.disabled = false;
+      readyBtn.style.display = "";
+      readyBtn.classList.add("throb");
+      readyBtn.classList.add("round-panel__ready--armed");
+    };
+
+    const showWaitingStatus = () => {
+      readyMode = false;
+      hideReadyButton();
+      steps.classList.add("is-hidden");
+      setPrompt(waitingLabel, { status: true });
+      setChoicesVisible(false);
+      clearAdvanceTimer();
+      pauseRoundTimer(timerContext);
+    };
+
+    const showClueScreen = () => {
+      readyMode = true;
+      if (readyClicked || published) {
+        showWaitingStatus();
+        return;
       }
-      if (!published) {
-        submitBtn.textContent = "SUBMIT";
+      const clueText = resolveRoundClue(latestRoomData, fallbackMaths, effectiveRound()) || "";
+      setPrompt(clueText, { status: false });
+      setChoicesVisible(false);
+      steps.classList.remove("is-hidden");
+      armReadyButton();
+      renderSteps();
+      pauseRoundTimer(timerContext);
+    };
+
+    const exitClueScreen = () => {
+      readyMode = false;
+      hideReadyButton();
+      steps.classList.remove("is-hidden");
+      setChoicesVisible(true);
+    };
+
+    const clearDraftTimer = () => {
+      if (draftSyncTimer) {
+        clearTimeout(draftSyncTimer);
+        draftSyncTimer = null;
+      }
+      draftPending = false;
+    };
+
+    const syncDraft = async () => {
+      if (published || submitting || !triplet.length) return;
+      draftPending = false;
+      const payload = triplet.map((entry, i) => ({
+        question: entry.question || "",
+        chosen: chosen[i] || "",
+        correct: entry.correct || "",
+      }));
+      try {
+        await updateDoc(rRef, {
+          [`answers.${myRole}.${round}`]: payload,
+          "timestamps.updatedAt": serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn("[questions] draft sync failed:", err);
       }
     };
 
-    const highlightSubmitIfReady = () => {
-      const answeredCount = chosen.filter((value) => value).length;
-      if (triplet.length > 0 && answeredCount >= triplet.length && !published && !submitting) {
-        submitBtn.classList.add("round-panel__submit--ready");
-        submitBtn.classList.add("throb");
-      }
+    const scheduleDraftSync = () => {
+      if (published || submitting || !triplet.length) return;
+      draftPending = true;
+      if (draftSyncTimer) return;
+      draftSyncTimer = setTimeout(() => {
+        draftSyncTimer = null;
+        if (!draftPending) return;
+        syncDraft();
+      }, 250);
     };
 
     const showQuestion = (targetIdx, { animate = true } = {}) => {
+      exitClueScreen();
       if (triplet.length === 0) return;
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
@@ -324,7 +426,6 @@ export default {
         choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
-        highlightSubmitIfReady();
       };
       if (animate) animateSwap(render);
       else render();
@@ -349,23 +450,19 @@ export default {
         const next = findNextUnanswered(currentIndex);
         if (next !== null && next !== undefined) {
           showQuestion(next, { animate: true });
-        } else if (triplet.length > 0) {
-          showQuestion(triplet.length - 1, { animate: true });
+        } else if (allAnswered()) {
+          showClueScreen();
         }
-        highlightSubmitIfReady();
       }, 700);
     };
 
-    const showWaitingPrompt = () => {
-      setPrompt(waitingLabel, { status: true });
-      setChoicesVisible(false);
-      clearAdvanceTimer();
-    };
 
     const rRef = roomRef(code);
 
     const roomSnap0 = await getDoc(rRef);
     const room0 = roomSnap0.data() || {};
+    latestRoomData = room0;
+    fallbackMaths = room0.maths || {};
     if (!round) {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
@@ -389,10 +486,12 @@ export default {
 
     const setLoadingState = (text) => {
       pauseRoundTimer(timerContext);
+      readyMode = false;
+      hideReadyButton();
+      steps.classList.remove("is-hidden");
       setPrompt(text, { status: true });
       setChoicesVisible(false);
       renderSteps();
-      updateSubmitState();
     };
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
@@ -448,24 +547,27 @@ export default {
       }
     }
 
+    const questionsReady = triplet.every((entry) => entry.question && entry.options?.length === 2);
+
     if (submittedAlready) {
       published = true;
-      submitBtn.disabled = true;
-      submitBtn.textContent = waitingLabel;
-      showWaitingPrompt();
+      readyClicked = true;
+      showWaitingStatus();
       renderSteps();
       renderChoices();
       pauseRoundTimer(timerContext);
-    } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
-      showQuestion(0, { animate: false });
-      updateSubmitState();
+    } else if (questionsReady) {
+      if (allAnswered()) {
+        showClueScreen();
+      } else {
+        showQuestion(0, { animate: false });
+      }
     } else {
       setLoadingState("Preparing questions…");
     }
 
     renderSteps();
     renderChoices();
-    updateSubmitState();
 
     const showBackConfirm = () => {
       backOverlay.classList.add("is-visible");
@@ -526,7 +628,7 @@ export default {
         }, 900);
         renderChoices();
         renderSteps();
-        updateSubmitState();
+        scheduleDraftSync();
         scheduleAdvance(currentIndex);
       });
     });
@@ -539,19 +641,16 @@ export default {
         showQuestion(i, { animate: true });
         renderChoices();
         renderSteps();
-        updateSubmitState();
       });
     });
 
-    submitBtn.addEventListener("click", async () => {
-      if (published || submitting) return;
-      const answeredCount = chosen.filter((value) => value).length;
-      if (answeredCount < triplet.length) return;
-      const revertIdx = idx;
+    readyBtn.addEventListener("click", async () => {
+      if (published || submitting || readyClicked) return;
+      if (!allAnswered()) return;
+      clearDraftTimer();
+      readyClicked = true;
       submitting = true;
-      updateSubmitState();
-      submitBtn.textContent = "SUBMITTING…";
-      showWaitingPrompt();
+      showWaitingStatus();
       renderSteps();
 
       const payload = triplet.map((entry, i) => ({
@@ -571,25 +670,34 @@ export default {
         await updateDoc(rRef, patch);
         published = true;
         submitting = false;
-        submitBtn.disabled = true;
-        submitBtn.textContent = waitingLabel;
-        showWaitingPrompt();
-        renderSteps();
         renderChoices();
-        updateSubmitState();
         pauseRoundTimer(timerContext);
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
-        submitBtn.textContent = "SUBMIT";
-        showQuestion(revertIdx, { animate: false });
-        updateSubmitState();
+        readyClicked = false;
+        showClueScreen();
+        renderSteps();
+        renderChoices();
         resumeRoundTimer(timerContext);
       }
     });
 
     const stopWatcherRef = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
+      if (data.maths) {
+        fallbackMaths = data.maths;
+      } else if (fallbackMaths) {
+        data.maths = fallbackMaths;
+      }
+      latestRoomData = data;
+      if (readyMode && !readyClicked && allAnswered()) {
+        const clueBefore = prompt.textContent;
+        showClueScreen();
+        if (prompt.textContent !== clueBefore) {
+          renderSteps();
+        }
+      }
 
       const nextRound = Number(data.round) || round;
       if (nextRound !== round) {
@@ -615,11 +723,9 @@ export default {
       }
 
       if (published && alive) {
-        showWaitingPrompt();
+        showWaitingStatus();
         renderSteps();
         renderChoices();
-        submitBtn.disabled = true;
-        submitBtn.textContent = waitingLabel;
       }
 
       if (myRole === "host" && data.state === "questions") {
@@ -647,6 +753,7 @@ export default {
       alive = false;
       clearAdvanceTimer();
       clearSwapTimer();
+      clearDraftTimer();
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);

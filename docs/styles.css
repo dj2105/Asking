@@ -256,6 +256,10 @@ body.layout-top .stage-center.stage-center--solo {
   gap: 14px;
 }
 
+.round-panel__steps.is-hidden {
+  display: none;
+}
+
 .round-panel__step {
   flex: 1;
   border-radius: 999px;
@@ -426,6 +430,19 @@ body.layout-top .stage-center.stage-center--solo {
 
 .round-panel__submit.round-panel__submit--ready {
   box-shadow: 0 16px 34px rgba(14, 26, 48, 0.2);
+}
+
+.round-panel__ready {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+  box-shadow: 0 24px 46px rgba(34, 197, 94, 0.35);
+}
+
+.round-panel__ready:hover:not(:disabled) {
+  box-shadow: 0 32px 60px rgba(34, 197, 94, 0.45);
+}
+
+.round-panel__ready.round-panel__ready--armed {
+  box-shadow: 0 16px 34px rgba(34, 197, 94, 0.32);
 }
 
 .round-panel__submit:disabled {
