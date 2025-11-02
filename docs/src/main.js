@@ -100,6 +100,8 @@ const FINAL_STAGE_INDEX =
   PRE_STAGE_ROUTES.length + GAME_ROUNDS * ROUND_STAGE_ROUTES.length + POST_STAGE_ROUTES.length - 1;
 const MAX_BG_DEPTH = 0.8;
 
+const TOP_ALIGNED_ROUTES = new Set(["keyroom", "award", "final"]);
+
 function clampRoundIndex(raw) {
   const num = Number(raw);
   if (!Number.isFinite(num) || num <= 0) return 1;
@@ -198,6 +200,105 @@ let current = { route: "", mod: null, unmount: null };
 // Routes that should NOT show the score strip
 const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
 
+let centerFrame = 0;
+let centerObserver = null;
+let centerObservedView = null;
+
+function resetCenteredView() {
+  if (!app) return;
+  const view = app.querySelector(".view");
+  if (!view) return;
+  view.style.position = "";
+  view.style.left = "";
+  view.style.top = "";
+  view.style.transform = "";
+  view.style.margin = "";
+  if (centerObserver) {
+    centerObserver.disconnect();
+    centerObserver = null;
+  }
+  centerObservedView = null;
+}
+
+function applyLayoutMode(route) {
+  const body = document.body;
+  if (!body) return;
+  const centered = !TOP_ALIGNED_ROUTES.has(route);
+  body.classList.toggle("layout-centered", centered);
+  body.classList.toggle("layout-top", !centered);
+  body.classList.toggle("layout-scroll-lock", centered);
+  if (!centered) resetCenteredView();
+}
+
+function readMetric(styles, name) {
+  if (!styles) return 0;
+  const raw = styles.getPropertyValue(name);
+  if (!raw) return 0;
+  const num = parseFloat(raw);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function centerActiveView() {
+  centerFrame = 0;
+  if (!document.body.classList.contains("layout-centered")) return;
+  if (!app) return;
+  const view = app.querySelector(".view");
+  if (!view) return;
+
+  const docEl = document.documentElement;
+  const computed = docEl ? getComputedStyle(docEl) : null;
+  const topGap = readMetric(computed, "--score-strip-top-gap");
+  const stripHeight = readMetric(computed, "--score-strip-height");
+  const clearance = readMetric(computed, "--score-strip-clearance") || topGap * 2 + stripHeight;
+  const hasStrip = document.body.classList.contains("has-score-strip");
+
+  const viewportHeight = Math.max(window.innerHeight || 0, docEl?.clientHeight || 0);
+  if (viewportHeight <= 0) return;
+
+  const rect = view.getBoundingClientRect();
+  const viewHeight = rect.height;
+  const naturalTop = (viewportHeight - viewHeight) / 2;
+  const minTopBase = hasStrip ? clearance : topGap;
+  const minTop = Math.max(0, minTopBase);
+  const maxTop = Math.max(minTop, viewportHeight - viewHeight);
+  const top = Math.min(Math.max(minTop, naturalTop), maxTop);
+
+  view.style.position = "relative";
+  view.style.left = "";
+  view.style.top = `${top}px`;
+  view.style.transform = "";
+  view.style.margin = "0 auto";
+}
+
+function queueCentering() {
+  if (!document.body.classList.contains("layout-centered")) {
+    resetCenteredView();
+    if (centerFrame) {
+      cancelAnimationFrame(centerFrame);
+      centerFrame = 0;
+    }
+    return;
+  }
+  if (typeof ResizeObserver === "function") {
+    const view = app?.querySelector(".view");
+    if (view) {
+      if (!centerObserver) {
+        centerObserver = new ResizeObserver(() => queueCentering());
+      }
+      if (centerObservedView !== view) {
+        centerObserver.disconnect();
+        centerObserver.observe(view);
+        centerObservedView = view;
+      }
+    }
+  }
+  if (centerFrame) cancelAnimationFrame(centerFrame);
+  centerFrame = requestAnimationFrame(centerActiveView);
+}
+
+window.addEventListener("resize", queueCentering);
+window.addEventListener("score-strip:layout", queueCentering);
+
 // Map route -> dynamic import path
 const VIEW_MAP = {
   lobby:     () => import("./views/Lobby.js"),
@@ -242,6 +343,8 @@ async function mountRoute() {
 
   console.log(`[router] mount ${actualRoute}`);
 
+  applyLayoutMode(actualRoute);
+
   // Unmount old view (if any)
   if (typeof current?.unmount === "function") {
     try { await current.unmount(); } catch {}
@@ -283,6 +386,7 @@ async function mountRoute() {
     }
 
     ScrollReset.reset(actualRoute, qs);
+    queueCentering();
   } catch (e) {
     // Hard failure: show a tiny crash card (keeps UX within visual language)
     console.error("[router] mount failed:", e);
@@ -293,6 +397,7 @@ async function mountRoute() {
         <div class="mono small" style="opacity:.8">Try going back to the lobby.</div>
       </div></div>`;
     ScrollReset.reset(actualRoute, qs);
+    queueCentering();
   }
 }
 
