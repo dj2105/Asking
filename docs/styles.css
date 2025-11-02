@@ -21,6 +21,10 @@
   --ok: #4ade80;
   --bad: #f87171;
   --bg-depth: 0;
+  --layout-pad-base: clamp(80px, 12vh, 160px);
+  --score-strip-gap: 32px;
+  --score-strip-fallback-height: 72px;
+  --score-strip-clearance: calc(var(--score-strip-gap) * 2 + var(--score-strip-fallback-height));
 }
 
 html, body { height: 100%; }
@@ -35,6 +39,27 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  --layout-pad-top: var(--layout-pad-base);
+  --layout-pad-bottom: var(--layout-pad-base);
+}
+
+body.layout-center {
+  --layout-pad-top: var(--score-strip-clearance);
+  --layout-pad-bottom: var(--score-strip-clearance);
+}
+
+body.has-score-strip,
+body.layout-top {
+  --layout-pad-top: var(--score-strip-clearance);
+}
+
+body.layout-top {
+  --layout-pad-bottom: clamp(72px, 12vh, 140px);
+}
+
+html.layout-scroll-lock,
+body.layout-scroll-lock {
+  overflow: hidden;
 }
 
 #app {
@@ -42,20 +67,21 @@ body {
   flex: 1;
   width: 100%;
   min-height: 100vh;
-  padding: clamp(120px, 18vh, 220px) 24px 64px;
+  padding: var(--layout-pad-top) 24px var(--layout-pad-bottom);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 32px;
+  overflow: visible;
 }
 
-body:not(.has-score-strip) #app {
-  padding-top: clamp(80px, 12vh, 160px);
+body.layout-center #app {
+  justify-content: center;
 }
 
-body.has-score-strip #app {
-  padding-top: clamp(120px, 18vh, 220px);
+body.layout-scroll-lock #app {
+  overflow: hidden;
 }
 
 /* View layout */
@@ -69,22 +95,36 @@ body.has-score-strip #app {
   justify-content: center;
   gap: 28px;
   position: relative;
+  flex: 1 0 auto;
+  min-height: max(0px, calc(100vh - var(--layout-pad-top) - var(--layout-pad-bottom)));
+}
+
+body.layout-top .view {
+  justify-content: flex-start;
+  min-height: 0;
 }
 
 .stage-center {
   position: relative;
   width: 100%;
-  min-height: clamp(360px, calc(100vh - 220px), 620px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 28px;
+  flex: 1 0 auto;
+}
+
+body.layout-top .stage-center {
+  justify-content: flex-start;
 }
 
 .stage-center.stage-center--solo {
-  min-height: clamp(320px, calc(100vh - 220px), 560px);
   gap: 20px;
+}
+
+body.layout-top .stage-center.stage-center--solo {
+  justify-content: flex-start;
 }
 
 .stage-center .card {
