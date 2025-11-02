@@ -161,20 +161,27 @@ export default {
     content.appendChild(prompt);
     content.appendChild(choicesWrap);
 
-    const submitBtn = el(
+    const readyWrap = el("div", { class: "round-panel__ready is-hidden" });
+    const readyBtn = el(
       "button",
       {
-        class: "btn round-panel__submit mono",
+        class: "btn btn-ready round-panel__submit mono",
         type: "button",
-        disabled: "disabled",
       },
-      "SUBMIT"
+      "READY"
     );
+    const waitingNote = el(
+      "div",
+      { class: "round-panel__waiting mono is-hidden" },
+      ""
+    );
+    readyWrap.appendChild(readyBtn);
+    readyWrap.appendChild(waitingNote);
 
     panel.appendChild(heading);
     panel.appendChild(steps);
     panel.appendChild(content);
-    panel.appendChild(submitBtn);
+    panel.appendChild(readyWrap);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -267,13 +274,19 @@ export default {
       }, 140);
     };
 
+    let viewMode = "question";
+    let roundClue = "";
+
     const renderSteps = () => {
       refreshStepLabels();
+      const disableSteps =
+        triplet.length === 0 || submitting || published || viewMode === "waiting";
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
-        btn.disabled = triplet.length === 0 || published || submitting;
+        btn.disabled = disableSteps;
       });
+      steps.classList.toggle("is-hidden", viewMode === "waiting");
     };
 
     const renderChoices = () => {
@@ -284,39 +297,51 @@ export default {
         btn.textContent = option;
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
-        btn.disabled = !option || published || submitting;
+        btn.disabled = !option || published || submitting || viewMode === "waiting";
       });
     };
 
-    const updateSubmitState = () => {
-      const answeredCount = chosen.filter((value) => value).length;
-      const allAnswered = triplet.length > 0 && answeredCount >= triplet.length;
-      const ready = allAnswered && !published && !submitting;
-      submitBtn.disabled = !ready;
-      submitBtn.classList.toggle("round-panel__submit--ready", ready);
-      submitBtn.classList.toggle("throb", ready);
-      if (!ready) {
-        submitBtn.classList.remove("round-panel__submit--ready");
-        submitBtn.classList.remove("throb");
+    const setViewMode = (mode, { force = false } = {}) => {
+      if (!force && viewMode === mode) return;
+      viewMode = mode;
+      if (mode === "question") {
+        readyWrap.classList.add("is-hidden");
+        readyBtn.classList.remove("throb");
+        readyBtn.classList.remove("is-hidden");
+        readyBtn.disabled = false;
+        waitingNote.classList.add("is-hidden");
+        steps.classList.remove("is-hidden");
+        setChoicesVisible(true);
+      } else if (mode === "review") {
+        readyWrap.classList.remove("is-hidden");
+        readyBtn.classList.remove("is-hidden");
+        readyBtn.disabled = false;
+        readyBtn.classList.add("throb");
+        waitingNote.classList.add("is-hidden");
+        steps.classList.remove("is-hidden");
+        setChoicesVisible(false);
+        setPrompt(roundClue || "", { status: false });
+      } else if (mode === "waiting") {
+        readyWrap.classList.remove("is-hidden");
+        readyBtn.classList.add("is-hidden");
+        readyBtn.classList.remove("throb");
+        waitingNote.textContent = waitingLabel;
+        waitingNote.classList.remove("is-hidden");
+        steps.classList.add("is-hidden");
+        setChoicesVisible(false);
+        setPrompt(waitingLabel, { status: true });
       }
-      if (!published) {
-        submitBtn.textContent = "SUBMIT";
-      }
+      renderSteps();
     };
 
-    const highlightSubmitIfReady = () => {
-      const answeredCount = chosen.filter((value) => value).length;
-      if (triplet.length > 0 && answeredCount >= triplet.length && !published && !submitting) {
-        submitBtn.classList.add("round-panel__submit--ready");
-        submitBtn.classList.add("throb");
-      }
-    };
+    const allAnswered = () => triplet.length > 0 && chosen.every((value) => value);
 
     const showQuestion = (targetIdx, { animate = true } = {}) => {
       if (triplet.length === 0) return;
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
+      setViewMode("question", { force: true });
       const render = () => {
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
@@ -324,7 +349,6 @@ export default {
         choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
-        highlightSubmitIfReady();
       };
       if (animate) animateSwap(render);
       else render();
@@ -346,19 +370,22 @@ export default {
       advanceTimer = setTimeout(() => {
         advanceTimer = null;
         if (!alive || submitting || published) return;
-        const next = findNextUnanswered(currentIndex);
-        if (next !== null && next !== undefined) {
-          showQuestion(next, { animate: true });
-        } else if (triplet.length > 0) {
-          showQuestion(triplet.length - 1, { animate: true });
+        if (allAnswered()) {
+          setViewMode("review", { force: true });
+        } else {
+          const next = findNextUnanswered(currentIndex);
+          if (next !== null && next !== undefined) {
+            showQuestion(next, { animate: true });
+          } else if (triplet.length > 0) {
+            showQuestion(triplet.length - 1, { animate: true });
+          }
         }
-        highlightSubmitIfReady();
       }, 700);
     };
 
     const showWaitingPrompt = () => {
-      setPrompt(waitingLabel, { status: true });
-      setChoicesVisible(false);
+      setViewMode("waiting", { force: true });
+      waitingNote.textContent = waitingLabel;
       clearAdvanceTimer();
     };
 
@@ -387,12 +414,43 @@ export default {
 
     const timerContext = { code, role: myRole, round };
 
+    const clueFromMap = (map = {}, roundNumber = 1) => {
+      if (!map) return "";
+      const direct = map[roundNumber];
+      if (typeof direct === "string" && direct.trim()) return direct.trim();
+      const viaKey = map[String(roundNumber)];
+      if (typeof viaKey === "string" && viaKey.trim()) return viaKey.trim();
+      return "";
+    };
+
+    const clueFromArray = (arr = [], roundNumber = 1) => {
+      if (!Array.isArray(arr)) return "";
+      const entry = arr[roundNumber - 1];
+      if (typeof entry === "string" && entry.trim()) return entry.trim();
+      if (entry && typeof entry.text === "string" && entry.text.trim()) return entry.text.trim();
+      if (entry && typeof entry.prompt === "string" && entry.prompt.trim()) return entry.prompt.trim();
+      return "";
+    };
+
+    let roundDocData = {};
+
+    const refreshRoundClue = (roomData = {}, roundData = {}) => {
+      const next =
+        clueFromMap(roomData.clues, round) ||
+        clueFromArray(roomData.maths?.clues, round) ||
+        clueFromArray(roundData.maths?.clues, round) ||
+        clueFromArray(roundData.clues, round);
+      if (next) {
+        roundClue = next;
+      }
+    };
+
     const setLoadingState = (text) => {
       pauseRoundTimer(timerContext);
+      setViewMode("question", { force: true });
       setPrompt(text, { status: true });
       setChoicesVisible(false);
       renderSteps();
-      updateSubmitState();
     };
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
@@ -417,6 +475,8 @@ export default {
     setLoadingState("Preparing questions…");
     const rd = await waitForRoundData();
     if (!alive) return;
+    roundDocData = rd || {};
+    refreshRoundClue(room0, roundDocData);
 
     const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
     triplet = [0, 1, 2].map((i) => {
@@ -450,22 +510,22 @@ export default {
 
     if (submittedAlready) {
       published = true;
-      submitBtn.disabled = true;
-      submitBtn.textContent = waitingLabel;
-      showWaitingPrompt();
-      renderSteps();
+      setViewMode("waiting", { force: true });
       renderChoices();
       pauseRoundTimer(timerContext);
     } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
-      showQuestion(0, { animate: false });
-      updateSubmitState();
+      const firstUnanswered = chosen.findIndex((value) => !value);
+      if (firstUnanswered === -1) {
+        setViewMode("review", { force: true });
+      } else {
+        showQuestion(firstUnanswered >= 0 ? firstUnanswered : 0, { animate: false });
+      }
     } else {
       setLoadingState("Preparing questions…");
     }
 
     renderSteps();
     renderChoices();
-    updateSubmitState();
 
     const showBackConfirm = () => {
       backOverlay.classList.add("is-visible");
@@ -526,33 +586,33 @@ export default {
         }, 900);
         renderChoices();
         renderSteps();
-        updateSubmitState();
-        scheduleAdvance(currentIndex);
+        if (allAnswered()) {
+          clearAdvanceTimer();
+          setViewMode("review", { force: true });
+        } else {
+          scheduleAdvance(currentIndex);
+        }
       });
     });
 
     stepButtons.forEach((btn, i) => {
       btn.addEventListener("click", () => {
         if (triplet.length === 0) return;
-        if (published || submitting) return;
+        if (published || submitting || viewMode === "waiting") return;
         clearAdvanceTimer();
         showQuestion(i, { animate: true });
         renderChoices();
         renderSteps();
-        updateSubmitState();
       });
     });
 
-    submitBtn.addEventListener("click", async () => {
+    const submitAnswers = async () => {
       if (published || submitting) return;
-      const answeredCount = chosen.filter((value) => value).length;
-      if (answeredCount < triplet.length) return;
+      if (!allAnswered()) return;
       const revertIdx = idx;
       submitting = true;
-      updateSubmitState();
-      submitBtn.textContent = "SUBMITTING…";
-      showWaitingPrompt();
-      renderSteps();
+      setViewMode("waiting", { force: true });
+      clearAdvanceTimer();
 
       const payload = triplet.map((entry, i) => ({
         question: entry.question || "",
@@ -571,25 +631,28 @@ export default {
         await updateDoc(rRef, patch);
         published = true;
         submitting = false;
-        submitBtn.disabled = true;
-        submitBtn.textContent = waitingLabel;
-        showWaitingPrompt();
-        renderSteps();
+        setViewMode("waiting", { force: true });
         renderChoices();
-        updateSubmitState();
         pauseRoundTimer(timerContext);
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
-        submitBtn.textContent = "SUBMIT";
-        showQuestion(revertIdx, { animate: false });
-        updateSubmitState();
+        idx = revertIdx;
+        setViewMode("review", { force: true });
+        renderSteps();
         resumeRoundTimer(timerContext);
       }
-    });
+    };
+
+    readyBtn.addEventListener("click", submitAnswers);
 
     const stopWatcherRef = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
+
+      refreshRoundClue(data, roundDocData);
+      if (!published && !submitting && viewMode === "review") {
+        setViewMode("review", { force: true });
+      }
 
       const nextRound = Number(data.round) || round;
       if (nextRound !== round) {
@@ -614,12 +677,17 @@ export default {
         return;
       }
 
+      const submittedRemote = Boolean(((data.submitted || {})[myRole] || {})[round]);
+      if (submittedRemote && !published) {
+        published = true;
+        submitting = false;
+        setViewMode("waiting", { force: true });
+        pauseRoundTimer(timerContext);
+      }
+
       if (published && alive) {
         showWaitingPrompt();
-        renderSteps();
         renderChoices();
-        submitBtn.disabled = true;
-        submitBtn.textContent = waitingLabel;
       }
 
       if (myRole === "host" && data.state === "questions") {
