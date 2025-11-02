@@ -21,7 +21,12 @@
   --ok: #4ade80;
   --bad: #f87171;
   --bg-depth: 0;
-  --layout-pad-base: clamp(80px, 12vh, 160px);
+  --layout-stage-pad-top: clamp(96px, 14vh, 184px);
+  --layout-stage-pad-bottom: clamp(108px, 18vh, 228px);
+  --layout-landing-pad-top: clamp(148px, 24vh, 300px);
+  --layout-landing-pad-bottom: clamp(148px, 24vh, 300px);
+  --layout-top-pad-top: clamp(132px, 20vh, 268px);
+  --layout-top-pad-bottom: clamp(120px, 18vh, 248px);
   --score-strip-gap: 32px;
   --score-strip-fallback-height: 72px;
   --score-strip-clearance: calc(var(--score-strip-gap) * 2 + var(--score-strip-fallback-height));
@@ -39,27 +44,33 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  --layout-pad-top: var(--layout-pad-base);
-  --layout-pad-bottom: var(--layout-pad-base);
+  --layout-pad-top-base: var(--layout-stage-pad-top);
+  --layout-pad-bottom-base: var(--layout-stage-pad-bottom);
+  --layout-pad-top: var(--layout-pad-top-base);
+  --layout-pad-bottom: var(--layout-pad-bottom-base);
 }
 
-body.layout-center {
-  --layout-pad-top: var(--score-strip-clearance);
-  --layout-pad-bottom: var(--score-strip-clearance);
+body.layout-stage {
+  --layout-pad-top-base: var(--layout-stage-pad-top);
+  --layout-pad-bottom-base: var(--layout-stage-pad-bottom);
 }
 
-body.has-score-strip,
+body.layout-landing {
+  --layout-pad-top-base: var(--layout-landing-pad-top);
+  --layout-pad-bottom-base: var(--layout-landing-pad-bottom);
+}
+
 body.layout-top {
-  --layout-pad-top: var(--score-strip-clearance);
+  --layout-pad-top-base: var(--layout-top-pad-top);
+  --layout-pad-bottom-base: var(--layout-top-pad-bottom);
 }
 
-body.layout-top {
-  --layout-pad-bottom: clamp(72px, 12vh, 140px);
+body.has-score-strip {
+  --layout-pad-top: max(var(--layout-pad-top-base), var(--score-strip-clearance));
 }
 
-html.layout-scroll-lock,
-body.layout-scroll-lock {
-  overflow: hidden;
+body:not(.has-score-strip) {
+  --layout-pad-top: var(--layout-pad-top-base);
 }
 
 #app {
@@ -76,14 +87,6 @@ body.layout-scroll-lock {
   overflow: visible;
 }
 
-body.layout-center #app {
-  justify-content: center;
-}
-
-body.layout-scroll-lock #app {
-  overflow: hidden;
-}
-
 /* View layout */
 .view {
   width: 100%;
@@ -92,7 +95,7 @@ body.layout-scroll-lock #app {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 28px;
   position: relative;
   flex: 1 0 auto;
@@ -104,13 +107,19 @@ body.layout-top .view {
   min-height: 0;
 }
 
+body.layout-landing #app,
+body.layout-landing .view,
+body.layout-landing .stage-center {
+  justify-content: center;
+}
+
 .stage-center {
   position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 28px;
   flex: 1 0 auto;
 }

@@ -199,17 +199,22 @@ let current = { route: "", mod: null, unmount: null };
 const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
 
 // Map route -> dynamic import path
-const TOP_LAYOUT_ROUTES = new Set(["keyroom", "award", "final"]);
+const TOP_LAYOUT_ROUTES = new Set(["keyroom", "final"]);
+const LANDING_LAYOUT_ROUTES = new Set(["lobby"]);
+const STAGE_LAYOUT_ROUTES = new Set(["countdown", "questions", "marking", "award", "maths"]);
 
 function applyLayoutMode(route) {
   const body = document.body;
   const root = document.documentElement;
   if (!body) return;
   const topAligned = TOP_LAYOUT_ROUTES.has(route);
+  const landing = LANDING_LAYOUT_ROUTES.has(route);
+  const stage = STAGE_LAYOUT_ROUTES.has(route);
   body.classList.toggle("layout-top", topAligned);
-  body.classList.toggle("layout-center", !topAligned);
-  body.classList.toggle("layout-scroll-lock", !topAligned);
-  if (root) root.classList.toggle("layout-scroll-lock", !topAligned);
+  body.classList.toggle("layout-landing", landing);
+  body.classList.toggle("layout-stage", stage);
+  if (root) root.classList.remove("layout-scroll-lock");
+  body.classList.remove("layout-scroll-lock");
   if (route) body.setAttribute("data-route", route);
   else body.removeAttribute("data-route");
 }
