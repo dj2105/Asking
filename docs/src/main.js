@@ -207,9 +207,9 @@ function applyLayoutMode(route) {
   if (!body) return;
   const topAligned = TOP_LAYOUT_ROUTES.has(route);
   body.classList.toggle("layout-top", topAligned);
-  body.classList.toggle("layout-center", !topAligned);
-  body.classList.toggle("layout-scroll-lock", !topAligned);
-  if (root) root.classList.toggle("layout-scroll-lock", !topAligned);
+  body.classList.remove("layout-center");
+  body.classList.remove("layout-scroll-lock");
+  if (root) root.classList.remove("layout-scroll-lock");
   if (route) body.setAttribute("data-route", route);
   else body.removeAttribute("data-route");
 }
