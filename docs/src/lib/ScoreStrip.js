@@ -30,6 +30,40 @@ const state = {
   roomData: null,
 };
 
+let layoutFrame = 0;
+
+function dispatchLayoutUpdate() {
+  window.dispatchEvent(new CustomEvent("score-strip:layout"));
+}
+
+function applyLayoutMetrics() {
+  const root = document.documentElement;
+  if (!root) return;
+
+  if (state.node && state.node.isConnected) {
+    const rect = state.node.getBoundingClientRect();
+    const topGap = Math.max(0, rect.top);
+    const height = Math.max(0, rect.height);
+    root.style.setProperty("--score-strip-top-gap", `${topGap}px`);
+    root.style.setProperty("--score-strip-height", `${height}px`);
+    root.style.setProperty("--score-strip-clearance", `${topGap * 2 + height}px`);
+  } else {
+    root.style.removeProperty("--score-strip-top-gap");
+    root.style.removeProperty("--score-strip-height");
+    root.style.removeProperty("--score-strip-clearance");
+  }
+
+  dispatchLayoutUpdate();
+}
+
+function scheduleLayoutMetrics() {
+  if (layoutFrame) cancelAnimationFrame(layoutFrame);
+  layoutFrame = requestAnimationFrame(() => {
+    layoutFrame = 0;
+    applyLayoutMetrics();
+  });
+}
+
 function computeScores(roomData = {}) {
   const scores = roomData.scores || {};
   const hostRounds = scores.host || {};
@@ -62,6 +96,8 @@ function render() {
       <div class="score-strip__right">${rightHTML}</div>
     </div>
   `;
+
+  scheduleLayoutMetrics();
 }
 
 async function bind(code) {
@@ -99,6 +135,7 @@ export function mount(container, { code } = {}) {
   }
   document.body.classList.add("has-score-strip");
   bind(code);
+  scheduleLayoutMetrics();
 }
 
 export function update({ code } = {}) {
@@ -112,6 +149,7 @@ export function hide() {
     state.node.parentNode.removeChild(state.node);
   }
   document.body.classList.remove("has-score-strip");
+  scheduleLayoutMetrics();
 }
 
 export default { mount, update, hide };

@@ -21,6 +21,10 @@
   --ok: #4ade80;
   --bad: #f87171;
   --bg-depth: 0;
+  --viewport-pad-x: clamp(24px, 6vw, 42px);
+  --score-strip-top-gap: 32px;
+  --score-strip-height: 74px;
+  --score-strip-clearance: 138px;
 }
 
 html, body { height: 100%; }
@@ -37,25 +41,24 @@ body {
   overflow-x: hidden;
 }
 
+body.layout-scroll-lock {
+  overflow-y: hidden;
+}
+
 #app {
   position: relative;
-  flex: 1;
   width: 100%;
   min-height: 100vh;
-  padding: clamp(120px, 18vh, 220px) 24px 64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 32px;
+  padding: 0 var(--viewport-pad-x) var(--app-pad-bottom, 80px);
 }
 
-body:not(.has-score-strip) #app {
-  padding-top: clamp(80px, 12vh, 160px);
+body.layout-top #app {
+  padding-top: var(--score-strip-clearance);
+  --app-pad-bottom: clamp(96px, 16vh, 160px);
 }
 
-body.has-score-strip #app {
-  padding-top: clamp(120px, 18vh, 220px);
+body.layout-centered #app {
+  --app-pad-bottom: 0px;
 }
 
 /* View layout */
@@ -69,6 +72,10 @@ body.has-score-strip #app {
   justify-content: center;
   gap: 28px;
   position: relative;
+}
+
+body.layout-top .view {
+  justify-content: flex-start;
 }
 
 .stage-center {
