@@ -71,6 +71,31 @@ function createPaletteApplier(hue, accentHue) {
   };
 }
 
+const normaliseClue = (value) => {
+  if (typeof value === "string") return value.trim();
+  return "";
+};
+
+const resolveClue = (roomData = {}, fallbackMaths = {}, round = 1) => {
+  const roundNumber = Number(round) || 1;
+  const arrIndex = roundNumber - 1;
+  if (roomData && typeof roomData === "object") {
+    const direct = normaliseClue(roomData.clues?.[roundNumber]);
+    if (direct) return direct;
+    if (Array.isArray(roomData.maths?.clues) && arrIndex >= 0) {
+      const mathsClue = normaliseClue(roomData.maths.clues[arrIndex]);
+      if (mathsClue) return mathsClue;
+    }
+  }
+  if (fallbackMaths && typeof fallbackMaths === "object" && arrIndex >= 0) {
+    if (Array.isArray(fallbackMaths.clues)) {
+      const fallback = normaliseClue(fallbackMaths.clues[arrIndex]);
+      if (fallback) return fallback;
+    }
+  }
+  return "";
+};
+
 const FALLBACK_ITEMS = [
   {
     question: "In the sentence “She sang happily”, which part of speech is “happily”?",
@@ -161,20 +186,20 @@ export default {
     content.appendChild(prompt);
     content.appendChild(choicesWrap);
 
-    const submitBtn = el(
+    const readyBtn = el(
       "button",
       {
-        class: "btn round-panel__submit mono",
+        class: "btn round-panel__submit mono btn-ready",
         type: "button",
-        disabled: "disabled",
       },
-      "SUBMIT"
+      "READY"
     );
+    readyBtn.style.display = "none";
 
     panel.appendChild(heading);
     panel.appendChild(steps);
     panel.appendChild(content);
-    panel.appendChild(submitBtn);
+    panel.appendChild(readyBtn);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -217,6 +242,9 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    let showingClue = false;
+    let fallbackMaths = {};
+    let latestRoomData = {};
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -269,6 +297,7 @@ export default {
 
     const renderSteps = () => {
       refreshStepLabels();
+      steps.classList.toggle("is-hidden", published || submitting);
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
@@ -288,28 +317,47 @@ export default {
       });
     };
 
-    const updateSubmitState = () => {
-      const answeredCount = chosen.filter((value) => value).length;
-      const allAnswered = triplet.length > 0 && answeredCount >= triplet.length;
-      const ready = allAnswered && !published && !submitting;
-      submitBtn.disabled = !ready;
-      submitBtn.classList.toggle("round-panel__submit--ready", ready);
-      submitBtn.classList.toggle("throb", ready);
-      if (!ready) {
-        submitBtn.classList.remove("round-panel__submit--ready");
-        submitBtn.classList.remove("throb");
-      }
-      if (!published) {
-        submitBtn.textContent = "SUBMIT";
-      }
+    const isRoundComplete = () => triplet.length > 0 && chosen.every((value) => Boolean(value));
+
+    const hideReadyPrompt = () => {
+      showingClue = false;
+      readyBtn.style.display = "none";
+      readyBtn.disabled = false;
+      readyBtn.textContent = "READY";
+      readyBtn.classList.remove("round-panel__submit--ready");
+      readyBtn.classList.remove("throb");
     };
 
-    const highlightSubmitIfReady = () => {
-      const answeredCount = chosen.filter((value) => value).length;
-      if (triplet.length > 0 && answeredCount >= triplet.length && !published && !submitting) {
-        submitBtn.classList.add("round-panel__submit--ready");
-        submitBtn.classList.add("throb");
-      }
+    const getClueText = () => {
+      const text = resolveClue(latestRoomData, fallbackMaths, effectiveRound());
+      return text || "Jemima’s clue is on its way…";
+    };
+
+    const showReadyPrompt = ({ animate = true } = {}) => {
+      if (published || submitting) return;
+      showingClue = true;
+      const render = () => {
+        setPrompt(getClueText(), { status: false });
+        setChoicesVisible(false);
+        readyBtn.style.display = "";
+        readyBtn.disabled = false;
+        readyBtn.textContent = "READY";
+        readyBtn.classList.add("round-panel__submit--ready");
+        readyBtn.classList.add("throb");
+      };
+      if (animate) animateSwap(render);
+      else render();
+      renderSteps();
+    };
+
+    const enterWaitingState = () => {
+      published = true;
+      hideReadyPrompt();
+      steps.classList.add("is-hidden");
+      showWaitingPrompt();
+      renderSteps();
+      renderChoices();
+      pauseRoundTimer(timerContext);
     };
 
     const showQuestion = (targetIdx, { animate = true } = {}) => {
@@ -317,6 +365,7 @@ export default {
       if (targetIdx < 0) targetIdx = 0;
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
+      hideReadyPrompt();
       const render = () => {
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
@@ -324,7 +373,6 @@ export default {
         choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
         renderChoices();
         renderSteps();
-        highlightSubmitIfReady();
       };
       if (animate) animateSwap(render);
       else render();
@@ -349,14 +397,16 @@ export default {
         const next = findNextUnanswered(currentIndex);
         if (next !== null && next !== undefined) {
           showQuestion(next, { animate: true });
+        } else if (isRoundComplete()) {
+          showReadyPrompt({ animate: true });
         } else if (triplet.length > 0) {
           showQuestion(triplet.length - 1, { animate: true });
         }
-        highlightSubmitIfReady();
       }, 700);
     };
 
     const showWaitingPrompt = () => {
+      hideReadyPrompt();
       setPrompt(waitingLabel, { status: true });
       setChoicesVisible(false);
       clearAdvanceTimer();
@@ -366,6 +416,8 @@ export default {
 
     const roomSnap0 = await getDoc(rRef);
     const room0 = roomSnap0.data() || {};
+    latestRoomData = room0;
+    fallbackMaths = room0.maths || {};
     if (!round) {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
@@ -388,11 +440,11 @@ export default {
     const timerContext = { code, role: myRole, round };
 
     const setLoadingState = (text) => {
+      hideReadyPrompt();
       pauseRoundTimer(timerContext);
       setPrompt(text, { status: true });
       setChoicesVisible(false);
       renderSteps();
-      updateSubmitState();
     };
 
     const existingAns = (((room0.answers || {})[myRole] || {})[round] || []);
@@ -448,24 +500,24 @@ export default {
       }
     }
 
+    const prefilledComplete = isRoundComplete();
+
     if (submittedAlready) {
-      published = true;
-      submitBtn.disabled = true;
-      submitBtn.textContent = waitingLabel;
-      showWaitingPrompt();
-      renderSteps();
-      renderChoices();
-      pauseRoundTimer(timerContext);
+      enterWaitingState();
     } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
-      showQuestion(0, { animate: false });
-      updateSubmitState();
+      if (prefilledComplete) {
+        showReadyPrompt({ animate: false });
+      } else {
+        const firstIncomplete = chosen.findIndex((value) => !value);
+        const startIdx = firstIncomplete === -1 ? 0 : firstIncomplete;
+        showQuestion(startIdx, { animate: false });
+      }
     } else {
       setLoadingState("Preparing questions…");
     }
 
     renderSteps();
     renderChoices();
-    updateSubmitState();
 
     const showBackConfirm = () => {
       backOverlay.classList.add("is-visible");
@@ -526,7 +578,6 @@ export default {
         }, 900);
         renderChoices();
         renderSteps();
-        updateSubmitState();
         scheduleAdvance(currentIndex);
       });
     });
@@ -539,20 +590,19 @@ export default {
         showQuestion(i, { animate: true });
         renderChoices();
         renderSteps();
-        updateSubmitState();
       });
     });
 
-    submitBtn.addEventListener("click", async () => {
+    readyBtn.addEventListener("click", async () => {
       if (published || submitting) return;
-      const answeredCount = chosen.filter((value) => value).length;
-      if (answeredCount < triplet.length) return;
-      const revertIdx = idx;
+      if (!isRoundComplete()) return;
       submitting = true;
-      updateSubmitState();
-      submitBtn.textContent = "SUBMITTING…";
-      showWaitingPrompt();
+      clearAdvanceTimer();
+      readyBtn.disabled = true;
+      readyBtn.classList.remove("throb");
+      readyBtn.textContent = "READYING…";
       renderSteps();
+      showWaitingPrompt();
 
       const payload = triplet.map((entry, i) => ({
         question: entry.question || "",
@@ -569,27 +619,22 @@ export default {
       try {
         console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
         await updateDoc(rRef, patch);
-        published = true;
         submitting = false;
-        submitBtn.disabled = true;
-        submitBtn.textContent = waitingLabel;
-        showWaitingPrompt();
-        renderSteps();
-        renderChoices();
-        updateSubmitState();
-        pauseRoundTimer(timerContext);
+        enterWaitingState();
       } catch (err) {
         console.warn("[questions] publish failed:", err);
         submitting = false;
-        submitBtn.textContent = "SUBMIT";
-        showQuestion(revertIdx, { animate: false });
-        updateSubmitState();
+        readyBtn.disabled = false;
+        readyBtn.textContent = "READY";
         resumeRoundTimer(timerContext);
+        renderSteps();
+        showReadyPrompt({ animate: false });
       }
     });
 
     const stopWatcherRef = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
+      latestRoomData = data;
 
       const nextRound = Number(data.round) || round;
       if (nextRound !== round) {
@@ -614,17 +659,24 @@ export default {
         return;
       }
 
+      const answersForMe = (((data.answers || {})[myRole] || {})[round]) || [];
+      const answersForOpp = (((data.answers || {})[oppRole] || {})[round]) || [];
+      const myServerDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(answersForMe) && answersForMe.length >= 3);
+      const oppServerDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(answersForOpp) && answersForOpp.length >= 3);
+
+      if (myServerDone && !published) {
+        enterWaitingState();
+      } else if (!myServerDone && showingClue && !submitting) {
+        showReadyPrompt({ animate: false });
+      }
+
       if (published && alive) {
         showWaitingPrompt();
-        renderSteps();
-        renderChoices();
-        submitBtn.disabled = true;
-        submitBtn.textContent = waitingLabel;
       }
 
       if (myRole === "host" && data.state === "questions") {
-        const myDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(((data.answers || {})[myRole] || {})[round]) && (((data.answers || {})[myRole] || {})[round]).length === 3);
-        const oppDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(((data.answers || {})[oppRole] || {})[round]) && (((data.answers || {})[oppRole] || {})[round]).length === 3);
+        const myDone = myServerDone;
+        const oppDone = oppServerDone;
         if (myDone && oppDone) {
           try {
             console.log(`[flow] questions -> marking | code=${code} round=${round} role=${myRole}`);

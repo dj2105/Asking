@@ -123,6 +123,31 @@ function createPaletteApplier(hue, accentHue) {
   };
 }
 
+const normaliseClue = (value) => {
+  if (typeof value === "string") return value.trim();
+  return "";
+};
+
+const resolveClue = (roomData = {}, fallbackMaths = {}, round = 1) => {
+  const roundNumber = Number(round) || 1;
+  const arrIndex = roundNumber - 1;
+  if (roomData && typeof roomData === "object") {
+    const direct = normaliseClue(roomData.clues?.[roundNumber]);
+    if (direct) return direct;
+    if (Array.isArray(roomData.maths?.clues) && arrIndex >= 0) {
+      const mathsClue = normaliseClue(roomData.maths.clues[arrIndex]);
+      if (mathsClue) return mathsClue;
+    }
+  }
+  if (fallbackMaths && typeof fallbackMaths === "object" && arrIndex >= 0) {
+    if (Array.isArray(fallbackMaths.clues)) {
+      const fallback = normaliseClue(fallbackMaths.clues[arrIndex]);
+      if (fallback) return fallback;
+    }
+  }
+  return "";
+};
+
 export default {
   async mount(container) {
     const me = await ensureAuth();
@@ -202,20 +227,20 @@ export default {
     content.appendChild(answerBox);
     content.appendChild(verdictRow);
 
-    const submitBtn = el(
+    const readyBtn = el(
       "button",
       {
-        class: "btn round-panel__submit mono",
+        class: "btn round-panel__submit mono btn-ready",
         type: "button",
-        disabled: "disabled",
       },
-      "SUBMIT"
+      "READY"
     );
+    readyBtn.style.display = "none";
 
     panel.appendChild(heading);
     panel.appendChild(steps);
     panel.appendChild(content);
-    panel.appendChild(submitBtn);
+    panel.appendChild(readyBtn);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -260,6 +285,9 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    let showingClue = false;
+    let fallbackMaths = {};
+    let latestRoomData = {};
 
     let alive = true;
     let stopRoomWatch = null;
@@ -312,6 +340,7 @@ export default {
 
     const renderSteps = () => {
       refreshStepLabels();
+      steps.classList.toggle("is-hidden", published || submitting);
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", marks[i] !== null);
@@ -338,25 +367,49 @@ export default {
       btnUnknown.disabled = !enabled;
     };
 
-    const updateSubmitState = () => {
-      const ready = marks.every((value) => value !== null) && !published && !submitting;
-      submitBtn.disabled = !ready;
-      submitBtn.classList.toggle("round-panel__submit--ready", ready);
-      submitBtn.classList.toggle("throb", ready);
-      if (!ready) {
-        submitBtn.classList.remove("round-panel__submit--ready");
-        submitBtn.classList.remove("throb");
-      }
-      if (!published) {
-        submitBtn.textContent = "SUBMIT";
-      }
+    const isFullyMarked = () => marks.every((value) => value !== null);
+
+    const hideReadyPrompt = () => {
+      showingClue = false;
+      readyBtn.style.display = "none";
+      readyBtn.disabled = false;
+      readyBtn.textContent = "READY";
+      readyBtn.classList.remove("round-panel__submit--ready");
+      readyBtn.classList.remove("throb");
     };
 
-    const highlightSubmitIfReady = () => {
-      if (marks.every((value) => value !== null) && !published && !submitting) {
-        submitBtn.classList.add("round-panel__submit--ready");
-        submitBtn.classList.add("throb");
-      }
+    const getClueText = () => {
+      const text = resolveClue(latestRoomData, fallbackMaths, effectiveRound());
+      return text || "Jemima’s clue is on its way…";
+    };
+
+    const showReadyPrompt = ({ animate = true } = {}) => {
+      if (published || submitting) return;
+      showingClue = true;
+      const render = () => {
+        setPrompt(getClueText(), { status: false });
+        setMarkingVisible(false);
+        readyBtn.style.display = "";
+        readyBtn.disabled = false;
+        readyBtn.textContent = "READY";
+        readyBtn.classList.add("round-panel__submit--ready");
+        readyBtn.classList.add("throb");
+      };
+      if (animate) animateSwap(render);
+      else render();
+      renderSteps();
+    };
+
+    const enterWaitingState = () => {
+      published = true;
+      hideReadyPrompt();
+      steps.classList.add("is-hidden");
+      setMarkingVisible(false);
+      setVerdictsEnabled(false);
+      showWaitingPrompt();
+      renderSteps();
+      reflectVerdicts();
+      clearRoundTimer(timerContext);
     };
 
     const showMark = (targetIdx, { animate = true } = {}) => {
@@ -365,6 +418,7 @@ export default {
       if (targetIdx >= triplet.length) targetIdx = triplet.length - 1;
       idx = targetIdx;
       setVerdictsEnabled(!published && !submitting);
+      hideReadyPrompt();
       const render = () => {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
@@ -374,7 +428,6 @@ export default {
         renderSteps();
         [btnRight, btnUnknown, btnWrong].forEach((btn) => btn.classList.remove("is-blinking"));
         reflectVerdicts();
-        highlightSubmitIfReady();
         setMarkingVisible(true);
       };
       if (animate) animateSwap(render);
@@ -400,14 +453,16 @@ export default {
         const next = findNextPending(currentIndex);
         if (next !== null && next !== undefined) {
           showMark(next, { animate: true });
+        } else if (isFullyMarked()) {
+          showReadyPrompt({ animate: true });
         } else {
           showMark(marks.length - 1, { animate: true });
         }
-        highlightSubmitIfReady();
       }, 700);
     };
 
     const showWaitingPrompt = () => {
+      hideReadyPrompt();
       setPrompt(waitingLabel, { status: true });
       setMarkingVisible(false);
       clearAdvanceTimer();
@@ -418,6 +473,8 @@ export default {
 
     const roomSnap = await getDoc(rRef);
     const roomData0 = roomSnap.data() || {};
+    latestRoomData = roomData0;
+    fallbackMaths = roomData0.maths || {};
     const { hostUid, guestUid } = roomData0.meta || {};
     const storedRole = getStoredRole(code);
     const myRole = storedRole === "host" || storedRole === "guest"
@@ -430,12 +487,12 @@ export default {
     const timerContext = { code, role: myRole, round };
 
     const setLoadingState = (text) => {
+      hideReadyPrompt();
       pauseRoundTimer(timerContext);
       setPrompt(text, { status: true });
       setMarkingVisible(false);
       setVerdictsEnabled(false);
       renderSteps();
-      updateSubmitState();
     };
 
     setLoadingState("Preparing responses…");
@@ -457,24 +514,21 @@ export default {
     answerLabel.textContent = `${oppName.toUpperCase()}’S ANSWER`;
 
     const alreadyAck = Boolean(((roomData0.markingAck || {})[myRole] || {})[round]);
-    if (alreadyAck && marks.every((value) => value !== null)) {
-      published = true;
-      submitBtn.disabled = true;
-      submitBtn.textContent = waitingLabel;
+    const marksComplete = isFullyMarked();
+
+    if (alreadyAck && marksComplete) {
       setVerdictsEnabled(false);
-      showWaitingPrompt();
-      renderSteps();
-      reflectVerdicts();
-      updateSubmitState();
-      clearRoundTimer(timerContext);
+      enterWaitingState();
+    } else if (marksComplete) {
+      showReadyPrompt({ animate: false });
     } else {
-      showMark(0, { animate: false });
-      updateSubmitState();
+      const firstPending = marks.findIndex((value) => value === null);
+      const startIdx = firstPending === -1 ? 0 : firstPending;
+      showMark(startIdx, { animate: false });
     }
 
     renderSteps();
     reflectVerdicts();
-    updateSubmitState();
 
     const showBackConfirm = () => {
       backOverlay.classList.add("is-visible");
@@ -553,16 +607,16 @@ export default {
 
     const submitMarks = async () => {
       if (published || submitting) return;
-      if (!marks.every((value) => value !== null)) return;
-      const revertIdx = idx;
+      if (!isFullyMarked()) return;
       submitting = true;
-      updateSubmitState();
-      submitBtn.textContent = "SUBMITTING…";
       clearAdvanceTimer();
+      readyBtn.disabled = true;
+      readyBtn.classList.remove("throb");
+      readyBtn.textContent = "READYING…";
+      renderSteps();
       setVerdictsEnabled(false);
       pauseRoundTimer(timerContext);
       showWaitingPrompt();
-      renderSteps();
       reflectVerdicts();
       const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
       const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
@@ -577,22 +631,17 @@ export default {
 
       try {
         await updateDoc(rRef, patch);
-        published = true;
         submitting = false;
-        submitBtn.disabled = true;
-        submitBtn.textContent = waitingLabel;
-        showWaitingPrompt();
-        renderSteps();
-        reflectVerdicts();
-        updateSubmitState();
-        clearRoundTimer(timerContext);
+        enterWaitingState();
       } catch (err) {
         console.warn("[marking] submit failed:", err);
         submitting = false;
-        updateSubmitState();
+        readyBtn.disabled = false;
+        readyBtn.textContent = "READY";
         setVerdictsEnabled(true);
         resumeRoundTimer(timerContext);
-        showMark(revertIdx, { animate: false });
+        renderSteps();
+        showReadyPrompt({ animate: false });
       }
     };
 
@@ -610,7 +659,6 @@ export default {
       }
       renderSteps();
       reflectVerdicts();
-      updateSubmitState();
       scheduleAdvance(idx);
     };
 
@@ -625,14 +673,14 @@ export default {
         clearAdvanceTimer();
         showMark(i, { animate: true });
         reflectVerdicts();
-        updateSubmitState();
       });
     });
 
-    submitBtn.addEventListener("click", submitMarks);
+    readyBtn.addEventListener("click", submitMarks);
 
     const unsubscribeRoom = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
+      latestRoomData = data;
       const stateName = (data.state || "").toLowerCase();
 
       if (Number.isFinite(Number(data.round))) {
@@ -672,16 +720,14 @@ export default {
       if (ackMine && !published) {
         const incoming = (((data.marking || {})[myRole] || {})[round] || marks);
         marks = marks.map((_, i) => markValue(incoming[i]));
-        published = true;
         submitting = false;
+        enterWaitingState();
+      } else if (!ackMine && showingClue && !submitting && isFullyMarked()) {
+        showReadyPrompt({ animate: false });
+      }
+
+      if (published && alive) {
         showWaitingPrompt();
-        renderSteps();
-        reflectVerdicts();
-        updateSubmitState();
-        submitBtn.disabled = true;
-        submitBtn.textContent = waitingLabel;
-        setVerdictsEnabled(false);
-        clearRoundTimer(timerContext);
       }
 
       if (myRole === "host" && stateName === "marking" && ackMine && ackOpp) {
