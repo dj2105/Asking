@@ -74,6 +74,9 @@ const markValue = (value) => {
   return VERDICT.UNKNOWN;
 };
 
+const DEFAULT_HEADING = "MARKING";
+const JEMIMA_HEADING = "JEMIMA";
+
 function balanceQuestionText(input = "") {
   const raw = String(input || "").replace(/\s+/g, " ").trim();
   if (!raw) return "";
@@ -165,7 +168,7 @@ export default {
 
     const root = el("div", { class: "view view-marking stage-center" });
     const panel = el("div", { class: "round-panel" });
-    const heading = el("h2", { class: "round-panel__heading mono" }, "MARKING");
+    const heading = el("h2", { class: "round-panel__heading mono" }, DEFAULT_HEADING);
 
     const steps = el("div", { class: "round-panel__steps" });
     const stepButtons = [0, 1, 2].map((i) => {
@@ -184,6 +187,11 @@ export default {
 
     const content = el("div", { class: "round-panel__content" });
     const prompt = el("div", { class: "round-panel__question mono" }, "");
+    const statusNote = el(
+      "div",
+      { class: "round-panel__status-note mono is-hidden" },
+      ""
+    );
 
     const answerBox = el("div", { class: "round-panel__answer" });
     const answerLabel = el("div", { class: "round-panel__answer-label mono" }, "");
@@ -224,6 +232,7 @@ export default {
     verdictRow.appendChild(btnWrong);
 
     content.appendChild(prompt);
+    content.appendChild(statusNote);
     content.appendChild(answerBox);
     content.appendChild(verdictRow);
 
@@ -266,11 +275,30 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
-    const setPrompt = (text, { status = false } = {}) => {
+    const setPrompt = (text, { status = false, variant = "question" } = {}) => {
       const displayText = status ? String(text || "") : balanceQuestionText(text);
       prompt.textContent = displayText;
+      const isClue = !status && variant === "clue";
       prompt.classList.toggle("round-panel__question--status", status);
+      prompt.classList.toggle("round-panel__question--clue", isClue);
       content.classList.toggle("round-panel__content--status", status);
+      content.classList.toggle("round-panel__content--comment", isClue);
+    };
+
+    const showStatusNote = (text) => {
+      statusNote.textContent = text || "";
+      statusNote.classList.remove("is-hidden");
+    };
+
+    const hideStatusNote = () => {
+      statusNote.textContent = "";
+      if (!statusNote.classList.contains("is-hidden")) {
+        statusNote.classList.add("is-hidden");
+      }
+    };
+
+    const setHeading = (value = DEFAULT_HEADING) => {
+      heading.textContent = value;
     };
 
     const setMarkingVisible = (visible) => {
@@ -382,6 +410,8 @@ export default {
         readyBtn.classList.add("btn-ready");
       }
       readyBtn.classList.remove("throb");
+      hideStatusNote();
+      setHeading(DEFAULT_HEADING);
     };
 
     const getClueText = () => {
@@ -393,7 +423,9 @@ export default {
       if (published || submitting) return;
       showingClue = true;
       const render = () => {
-        setPrompt(getClueText(), { status: false });
+        setHeading(DEFAULT_HEADING);
+        setPrompt(getClueText(), { status: false, variant: "clue" });
+        hideStatusNote();
         setMarkingVisible(false);
         readyBtn.style.display = "";
         readyBtn.disabled = false;
@@ -431,7 +463,9 @@ export default {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
         const answerText = answers[idx] || "(no answer recorded)";
-        setPrompt(questionText, { status: false });
+        setHeading(DEFAULT_HEADING);
+        setPrompt(questionText, { status: false, variant: "question" });
+        hideStatusNote();
         answerValue.textContent = answerText;
         renderSteps();
         [btnRight, btnUnknown, btnWrong].forEach((btn) => {
@@ -474,9 +508,12 @@ export default {
 
     const showWaitingPrompt = () => {
       showingClue = false;
-      setPrompt(waitingLabel, { status: true });
+      const clueText = getClueText();
+      setHeading(JEMIMA_HEADING);
+      setPrompt(clueText, { status: false, variant: "clue" });
+      showStatusNote(waitingLabel);
       setMarkingVisible(false);
-      readyBtn.style.display = "";
+      readyBtn.style.display = "none";
       readyBtn.disabled = true;
       readyBtn.textContent = waitingLabel;
       readyBtn.classList.remove("btn-ready");
@@ -507,7 +544,9 @@ export default {
     const setLoadingState = (text) => {
       hideReadyPrompt();
       pauseRoundTimer(timerContext);
+      setHeading(DEFAULT_HEADING);
       setPrompt(text, { status: true });
+      hideStatusNote();
       setMarkingVisible(false);
       setVerdictsEnabled(false);
       renderSteps();
@@ -664,7 +703,18 @@ export default {
 
     const handleVerdict = (value, sourceBtn) => {
       if (published || submitting) return;
-      marks[idx] = markValue(value);
+      const canonical = markValue(value);
+      if (marks[idx] === canonical) {
+        marks[idx] = null;
+        if (sourceBtn) {
+          sourceBtn.classList.remove("is-blinking");
+          sourceBtn.classList.remove("is-blinking-fast");
+        }
+        renderSteps();
+        reflectVerdicts();
+        return;
+      }
+      marks[idx] = canonical;
       if (sourceBtn) {
         [btnRight, btnUnknown, btnWrong].forEach((btn) => {
           if (btn !== sourceBtn) {
