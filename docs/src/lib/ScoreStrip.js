@@ -28,7 +28,55 @@ const state = {
   unsubRoom: null,
   code: null,
   roomData: null,
+  resizeHandler: null,
+  clearanceFrame: 0,
 };
+
+function parseGap(value) {
+  if (!value) return NaN;
+  const trimmed = String(value).trim();
+  if (!trimmed) return NaN;
+  const parsed = parseFloat(trimmed);
+  if (Number.isNaN(parsed)) return NaN;
+  return parsed;
+}
+
+function updateClearance() {
+  const body = document.body;
+  if (!body) return;
+  if (!state.node || !state.node.isConnected) {
+    body.style.removeProperty("--score-strip-clearance");
+    return;
+  }
+
+  let gap = 32;
+  try {
+    const root = document.documentElement;
+    if (root) {
+      const computed = getComputedStyle(root).getPropertyValue("--score-strip-gap");
+      const parsedGap = parseGap(computed);
+      if (Number.isFinite(parsedGap)) gap = parsedGap;
+    }
+  } catch {}
+
+  const height = state.node.offsetHeight || 0;
+  const clearance = Math.max(0, height + gap * 2);
+  body.style.setProperty("--score-strip-clearance", `${clearance}px`);
+}
+
+function scheduleClearanceUpdate() {
+  if (state.clearanceFrame) cancelAnimationFrame(state.clearanceFrame);
+  state.clearanceFrame = requestAnimationFrame(() => {
+    state.clearanceFrame = 0;
+    updateClearance();
+  });
+}
+
+function ensureResizeListener() {
+  if (state.resizeHandler) return;
+  state.resizeHandler = () => scheduleClearanceUpdate();
+  window.addEventListener("resize", state.resizeHandler);
+}
 
 function computeScores(roomData = {}) {
   const scores = roomData.scores || {};
@@ -62,6 +110,7 @@ function render() {
       <div class="score-strip__right">${rightHTML}</div>
     </div>
   `;
+  scheduleClearanceUpdate();
 }
 
 async function bind(code) {
@@ -98,6 +147,8 @@ export function mount(container, { code } = {}) {
     container.prepend(state.node);
   }
   document.body.classList.add("has-score-strip");
+  ensureResizeListener();
+  scheduleClearanceUpdate();
   bind(code);
 }
 
@@ -112,6 +163,17 @@ export function hide() {
     state.node.parentNode.removeChild(state.node);
   }
   document.body.classList.remove("has-score-strip");
+  if (state.resizeHandler) {
+    window.removeEventListener("resize", state.resizeHandler);
+    state.resizeHandler = null;
+  }
+  if (state.clearanceFrame) {
+    cancelAnimationFrame(state.clearanceFrame);
+    state.clearanceFrame = 0;
+  }
+  if (document.body) {
+    document.body.style.removeProperty("--score-strip-clearance");
+  }
 }
 
 export default { mount, update, hide };

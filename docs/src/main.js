@@ -199,6 +199,21 @@ let current = { route: "", mod: null, unmount: null };
 const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
 
 // Map route -> dynamic import path
+const TOP_LAYOUT_ROUTES = new Set(["keyroom", "award", "final"]);
+
+function applyLayoutMode(route) {
+  const body = document.body;
+  const root = document.documentElement;
+  if (!body) return;
+  const topAligned = TOP_LAYOUT_ROUTES.has(route);
+  body.classList.toggle("layout-top", topAligned);
+  body.classList.toggle("layout-center", !topAligned);
+  body.classList.toggle("layout-scroll-lock", !topAligned);
+  if (root) root.classList.toggle("layout-scroll-lock", !topAligned);
+  if (route) body.setAttribute("data-route", route);
+  else body.removeAttribute("data-route");
+}
+
 const VIEW_MAP = {
   lobby:     () => import("./views/Lobby.js"),
   keyroom:   () => import("./views/KeyRoom.js"),
@@ -241,6 +256,8 @@ async function mountRoute() {
   const importer = load || VIEW_MAP.lobby;
 
   console.log(`[router] mount ${actualRoute}`);
+
+  applyLayoutMode(actualRoute);
 
   // Unmount old view (if any)
   if (typeof current?.unmount === "function") {
@@ -292,6 +309,7 @@ async function mountRoute() {
         <div class="mono" style="font-weight:700;margin-bottom:6px;">Oops — couldn’t load “${route}”.</div>
         <div class="mono small" style="opacity:.8">Try going back to the lobby.</div>
       </div></div>`;
+    applyLayoutMode("lobby");
     ScrollReset.reset(actualRoute, qs);
   }
 }
