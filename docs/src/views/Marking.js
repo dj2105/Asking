@@ -267,9 +267,10 @@ export default {
     container.appendChild(root);
 
     const setPrompt = (text, { status = false } = {}) => {
-      const content = status ? String(text || "") : balanceQuestionText(text);
-      prompt.textContent = content;
+      const displayText = status ? String(text || "") : balanceQuestionText(text);
+      prompt.textContent = displayText;
       prompt.classList.toggle("round-panel__question--status", status);
+      content.classList.toggle("round-panel__content--status", status);
     };
 
     const setMarkingVisible = (visible) => {
@@ -376,6 +377,10 @@ export default {
       readyBtn.disabled = false;
       readyBtn.textContent = "READY";
       readyBtn.classList.remove("round-panel__submit--ready");
+      readyBtn.classList.remove("round-panel__submit--waiting");
+      if (!readyBtn.classList.contains("btn-ready")) {
+        readyBtn.classList.add("btn-ready");
+      }
       readyBtn.classList.remove("throb");
     };
 
@@ -393,7 +398,9 @@ export default {
         readyBtn.style.display = "";
         readyBtn.disabled = false;
         readyBtn.textContent = "READY";
+        readyBtn.classList.add("btn-ready");
         readyBtn.classList.add("round-panel__submit--ready");
+        readyBtn.classList.remove("round-panel__submit--waiting");
         readyBtn.classList.add("throb");
       };
       if (animate) animateSwap(render);
@@ -403,7 +410,7 @@ export default {
 
     const enterWaitingState = () => {
       published = true;
-      hideReadyPrompt();
+      showingClue = false;
       steps.classList.add("is-hidden");
       setMarkingVisible(false);
       setVerdictsEnabled(false);
@@ -466,9 +473,16 @@ export default {
     };
 
     const showWaitingPrompt = () => {
-      hideReadyPrompt();
+      showingClue = false;
       setPrompt(waitingLabel, { status: true });
       setMarkingVisible(false);
+      readyBtn.style.display = "";
+      readyBtn.disabled = true;
+      readyBtn.textContent = waitingLabel;
+      readyBtn.classList.remove("btn-ready");
+      readyBtn.classList.remove("round-panel__submit--ready");
+      readyBtn.classList.remove("throb");
+      readyBtn.classList.add("round-panel__submit--waiting");
       clearAdvanceTimer();
     };
 
@@ -616,7 +630,6 @@ export default {
       clearAdvanceTimer();
       readyBtn.disabled = true;
       readyBtn.classList.remove("throb");
-      readyBtn.textContent = "READYING…";
       renderSteps();
       setVerdictsEnabled(false);
       pauseRoundTimer(timerContext);
