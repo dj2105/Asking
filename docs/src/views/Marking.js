@@ -341,6 +341,7 @@ export default {
     const renderSteps = () => {
       refreshStepLabels();
       steps.classList.toggle("is-hidden", published || submitting);
+      steps.classList.toggle("is-complete", isFullyMarked());
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", marks[i] !== null);
@@ -426,7 +427,10 @@ export default {
         setPrompt(questionText, { status: false });
         answerValue.textContent = answerText;
         renderSteps();
-        [btnRight, btnUnknown, btnWrong].forEach((btn) => btn.classList.remove("is-blinking"));
+        [btnRight, btnUnknown, btnWrong].forEach((btn) => {
+          btn.classList.remove("is-blinking");
+          btn.classList.remove("is-blinking-fast");
+        });
         reflectVerdicts();
         setMarkingVisible(true);
       };
@@ -650,12 +654,20 @@ export default {
       marks[idx] = markValue(value);
       if (sourceBtn) {
         [btnRight, btnUnknown, btnWrong].forEach((btn) => {
-          if (btn !== sourceBtn) btn.classList.remove("is-blinking");
+          if (btn !== sourceBtn) {
+            btn.classList.remove("is-blinking");
+            btn.classList.remove("is-blinking-fast");
+          }
         });
         sourceBtn.classList.add("is-blinking");
+        const blinkFast = Math.random() < 0.5;
+        if (blinkFast) sourceBtn.classList.add("is-blinking-fast");
+        else sourceBtn.classList.remove("is-blinking-fast");
+        const blinkDuration = blinkFast ? 450 : 900;
         setTimeout(() => {
           sourceBtn.classList.remove("is-blinking");
-        }, 900);
+          sourceBtn.classList.remove("is-blinking-fast");
+        }, blinkDuration);
       }
       renderSteps();
       reflectVerdicts();

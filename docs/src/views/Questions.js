@@ -298,6 +298,7 @@ export default {
     const renderSteps = () => {
       refreshStepLabels();
       steps.classList.toggle("is-hidden", published || submitting);
+      steps.classList.toggle("is-complete", isRoundComplete());
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
@@ -313,6 +314,10 @@ export default {
         btn.textContent = option;
         const isSelected = option && currentSelection === option;
         btn.classList.toggle("is-selected", isSelected);
+        if (!isSelected) {
+          btn.classList.remove("is-blinking");
+          btn.classList.remove("is-blinking-fast");
+        }
         btn.disabled = !option || published || submitting;
       });
     };
@@ -370,7 +375,10 @@ export default {
         const current = triplet[idx] || {};
         setPrompt(current.question || "", { status: false });
         setChoicesVisible(true);
-        choiceButtons.forEach((btn) => btn.classList.remove("is-blinking"));
+        choiceButtons.forEach((btn) => {
+          btn.classList.remove("is-blinking");
+          btn.classList.remove("is-blinking-fast");
+        });
         renderChoices();
         renderSteps();
       };
@@ -570,12 +578,20 @@ export default {
         chosen[currentIndex] = text;
         choiceButtons.forEach((choiceBtn) => {
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
-          if (choiceBtn !== btn) choiceBtn.classList.remove("is-blinking");
+          if (choiceBtn !== btn) {
+            choiceBtn.classList.remove("is-blinking");
+            choiceBtn.classList.remove("is-blinking-fast");
+          }
         });
         btn.classList.add("is-blinking");
+        const blinkFast = Math.random() < 0.5;
+        if (blinkFast) btn.classList.add("is-blinking-fast");
+        else btn.classList.remove("is-blinking-fast");
+        const blinkDuration = blinkFast ? 450 : 900;
         setTimeout(() => {
           btn.classList.remove("is-blinking");
-        }, 900);
+          btn.classList.remove("is-blinking-fast");
+        }, blinkDuration);
         renderChoices();
         renderSteps();
         scheduleAdvance(currentIndex);

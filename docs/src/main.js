@@ -100,6 +100,26 @@ const FINAL_STAGE_INDEX =
   PRE_STAGE_ROUTES.length + GAME_ROUNDS * ROUND_STAGE_ROUTES.length + POST_STAGE_ROUTES.length - 1;
 const MAX_BG_DEPTH = 0.8;
 
+const CARD_MOTIONS = [
+  "pickup-left",
+  "pickup-right",
+  "pickup-up",
+  "pickup-down",
+  "putdown-left",
+  "putdown-right",
+  "putdown-up",
+  "putdown-down",
+];
+
+let lastCardMotion = "";
+
+function pickCardMotion() {
+  const pool = CARD_MOTIONS.filter((value) => value !== lastCardMotion);
+  const choice = pool.length ? pool[Math.floor(Math.random() * pool.length)] : CARD_MOTIONS[0];
+  lastCardMotion = choice;
+  return choice;
+}
+
 function clampRoundIndex(raw) {
   const num = Number(raw);
   if (!Number.isFinite(num) || num <= 0) return 1;
@@ -272,6 +292,7 @@ async function mountRoute() {
 
   const stage = document.createElement("div");
   stage.className = "route-stage";
+  stage.dataset.motion = pickCardMotion();
   app.appendChild(stage);
 
   const wantsScoreStrip = !STRIP_EXCLUDE.has(actualRoute);
