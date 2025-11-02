@@ -199,7 +199,7 @@ let current = { route: "", mod: null, unmount: null };
 const STRIP_EXCLUDE = new Set(["lobby", "keyroom", "coderoom", "seeding", "final", "watcher", "rejoin"]);
 
 // Map route -> dynamic import path
-const TOP_LAYOUT_ROUTES = new Set(["keyroom", "award", "final"]);
+const TOP_LAYOUT_ROUTES = new Set(["final"]);
 
 function applyLayoutMode(route) {
   const body = document.body;
@@ -208,8 +208,10 @@ function applyLayoutMode(route) {
   const topAligned = TOP_LAYOUT_ROUTES.has(route);
   body.classList.toggle("layout-top", topAligned);
   body.classList.toggle("layout-center", !topAligned);
-  body.classList.toggle("layout-scroll-lock", !topAligned);
-  if (root) root.classList.toggle("layout-scroll-lock", !topAligned);
+  const expectsStrip = route && !STRIP_EXCLUDE.has(route);
+  body.classList.toggle("layout-awaits-strip", expectsStrip);
+  if (root) root.classList.remove("layout-scroll-lock");
+  body.classList.remove("layout-scroll-lock");
   if (route) body.setAttribute("data-route", route);
   else body.removeAttribute("data-route");
 }

@@ -21,7 +21,7 @@
   --ok: #4ade80;
   --bad: #f87171;
   --bg-depth: 0;
-  --layout-pad-base: clamp(80px, 12vh, 160px);
+  --layout-pad-base: clamp(96px, 15vh, 208px);
   --score-strip-gap: 32px;
   --score-strip-fallback-height: 72px;
   --score-strip-clearance: calc(var(--score-strip-gap) * 2 + var(--score-strip-fallback-height));
@@ -40,26 +40,26 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   --layout-pad-top: var(--layout-pad-base);
-  --layout-pad-bottom: var(--layout-pad-base);
+  --layout-pad-bottom: clamp(88px, 14vh, 208px);
 }
 
 body.layout-center {
-  --layout-pad-top: var(--score-strip-clearance);
-  --layout-pad-bottom: var(--score-strip-clearance);
+  --layout-pad-top: var(--layout-pad-base);
 }
 
-body.has-score-strip,
+body.layout-awaits-strip,
+body.has-score-strip {
+  --layout-pad-top: max(var(--layout-pad-base), var(--score-strip-clearance));
+}
+
 body.layout-top {
-  --layout-pad-top: var(--score-strip-clearance);
+  --layout-pad-top: calc(var(--layout-pad-base) + 48px);
+  --layout-pad-bottom: clamp(120px, 18vh, 240px);
 }
 
-body.layout-top {
-  --layout-pad-bottom: clamp(72px, 12vh, 140px);
-}
-
-html.layout-scroll-lock,
-body.layout-scroll-lock {
-  overflow: hidden;
+body.layout-top.layout-awaits-strip,
+body.layout-top.has-score-strip {
+  --layout-pad-top: max(calc(var(--layout-pad-base) + 48px), var(--score-strip-clearance));
 }
 
 #app {
@@ -76,14 +76,6 @@ body.layout-scroll-lock {
   overflow: visible;
 }
 
-body.layout-center #app {
-  justify-content: center;
-}
-
-body.layout-scroll-lock #app {
-  overflow: hidden;
-}
-
 /* View layout */
 .view {
   width: 100%;
@@ -92,7 +84,7 @@ body.layout-scroll-lock #app {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 28px;
   position: relative;
   flex: 1 0 auto;
@@ -110,7 +102,7 @@ body.layout-top .view {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 28px;
   flex: 1 0 auto;
 }
