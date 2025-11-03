@@ -57,9 +57,104 @@ function resolveRoundDistractor(item = {}, round) {
   );
 }
 
-function renderQuestionSection({ heading, items, answers, round }) {
+function getRoundMapValue(map = {}, roundNumber) {
+  if (!map || typeof map !== "object") return undefined;
+  if (map[roundNumber] !== undefined) return map[roundNumber];
+  const key = String(roundNumber);
+  if (map[key] !== undefined) return map[key];
+  return undefined;
+}
+
+function normaliseClueValue(value) {
+  if (typeof value === "string") return value.trim();
+  return "";
+}
+
+function normaliseRevealValue(value) {
+  if (typeof value === "string") return value.trim();
+  if (value && typeof value === "object") {
+    const prompt = typeof value.prompt === "string" ? value.prompt.trim() : "";
+    if (prompt) return prompt;
+    const text = typeof value.text === "string" ? value.text.trim() : "";
+    if (text) return text;
+    const val = typeof value.value === "string" ? value.value.trim() : "";
+    if (val) return val;
+  }
+  return "";
+}
+
+function resolveRoundClue(roomData = {}, round = 1) {
+  const roundNumber = Number(round) || 1;
+  const direct = normaliseClueValue(
+    getRoundMapValue(roomData.clues, roundNumber)
+  );
+  if (direct) return direct;
+  const maths = roomData.maths || {};
+  const arrIndex = roundNumber - 1;
+  if (Array.isArray(maths.clues) && arrIndex >= 0 && arrIndex < maths.clues.length) {
+    const viaMaths = normaliseClueValue(maths.clues[arrIndex]);
+    if (viaMaths) return viaMaths;
+  }
+  return "";
+}
+
+function resolveRoundReveal(roomData = {}, round = 1) {
+  const roundNumber = Number(round) || 1;
+  const direct = normaliseRevealValue(
+    getRoundMapValue(roomData.reveals, roundNumber)
+  );
+  if (direct) return direct;
+  const maths = roomData.maths || {};
+  const arrIndex = roundNumber - 1;
+  if (
+    Array.isArray(maths.reveals) &&
+    arrIndex >= 0 &&
+    arrIndex < maths.reveals.length
+  ) {
+    const viaMaths = normaliseRevealValue(maths.reveals[arrIndex]);
+    if (viaMaths) return viaMaths;
+  }
+  return "";
+}
+
+function normaliseTimingEntry(entry) {
+  if (!entry || typeof entry !== "object") return null;
+  const totalSeconds =
+    typeof entry.totalSeconds === "number" ? entry.totalSeconds : null;
+  if (totalSeconds !== null && !Number.isNaN(totalSeconds)) return totalSeconds;
+  const totalMs = typeof entry.totalMs === "number" ? entry.totalMs : null;
+  if (totalMs !== null && !Number.isNaN(totalMs)) return totalMs / 1000;
+  const total = typeof entry.total === "number" ? entry.total : null;
+  if (total !== null && !Number.isNaN(total)) return total;
+  return null;
+}
+
+function determineFasterRole(roomData = {}, round = 1) {
+  const roundNumber = Number(round) || 1;
+  const timings = roomData.timings || {};
+  const hostEntry = normaliseTimingEntry(
+    getRoundMapValue((timings.host || {}), roundNumber)
+  );
+  const guestEntry = normaliseTimingEntry(
+    getRoundMapValue((timings.guest || {}), roundNumber)
+  );
+  if (hostEntry === null || guestEntry === null) return null;
+  const epsilon = 0.01;
+  if (hostEntry + epsilon < guestEntry) return "host";
+  if (guestEntry + epsilon < hostEntry) return "guest";
+  return null;
+}
+
+function renderQuestionSection({ heading, items, answers, round, score }) {
   const block = el("div", { class: "award-box award-box--questions" });
-  block.appendChild(el("div", { class: "mono award-box__title" }, heading));
+  const header = el("div", { class: "award-box__header" });
+  header.appendChild(el("div", { class: "mono award-box__title" }, heading));
+  if (typeof score === "number" && !Number.isNaN(score)) {
+    header.appendChild(
+      el("div", { class: "mono award-round-score" }, String(score))
+    );
+  }
+  block.appendChild(header);
 
   for (let i = 0; i < 3; i += 1) {
     const item = items[i] || {};
@@ -73,8 +168,14 @@ function renderQuestionSection({ heading, items, answers, round }) {
 
     const row = el("div", { class: "award-question" });
     const textCol = el("div", { class: "award-question__text" });
+    const baseRound = Number(round) || 1;
+    const questionNumber = (Math.max(baseRound - 1, 0) * 3) + (i + 1);
     textCol.appendChild(
-      el("div", { class: "mono award-question__prompt" }, `${i + 1}. ${question}`)
+      el(
+        "div",
+        { class: "mono award-question__prompt" },
+        `${questionNumber}. ${question}`
+      )
     );
 
     let distractor = resolveRoundDistractor(item, round);
@@ -138,6 +239,7 @@ export default {
     const root = el("div", { class: "view view-award" });
 
     const card = el("div", { class: "card award-card" });
+    const cardTitle = el("div", { class: "mono award-card__heading" }, "SCORES");
     const scoreboard = el("div", { class: "award-scoreboard" });
     const hostScoreValue = el("div", { class: "mono award-scoreboard__value" }, "0");
     const hostScoreLabel = el("div", { class: "mono award-scoreboard__label" }, "DANIEL");
@@ -156,13 +258,35 @@ export default {
 
     const reviewWrap = el("div", { class: "award-review" });
 
+    card.appendChild(cardTitle);
     card.appendChild(scoreboard);
     card.appendChild(reviewWrap);
 
-    const continueBtn = el("button", { class: "btn" }, "I'M READY");
-    card.appendChild(continueBtn);
-
     root.appendChild(card);
+
+    const jemimaCard = el("div", { class: "card award-card award-card--jemima" });
+    const jemimaTitle = el("div", { class: "mono award-card__heading" }, "JEMIMA");
+    const jemimaClue = el("div", { class: "mono award-clue" }, "");
+    const jemimaReveal = el(
+      "div",
+      { class: "mono award-reveal award-reveal--hidden" },
+      ""
+    );
+    jemimaCard.appendChild(jemimaTitle);
+    jemimaCard.appendChild(jemimaClue);
+    jemimaCard.appendChild(jemimaReveal);
+
+    root.appendChild(jemimaCard);
+
+    const continueRow = el("div", { class: "award-continue-row" });
+    const continueBtn = el(
+      "button",
+      { class: "btn award-continue-btn" },
+      "ROUND 2"
+    );
+    continueRow.appendChild(continueBtn);
+
+    root.appendChild(continueRow);
 
     container.appendChild(root);
 
@@ -178,7 +302,11 @@ export default {
       : hostUid === me.uid ? "host" : guestUid === me.uid ? "guest" : "guest";
     const oppRole = myRole === "host" ? "guest" : "host";
     const oppName = oppRole === "host" ? "Daniel" : "Jaime";
-    const computeReadyLabel = (r) => (r >= 5 ? "I'M READY FOR MATHS" : `I'M READY FOR ROUND ${r + 1}`);
+    const computeReadyLabel = (r) => {
+      const base = Number(r) || 1;
+      const nextRound = Math.min(base + 1, 5);
+      return `ROUND ${nextRound}`;
+    };
     let readyLabel = computeReadyLabel(round);
     let waitingLabel = `WAITING FOR ${oppName.toUpperCase()}`;
     continueBtn.textContent = readyLabel;
@@ -189,6 +317,7 @@ export default {
       hostAnswers: [],
       guestAnswers: []
     };
+    let roundScores = { host: 0, guest: 0 };
 
     const rdSnap = await getDoc(rdRef);
     const rd = rdSnap.data() || {};
@@ -212,11 +341,59 @@ export default {
       return total;
     };
 
-    const updateRoundScores = () => {
-      const hostScore = countCorrect(reviewData.hostAnswers, reviewData.hostItems);
-      const guestScore = countCorrect(reviewData.guestAnswers, reviewData.guestItems);
-      hostScoreValue.textContent = String(hostScore);
-      guestScoreValue.textContent = String(guestScore);
+    let latestRoomData = roomData0;
+    let fallbackMaths = roomData0.maths || {};
+
+    const recomputeRoundScores = () => {
+      roundScores.host = countCorrect(reviewData.hostAnswers, reviewData.hostItems);
+      roundScores.guest = countCorrect(reviewData.guestAnswers, reviewData.guestItems);
+    };
+
+    const updateScoreboardTotals = () => {
+      const data = latestRoomData || {};
+      const hostMap = (data.scores || {}).host || {};
+      const guestMap = (data.scores || {}).guest || {};
+      const limit = Math.min(Math.max(Number(round) || 1, 1), 5);
+      const getValue = (map, index, fallback) => {
+        const direct = getRoundMapValue(map, index);
+        if (typeof direct === "number" && !Number.isNaN(direct)) return direct;
+        if (index === limit && typeof fallback === "number" && !Number.isNaN(fallback)) {
+          return fallback;
+        }
+        return 0;
+      };
+      let hostTotal = 0;
+      let guestTotal = 0;
+      for (let i = 1; i <= limit; i += 1) {
+        hostTotal += getValue(hostMap, i, roundScores.host);
+        guestTotal += getValue(guestMap, i, roundScores.guest);
+      }
+      hostScoreValue.textContent = String(hostTotal);
+      guestScoreValue.textContent = String(guestTotal);
+    };
+
+    const DEFAULT_CLUE_PLACEHOLDER = "Jemima’s clue will appear soon.";
+
+    const updateJemimaCard = () => {
+      const baseData = latestRoomData || {};
+      const mathsSource =
+        baseData.maths && typeof baseData.maths === "object"
+          ? baseData.maths
+          : fallbackMaths;
+      const mergedData = { ...baseData, maths: mathsSource };
+      const clueText = resolveRoundClue(mergedData, round) || DEFAULT_CLUE_PLACEHOLDER;
+      jemimaClue.textContent = clueText;
+      const revealText = resolveRoundReveal(mergedData, round);
+      const fasterRole = determineFasterRole(baseData, round);
+      if (fasterRole === myRole && revealText) {
+        jemimaReveal.textContent = revealText;
+        jemimaReveal.classList.remove("award-reveal--hidden");
+      } else {
+        jemimaReveal.textContent = "";
+        if (!jemimaReveal.classList.contains("award-reveal--hidden")) {
+          jemimaReveal.classList.add("award-reveal--hidden");
+        }
+      }
     };
 
     const refreshReviews = () => {
@@ -226,27 +403,35 @@ export default {
       const oppItems = myRole === "host" ? reviewData.guestItems : reviewData.hostItems;
       const oppAnswers = myRole === "host" ? reviewData.guestAnswers : reviewData.hostAnswers;
 
+      recomputeRoundScores();
+      const myScore = myRole === "host" ? roundScores.host : roundScores.guest;
+      const oppScore = myRole === "host" ? roundScores.guest : roundScores.host;
+
       reviewWrap.appendChild(renderQuestionSection({
         heading: "YOUR QUESTIONS",
         items: myItems,
         answers: myAnswers,
         round,
+        score: myScore,
       }));
       reviewWrap.appendChild(renderQuestionSection({
-        heading: `${oppName.toUpperCase()}'S QUESTIONS`,
+        heading: `${oppName.toUpperCase()}’S QUESTIONS`,
         items: oppItems,
         answers: oppAnswers,
         round,
+        score: oppScore,
       }));
-      updateRoundScores();
+      updateScoreboardTotals();
     };
 
     const refreshSummary = () => {
-      updateRoundScores();
+      recomputeRoundScores();
+      updateScoreboardTotals();
     };
 
     refreshReviews();
     refreshSummary();
+    updateJemimaCard();
 
     let ackMine = Boolean(((roomData0.awardAck || {})[myRole] || {})[round]);
     let ackOpp = Boolean(((roomData0.awardAck || {})[oppRole] || {})[round]);
@@ -335,6 +520,10 @@ export default {
 
     const stop = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
+      latestRoomData = data;
+      if (data.maths && typeof data.maths === "object") {
+        fallbackMaths = data.maths;
+      }
 
       const stateName = String(data.state || "").toLowerCase();
       const dataRound = Number(data.round);
@@ -353,6 +542,7 @@ export default {
         reviewData.guestAnswers = Array.isArray(answersGuest) ? answersGuest : [];
         refreshReviews();
         refreshSummary();
+        updateJemimaCard();
       }
 
       const ackData = data.awardAck || {};
@@ -391,6 +581,7 @@ export default {
       }
       if (stateName !== "award") {
         refreshSummary();
+        updateJemimaCard();
       }
     }, (err) => {
       console.warn("[award] snapshot error:", err);
