@@ -271,6 +271,8 @@ export default {
     let submitting = false;
     let advanceTimer = null;
     let swapTimer = null;
+    let stepLabelsLocked = false;
+    let stepLabelTimer = null;
     let showingClue = false;
     let fallbackMaths = {};
     let latestRoomData = {};
@@ -327,6 +329,38 @@ export default {
       }
     };
 
+    const clearStepLabelTimer = () => {
+      if (stepLabelTimer) {
+        clearTimeout(stepLabelTimer);
+        stepLabelTimer = null;
+      }
+    };
+
+    const applyStepLabels = () => {
+      if (!stepLabelsLocked) {
+        refreshStepLabels();
+      }
+    };
+
+    const lockStepLabels = (ms) => {
+      clearStepLabelTimer();
+      if (ms && ms > 0) {
+        stepLabelsLocked = true;
+        stepLabelTimer = setTimeout(() => {
+          stepLabelTimer = null;
+          stepLabelsLocked = false;
+          refreshStepLabels();
+        }, ms);
+      } else {
+        stepLabelsLocked = false;
+        refreshStepLabels();
+      }
+    };
+
+    const unlockStepLabels = () => {
+      lockStepLabels(0);
+    };
+
     const animateSwap = (renderFn) => {
       clearSwapTimer();
       content.classList.add("is-leaving");
@@ -342,11 +376,12 @@ export default {
     };
 
     const renderSteps = () => {
-      refreshStepLabels();
+      applyStepLabels();
       steps.classList.toggle("is-hidden", published || submitting);
       steps.classList.toggle("is-complete", isRoundComplete());
+      const allowActive = !(published || submitting || showingClue);
       stepButtons.forEach((btn, i) => {
-        btn.classList.toggle("is-active", i === idx);
+        btn.classList.toggle("is-active", allowActive && i === idx);
         btn.classList.toggle("is-answered", Boolean(chosen[i]));
         btn.disabled = triplet.length === 0 || published || submitting;
       });
@@ -594,6 +629,7 @@ export default {
       setLoadingState("Preparing questions…");
     }
 
+    unlockStepLabels();
     renderSteps();
     renderChoices();
 
@@ -650,6 +686,7 @@ export default {
           chosen[currentIndex] = "";
           btn.classList.remove("is-blinking");
           btn.classList.remove("is-blinking-fast");
+          unlockStepLabels();
           renderChoices();
           renderSteps();
           return;
@@ -665,6 +702,7 @@ export default {
         btn.classList.add("is-blinking");
         btn.classList.add("is-blinking-fast");
         const flashDuration = 260;
+        lockStepLabels(flashDuration);
         setTimeout(() => {
           btn.classList.remove("is-blinking");
           btn.classList.remove("is-blinking-fast");
@@ -732,6 +770,7 @@ export default {
       if (nextRound !== round) {
         round = nextRound;
         timerContext.round = round;
+        unlockStepLabels();
         renderSteps();
         applyPalette(effectiveRound());
       }
@@ -791,6 +830,7 @@ export default {
       alive = false;
       clearAdvanceTimer();
       clearSwapTimer();
+      clearStepLabelTimer();
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);
