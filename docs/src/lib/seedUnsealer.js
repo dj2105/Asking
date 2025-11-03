@@ -97,62 +97,6 @@ function validateItem(item, label) {
   assert(typeof distractors.hard === "string" && distractors.hard.trim(), `${label} distractor hard missing.`);
 }
 
-function validatePack(pack) {
-  assert(pack && typeof pack === "object", "Decrypted pack empty.");
-  assert(pack.version === PACK_VERSION_FULL, "Unsupported sealed version.");
-
-  const meta = pack.meta || {};
-  assert(meta && typeof meta === "object", "Pack meta missing.");
-  const code = clampCode(meta.roomCode);
-  assert(code && code.length >= 3 && code.length <= 5, "Pack room code invalid.");
-  assert(code === meta.roomCode, "Pack room code must be uppercase alphanumeric (3–5 chars).");
-  assert(typeof meta.hostUid === "string" && meta.hostUid.trim(), "Pack hostUid missing.");
-  assert(typeof meta.guestUid === "string" && meta.guestUid.trim(), "Pack guestUid missing.");
-  assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
-
-  const rounds = Array.isArray(pack.rounds) ? pack.rounds : [];
-  assert(rounds.length === 5, "Pack must contain 5 rounds.");
-  const seenRounds = new Set();
-  rounds.forEach((round, idx) => {
-    assert(round && typeof round === "object", `Round entry ${idx + 1} invalid.`);
-    const rnum = Number(round.round);
-    assert(Number.isInteger(rnum) && rnum >= 1 && rnum <= 5, `Round number invalid at index ${idx}.`);
-    seenRounds.add(rnum);
-
-    const hostItems = Array.isArray(round.hostItems) ? round.hostItems : [];
-    const guestItems = Array.isArray(round.guestItems) ? round.guestItems : [];
-    assert(hostItems.length === 3, `Round ${rnum} hostItems must be 3.`);
-    assert(guestItems.length === 3, `Round ${rnum} guestItems must be 3.`);
-    hostItems.forEach((item, i) => validateItem(item, `Round ${rnum} host item ${i + 1}`));
-    guestItems.forEach((item, i) => validateItem(item, `Round ${rnum} guest item ${i + 1}`));
-  });
-  assert(seenRounds.size === 5, "Pack rounds must cover 1–5 exactly.");
-  for (let i = 1; i <= 5; i += 1) {
-    assert(seenRounds.has(i), "Pack rounds must cover 1–5 exactly.");
-  }
-
-  const maths = pack.maths || {};
-  assert(Array.isArray(maths.clues) && maths.clues.length === 5, "Maths clues must contain 5 entries.");
-  maths.clues.forEach((clue, idx) => {
-    assert(typeof clue === "string" && clue.trim(), `Maths clue ${idx + 1} missing.`);
-  });
-  assert(Array.isArray(maths.reveals) && maths.reveals.length === 5, "Maths reveals must contain 5 entries.");
-  maths.reveals.forEach((reveal, idx) => {
-    const ok = typeof reveal === "string" ? reveal.trim() : typeof reveal === "object";
-    assert(ok, `Maths reveal ${idx + 1} missing.`);
-  });
-  assert(typeof maths.question === "string" && maths.question.trim(), "Maths question missing.");
-  assert(Number.isInteger(maths.answer), "Maths answer must be an integer.");
-
-  const integrity = pack.integrity || {};
-  assert(typeof integrity.checksum === "string" && /^[0-9a-f]{64}$/i.test(integrity.checksum), "Integrity checksum invalid.");
-  if ("verified" in integrity) {
-    assert(Boolean(integrity.verified), "Integrity flag must be true.");
-  }
-
-  return { code };
-}
-
 function clonePlain(value) {
   return JSON.parse(JSON.stringify(value ?? null));
 }
@@ -225,8 +169,11 @@ function validateHalfpack(pack) {
 
 function validateQuestionPack(pack) {
   assert(pack && typeof pack === "object", "Decrypted pack empty.");
-  assert(pack.version === PACK_VERSION_QUESTIONS, "Unsupported sealed version.");
-
+const OK_QUESTION_VERSIONS = ["jemima-questionpack-1", "jemima-questions-1"];
+assert(OK_QUESTION_VERSIONS.includes(pack.version), "Unsupported sealed version.");
+if (pack.version === "jemima-questions-1") {
+  console.warn("Using legacy question pack format (jemima-questions-1).");
+}
   const meta = pack.meta || {};
   assert(meta && typeof meta === "object", "Pack meta missing.");
   const code = clampCode(meta.roomCode);
