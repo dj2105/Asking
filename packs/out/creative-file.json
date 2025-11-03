@@ -1,0 +1,25 @@
+{
+  "version": "jemima-maths-chain-1",
+  "meta": {
+    "roomCode": "LYT",
+    "generatedAt": "2025-10-24T04:33:41Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "maths": {
+    "location": "Canal boat galley",
+    "beats": [
+      "I start with the 24 hours I've booked the canal boat, determined to use every minute.",
+      "We plan to glide through 6 locks before dusk, so I add 6 to the tally for each heavy gate.",
+      "Mum insists we count both crew mates steering, so I double the total for the 2 of us swapping shifts.",
+      "Storm clouds threaten 8 sodden detours, so I subtract 8 in case we lose time sheltering.",
+      "To cheer us I pack a dozen jam tarts, so I add 12 sweet boosts to the plan."
+    ],
+    "question": "Be a pal—what number will I dock with? ___",
+    "answer": 64
+  },
+  "integrity": {
+    "checksum": "557e88e27b87156dfd00a2494c8b5079ba19a3ab3f490814c3477677b865a19a",
+    "verified": true
+  }
+}
