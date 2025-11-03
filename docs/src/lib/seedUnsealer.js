@@ -236,6 +236,26 @@ function validateMaths(pack) {
   return { code };
 }
 
+function validatePack(pack) {
+  assert(pack && typeof pack === "object", "Decrypted pack empty.");
+  const v = String(pack.version || "");
+
+  if (v === PACK_VERSION_FULL) {
+    return { code: clampCode(pack.meta?.roomCode || "") };
+  }
+  if (v === PACK_VERSION_HALF) {
+    return validateHalfpack(pack);
+  }
+  if (["jemima-questionpack-1", "jemima-questions-1"].includes(v)) {
+    return validateQuestionPack(pack);
+  }
+  if (v === PACK_VERSION_MATHS) {
+    return validateMaths(pack);
+  }
+
+  throw new Error("Unsupported sealed version.");
+}
+
 export async function unsealFile(file, { password = PASSWORD_DEMO } = {}) {
   const pack = await readSealedContent(file, password);
   const { code } = validatePack(pack);
