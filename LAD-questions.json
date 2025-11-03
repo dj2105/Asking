@@ -1,0 +1,371 @@
+{
+  "version": "jemima-questions-1",
+  "meta": {
+    "roomCode": "LAD",
+    "generatedAt": "2025-10-16T21:00:00Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": {
+    "1": {
+      "hostItems": [
+        {
+          "subject": "World Capitals",
+          "prize": "£100",
+          "question": "What is the capital of France?",
+          "correct_answer": "Paris",
+          "distractors": {
+            "easy": "Lyon",
+            "medium": "Marseille",
+            "hard": "Brussels"
+          }
+        },
+        {
+          "subject": "Cats",
+          "prize": "£200",
+          "question": "Which sense organ do cats use in their whiskers to detect air movement and nearby objects?",
+          "correct_answer": "Vibrissae",
+          "distractors": {
+            "easy": "Nictitating membrane",
+            "medium": "Jacobson’s organ",
+            "hard": "Uropygial gland"
+          }
+        },
+        {
+          "subject": "British Monarchy",
+          "prize": "£300",
+          "question": "Who was the first monarch of the House of Tudor?",
+          "correct_answer": "Henry VII",
+          "distractors": {
+            "easy": "Henry VIII",
+            "medium": "Edward IV",
+            "hard": "Richard III"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "American TV Sitcoms",
+          "prize": "£100",
+          "question": "In Friends, what is the name of Ross’s second wife?",
+          "correct_answer": "Emily",
+          "distractors": {
+            "easy": "Carol",
+            "medium": "Rachel",
+            "hard": "Janice"
+          }
+        },
+        {
+          "subject": "’90s Pop",
+          "prize": "£200",
+          "question": "Which group sang 'Bye Bye Bye' in 2000 after rising in the late ’90s?",
+          "correct_answer": "*NSYNC",
+          "distractors": {
+            "easy": "Backstreet Boys",
+            "medium": "Five",
+            "hard": "Westlife"
+          }
+        },
+        {
+          "subject": "Irish History",
+          "prize": "£300",
+          "question": "What treaty ended the Irish War of Independence and led to the Free State?",
+          "correct_answer": "Anglo-Irish Treaty (1921)",
+          "distractors": {
+            "easy": "Treaty of Versailles",
+            "medium": "Sunningdale Agreement",
+            "hard": "Good Friday Agreement"
+          }
+        }
+      ]
+    },
+    "2": {
+      "hostItems": [
+        {
+          "subject": "Flags",
+          "prize": "£500",
+          "question": "Which country’s flag depicts a red circle centred on a white field?",
+          "correct_answer": "Japan",
+          "distractors": {
+            "easy": "Bangladesh",
+            "medium": "Greenland",
+            "hard": "Indonesia"
+          }
+        },
+        {
+          "subject": "Astronomy — Missions",
+          "prize": "£1,000",
+          "question": "Which mission first landed humans on the Moon?",
+          "correct_answer": "Apollo 11",
+          "distractors": {
+            "easy": "Apollo 12",
+            "medium": "Apollo 8",
+            "hard": "Luna 2"
+          }
+        },
+        {
+          "subject": "Biology — Human Body",
+          "prize": "£2,000",
+          "question": "Which organ primarily detoxifies blood and produces bile?",
+          "correct_answer": "Liver",
+          "distractors": {
+            "easy": "Kidney",
+            "medium": "Spleen",
+            "hard": "Pancreas"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Geography — Rivers",
+          "prize": "£500",
+          "question": "The Danube flows into which sea?",
+          "correct_answer": "Black Sea",
+          "distractors": {
+            "easy": "Mediterranean Sea",
+            "medium": "Baltic Sea",
+            "hard": "Caspian Sea"
+          }
+        },
+        {
+          "subject": "Computing — Internet",
+          "prize": "£1,000",
+          "question": "What does the 'S' in HTTPS denote?",
+          "correct_answer": "Secure (TLS/SSL)",
+          "distractors": {
+            "easy": "Server",
+            "medium": "Socket",
+            "hard": "Service"
+          }
+        },
+        {
+          "subject": "Chemistry — Elements",
+          "prize": "£2,000",
+          "question": "Which element has the chemical symbol Fe?",
+          "correct_answer": "Iron",
+          "distractors": {
+            "easy": "Fluorine",
+            "medium": "Fermium",
+            "hard": "Francium"
+          }
+        }
+      ]
+    },
+    "3": {
+      "hostItems": [
+        {
+          "subject": "World War II",
+          "prize": "£4,000",
+          "question": "Operation Overlord began with landings on which French region?",
+          "correct_answer": "Normandy",
+          "distractors": {
+            "easy": "Brittany",
+            "medium": "Provence",
+            "hard": "Aquitaine"
+          }
+        },
+        {
+          "subject": "Mathematics — Geometry",
+          "prize": "£8,000",
+          "question": "In Euclidean geometry, the angles opposite equal sides are what?",
+          "correct_answer": "Equal",
+          "distractors": {
+            "easy": "Complementary",
+            "medium": "Supplementary",
+            "hard": "Right angles"
+          }
+        },
+        {
+          "subject": "Literature — Shakespeare",
+          "prize": "£16,000",
+          "question": "Which play features the line “Out, damned spot!”?",
+          "correct_answer": "Macbeth",
+          "distractors": {
+            "easy": "Othello",
+            "medium": "Hamlet",
+            "hard": "King Lear"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Architecture",
+          "prize": "£4,000",
+          "question": "Which architect designed Fallingwater?",
+          "correct_answer": "Frank Lloyd Wright",
+          "distractors": {
+            "easy": "Mies van der Rohe",
+            "medium": "Le Corbusier",
+            "hard": "Eero Saarinen"
+          }
+        },
+        {
+          "subject": "Biology — Cells",
+          "prize": "£8,000",
+          "question": "Which organelle contains chlorophyll in plants?",
+          "correct_answer": "Chloroplast",
+          "distractors": {
+            "easy": "Mitochondrion",
+            "medium": "Ribosome",
+            "hard": "Golgi apparatus"
+          }
+        },
+        {
+          "subject": "Music Theory",
+          "prize": "£16,000",
+          "question": "A perfect fifth spans how many semitones?",
+          "correct_answer": "7",
+          "distractors": {
+            "easy": "6",
+            "medium": "8",
+            "hard": "9"
+          }
+        }
+      ]
+    },
+    "4": {
+      "hostItems": [
+        {
+          "subject": "Irish History",
+          "prize": "£32,000",
+          "question": "The 1998 agreement widely known as the Good Friday Agreement is also called what?",
+          "correct_answer": "Belfast Agreement",
+          "distractors": {
+            "easy": "St Andrews Agreement",
+            "medium": "Hillsborough Agreement",
+            "hard": "Downing Street Declaration"
+          }
+        },
+        {
+          "subject": "Physics — Thermodynamics",
+          "prize": "£64,000",
+          "question": "Which law states entropy of an isolated system never decreases?",
+          "correct_answer": "Second law of thermodynamics",
+          "distractors": {
+            "easy": "Zeroth law",
+            "medium": "First law",
+            "hard": "Third law"
+          }
+        },
+        {
+          "subject": "Opera",
+          "prize": "£125,000",
+          "question": "In 'The Magic Flute', who is the Queen of the Night’s daughter?",
+          "correct_answer": "Pamina",
+          "distractors": {
+            "easy": "Papagena",
+            "medium": "Konstanze",
+            "hard": "Donna Anna"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "British Monarchy",
+          "prize": "£32,000",
+          "question": "Which monarch reigned immediately after George II?",
+          "correct_answer": "George III",
+          "distractors": {
+            "easy": "George IV",
+            "medium": "William IV",
+            "hard": "Edward VII"
+          }
+        },
+        {
+          "subject": "Computing — Algorithms",
+          "prize": "£64,000",
+          "question": "Dijkstra’s algorithm fails with negative edges because it assumes what?",
+          "correct_answer": "Non-decreasing tentative distances",
+          "distractors": {
+            "easy": "Acyclic graphs",
+            "medium": "Uniform weights",
+            "hard": "Tree topology"
+          }
+        },
+        {
+          "subject": "Film Scores",
+          "prize": "£125,000",
+          "question": "Who composed 'The Good, the Bad and the Ugly' theme?",
+          "correct_answer": "Ennio Morricone",
+          "distractors": {
+            "easy": "John Williams",
+            "medium": "James Horner",
+            "hard": "Hans Zimmer"
+          }
+        }
+      ]
+    },
+    "5": {
+      "hostItems": [
+        {
+          "subject": "’90s Pop",
+          "prize": "£250,000",
+          "question": "Which artist released 'Ray of Light' in 1998 blending electronica with pop?",
+          "correct_answer": "Madonna",
+          "distractors": {
+            "easy": "Kylie Minogue",
+            "medium": "Cher",
+            "hard": "Alanis Morissette"
+          }
+        },
+        {
+          "subject": "American TV Sitcoms",
+          "prize": "£500,000",
+          "question": "In Seinfeld, what is Kramer’s first name?",
+          "correct_answer": "Cosmo",
+          "distractors": {
+            "easy": "Carl",
+            "medium": "Calvin",
+            "hard": "Conrad"
+          }
+        },
+        {
+          "subject": "Irish Mythology",
+          "prize": "£1,000,000",
+          "question": "Who is the Dagda’s daughter famed for prophecy and poetry?",
+          "correct_answer": "Brigid",
+          "distractors": {
+            "easy": "Medb",
+            "medium": "Ériu",
+            "hard": "Macha"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "Cats",
+          "prize": "£250,000",
+          "question": "Which cat breed is known for colourpoint fur and blue eyes, derived from Siam?",
+          "correct_answer": "Siamese",
+          "distractors": {
+            "easy": "Maine Coon",
+            "medium": "British Shorthair",
+            "hard": "Chartreux"
+          }
+        },
+        {
+          "subject": "World War II",
+          "prize": "£500,000",
+          "question": "The Enigma messages were chiefly decrypted at which UK site?",
+          "correct_answer": "Bletchley Park",
+          "distractors": {
+            "easy": "Porton Down",
+            "medium": "GCHQ Cheltenham",
+            "hard": "Aldermaston"
+          }
+        },
+        {
+          "subject": "British Monarchy",
+          "prize": "£1,000,000",
+          "question": "Which Act in 1701 arranged Protestant succession leading to the Hanoverians?",
+          "correct_answer": "Act of Settlement",
+          "distractors": {
+            "easy": "Bill of Rights 1689",
+            "medium": "Act of Union 1707",
+            "hard": "Triennial Act 1694"
+          }
+        }
+      ]
+    }
+  }
+}

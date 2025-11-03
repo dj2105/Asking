@@ -376,10 +376,14 @@
             "prize": "£1,000,000",
             "question": "Which Act in 1701 arranged Protestant succession leading to the Hanoverians?",
             "correct_answer": "Act of Settlement",
-            "distractors": { "easy": "Bill of Rights 1689", "medium": "Act of Union 1707", "hard": "Triennial Act 1694" }
+            "distractors": {
+              "easy": "Bill of Rights 1689",
+              "medium": "Act of Union 1707",
+              "hard": "Triennial Act 1694"
+            }
           }
         ]
       }
-    }
+    ]
   }
 }

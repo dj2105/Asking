@@ -19,14 +19,15 @@ Usage:
 import sys, json, base64, hashlib, secrets, re
 from datetime import datetime, timezone
 
-# ---- crypto via PyCryptodome ----
+# ---- crypto via PyCryptodome (optional) ----
 try:
     from Crypto.Cipher import AES  # type: ignore
     from Crypto.Protocol.KDF import PBKDF2  # type: ignore
     from Crypto.Hash import SHA256  # type: ignore
-except ModuleNotFoundError as e:
-    print("PyCryptodome not found. Install with: pip install pycryptodome", file=sys.stderr)
-    raise
+except ModuleNotFoundError:  # pragma: no cover
+    AES = None
+    PBKDF2 = None
+    SHA256 = None
 
 PASSWORD = b"DEMO-ONLY"         # <-- change in production
 PBKDF2_ROUNDS = 150_000
@@ -37,12 +38,105 @@ def js(o) -> str:
     return json.dumps(o, separators=(",", ":"), ensure_ascii=False)
 
 def derive_key(password: bytes, salt: bytes) -> bytes:
-    return PBKDF2(password, salt, dkLen=32, count=PBKDF2_ROUNDS, hmac_hash_module=SHA256)
+    if PBKDF2 is not None and SHA256 is not None:
+        return PBKDF2(password, salt, dkLen=32, count=PBKDF2_ROUNDS, hmac_hash_module=SHA256)
+    return hashlib.pbkdf2_hmac("sha256", password, salt, PBKDF2_ROUNDS, dklen=32)
 
 def encrypt_aes_gcm(key: bytes, nonce: bytes, plaintext: bytes) -> bytes:
-    cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
-    ciphertext, tag = cipher.encrypt_and_digest(plaintext)
+    if AES is not None:
+        cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
+        ciphertext, tag = cipher.encrypt_and_digest(plaintext)
+        return ciphertext + tag
+
+    import ctypes
+    from ctypes.util import find_library
+
+    lib_name = find_library("crypto") or "libcrypto.so"
+    libcrypto = ctypes.CDLL(lib_name)
+
+    EVP_CTRL_GCM_SET_IVLEN = 0x9
+    EVP_CTRL_GCM_GET_TAG = 0x10
+
+    EVP_CIPHER_CTX_new = libcrypto.EVP_CIPHER_CTX_new
+    EVP_CIPHER_CTX_new.restype = ctypes.c_void_p
+    ctx = EVP_CIPHER_CTX_new()
+    if not ctx:
+        raise RuntimeError("Failed to allocate EVP_CIPHER_CTX")
+
+    EVP_CIPHER_CTX_free = libcrypto.EVP_CIPHER_CTX_free
+    EVP_CIPHER_CTX_free.argtypes = [ctypes.c_void_p]
+
+    try:
+        EVP_aes_256_gcm = libcrypto.EVP_aes_256_gcm
+        EVP_aes_256_gcm.restype = ctypes.c_void_p
+
+        EVP_EncryptInit_ex = libcrypto.EVP_EncryptInit_ex
+        EVP_EncryptInit_ex.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+        EVP_EncryptInit_ex.restype = ctypes.c_int
+
+        EVP_CIPHER_CTX_ctrl = libcrypto.EVP_CIPHER_CTX_ctrl
+        EVP_CIPHER_CTX_ctrl.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_void_p]
+        EVP_CIPHER_CTX_ctrl.restype = ctypes.c_int
+
+        EVP_EncryptUpdate = libcrypto.EVP_EncryptUpdate
+        EVP_EncryptUpdate.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_int), ctypes.c_void_p, ctypes.c_int]
+        EVP_EncryptUpdate.restype = ctypes.c_int
+
+        EVP_EncryptFinal_ex = libcrypto.EVP_EncryptFinal_ex
+        EVP_EncryptFinal_ex.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]
+        EVP_EncryptFinal_ex.restype = ctypes.c_int
+
+        if EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), None, None, None) != 1:
+            raise RuntimeError("EVP_EncryptInit_ex failed (stage 1)")
+        if EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, 12, None) != 1:
+            raise RuntimeError("EVP_CTRL_GCM_SET_IVLEN failed")
+
+        key_buf = ctypes.create_string_buffer(key, len(key))
+        return _openssl_gcm_encrypt(libcrypto, ctx, key_buf, plaintext)
+    finally:
+        EVP_CIPHER_CTX_free(ctypes.c_void_p(ctx))
+
+
+def _openssl_gcm_encrypt(libcrypto, ctx, key_buf, plaintext: bytes) -> bytes:
+    import ctypes, secrets
+
+    EVP_EncryptInit_ex = libcrypto.EVP_EncryptInit_ex
+    EVP_CIPHER_CTX_ctrl = libcrypto.EVP_CIPHER_CTX_ctrl
+    EVP_EncryptUpdate = libcrypto.EVP_EncryptUpdate
+    EVP_EncryptFinal_ex = libcrypto.EVP_EncryptFinal_ex
+
+    EVP_CTRL_GCM_GET_TAG = 0x10
+
+    nonce = secrets.token_bytes(12)
+    nonce_buf = ctypes.create_string_buffer(nonce, len(nonce))
+    if EVP_EncryptInit_ex(ctx, None, None, key_buf, nonce_buf) != 1:
+        raise RuntimeError("EVP_EncryptInit_ex failed (stage 2)")
+
+    out_buf = ctypes.create_string_buffer(len(plaintext) + 16)
+    out_len = ctypes.c_int(0)
+    if len(plaintext):
+        pt_buf = ctypes.create_string_buffer(plaintext, len(plaintext))
+        if EVP_EncryptUpdate(ctx, out_buf, ctypes.byref(out_len), pt_buf, len(plaintext)) != 1:
+            raise RuntimeError("EVP_EncryptUpdate failed")
+    total = out_len.value
+
+    final_len = ctypes.c_int(0)
+    if EVP_EncryptFinal_ex(ctx, ctypes.byref(out_buf, total), ctypes.byref(final_len)) != 1:
+        raise RuntimeError("EVP_EncryptFinal_ex failed")
+    total += final_len.value
+
+    tag_buf = ctypes.create_string_buffer(16)
+    if EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag_buf) != 1:
+        raise RuntimeError("EVP_CTRL_GCM_GET_TAG failed")
+
+    global _last_nonce_for_fallback
+    _last_nonce_for_fallback = bytes(nonce)
+    ciphertext = out_buf.raw[:total]
+    tag = tag_buf.raw[:16]
     return ciphertext + tag
+
+
+_last_nonce_for_fallback = None
 
 def must(cond, msg):
     if not cond:
@@ -170,8 +264,14 @@ def seal(pack: dict, out_path: str):
 
     salt = secrets.token_bytes(16)
     key = derive_key(PASSWORD, salt)
-    nonce = secrets.token_bytes(12)
-    ct = encrypt_aes_gcm(key, nonce, js(payload).encode("utf-8"))
+    nonce = secrets.token_bytes(12) if AES is not None else None
+    plaintext = js(payload).encode("utf-8")
+    ct = encrypt_aes_gcm(key, nonce if nonce is not None else b"", plaintext)
+    if nonce is None:
+        global _last_nonce_for_fallback
+        nonce = _last_nonce_for_fallback
+        if not nonce:
+            raise RuntimeError("Fallback nonce missing")
 
     envelope = {
         "alg": "AES-GCM",
