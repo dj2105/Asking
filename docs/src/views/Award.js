@@ -19,29 +19,6 @@ import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 
 const CONTINUE_LEAD_MS = 3_000;
 
-const SLOW_COACH_LINES = [
-  "Speed earns secrets.",
-  "Hints don’t wait for hesitation.",
-  "Quicker minds get the clues.",
-  "Lag and lose the lead.",
-  "No haste, no hint.",
-  "The swift see what the slow miss.",
-  "Hesitation costs revelation.",
-  "Move faster to unlock wisdom.",
-  "Delay denies discovery.",
-  "A sluggish tap wins no clue.",
-  "Only the sharp catch the whisper.",
-  "The clock favours the keen.",
-  "Too late for enlightenment.",
-  "Speed is the price of insight.",
-  "The hint runs ahead of you.",
-  "Swift fingers, sharp minds.",
-  "Clues slip past the slow.",
-  "You blinked, the hint vanished.",
-  "Momentum makes meaning.",
-  "The hint rewards the hurried.",
-];
-
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
   for (const k in attrs) {
@@ -161,14 +138,25 @@ export default {
     const root = el("div", { class: "view view-award" });
 
     const card = el("div", { class: "card award-card" });
-    const scoreHeading = el("div", { class: "mono award-title" }, "");
-    const timeLine = el("div", { class: "mono award-timeline" }, "");
-    const revealBox = el("div", { class: "mono award-reveal award-reveal--hidden" }, "");
+    const scoreboard = el("div", { class: "award-scoreboard" });
+    const hostScoreValue = el("div", { class: "mono award-scoreboard__value" }, "0");
+    const hostScoreLabel = el("div", { class: "mono award-scoreboard__label" }, "DANIEL");
+    const hostScore = el("div", { class: "award-scoreboard__player" });
+    hostScore.appendChild(hostScoreValue);
+    hostScore.appendChild(hostScoreLabel);
+
+    const guestScoreValue = el("div", { class: "mono award-scoreboard__value" }, "0");
+    const guestScoreLabel = el("div", { class: "mono award-scoreboard__label" }, "JAIME");
+    const guestScore = el("div", { class: "award-scoreboard__player" });
+    guestScore.appendChild(guestScoreValue);
+    guestScore.appendChild(guestScoreLabel);
+
+    scoreboard.appendChild(hostScore);
+    scoreboard.appendChild(guestScore);
+
     const reviewWrap = el("div", { class: "award-review" });
 
-    card.appendChild(scoreHeading);
-    card.appendChild(timeLine);
-    card.appendChild(revealBox);
+    card.appendChild(scoreboard);
     card.appendChild(reviewWrap);
 
     const continueBtn = el("button", { class: "btn" }, "I'M READY");
@@ -195,77 +183,11 @@ export default {
     let waitingLabel = `WAITING FOR ${oppName.toUpperCase()}`;
     continueBtn.textContent = readyLabel;
 
-    let revealMap = roomData0.reveals || {};
-    let mathsReveals = Array.isArray(roomData0.maths?.reveals) ? roomData0.maths.reveals : [];
-    let timingsData = roomData0.timings || {};
-
     let reviewData = {
       hostItems: [],
       guestItems: [],
       hostAnswers: [],
       guestAnswers: []
-    };
-
-    const resolveReveal = (r) => {
-      if (revealMap && typeof revealMap[r] === "string") return revealMap[r];
-      const idx = r - 1;
-      const entry = mathsReveals[idx];
-      if (!entry) return "";
-      if (typeof entry === "string") return entry;
-      if (entry && typeof entry.prompt === "string") return entry.prompt;
-      return "";
-    };
-    const formatSeconds = (value) => {
-      const num = Number(value);
-      if (!Number.isFinite(num)) return "—";
-      return `${num.toFixed(1)}s`;
-    };
-
-    let slowCoachRound = null;
-    let slowCoachLine = "";
-    const pickSlowCoachLine = () => {
-      if (!SLOW_COACH_LINES.length) {
-        slowCoachLine = "";
-        slowCoachRound = round;
-        return;
-      }
-      const idx = Math.floor(Math.random() * SLOW_COACH_LINES.length);
-      slowCoachLine = SLOW_COACH_LINES[idx];
-      slowCoachRound = round;
-    };
-
-    const updateTimes = () => {
-      const hostTiming = Number((((timingsData || {}).host || {})[round] || {}).totalSeconds);
-      const guestTiming = Number((((timingsData || {}).guest || {})[round] || {}).totalSeconds);
-      timeLine.textContent = `Round ${round} • Daniel ${formatSeconds(hostTiming)} • Jaime ${formatSeconds(guestTiming)}`;
-    };
-    const updateReveal = () => {
-      const revealText = (resolveReveal(round) || "").trim();
-      const hostTiming = Number((((timingsData || {}).host || {})[round] || {}).totalSeconds);
-      const guestTiming = Number((((timingsData || {}).guest || {})[round] || {}).totalSeconds);
-      const timingsReady = Number.isFinite(hostTiming) && Number.isFinite(guestTiming);
-      if (revealText && timingsReady && hostTiming !== guestTiming) {
-        const hostFaster = hostTiming < guestTiming;
-        const winnerRole = hostFaster ? "host" : "guest";
-        const isWinner = myRole === winnerRole;
-        let displayText = revealText;
-        if (!isWinner) {
-          if (slowCoachRound !== round || !slowCoachLine) pickSlowCoachLine();
-          displayText = slowCoachLine;
-        }
-        if (displayText) {
-          revealBox.textContent = displayText;
-          revealBox.classList.remove("award-reveal--hidden");
-          return;
-        }
-      }
-      revealBox.textContent = "";
-      revealBox.classList.add("award-reveal--hidden");
-    };
-
-    const resetSlowCoachLine = () => {
-      slowCoachRound = null;
-      slowCoachLine = "";
     };
 
     const rdSnap = await getDoc(rdRef);
@@ -293,7 +215,8 @@ export default {
     const updateRoundScores = () => {
       const hostScore = countCorrect(reviewData.hostAnswers, reviewData.hostItems);
       const guestScore = countCorrect(reviewData.guestAnswers, reviewData.guestItems);
-      scoreHeading.textContent = `Daniel ${hostScore} — ${guestScore} Jaime`;
+      hostScoreValue.textContent = String(hostScore);
+      guestScoreValue.textContent = String(guestScore);
     };
 
     const refreshReviews = () => {
@@ -320,8 +243,6 @@ export default {
 
     const refreshSummary = () => {
       updateRoundScores();
-      updateTimes();
-      updateReveal();
     };
 
     refreshReviews();
@@ -415,21 +336,10 @@ export default {
     const stop = onSnapshot(rRef, (snap) => {
       const data = snap.data() || {};
 
-      if (data.reveals && typeof data.reveals === "object") {
-        revealMap = data.reveals;
-      }
-      if (data.maths && Array.isArray(data.maths.reveals)) {
-        mathsReveals = data.maths.reveals;
-      }
-      if (data.timings && typeof data.timings === "object") {
-        timingsData = data.timings;
-      }
-
       const stateName = String(data.state || "").toLowerCase();
       const dataRound = Number(data.round);
       if (stateName === "award" && dataRound && dataRound !== round) {
         round = dataRound;
-        resetSlowCoachLine();
         readyLabel = computeReadyLabel(round);
         if (!ackMine) {
           continueBtn.textContent = readyLabel;
