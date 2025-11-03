@@ -1276,6 +1276,12 @@ input[type="number"]:focus,
 .mark-card__clue { text-align: left; }
 .award-clue { text-align: center; font-weight: 600; }
 
+.award-card--jemima .award-clue {
+  background: none;
+  padding: 0;
+  margin-top: 6px;
+}
+
 .question-card__clue--empty,
 .mark-card__clue--empty,
 .award-clue--empty {
@@ -1322,36 +1328,13 @@ input[type="number"]:focus,
 }
 
 .award-scoreboard {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  text-align: center;
-  margin-bottom: 12px;
+  display: none;
 }
 
-.award-scoreboard__player {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.award-scoreboard__value {
-  font-size: 3.2rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  line-height: 1;
-  color: var(--ink);
-}
-
+.award-scoreboard__player,
+.award-scoreboard__value,
 .award-scoreboard__label {
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  opacity: 0.72;
+  display: none;
 }
 
 .result-panel {
@@ -1457,8 +1440,8 @@ input[type="number"]:focus,
 .award-card__heading {
   margin: 0;
   font-weight: 700;
-  font-size: 1.05rem;
-  letter-spacing: 0.16em;
+  font-size: 1.6rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   text-align: center;
 }
@@ -1472,7 +1455,7 @@ input[type="number"]:focus,
 }
 
 .award-card--jemima .award-card__heading {
-  text-align: left;
+  text-align: center;
 }
 
 .award-review {
@@ -1519,7 +1502,6 @@ input[type="number"]:focus,
   font-weight: 700;
   font-size: 1.1rem;
   line-height: 1;
-  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.35);
   flex-shrink: 0;
 }
 
@@ -1617,6 +1599,7 @@ input[type="number"]:focus,
   font-size: 0.92rem;
   line-height: 1.4;
   font-weight: 600;
+  text-align: center;
 }
 
 .award-reveal--hidden {
