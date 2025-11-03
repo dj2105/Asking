@@ -281,12 +281,29 @@ export default {
 
     const questionOffset = () => (effectiveRound() - 1) * 3;
 
+    const optionLetter = (index) => String.fromCharCode(65 + index);
+
+    const resolveAnswerLetter = (questionIndex) => {
+      const selection = chosen[questionIndex] || "";
+      if (!selection) return "";
+      const entry = triplet[questionIndex] || {};
+      const options = Array.isArray(entry.options) ? entry.options : [];
+      const idxFound = options.findIndex((opt) => opt === selection);
+      if (idxFound < 0) return "";
+      return optionLetter(idxFound);
+    };
+
     const refreshStepLabels = () => {
       const base = questionOffset();
       stepButtons.forEach((btn, i) => {
         const number = base + i + 1;
-        btn.textContent = String(number);
-        btn.setAttribute("aria-label", `Question ${number}`);
+        const letter = resolveAnswerLetter(i);
+        const labelText = letter || String(number);
+        btn.textContent = labelText;
+        const aria = letter
+          ? `Question ${number} answered option ${letter}`
+          : `Question ${number}`;
+        btn.setAttribute("aria-label", aria);
       });
     };
 
@@ -451,7 +468,7 @@ export default {
         } else if (triplet.length > 0) {
           showQuestion(triplet.length - 1, { animate: true });
         }
-      }, 700);
+      }, 420);
     };
 
     const showWaitingPrompt = () => {
@@ -646,14 +663,12 @@ export default {
           }
         });
         btn.classList.add("is-blinking");
-        const blinkFast = Math.random() < 0.5;
-        if (blinkFast) btn.classList.add("is-blinking-fast");
-        else btn.classList.remove("is-blinking-fast");
-        const blinkDuration = blinkFast ? 450 : 900;
+        btn.classList.add("is-blinking-fast");
+        const flashDuration = 260;
         setTimeout(() => {
           btn.classList.remove("is-blinking");
           btn.classList.remove("is-blinking-fast");
-        }, blinkDuration);
+        }, flashDuration);
         renderChoices();
         renderSteps();
         scheduleAdvance(currentIndex);

@@ -2,7 +2,7 @@
 //
 // Marking phase — award-style panel mirroring the Questions layout.
 // • Shows opponent’s three questions one at a time with their submitted answer.
-// • Three marking buttons (✓ / I DUNNO / ✕) sit below the text, neutral until selected.
+// • Three marking buttons (✓ / ? / ✕) sit below the text, neutral until selected.
 // • Selections hold for 0.5s before auto-advancing to the next unanswered mark.
 // • Once all three verdicts are set, the Submit button activates (Award-style primary).
 // • Submission writes marking.{role}.{round}, timings.{role}.{round}, markingAck.{role}.{round} = true.
@@ -206,6 +206,7 @@ export default {
         class: "marking-button marking-button--tick mono",
         type: "button",
         "aria-pressed": "false",
+        "aria-label": "Mark correct",
       },
       "✓"
     );
@@ -215,8 +216,9 @@ export default {
         class: "marking-button marking-button--unknown mono",
         type: "button",
         "aria-pressed": "false",
+        "aria-label": "Mark unsure",
       },
-      "I DUNNO"
+      "?"
     );
     const btnWrong = el(
       "button",
@@ -224,6 +226,7 @@ export default {
         class: "marking-button marking-button--cross mono",
         type: "button",
         "aria-pressed": "false",
+        "aria-label": "Mark incorrect",
       },
       "✕"
     );
@@ -330,12 +333,48 @@ export default {
 
     const markOffset = () => (effectiveRound() - 1) * 3;
 
+    const stepColorClasses = [
+      "round-panel__step--tick",
+      "round-panel__step--unknown",
+      "round-panel__step--cross",
+    ];
+
+    const markSymbol = (value) => {
+      if (value === VERDICT.RIGHT) return "✓";
+      if (value === VERDICT.WRONG) return "✕";
+      if (value === VERDICT.UNKNOWN) return "?";
+      return "";
+    };
+
+    const markClass = (value) => {
+      if (value === VERDICT.RIGHT) return "round-panel__step--tick";
+      if (value === VERDICT.WRONG) return "round-panel__step--cross";
+      if (value === VERDICT.UNKNOWN) return "round-panel__step--unknown";
+      return "";
+    };
+
+    const markDescriptor = (value) => {
+      if (value === VERDICT.RIGHT) return "correct";
+      if (value === VERDICT.WRONG) return "incorrect";
+      if (value === VERDICT.UNKNOWN) return "unsure";
+      return "pending";
+    };
+
     const refreshStepLabels = () => {
       const base = markOffset();
       stepButtons.forEach((btn, i) => {
         const number = base + i + 1;
-        btn.textContent = String(number);
-        btn.setAttribute("aria-label", `Mark ${number}`);
+        const verdict = marks[i];
+        const symbol = markSymbol(verdict);
+        const labelText = symbol || String(number);
+        btn.textContent = labelText;
+        const aria = verdict
+          ? `Mark ${number} marked ${markDescriptor(verdict)}`
+          : `Mark ${number}`;
+        btn.setAttribute("aria-label", aria);
+        stepColorClasses.forEach((cls) => btn.classList.remove(cls));
+        const colourClass = markClass(verdict);
+        if (colourClass) btn.classList.add(colourClass);
       });
     };
 
@@ -503,7 +542,7 @@ export default {
         } else {
           showMark(marks.length - 1, { animate: true });
         }
-      }, 700);
+      }, 420);
     };
 
     const showWaitingPrompt = () => {
@@ -723,14 +762,12 @@ export default {
           }
         });
         sourceBtn.classList.add("is-blinking");
-        const blinkFast = Math.random() < 0.5;
-        if (blinkFast) sourceBtn.classList.add("is-blinking-fast");
-        else sourceBtn.classList.remove("is-blinking-fast");
-        const blinkDuration = blinkFast ? 450 : 900;
+        sourceBtn.classList.add("is-blinking-fast");
+        const flashDuration = 260;
         setTimeout(() => {
           sourceBtn.classList.remove("is-blinking");
           sourceBtn.classList.remove("is-blinking-fast");
-        }, blinkDuration);
+        }, flashDuration);
       }
       renderSteps();
       reflectVerdicts();
