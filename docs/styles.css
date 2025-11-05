@@ -2262,3 +2262,294 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   opacity: 0.75;
   margin-bottom: 6px;
 }
+
+.final-bridge {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.final-bridge__note {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.final-bridge__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.final-bridge__row {
+  display: grid;
+  grid-template-columns: minmax(0, 120px) 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.final-bridge__player {
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.final-bridge__flow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.final-bridge__step {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--ink);
+  min-width: 120px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+}
+
+.final-bridge__step--maths {
+  background: rgba(79, 70, 229, 0.16);
+  color: #1f2262;
+  box-shadow: 0 12px 24px rgba(79, 70, 229, 0.18);
+}
+
+.final-bridge__step--total {
+  background: rgba(47, 123, 82, 0.16);
+  color: #134b2f;
+  box-shadow: 0 12px 24px rgba(47, 123, 82, 0.22);
+}
+
+.final-bridge__label {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.final-bridge__value {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.final-bridge__arrow {
+  font-size: 1.4rem;
+  opacity: 0.65;
+}
+
+.final-stats-block {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 18px 20px;
+}
+
+.final-stats__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.final-stats__item {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  line-height: 1.5;
+}
+
+.final-review {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.final-round {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.final-round__summary {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px;
+  cursor: pointer;
+}
+
+.final-round__summary:hover {
+  background: rgba(79, 70, 229, 0.08);
+}
+
+.final-round[open] .final-round__summary {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.final-round__summary-label {
+  font-size: 0.84rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.final-round__summary-score,
+.final-round__summary-timing,
+.final-round__summary-clue {
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+.final-round__summary-clue {
+  opacity: 0.72;
+}
+
+.final-round__content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px 22px;
+}
+
+.final-round__player {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.final-round__player-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.final-round__player-name {
+  font-size: 0.92rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.final-round__marker {
+  font-size: 0.88rem;
+  opacity: 0.68;
+}
+
+.final-round__qa-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.final-round__qa-item {
+  background: rgba(248, 249, 252, 0.84);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.final-round__prompt {
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.final-round__answer {
+  font-size: 0.95rem;
+}
+
+.final-round__answer--correct {
+  color: #2f7b52;
+}
+
+.final-round__answer--wrong {
+  color: #b42a2a;
+}
+
+.final-round__answer--empty {
+  color: rgba(15, 23, 42, 0.48);
+  font-style: italic;
+}
+
+.final-round__correct {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.final-round__verdict-line {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.final-round__verdict {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: rgba(15, 23, 42, 0.08);
+  color: rgba(15, 23, 42, 0.68);
+}
+
+.final-round__verdict--right {
+  background: rgba(47, 123, 82, 0.18);
+  color: #1d5b3a;
+}
+
+.final-round__verdict--wrong {
+  background: rgba(180, 42, 42, 0.2);
+  color: #8b1111;
+}
+
+.final-round__verdict--unknown {
+  background: rgba(10, 105, 214, 0.18);
+  color: #0a69d6;
+}
+
+.final-maths__clues-heading {
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-top: 8px;
+  opacity: 0.72;
+}
+
+.final-maths__clues {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.final-maths__clue {
+  font-size: 0.9rem;
+  opacity: 0.82;
+}
