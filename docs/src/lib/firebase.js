@@ -7,6 +7,16 @@ import {
 import {
   getFirestore,
   connectFirestoreEmulator,
+  collection,
+  doc,
+  addDoc,
+  getDoc,
+  deleteDoc,
+  query,
+  where,
+  getDocs,
+  getCountFromServer,
+  serverTimestamp,
 } from "firebase/firestore";
 
 const FALLBACK_CONFIG = {
@@ -56,5 +66,97 @@ export async function ensureAuth() {
   } catch (error) {
     console.error("[firebase] Anonymous sign-in failed", error);
     return auth.currentUser;
+  }
+}
+
+const COLLECTION_MAP = {
+  questions: () => collection(db, "packs_questions"),
+  maths: () => collection(db, "packs_maths"),
+};
+
+const USED_COLLECTION_MAP = {
+  questions: () => collection(db, "packs_questions_used"),
+  maths: () => collection(db, "packs_maths_used"),
+};
+
+function resolveCollection(kind, map) {
+  const getter = map[kind];
+  if (typeof getter !== "function") {
+    throw new Error(`Unknown pack kind: ${kind}`);
+  }
+  return getter();
+}
+
+export const packsQuestionsRef = () => resolveCollection("questions", COLLECTION_MAP);
+export const packsMathsRef = () => resolveCollection("maths", COLLECTION_MAP);
+export const packsQuestionsUsedRef = () => resolveCollection("questions", USED_COLLECTION_MAP);
+export const packsMathsUsedRef = () => resolveCollection("maths", USED_COLLECTION_MAP);
+
+function withBasePackFields(kind, data = {}, sourceName = "") {
+  const safeName = typeof sourceName === "string" && sourceName.trim() ? sourceName.trim() : "Uploaded pack";
+  return {
+    ...data,
+    kind,
+    sourceName: safeName,
+    status: "available",
+    uploadedAt: serverTimestamp(),
+  };
+}
+
+export async function createPackDoc(kind, data, sourceName = "") {
+  const target = resolveCollection(kind, COLLECTION_MAP);
+  const payload = withBasePackFields(kind, data, sourceName);
+  const docRef = await addDoc(target, payload);
+  return { id: docRef.id };
+}
+
+export async function countAvailable(kind) {
+  try {
+    const target = resolveCollection(kind, COLLECTION_MAP);
+    const q = query(target, where("status", "==", "available"));
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count || 0;
+  } catch (err) {
+    console.warn("[firebase] countAvailable failed", kind, err);
+    return 0;
+  }
+}
+
+export async function pickRandomAvailable(kind) {
+  try {
+    const target = resolveCollection(kind, COLLECTION_MAP);
+    const q = query(target, where("status", "==", "available"));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const docs = snap.docs;
+    const idx = Math.floor(Math.random() * docs.length);
+    const chosen = docs[idx];
+    return { id: chosen.id, data: chosen.data() };
+  } catch (err) {
+    console.warn("[firebase] pickRandomAvailable failed", kind, err);
+    return null;
+  }
+}
+
+export async function movePackToUsed(kind, id, extra = {}) {
+  if (!id) return null;
+  try {
+    const sourceCollection = resolveCollection(kind, COLLECTION_MAP);
+    const docRef = doc(sourceCollection, id);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) return null;
+    const data = snap.data() || {};
+    const payload = {
+      ...data,
+      ...extra,
+      usedAt: serverTimestamp(),
+    };
+    const usedCollection = resolveCollection(kind, USED_COLLECTION_MAP);
+    const writeRef = await addDoc(usedCollection, payload);
+    await deleteDoc(docRef);
+    return { usedId: writeRef.id };
+  } catch (err) {
+    console.warn("[firebase] movePackToUsed failed", kind, id, err);
+    return null;
   }
 }
