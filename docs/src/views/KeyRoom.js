@@ -324,29 +324,37 @@ function extractPacks(value) {
   const packs = [];
   let rejected = 0;
 
-  const visit = (node) => {
+  const visit = (node, trace = "root") => {
     if (!node) return;
     if (Array.isArray(node)) {
-      node.forEach(visit);
+      node.forEach((child, idx) => visit(child, `${trace}[${idx}]`));
       return;
     }
     if (typeof node !== "object") return;
 
     const questions = tryNormalizeQuestionsPack(node);
     if (questions.detected) {
-      if (questions.valid) packs.push({ kind: "questions", data: questions.data });
-      else rejected += 1;
+      if (questions.valid) {
+        packs.push({ kind: "questions", data: questions.data });
+      } else {
+        console.warn(`[KeyRoom] Rejected questions pack at ${trace}: ${questions.reason}`);
+        rejected += 1;
+      }
       return;
     }
 
     const maths = tryNormalizeMathsPack(node);
     if (maths.detected) {
-      if (maths.valid) packs.push({ kind: "maths", data: maths.data });
-      else rejected += 1;
+      if (maths.valid) {
+        packs.push({ kind: "maths", data: maths.data });
+      } else {
+        console.warn(`[KeyRoom] Rejected maths pack at ${trace}: ${maths.reason}`);
+        rejected += 1;
+      }
       return;
     }
 
-    Object.values(node).forEach(visit);
+    Object.entries(node).forEach(([key, child]) => visit(child, `${trace}.${key}`));
   };
 
   visit(value);
@@ -872,3 +880,4 @@ export default {
     this._cleanup = null;
   },
 };
+
