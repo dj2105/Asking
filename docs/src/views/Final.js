@@ -88,25 +88,6 @@ function resolveCorrectAnswer(answer = {}, fallbackItem = {}) {
   return "";
 }
 
-function normaliseTimingEntry(entry) {
-  if (!entry || typeof entry !== "object") return null;
-  const seconds = typeof entry.totalSeconds === "number" ? entry.totalSeconds : null;
-  if (seconds !== null && !Number.isNaN(seconds)) return seconds;
-  const millis = typeof entry.totalMs === "number" ? entry.totalMs : null;
-  if (millis !== null && !Number.isNaN(millis)) return millis / 1000;
-  const generic = typeof entry.total === "number" ? entry.total : null;
-  if (generic !== null && !Number.isNaN(generic)) return generic;
-  return null;
-}
-
-function formatSeconds(value) {
-  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "—";
-  if (num < 0.05) return "0.0s";
-  return `${num.toFixed(num >= 10 ? 1 : 2)}s`;
-}
-
 function formatSignedPoints(value) {
   const num = Number(value);
   if (!Number.isFinite(num) || num === 0) return num === 0 ? "+0" : "0";
@@ -137,195 +118,170 @@ function countCorrectAnswers(answers = [], items = []) {
   return total;
 }
 
-function collectVerdicts(marking = {}, role) {
-  const perRole = marking[role] || {};
-  const results = [];
-  for (let round = 1; round <= 5; round += 1) {
-    const entry = getRoundMapValue(perRole, round);
-    if (!Array.isArray(entry)) continue;
-    for (const verdict of entry) {
-      if (verdict === null || verdict === undefined || verdict === "") continue;
-      results.push(String(verdict));
-    }
-  }
-  return results;
+function formatScore(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "0";
+  return Number(value).toLocaleString();
 }
 
-function collectTimingEntries(timings = {}, role) {
-  const perRole = timings[role] || {};
-  const values = [];
-  for (let round = 1; round <= 5; round += 1) {
-    const entry = normaliseTimingEntry(getRoundMapValue(perRole, round));
-    if (entry === null || entry === undefined) continue;
-    values.push(entry);
+function renderScoreboard(section, totals) {
+  const cards = section.querySelectorAll(".final-scoreboard__value");
+  const deltaCards = section.querySelectorAll(".final-scoreboard__delta");
+  const [hostValue, guestValue] = cards;
+  if (hostValue) hostValue.textContent = formatScore(totals.hostQuestions);
+  if (guestValue) guestValue.textContent = formatScore(totals.guestQuestions);
+  if (deltaCards.length === 2) {
+    const [hostDelta, guestDelta] = deltaCards;
+    const diff = totals.hostQuestions - totals.guestQuestions;
+    if (hostDelta) hostDelta.textContent = diff === 0 ? "Level" : diff > 0 ? `+${diff}` : "";
+    if (guestDelta) guestDelta.textContent = diff === 0 ? "Level" : diff < 0 ? `${diff}` : "";
   }
-  return values;
 }
 
-function computeAccuracySummary(role, roomData = {}, roundsData = {}) {
-  const answersMap = (roomData.answers || {})[role] || {};
-  const itemsKey = role === "host" ? "hostItems" : "guestItems";
-  let current = 0;
-  let longest = 0;
-  let totalCorrect = 0;
-  let totalQuestions = 0;
-  const perfectRounds = [];
+function renderMathsAnswers(stage, mathsAnswers = {}) {
+  const host = mathsAnswers.host || {};
+  const guest = mathsAnswers.guest || {};
+  const hostValue = stage.querySelector("[data-role=host][data-field=value]");
+  const guestValue = stage.querySelector("[data-role=guest][data-field=value]");
+  const hostDelta = stage.querySelector("[data-role=host][data-field=delta]");
+  const guestDelta = stage.querySelector("[data-role=guest][data-field=delta]");
+  if (hostValue) hostValue.textContent = formatPoints(host.value);
+  if (guestValue) guestValue.textContent = formatPoints(guest.value);
+  if (hostDelta) hostDelta.textContent = formatDelta(host.delta);
+  if (guestDelta) guestDelta.textContent = formatDelta(guest.delta);
+}
 
+function renderMathsScores(stage, totals, mathsAnswers = {}) {
+  const host = mathsAnswers.host || {};
+  const guest = mathsAnswers.guest || {};
+  const hostPoints = Number(host.points) || 0;
+  const guestPoints = Number(guest.points) || 0;
+  const hostLine = stage.querySelector("[data-role=host]");
+  const guestLine = stage.querySelector("[data-role=guest]");
+  if (hostLine) hostLine.textContent = `Daniel banks ${formatSignedPoints(hostPoints)} maths points for ${formatScore(totals.hostTotal)} overall.`;
+  if (guestLine) guestLine.textContent = `Jaime banks ${formatSignedPoints(guestPoints)} maths points for ${formatScore(totals.guestTotal)} overall.`;
+}
+
+function formatPercent(value) {
+  if (!Number.isFinite(value)) return "0%";
+  return `${Math.round(value)}%`;
+}
+
+function computeMarkingNarrative(role, roomData = {}, roundsData = {}) {
+  const markerName = role === "host" ? "Daniel" : "Jaime";
+  const subjectName = role === "host" ? "Jaime" : "Daniel";
+  const markingMap = ((roomData.marking || {})[role]) || {};
+  const answersMap = ((roomData.answers || {})[role === "host" ? "guest" : "host"]) || {};
+  const itemsKey = role === "host" ? "guestItems" : "hostItems";
+  let rightCalls = 0;
+  let wrongCalls = 0;
+  let judged = 0;
+  let accurate = 0;
   for (let round = 1; round <= 5; round += 1) {
-    const answers = Array.isArray(getRoundMapValue(answersMap, round))
-      ? getRoundMapValue(answersMap, round)
-      : [];
-    const roundItems = Array.isArray((roundsData[round] || {})[itemsKey])
-      ? (roundsData[round] || {})[itemsKey]
-      : [];
-    const questionCount = Math.max(roundItems.length, answers.length, 3);
-    let roundCorrect = 0;
-    for (let i = 0; i < questionCount; i += 1) {
+    const verdicts = Array.isArray(getRoundMapValue(markingMap, round)) ? getRoundMapValue(markingMap, round) : [];
+    const answers = Array.isArray(getRoundMapValue(answersMap, round)) ? getRoundMapValue(answersMap, round) : [];
+    const items = Array.isArray((roundsData[round] || {})[itemsKey]) ? (roundsData[round] || {})[itemsKey] : [];
+    const count = Math.max(verdicts.length, answers.length, items.length, 3);
+    for (let i = 0; i < count; i += 1) {
+      const verdict = verdicts[i];
+      if (verdict !== "right" && verdict !== "wrong") continue;
       const answer = answers[i] || {};
-      const item = roundItems[i] || {};
+      const item = items[i] || {};
       const chosen = answer.chosen;
       const correct = resolveCorrectAnswer(answer, item);
-      const isRight = Boolean(chosen) && Boolean(correct) && same(chosen, correct);
-      if (isRight) {
-        current += 1;
-        roundCorrect += 1;
-        totalCorrect += 1;
-      } else {
-        current = 0;
+      const actual = Boolean(chosen) && Boolean(correct) && same(chosen, correct);
+      judged += 1;
+      if (verdict === "right") rightCalls += 1;
+      if (verdict === "wrong") wrongCalls += 1;
+      if ((verdict === "right" && actual) || (verdict === "wrong" && !actual)) {
+        accurate += 1;
       }
-      longest = Math.max(longest, current);
-    }
-    totalQuestions += questionCount;
-    if (questionCount > 0 && roundCorrect === questionCount) {
-      perfectRounds.push(round);
     }
   }
-
-  return { totalCorrect, totalQuestions, longestStreak: longest, perfectRounds };
+  const accuracyPercent = judged > 0 ? (accurate / judged) * 100 : 0;
+  return {
+    markerName,
+    subjectName,
+    rightCalls,
+    wrongCalls,
+    accuracyPercent,
+  };
 }
 
-function formatRoundList(rounds = []) {
-  if (!Array.isArray(rounds) || rounds.length === 0) return "none";
-  return rounds.map((r) => `R${r}`).join(", ");
-}
-
-function renderScoreBridge(container, totals) {
-  container.innerHTML = "";
-  const players = [
-    { name: "Daniel", questions: totals.hostQuestions, maths: totals.hostMaths, total: totals.hostTotal },
-    { name: "Jaime", questions: totals.guestQuestions, maths: totals.guestMaths, total: totals.guestTotal },
-  ];
-  players.forEach((player) => {
-    const row = el("div", { class: "final-bridge__row" });
-    row.appendChild(el("div", { class: "mono final-bridge__player" }, player.name.toUpperCase()));
-    const flow = el("div", { class: "final-bridge__flow" });
-    const strip = el("div", { class: "final-bridge__step final-bridge__step--strip" }, [
-      el("div", { class: "mono final-bridge__label" }, "Score strip"),
-      el("div", { class: "mono final-bridge__value" }, String(player.questions)),
-    ]);
-    const arrow1 = el("div", { class: "final-bridge__arrow" }, "→");
-    const maths = el("div", { class: "final-bridge__step final-bridge__step--maths" }, [
-      el("div", { class: "mono final-bridge__label" }, "Maths bonus"),
-      el("div", { class: "mono final-bridge__value" }, formatSignedPoints(player.maths)),
-    ]);
-    const arrow2 = el("div", { class: "final-bridge__arrow" }, "→");
-    const total = el("div", { class: "final-bridge__step final-bridge__step--total" }, [
-      el("div", { class: "mono final-bridge__label" }, "Final total"),
-      el("div", { class: "mono final-bridge__value" }, String(player.total)),
-    ]);
-    flow.appendChild(strip);
-    flow.appendChild(arrow1);
-    flow.appendChild(maths);
-    flow.appendChild(arrow2);
-    flow.appendChild(total);
-    row.appendChild(flow);
-    container.appendChild(row);
-  });
-}
-
-function renderStatsList(list, roomData = {}, roundsData = {}) {
-  list.innerHTML = "";
-  const marking = roomData.marking || {};
-  const timings = roomData.timings || {};
-  const totals = computeTotals(roomData.scores || {}, roomData.mathsAnswers || {});
-
-  const hostVerdicts = collectVerdicts(marking, "host");
-  const guestVerdicts = collectVerdicts(marking, "guest");
-  const hostRight = hostVerdicts.filter((v) => v === "right").length;
-  const guestRight = guestVerdicts.filter((v) => v === "right").length;
-  const hostCalls = hostVerdicts.length;
-  const guestCalls = guestVerdicts.length;
-  let markingLine = "Marking calls: awaiting data.";
-  if (hostCalls + guestCalls > 0) {
-    let kicker = "Both spotted the same number of right answers.";
-    if (hostRight > guestRight) kicker = "Daniel led the spotting stakes.";
-    else if (guestRight > hostRight) kicker = "Jaime led the spotting stakes.";
-    markingLine = `Marking calls: Daniel ${hostRight}/${hostCalls} right • Jaime ${guestRight}/${guestCalls} right. ${kicker}`;
+function renderMarkingNarration(stage, roomData = {}, roundsData = {}, totals = {}) {
+  const hostLine = stage.querySelector("[data-role=host]");
+  const guestLine = stage.querySelector("[data-role=guest]");
+  const hostSummary = computeMarkingNarrative("host", roomData, roundsData);
+  const guestSummary = computeMarkingNarrative("guest", roomData, roundsData);
+  const hostFinal = formatScore(totals.hostTotal);
+  const guestFinal = formatScore(totals.guestTotal);
+  if (hostLine) {
+    hostLine.textContent = `${hostSummary.markerName} was sure ${hostSummary.subjectName} got ${hostSummary.rightCalls} right and ${hostSummary.wrongCalls} wrong. He was right ${formatPercent(hostSummary.accuracyPercent)} of the time, giving a final score of ${hostFinal}.`;
   }
+  if (guestLine) {
+    guestLine.textContent = `${guestSummary.markerName} was sure ${guestSummary.subjectName} got ${guestSummary.rightCalls} right and ${guestSummary.wrongCalls} wrong. He was right ${formatPercent(guestSummary.accuracyPercent)} of the time, giving a final score of ${guestFinal}.`;
+  }
+}
 
-  const hostTimes = collectTimingEntries(timings, "host");
-  const guestTimes = collectTimingEntries(timings, "guest");
-  const hostFastest = hostTimes.length ? Math.min(...hostTimes) : null;
-  const guestFastest = guestTimes.length ? Math.min(...guestTimes) : null;
-  const hostTotalTime = hostTimes.length ? hostTimes.reduce((sum, value) => sum + value, 0) : null;
-  const guestTotalTime = guestTimes.length ? guestTimes.reduce((sum, value) => sum + value, 0) : null;
-  let speedLine = "Marking speed: awaiting data.";
-  if (hostTimes.length || guestTimes.length) {
-    let speedKicker = "Neck and neck on fastest marks.";
-    if (hostFastest !== null && guestFastest !== null) {
-      const epsilon = 0.01;
-      if (hostFastest + epsilon < guestFastest) speedKicker = "Daniel was the faster marker overall.";
-      else if (guestFastest + epsilon < hostFastest) speedKicker = "Jaime was the faster marker overall.";
+function renderNumberRollStage(stage, maths = {}) {
+  const prompt = stage.querySelector(".final-number-roll__prompt");
+  const target = stage.querySelector(".final-number-roll__target");
+  if (prompt) {
+    const question = typeof maths.question === "string" && maths.question.trim()
+      ? maths.question.trim()
+      : "Jemima’s final question";
+    prompt.textContent = question;
+  }
+  if (target) {
+    const value = Number.isFinite(Number(maths.answer)) ? Number(maths.answer) : null;
+    target.dataset.targetValue = value !== null ? String(value) : "";
+    target.textContent = value !== null ? formatScore(value) : "Awaiting final total";
+  }
+}
+
+function renderWinner(stage, totals) {
+  const label = stage.querySelector(".final-winner__label");
+  if (label) label.textContent = winnerLabel(totals);
+}
+
+function buildQuestionList(playerName, items, answers, round, role) {
+  const section = el("section", { class: "final-round-panel__player" });
+  section.appendChild(el("h3", { class: "mono final-round-panel__player-name" }, playerName));
+  const list = el("ul", { class: "final-round-panel__question-list" });
+  const questionCount = Math.max(items.length, answers.length, 3);
+  for (let i = 0; i < questionCount; i += 1) {
+    const item = items[i] || {};
+    const answer = answers[i] || {};
+    const questionLabel = `Q${(round - 1) * 3 + (i + 1)}`;
+    const questionText = normaliseQuestionText(item, answer, questionLabel);
+    const chosen = answer.chosen || "";
+    const correct = resolveCorrectAnswer(answer, item) || "";
+    const wasCorrect = Boolean(chosen) && Boolean(correct) && same(chosen, correct);
+
+    const entry = el("li", { class: "final-question-entry" });
+    entry.appendChild(el("div", { class: "mono final-question-entry__prompt" }, questionText));
+
+    const answersWrap = el("div", { class: "final-question-entry__answers" });
+    if (chosen) {
+      const answerClasses = ["mono", "final-answer", wasCorrect ? "final-answer--correct" : "final-answer--wrong"];
+      answersWrap.appendChild(el("div", { class: answerClasses.join(" ") }, `${playerName} answered: ${chosen}`));
+    } else {
+      answersWrap.appendChild(el("div", { class: "mono final-answer final-answer--empty" }, `${playerName} left this blank.`));
     }
-    speedLine =
-      `Marking speed: Daniel fastest ${formatSeconds(hostFastest)} (total ${formatSeconds(hostTotalTime)}) • ` +
-      `Jaime fastest ${formatSeconds(guestFastest)} (total ${formatSeconds(guestTotalTime)}). ${speedKicker}`;
+    answersWrap.appendChild(el("div", { class: "mono final-answer final-answer--key" }, `Correct answer: ${correct || "—"}`));
+    entry.appendChild(answersWrap);
+    list.appendChild(entry);
   }
-
-  const hostAccuracy = computeAccuracySummary("host", roomData, roundsData);
-  const guestAccuracy = computeAccuracySummary("guest", roomData, roundsData);
-  let accuracyLine = "Accuracy streaks: awaiting answers.";
-  if (hostAccuracy.totalQuestions || guestAccuracy.totalQuestions) {
-    accuracyLine =
-      `Accuracy streaks: Daniel ${hostAccuracy.totalCorrect}/${hostAccuracy.totalQuestions} correct ` +
-      `(longest ${hostAccuracy.longestStreak}, perfect ${formatRoundList(hostAccuracy.perfectRounds)}) • ` +
-      `Jaime ${guestAccuracy.totalCorrect}/${guestAccuracy.totalQuestions} correct ` +
-      `(longest ${guestAccuracy.longestStreak}, perfect ${formatRoundList(guestAccuracy.perfectRounds)}).`;
-  }
-
-  const lines = [markingLine, speedLine, accuracyLine,
-    `Scoreline: Daniel ${totals.hostTotal} – Jaime ${totals.guestTotal}.`];
-
-  lines.forEach((line) => {
-    list.appendChild(el("li", { class: "mono final-stats__item" }, line));
-  });
-}
-
-function verdictLabel(value) {
-  if (value === "right") return "Right";
-  if (value === "wrong") return "Wrong";
-  if (value === "unknown") return "Unsure";
-  return "Not marked";
-}
-
-function verdictClass(value) {
-  if (value === "right") return "final-round__verdict--right";
-  if (value === "wrong") return "final-round__verdict--wrong";
-  if (value === "unknown") return "final-round__verdict--unknown";
-  return "final-round__verdict--none";
+  section.appendChild(list);
+  section.dataset.role = role;
+  return section;
 }
 
 function renderRoundReview(container, roomData = {}, roundsData = {}) {
   container.innerHTML = "";
-  const timings = roomData.timings || {};
-  const marking = roomData.marking || {};
   const answersHostMap = (roomData.answers || {}).host || {};
   const answersGuestMap = (roomData.answers || {}).guest || {};
 
   for (let round = 1; round <= 5; round += 1) {
-    const details = el("details", { class: "final-round" });
-    const summary = el("summary", { class: "final-round__summary" });
-
     const hostItems = Array.isArray((roundsData[round] || {}).hostItems)
       ? (roundsData[round] || {}).hostItems
       : [];
@@ -341,176 +297,68 @@ function renderRoundReview(container, roomData = {}, roundsData = {}) {
     const hostScore = countCorrectAnswers(answersHost, hostItems);
     const guestScore = countCorrectAnswers(answersGuest, guestItems);
 
-    const hostTiming = formatSeconds(normaliseTimingEntry(getRoundMapValue(timings.host || {}, round)));
-    const guestTiming = formatSeconds(normaliseTimingEntry(getRoundMapValue(timings.guest || {}, round)));
+    const panel = el("div", { class: "final-round-panel" });
+    const header = el("button", {
+      class: "mono final-round-panel__header",
+      type: "button",
+      "aria-expanded": "false",
+    }, [
+      el("span", { class: "final-round-panel__round" }, `ROUND ${round}`),
+      el("span", { class: "final-round-panel__score" }, `Daniel ${hostScore}/3 • Jaime ${guestScore}/3`),
+    ]);
+    const body = el("div", { class: "final-round-panel__body" });
+    body.appendChild(buildQuestionList("Daniel", hostItems, answersHost, round, "host"));
+    body.appendChild(buildQuestionList("Jaime", guestItems, answersGuest, round, "guest"));
 
-    const hostVerdicts = Array.isArray(getRoundMapValue(marking.guest || {}, round))
-      ? getRoundMapValue(marking.guest || {}, round)
-      : [];
-    const guestVerdicts = Array.isArray(getRoundMapValue(marking.host || {}, round))
-      ? getRoundMapValue(marking.host || {}, round)
-      : [];
-
-    const clue = (() => {
-      const direct = getRoundMapValue(roomData.clues || {}, round);
-      if (typeof direct === "string" && direct.trim()) return direct.trim();
-      const maths = roomData.maths || {};
-      const arrIndex = round - 1;
-      if (Array.isArray(maths.clues) && maths.clues[arrIndex]) {
-        const viaMaths = maths.clues[arrIndex];
-        if (typeof viaMaths === "string" && viaMaths.trim()) return viaMaths.trim();
+    header.addEventListener("click", () => {
+      const isOpen = panel.classList.toggle("is-open");
+      header.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      if (isOpen) {
+        body.style.maxHeight = `${body.scrollHeight}px`;
+      } else {
+        body.style.maxHeight = "0px";
       }
-      return "";
-    })();
+    });
 
-    summary.appendChild(el("span", { class: "mono final-round__summary-label" }, `Round ${round}`));
-    summary.appendChild(el(
-      "span",
-      { class: "mono final-round__summary-score" },
-      `Daniel ${hostScore}/3 • Jaime ${guestScore}/3`
-    ));
-    summary.appendChild(el(
-      "span",
-      { class: "mono final-round__summary-timing" },
-      `Marking — Daniel ${hostTiming} • Jaime ${guestTiming}`
-    ));
-    if (clue) {
-      summary.appendChild(el("span", { class: "mono final-round__summary-clue" }, `Clue: ${clue}`));
-    }
-
-    const body = el("div", { class: "final-round__content" });
-
-    const renderPlayer = ({ playerName, items, answers, verdicts, markerName, markerTiming }) => {
-      const section = el("section", { class: "final-round__player" });
-      const header = el("div", { class: "final-round__player-heading" }, [
-        el("div", { class: "mono final-round__player-name" }, playerName.toUpperCase()),
-        el(
-          "div",
-          { class: "mono final-round__marker" },
-          `Marked by ${markerName} (${markerTiming})`
-        ),
-      ]);
-      section.appendChild(header);
-      const list = el("ol", { class: "final-round__qa-list" });
-      const questionCount = Math.max(items.length, answers.length, 3);
-      for (let i = 0; i < questionCount; i += 1) {
-        const item = items[i] || {};
-        const answer = answers[i] || {};
-        const questionLabel = `Q${(round - 1) * 3 + (i + 1)}`;
-        const questionText = normaliseQuestionText(item, answer, questionLabel);
-        const chosen = answer.chosen || "";
-        const correct = resolveCorrectAnswer(answer, item) || "";
-        const wasCorrect = Boolean(chosen) && Boolean(correct) && same(chosen, correct);
-        const verdict = verdicts[i];
-
-        const entry = el("li", { class: "final-round__qa-item" });
-        entry.appendChild(el("div", { class: "mono final-round__prompt" }, questionText));
-
-        const verdictChip = el(
-          "span",
-          { class: `mono final-round__verdict ${verdictClass(verdict)}` },
-          verdictLabel(verdict)
-        );
-
-        const answerLine = (() => {
-          if (!chosen) return el("div", { class: "mono final-round__answer final-round__answer--empty" }, "No answer submitted");
-          const classes = ["mono", "final-round__answer"];
-          classes.push(wasCorrect ? "final-round__answer--correct" : "final-round__answer--wrong");
-          const status = wasCorrect ? "✓ correct" : "✕ incorrect";
-          return el("div", { class: classes.join(" ") }, `Answer: ${chosen} (${status})`);
-        })();
-
-        const correctLine = el(
-          "div",
-          { class: "mono final-round__correct" },
-          `Correct: ${correct || "—"}`
-        );
-
-        const verdictLine = el("div", { class: "final-round__verdict-line" }, verdictChip);
-
-        entry.appendChild(answerLine);
-        entry.appendChild(correctLine);
-        entry.appendChild(verdictLine);
-        list.appendChild(entry);
-      }
-      section.appendChild(list);
-      return section;
-    };
-
-    body.appendChild(renderPlayer({
-      playerName: "Daniel",
-      items: hostItems,
-      answers: answersHost,
-      verdicts: hostVerdicts,
-      markerName: "Jaime",
-      markerTiming: guestTiming,
-    }));
-
-    body.appendChild(renderPlayer({
-      playerName: "Jaime",
-      items: guestItems,
-      answers: answersGuest,
-      verdicts: guestVerdicts,
-      markerName: "Daniel",
-      markerTiming: hostTiming,
-    }));
-
-    details.appendChild(summary);
-    details.appendChild(body);
-    container.appendChild(details);
+    panel.appendChild(header);
+    panel.appendChild(body);
+    container.appendChild(panel);
   }
 }
 
-function renderMaths(mathSection, maths = {}, mathsAnswers = {}) {
-  const question = maths.question || "Jemima’s final question";
-  const correct = Number.isFinite(Number(maths.answer)) ? Number(maths.answer) : null;
-  const host = mathsAnswers.host || {};
-  const guest = mathsAnswers.guest || {};
-  mathSection.innerHTML = "";
-  mathSection.appendChild(el("div", { class: "mono final-maths__question" }, question));
-  if (Number.isFinite(correct)) {
-    mathSection.appendChild(el("div", { class: "mono final-maths__answer" }, `Correct answer: ${correct}`));
-  }
-  if (Array.isArray(maths.clues) && maths.clues.some((clue) => typeof clue === "string" && clue.trim())) {
-    const cluesHeading = el("div", { class: "mono final-maths__clues-heading" }, "Clues");
-    const cluesList = el("ul", { class: "final-maths__clues" });
-    maths.clues.forEach((clue, idx) => {
-      if (typeof clue !== "string" || !clue.trim()) return;
-      cluesList.appendChild(
-        el(
-          "li",
-          { class: "mono final-maths__clue" },
-          `Round ${idx + 1}: ${clue.trim()}`
-        )
-      );
-    });
-    if (cluesList.childNodes.length) {
-      mathSection.appendChild(cluesHeading);
-      mathSection.appendChild(cluesList);
+function createNumberRollController(targetEl, targetValue) {
+  if (!targetEl || !Number.isFinite(Number(targetValue))) return null;
+  const finalValue = Number(targetValue);
+  const duration = 4000;
+  const amplitude = Math.max(1, Math.abs(finalValue) * 0.1);
+  let frame = null;
+  const start = performance.now();
+
+  const step = (timestamp) => {
+    const elapsed = timestamp - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const swing = Math.sin(elapsed / 80) * amplitude * (1 - eased);
+    const displayValue = Math.round(finalValue + swing);
+    targetEl.textContent = formatScore(displayValue);
+    if (progress < 1) {
+      frame = requestAnimationFrame(step);
+    } else {
+      targetEl.textContent = formatScore(finalValue);
     }
-  }
-  const table = el("table", { class: "final-maths__table" });
-  table.appendChild(el("thead", {}, el("tr", {}, [
-    el("th", { class: "mono" }, "Player"),
-    el("th", { class: "mono" }, "Answer"),
-    el("th", { class: "mono" }, "Δ"),
-    el("th", { class: "mono" }, "Points"),
-  ])));
-  const tbody = el("tbody");
-  tbody.appendChild(el("tr", {}, [
-    el("td", { class: "mono" }, "Daniel"),
-    el("td", { class: "mono" }, formatPoints(host.value)),
-    el("td", { class: "mono" }, formatDelta(host.delta)),
-    el("td", { class: "mono" }, formatPoints(host.points)),
-  ]));
-  tbody.appendChild(el("tr", {}, [
-    el("td", { class: "mono" }, "Jaime"),
-    el("td", { class: "mono" }, formatPoints(guest.value)),
-    el("td", { class: "mono" }, formatDelta(guest.delta)),
-    el("td", { class: "mono" }, formatPoints(guest.points)),
-  ]));
-  table.appendChild(tbody);
-  mathSection.appendChild(table);
+  };
+
+  frame = requestAnimationFrame(step);
+
+  return {
+    cancel() {
+      if (frame) {
+        cancelAnimationFrame(frame);
+        frame = null;
+      }
+      targetEl.textContent = formatScore(finalValue);
+    },
+  };
 }
 
 export default {
@@ -523,52 +371,139 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-final" });
     const card = el("div", { class: "card final-card" });
-    const heading = el("h1", { class: "title" }, "SCORES");
-    const winnerBanner = el("div", { class: "mono final-winner" }, "");
+    const heading = el("h1", { class: "title final-title" }, "FINAL REVEAL");
 
-    const scoreBridgeNote = el(
-      "div",
-      { class: "mono final-bridge__note" },
-      "During play the Score Strip froze on question totals. Jemima now parades the marking stamps, adds the maths ledger, and declares the champion."
-    );
-    const scoreBridgeRows = el("div", { class: "final-bridge__rows" });
-    const scoreBridge = el("div", { class: "final-bridge" });
-    scoreBridge.appendChild(scoreBridgeNote);
-    scoreBridge.appendChild(scoreBridgeRows);
+    const sequence = el("div", { class: "final-sequence" });
 
-    const statsBlock = el("div", { class: "final-stats-block" });
-    const statsList = el("ul", { class: "final-stats__list" });
-    statsBlock.appendChild(statsList);
+    const createScoreCard = (name, role) => el("div", { class: `final-scoreboard__card final-scoreboard__card--${role}` }, [
+      el("span", { class: "mono final-scoreboard__player" }, name),
+      el("span", { class: "mono final-scoreboard__value" }, "0"),
+      el("span", { class: "mono final-scoreboard__delta" }, ""),
+    ]);
 
-    const mathsSection = el("div", { class: "final-maths" });
+    const scoreboardStage = el("section", { class: "final-stage final-stage--scoreboard" }, [
+      el("h2", { class: "mono final-stage__heading" }, "Scoreboard"),
+      el("p", { class: "mono final-stage__subtitle" }, "Question rounds only"),
+      el("div", { class: "final-scoreboard" }, [
+        createScoreCard("Daniel", "host"),
+        createScoreCard("Jaime", "guest"),
+      ]),
+    ]);
 
-    const reviewAccordion = el("div", { class: "final-review" });
+    const createMathCard = (name, role) =>
+      el("div", { class: `final-maths-card final-maths-card--${role}` }, [
+        el("span", { class: "mono final-maths-card__name" }, name),
+        el("div", { class: "final-maths-card__metric" }, [
+          el("span", { class: "mono final-maths-card__label" }, "Answer"),
+          el("span", { class: "mono final-maths-card__value", "data-role": role, "data-field": "value" }, "—"),
+        ]),
+        el("div", { class: "final-maths-card__metric" }, [
+          el("span", { class: "mono final-maths-card__label" }, "Δ"),
+          el("span", { class: "mono final-maths-card__value", "data-role": role, "data-field": "delta" }, "—"),
+        ]),
+      ]);
+
+    const mathsAnswersStage = el("section", { class: "final-stage final-stage--maths-answers" }, [
+      el("h2", { class: "mono final-stage__heading" }, "Maths answers"),
+      el("div", { class: "final-maths-cards" }, [
+        createMathCard("Daniel", "host"),
+        createMathCard("Jaime", "guest"),
+      ]),
+    ]);
+
+    const numberRollStage = el("section", { class: "final-stage final-stage--number-roll" }, [
+      el("h2", { class: "mono final-stage__heading" }, "The final figure"),
+      el("p", { class: "mono final-number-roll__prompt" }, ""),
+      el("div", { class: "final-number-roll__target" }, "—"),
+    ]);
+
+    const mathsScoresStage = el("section", { class: "final-stage final-stage--maths-scores" }, [
+      el("h2", { class: "mono final-stage__heading" }, "Maths scoring"),
+      el("p", { class: "mono final-stage__line", "data-role": "host" }, ""),
+      el("p", { class: "mono final-stage__line", "data-role": "guest" }, ""),
+    ]);
+
+    const markingStage = el("section", { class: "final-stage final-stage--marking" }, [
+      el("h2", { class: "mono final-stage__heading" }, "Marking verdicts"),
+      el("p", { class: "mono final-marking__line", "data-role": "host" }, ""),
+      el("p", { class: "mono final-marking__line", "data-role": "guest" }, ""),
+    ]);
+
+    const winnerStage = el("section", { class: "final-stage final-stage--winner" }, [
+      el("div", { class: "final-winner__label" }, ""),
+    ]);
+
+    sequence.appendChild(scoreboardStage);
+    sequence.appendChild(mathsAnswersStage);
+    sequence.appendChild(numberRollStage);
+    sequence.appendChild(mathsScoresStage);
+    sequence.appendChild(markingStage);
+    sequence.appendChild(winnerStage);
+
+    const reviewIntro = el("p", { class: "mono final-post__intro" }, "All questions and answers can be found below.");
+    const reviewAccordion = el("div", { class: "final-round-panels" });
+    const postRevealSection = el("section", { class: "final-post" }, [reviewIntro, reviewAccordion]);
 
     const backBtn = el("button", {
-      class: "btn",
+      class: "btn final-return",
       onclick: () => { window.location.hash = "#/lobby"; },
     }, "RETURN TO LOBBY");
 
     card.appendChild(heading);
-    card.appendChild(winnerBanner);
-    card.appendChild(el("h2", { class: "mono section-heading" }, "Score reveal"));
-    card.appendChild(scoreBridge);
-    card.appendChild(el("h2", { class: "mono section-heading" }, "Marking & speed stats"));
-    card.appendChild(statsBlock);
-    card.appendChild(el("h2", { class: "mono section-heading" }, "Maths challenge"));
-    card.appendChild(mathsSection);
-    card.appendChild(el("h2", { class: "mono section-heading" }, "Round-by-round review"));
-    card.appendChild(reviewAccordion);
+    card.appendChild(sequence);
+    card.appendChild(postRevealSection);
     card.appendChild(backBtn);
 
     root.appendChild(card);
     container.appendChild(root);
 
-    const bridgeRowsContainer = scoreBridgeRows;
     const roundsRef = collection(roomRef(code), "rounds");
 
     const roundsData = {};
     let latestRoomData = {};
+
+    this._sequenceTimeouts = [];
+    this._sequenceStarted = false;
+    this._rollController = null;
+
+    const stageElements = [scoreboardStage, mathsAnswersStage, numberRollStage, mathsScoresStage, markingStage, winnerStage];
+
+    const activateStage = (stage) => {
+      stage.classList.add("final-stage--active");
+    };
+
+    const startRoll = () => {
+      const targetEl = numberRollStage.querySelector(".final-number-roll__target");
+      const value = targetEl ? Number(targetEl.dataset.targetValue || "") : NaN;
+      if (!Number.isFinite(value)) return;
+      if (this._rollController && typeof this._rollController.cancel === "function") {
+        this._rollController.cancel();
+      }
+      this._rollController = createNumberRollController(targetEl, value);
+    };
+
+    const startSequence = () => {
+      if (this._sequenceStarted) return;
+      this._sequenceStarted = true;
+      postRevealSection.classList.remove("final-post--visible");
+      const schedule = (fn, delay) => {
+        const id = setTimeout(fn, delay);
+        this._sequenceTimeouts.push(id);
+      };
+      stageElements.forEach((stage) => stage.classList.remove("final-stage--active"));
+      schedule(() => activateStage(scoreboardStage), 0);
+      schedule(() => activateStage(mathsAnswersStage), 3000);
+      schedule(() => {
+        activateStage(numberRollStage);
+        startRoll();
+      }, 7000);
+      schedule(() => activateStage(mathsScoresStage), 11000);
+      schedule(() => activateStage(markingStage), 14000);
+      schedule(() => activateStage(winnerStage), 18000);
+      schedule(() => {
+        postRevealSection.classList.add("final-post--visible");
+      }, 20000);
+    };
 
     const refreshAll = () => {
       const roomData = latestRoomData || {};
@@ -576,11 +511,21 @@ export default {
       const maths = roomData.maths || {};
       const mathsAnswers = roomData.mathsAnswers || {};
       const totals = computeTotals(scores, mathsAnswers);
-      winnerBanner.textContent = winnerLabel(totals);
-      renderScoreBridge(bridgeRowsContainer, totals);
-      renderStatsList(statsList, roomData, roundsData);
-      renderMaths(mathsSection, maths, mathsAnswers);
+
+      renderScoreboard(scoreboardStage, totals);
+      renderMathsAnswers(mathsAnswersStage, mathsAnswers);
+      renderNumberRollStage(numberRollStage, maths);
+      renderMathsScores(mathsScoresStage, totals, mathsAnswers);
+      renderMarkingNarration(markingStage, roomData, roundsData, totals);
+      renderWinner(winnerStage, totals);
       renderRoundReview(reviewAccordion, roomData, roundsData);
+
+      const mathsTargetReady = Number.isFinite(Number(maths.answer));
+      const hostReady = mathsAnswers.host && mathsAnswers.host.value !== undefined && mathsAnswers.host.value !== null;
+      const guestReady = mathsAnswers.guest && mathsAnswers.guest.value !== undefined && mathsAnswers.guest.value !== null;
+      if (!this._sequenceStarted && mathsTargetReady && hostReady && guestReady) {
+        startSequence();
+      }
     };
 
     const updateView = (roomData = {}) => {
@@ -618,5 +563,16 @@ export default {
       try { this._stopRounds(); } catch {}
       this._stopRounds = null;
     }
+    if (this._sequenceTimeouts) {
+      try {
+        this._sequenceTimeouts.forEach((id) => clearTimeout(id));
+      } catch {}
+      this._sequenceTimeouts = [];
+    }
+    if (this._rollController && typeof this._rollController.cancel === "function") {
+      try { this._rollController.cancel(); } catch {}
+      this._rollController = null;
+    }
+    this._sequenceStarted = false;
   }
 };
