@@ -26,6 +26,7 @@ import {
   clearRoundTimer,
 } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { ensureBotMarking } from "../lib/SinglePlayerBot.js";
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
 
@@ -630,6 +631,9 @@ export default {
 
     const rdSnap = await getDoc(rdRef);
     const rdData = rdSnap.data() || {};
+    if (myRole === "host") {
+      await ensureBotMarking({ code, round, roomData: roomData0, roundData: rdData });
+    }
     const oppItems = (oppRole === "host" ? rdData.hostItems : rdData.guestItems) || [];
     const oppAnswers = (((roomData0.answers || {})[oppRole] || {})[round] || []).map((a) => a?.chosen || "");
     triplet = [0, 1, 2].map((i) => oppItems[i] || {});
