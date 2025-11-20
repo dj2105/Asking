@@ -10,7 +10,7 @@ import { clampCode } from "./util.js";
 export const BOT_UID = "jaime-bot";
 const MIN_CORRECTNESS = 0.5;
 const MAX_CORRECTNESS = 0.8;
-const DEFAULT_STATE = "coderoom";
+const DEFAULT_STATE = "countdown";
 
 function clampRound(raw) {
   const n = Number(raw);
@@ -44,11 +44,12 @@ export function normaliseBotConfig(raw = {}) {
 }
 
 export function buildStartOptions() {
-  const options = [{ value: "coderoom:1", label: "Code Room (Round 1)" }];
+  const options = [];
   for (let i = 1; i <= 5; i += 1) {
     options.push({ value: `countdown:${i}`, label: `Countdown — Round ${i}` });
     options.push({ value: `questions:${i}`, label: `Questions — Round ${i}` });
   }
+  options.splice(1, 0, { value: "coderoom:1", label: "Code Room (Round 1)" });
   options.push({ value: "maths:5", label: "Maths (after Round 5)" });
   options.push({ value: "final:5", label: "Final room" });
   return options;

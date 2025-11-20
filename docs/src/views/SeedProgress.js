@@ -318,9 +318,16 @@ export default {
       if (botConfig.enabled) meta.guestUid = botConfig.guestUid || DEFAULT_GUEST_UID;
       if (!meta.guestUid) meta.guestUid = DEFAULT_GUEST_UID;
 
-      const startState = botConfig.enabled ? botConfig.startState : "coderoom";
+      const startState = botConfig.enabled
+        ? botConfig.startState === "coderoom"
+          ? "countdown"
+          : botConfig.startState
+        : "coderoom";
       const startRound = botConfig.enabled ? botConfig.startRound : 1;
       const countdownStart = startState === "countdown" ? Date.now() + 3_000 : null;
+      const botPayload = botConfig.enabled
+        ? { ...botConfig, startState, startRound }
+        : null;
 
       const chosenPacks = {
         questions: {
@@ -354,7 +361,7 @@ export default {
         timings: { host: {}, guest: {} },
         chosenPacks,
         links: { guestReady: botConfig.enabled ? true : false },
-        bot: botConfig.enabled ? botConfig : null,
+        bot: botPayload,
       };
 
       const createPayload = {
@@ -388,7 +395,7 @@ export default {
 
       await updateSeeds("Pack ready.", 100);
       updateStatus("Seeding complete. Routing to start…");
-      const targetHash = startHash(code, botConfig);
+      const targetHash = startHash(code, botPayload || botConfig);
       setTimeout(() => {
         location.hash = targetHash;
       }, 600);
