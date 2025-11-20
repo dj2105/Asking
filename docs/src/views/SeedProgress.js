@@ -19,7 +19,6 @@ import {
 } from "firebase/firestore";
 import { clampCode, getHashParams } from "../lib/util.js";
 import { buildPlaceholderRounds, buildPlaceholderMaths, padItems, clone } from "../lib/placeholders.js";
-import { normaliseBotConfig, startHash } from "../lib/SinglePlayerBot.js";
 
 const DEFAULT_HOST_UID = "daniel-001";
 const DEFAULT_GUEST_UID = "jaime-001";
@@ -314,13 +313,7 @@ export default {
 
       const meta = { ...(roomData.meta || {}) };
       if (!meta.hostUid) meta.hostUid = DEFAULT_HOST_UID;
-      const botConfig = normaliseBotConfig(roomData.bot);
-      if (botConfig.enabled) meta.guestUid = botConfig.guestUid || DEFAULT_GUEST_UID;
       if (!meta.guestUid) meta.guestUid = DEFAULT_GUEST_UID;
-
-      const startState = botConfig.enabled ? botConfig.startState : "coderoom";
-      const startRound = botConfig.enabled ? botConfig.startRound : 1;
-      const countdownStart = startState === "countdown" ? Date.now() + 3_000 : null;
 
       const chosenPacks = {
         questions: {
@@ -338,12 +331,12 @@ export default {
       await updateSeeds("Committing room…", 75);
       const baseRoomFields = {
         meta,
-        state: startState,
-        round: startRound,
+        state: "coderoom",
+        round: 1,
         maths,
         clues: buildClueMap(maths),
         reveals: buildRevealMap(maths),
-        countdown: { startAt: countdownStart },
+        countdown: { startAt: null },
         answers: { host: {}, guest: {} },
         submitted: { host: {}, guest: {} },
         marking: { host: {}, guest: {}, startAt: null },
@@ -353,8 +346,6 @@ export default {
         scores: { host: {}, guest: {} },
         timings: { host: {}, guest: {} },
         chosenPacks,
-        links: { guestReady: botConfig.enabled ? true : false },
-        bot: botConfig.enabled ? botConfig : null,
       };
 
       const createPayload = {
@@ -387,10 +378,9 @@ export default {
       }
 
       await updateSeeds("Pack ready.", 100);
-      updateStatus("Seeding complete. Routing to start…");
-      const targetHash = startHash(code, botConfig);
+      updateStatus("Seeding complete. Routing to Code Room…");
       setTimeout(() => {
-        location.hash = targetHash;
+        location.hash = `#/coderoom?code=${code}`;
       }, 600);
     } catch (err) {
       console.error("[seeding] failed", err);

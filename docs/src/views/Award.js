@@ -16,7 +16,6 @@ import {
 } from "firebase/firestore";
 
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
-import { ensureBotAwardAck } from "../lib/SinglePlayerBot.js";
 
 const CONTINUE_LEAD_MS = 3_000;
 
@@ -436,10 +435,6 @@ export default {
 
     let ackMine = Boolean(((roomData0.awardAck || {})[myRole] || {})[round]);
     let ackOpp = Boolean(((roomData0.awardAck || {})[oppRole] || {})[round]);
-    if (myRole === "host") {
-      const botAcked = await ensureBotAwardAck({ code, round, roomData: roomData0 });
-      if (botAcked) ackOpp = true;
-    }
     let advancing = false;
 
     const updateAckUI = () => {
