@@ -654,6 +654,7 @@ export default {
     buildStartOptions().forEach((opt) => {
       singleStartSelect.appendChild(el("option", { value: opt.value }, opt.label));
     });
+    singleStartSelect.value = "countdown:1";
     singleStartRow.appendChild(singleStartBtn);
     singleStartRow.appendChild(singleStartSelect);
     card.appendChild(singleStartRow);
