@@ -1,0 +1,374 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "generatedAt": "2025-11-20T22:30:00Z",
+    "author": "sample"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "general knowledge",
+          "difficulty_tier": "easy",
+          "question": "How many days are there in a leap year?",
+          "correct_answer": "366",
+          "distractors": {
+            "easy": "365",
+            "medium": "364",
+            "hard": "367"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "easy",
+          "question": "Which country is famous for the landmark Big Ben?",
+          "correct_answer": "United Kingdom",
+          "distractors": {
+            "easy": "United States",
+            "medium": "Ireland",
+            "hard": "Belgium"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "easy",
+          "question": "What is H2O commonly known as?",
+          "correct_answer": "Water",
+          "distractors": {
+            "easy": "Hydrogen",
+            "medium": "Oxygen",
+            "hard": "Steam"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "history",
+          "difficulty_tier": "easy",
+          "question": "Who was known as the Maid of Orléans?",
+          "correct_answer": "Joan of Arc",
+          "distractors": {
+            "easy": "Marie Antoinette",
+            "medium": "Catherine de' Medici",
+            "hard": "Eleanor of Aquitaine"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "easy",
+          "question": "Which instrument has black and white keys and is played with both hands?",
+          "correct_answer": "Piano",
+          "distractors": {
+            "easy": "Violin",
+            "medium": "Accordion",
+            "hard": "Harpsichord"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "easy",
+          "question": "What is the title of the first Harry Potter book?",
+          "correct_answer": "Harry Potter and the Philosopher's Stone",
+          "distractors": {
+            "easy": "Harry Potter and the Chamber of Secrets",
+            "medium": "Harry Potter and the Goblet of Fire",
+            "hard": "Harry Potter and the Half-Blood Prince"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "medium",
+          "question": "Which organelle is responsible for photosynthesis in plants?",
+          "correct_answer": "Chloroplast",
+          "distractors": {
+            "easy": "Mitochondrion",
+            "medium": "Vacuole",
+            "hard": "Peroxisome"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "medium",
+          "question": "Who was the British Prime Minister during most of World War II?",
+          "correct_answer": "Winston Churchill",
+          "distractors": {
+            "easy": "Neville Chamberlain",
+            "medium": "Clement Attlee",
+            "hard": "Stanley Baldwin"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "medium",
+          "question": "Which city is known as the Gateway to the West in the United States?",
+          "correct_answer": "St. Louis",
+          "distractors": {
+            "easy": "Chicago",
+            "medium": "Kansas City",
+            "hard": "Cincinnati"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "music",
+          "difficulty_tier": "medium",
+          "question": "Which festival in the UK is famous for its Pyramid Stage?",
+          "correct_answer": "Glastonbury",
+          "distractors": {
+            "easy": "Reading Festival",
+            "medium": "Isle of Wight Festival",
+            "hard": "Latitude"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "medium",
+          "question": "What protocol secures web traffic with encryption, indicated by a padlock icon in browsers?",
+          "correct_answer": "HTTPS",
+          "distractors": {
+            "easy": "FTP",
+            "medium": "HTTP",
+            "hard": "SSH"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "medium",
+          "question": "Which author wrote 'The Handmaid's Tale'?",
+          "correct_answer": "Margaret Atwood",
+          "distractors": {
+            "easy": "Alice Munro",
+            "medium": "Doris Lessing",
+            "hard": "Octavia Butler"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "medium",
+          "question": "What is the primary gas found in Earth's atmosphere?",
+          "correct_answer": "Nitrogen",
+          "distractors": {
+            "easy": "Oxygen",
+            "medium": "Argon",
+            "hard": "Carbon dioxide"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "medium",
+          "question": "Which year saw the signing of the Magna Carta?",
+          "correct_answer": "1215",
+          "distractors": {
+            "easy": "1066",
+            "medium": "1295",
+            "hard": "1189"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "medium",
+          "question": "Which river forms part of the border between the United States and Mexico?",
+          "correct_answer": "Rio Grande",
+          "distractors": {
+            "easy": "Colorado River",
+            "medium": "Arkansas River",
+            "hard": "Bravo del Norte"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "music",
+          "difficulty_tier": "medium",
+          "question": "Which British singer released the album '21'?",
+          "correct_answer": "Adele",
+          "distractors": {
+            "easy": "Amy Winehouse",
+            "medium": "Duffy",
+            "hard": "Leona Lewis"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "medium",
+          "question": "Which programming language is known for its snake logo and use in data science?",
+          "correct_answer": "Python",
+          "distractors": {
+            "easy": "Java",
+            "medium": "Ruby",
+            "hard": "Julia"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "medium",
+          "question": "Who wrote the novel '1984'?",
+          "correct_answer": "George Orwell",
+          "distractors": {
+            "easy": "Aldous Huxley",
+            "medium": "Ray Bradbury",
+            "hard": "Arthur Koestler"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "hard",
+          "question": "Which scientist discovered penicillin in 1928?",
+          "correct_answer": "Alexander Fleming",
+          "distractors": {
+            "easy": "Louis Pasteur",
+            "medium": "Howard Florey",
+            "hard": "Ernst Chain"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "hard",
+          "question": "What was the codename for the Allied invasion of North Africa in World War II?",
+          "correct_answer": "Operation Torch",
+          "distractors": {
+            "easy": "Operation Overlord",
+            "medium": "Operation Husky",
+            "hard": "Operation Shingle"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "hard",
+          "question": "What is the largest lake in Africa by surface area?",
+          "correct_answer": "Lake Victoria",
+          "distractors": {
+            "easy": "Lake Tanganyika",
+            "medium": "Lake Malawi",
+            "hard": "Lake Turkana"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "music",
+          "difficulty_tier": "hard",
+          "question": "Which composer wrote the opera cycle 'The Ring of the Nibelung'?",
+          "correct_answer": "Richard Wagner",
+          "distractors": {
+            "easy": "Richard Strauss",
+            "medium": "Giacomo Puccini",
+            "hard": "Bedřich Smetana"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "hard",
+          "question": "Which UK scientist co-invented the World Wide Web alongside Tim Berners-Lee at CERN?",
+          "correct_answer": "Robert Cailliau",
+          "distractors": {
+            "easy": "Vint Cerf",
+            "medium": "Paul Mockapetris",
+            "hard": "Ted Nelson"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "hard",
+          "question": "Which author wrote the Booker-winning novel 'The Remains of the Day'?",
+          "correct_answer": "Kazuo Ishiguro",
+          "distractors": {
+            "easy": "Ian McEwan",
+            "medium": "Salman Rushdie",
+            "hard": "Julian Barnes"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "hard",
+          "question": "Which particle carries the strong nuclear force between quarks?",
+          "correct_answer": "Gluon",
+          "distractors": {
+            "easy": "Photon",
+            "medium": "Boson",
+            "hard": "Graviton"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "hard",
+          "question": "Which medieval document limited the power of the English monarch and influenced constitutional law?",
+          "correct_answer": "Magna Carta",
+          "distractors": {
+            "easy": "Bill of Rights",
+            "medium": "Petition of Right",
+            "hard": "Habeas Corpus Act"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "hard",
+          "question": "Which desert is home to Chile's Atacama Large Millimeter Array observatory?",
+          "correct_answer": "Atacama Desert",
+          "distractors": {
+            "easy": "Mojave Desert",
+            "medium": "Kalahari Desert",
+            "hard": "Patagonian Desert"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "music",
+          "difficulty_tier": "hard",
+          "question": "Which British band released the 1973 album 'Dark Side of the Moon'?",
+          "correct_answer": "Pink Floyd",
+          "distractors": {
+            "easy": "Led Zeppelin",
+            "medium": "Genesis",
+            "hard": "King Crimson"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "hard",
+          "question": "Which mathematician formulated the lambda calculus, foundational to functional programming?",
+          "correct_answer": "Alonzo Church",
+          "distractors": {
+            "easy": "Alan Turing",
+            "medium": "John von Neumann",
+            "hard": "Haskell Curry"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "hard",
+          "question": "Which epic poem recounts Aeneas's journey after the fall of Troy?",
+          "correct_answer": "The Aeneid",
+          "distractors": {
+            "easy": "The Iliad",
+            "medium": "The Odyssey",
+            "hard": "Metamorphoses"
+          }
+        }
+      ]
+    }
+  ]
+}
