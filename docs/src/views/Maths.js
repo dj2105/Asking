@@ -18,7 +18,6 @@ import {
 
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
-import { ensureBotMaths } from "../lib/SinglePlayerBot.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -200,10 +199,6 @@ export default {
 
     const mathsData = room0.maths || {};
     questionText.textContent = mathsData.question || "";
-
-    if (myRole === "host") {
-      await ensureBotMaths({ code, roomData: room0 });
-    }
 
     const draft = loadDraft(code, myRole) || {};
     if (typeof draft.answer === "string") answerInput.value = draft.answer;

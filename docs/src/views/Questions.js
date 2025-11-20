@@ -19,7 +19,6 @@ import {
 
 import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
-import { ensureBotGuestAnswers } from "../lib/SinglePlayerBot.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
@@ -583,10 +582,6 @@ export default {
     setLoadingState("Preparing questions…");
     const rd = await waitForRoundData();
     if (!alive) return;
-
-    if (myRole === "host") {
-      await ensureBotGuestAnswers({ code, round, roomData: latestRoomData, roundData: rd });
-    }
 
     const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
     triplet = [0, 1, 2].map((i) => {
