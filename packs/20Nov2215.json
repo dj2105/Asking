@@ -1,0 +1,374 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "generatedAt": "2025-11-20T22:15:00Z",
+    "author": "sample"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "mathematics",
+          "difficulty_tier": "easy",
+          "question": "What is the value of pi rounded to two decimal places?",
+          "correct_answer": "3.14",
+          "distractors": {
+            "easy": "2.14",
+            "medium": "3.10",
+            "hard": "3.16"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "easy",
+          "question": "Which ocean borders the west coast of the United States?",
+          "correct_answer": "Pacific Ocean",
+          "distractors": {
+            "easy": "Atlantic Ocean",
+            "medium": "Indian Ocean",
+            "hard": "Arctic Ocean"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "easy",
+          "question": "In which country did the Olympic Games originate?",
+          "correct_answer": "Greece",
+          "distractors": {
+            "easy": "Italy",
+            "medium": "Turkey",
+            "hard": "Cyprus"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "easy",
+          "question": "What planet is known as the Red Planet?",
+          "correct_answer": "Mars",
+          "distractors": {
+            "easy": "Venus",
+            "medium": "Jupiter",
+            "hard": "Mercury"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "easy",
+          "question": "Who created the detective Sherlock Holmes?",
+          "correct_answer": "Arthur Conan Doyle",
+          "distractors": {
+            "easy": "Agatha Christie",
+            "medium": "G. K. Chesterton",
+            "hard": "Dorothy L. Sayers"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "easy",
+          "question": "Which British band released the album 'Abbey Road'?",
+          "correct_answer": "The Beatles",
+          "distractors": {
+            "easy": "The Rolling Stones",
+            "medium": "The Who",
+            "hard": "The Kinks"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "technology",
+          "difficulty_tier": "medium",
+          "question": "What programming language is primarily used for styling web pages?",
+          "correct_answer": "CSS",
+          "distractors": {
+            "easy": "HTML",
+            "medium": "Sass",
+            "hard": "Less"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "medium",
+          "question": "Who was the first Tudor monarch of England?",
+          "correct_answer": "Henry VII",
+          "distractors": {
+            "easy": "Henry VIII",
+            "medium": "Richard III",
+            "hard": "Edward IV"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "medium",
+          "question": "What is the capital city of Canada?",
+          "correct_answer": "Ottawa",
+          "distractors": {
+            "easy": "Toronto",
+            "medium": "Montreal",
+            "hard": "Vancouver"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "medium",
+          "question": "What is the chemical symbol for potassium?",
+          "correct_answer": "K",
+          "distractors": {
+            "easy": "P",
+            "medium": "Pt",
+            "hard": "Kr"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "medium",
+          "question": "Which author wrote 'Pride and Prejudice'?",
+          "correct_answer": "Jane Austen",
+          "distractors": {
+            "easy": "Emily Brontë",
+            "medium": "Charlotte Brontë",
+            "hard": "Elizabeth Gaskell"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "medium",
+          "question": "Which composer is known for the 'Pastoral' Symphony No. 6?",
+          "correct_answer": "Ludwig van Beethoven",
+          "distractors": {
+            "easy": "Franz Schubert",
+            "medium": "Johannes Brahms",
+            "hard": "Felix Mendelssohn"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "technology",
+          "difficulty_tier": "medium",
+          "question": "Which company created the video game console 'Dreamcast'?",
+          "correct_answer": "Sega",
+          "distractors": {
+            "easy": "Nintendo",
+            "medium": "Atari",
+            "hard": "SNK"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "medium",
+          "question": "Which English queen was known as 'Bloody Mary'?",
+          "correct_answer": "Mary I",
+          "distractors": {
+            "easy": "Mary II",
+            "medium": "Elizabeth I",
+            "hard": "Anne"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "medium",
+          "question": "Which mountain range includes Mount Everest?",
+          "correct_answer": "Himalayas",
+          "distractors": {
+            "easy": "Andes",
+            "medium": "Alps",
+            "hard": "Karakoram"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "medium",
+          "question": "Which part of the human eye controls the amount of light entering?",
+          "correct_answer": "Iris",
+          "distractors": {
+            "easy": "Cornea",
+            "medium": "Pupil",
+            "hard": "Lens"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "medium",
+          "question": "Who wrote the epic poem 'Paradise Lost'?",
+          "correct_answer": "John Milton",
+          "distractors": {
+            "easy": "Geoffrey Chaucer",
+            "medium": "John Dryden",
+            "hard": "Andrew Marvell"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "medium",
+          "question": "Which Britpop band released the album '(What's the Story) Morning Glory?'",
+          "correct_answer": "Oasis",
+          "distractors": {
+            "easy": "Blur",
+            "medium": "Pulp",
+            "hard": "Suede"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "technology",
+          "difficulty_tier": "hard",
+          "question": "Which year did the ARPANET first go live?",
+          "correct_answer": "1969",
+          "distractors": {
+            "easy": "1975",
+            "medium": "1971",
+            "hard": "1967"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "hard",
+          "question": "Which treaty established the European Economic Community?",
+          "correct_answer": "Treaty of Rome",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Maastricht Treaty",
+            "hard": "Single European Act"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "hard",
+          "question": "What is the capital of the Canadian province of Saskatchewan?",
+          "correct_answer": "Regina",
+          "distractors": {
+            "easy": "Calgary",
+            "medium": "Winnipeg",
+            "hard": "Saskatoon"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "hard",
+          "question": "Which vitamin deficiency causes scurvy?",
+          "correct_answer": "Vitamin C",
+          "distractors": {
+            "easy": "Vitamin D",
+            "medium": "Vitamin B12",
+            "hard": "Vitamin A"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "hard",
+          "question": "Which novel features the character Humbert Humbert?",
+          "correct_answer": "Lolita",
+          "distractors": {
+            "easy": "Rebecca",
+            "medium": "Madame Bovary",
+            "hard": "Pale Fire"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "hard",
+          "question": "Who composed the opera 'Peter Grimes'?",
+          "correct_answer": "Benjamin Britten",
+          "distractors": {
+            "easy": "Edward Elgar",
+            "medium": "Ralph Vaughan Williams",
+            "hard": "Michael Tippett"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "technology",
+          "difficulty_tier": "hard",
+          "question": "Which company created the '8086' microprocessor architecture?",
+          "correct_answer": "Intel",
+          "distractors": {
+            "easy": "AMD",
+            "medium": "Motorola",
+            "hard": "Texas Instruments"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "hard",
+          "question": "Who was the British Prime Minister at the outbreak of World War I?",
+          "correct_answer": "H. H. Asquith",
+          "distractors": {
+            "easy": "Winston Churchill",
+            "medium": "David Lloyd George",
+            "hard": "Stanley Baldwin"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "hard",
+          "question": "Which Asian country contains the region of Borneo known as Sarawak?",
+          "correct_answer": "Malaysia",
+          "distractors": {
+            "easy": "Indonesia",
+            "medium": "Brunei",
+            "hard": "Philippines"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "hard",
+          "question": "What is the SI unit for luminous intensity?",
+          "correct_answer": "Candela",
+          "distractors": {
+            "easy": "Lux",
+            "medium": "Lumen",
+            "hard": "Watt"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "hard",
+          "question": "Which Russian author wrote 'The Master and Margarita'?",
+          "correct_answer": "Mikhail Bulgakov",
+          "distractors": {
+            "easy": "Leo Tolstoy",
+            "medium": "Fyodor Dostoevsky",
+            "hard": "Mikhail Sholokhov"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "hard",
+          "question": "Which songwriter penned 'Hallelujah' first released in 1984?",
+          "correct_answer": "Leonard Cohen",
+          "distractors": {
+            "easy": "Jeff Buckley",
+            "medium": "Bob Dylan",
+            "hard": "Paul Simon"
+          }
+        }
+      ]
+    }
+  ]
+}
