@@ -94,7 +94,7 @@ export default {
     const codeInput = el("input", {
       type: "text",
       class: "input",
-      maxlength: "5",
+      maxlength: "3",
       autocapitalize: "characters",
       autocomplete: "off",
       value: initialCode,

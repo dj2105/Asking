@@ -10,7 +10,7 @@ export function clampCode(input) {
     .trim()
     .toUpperCase()
     .replace(CODE_REGEX, "")
-    .slice(0, 5);
+    .slice(0, 3);
 }
 
 export function getHashParams() {

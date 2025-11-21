@@ -486,7 +486,7 @@ export default {
     const codeInput = el("input", {
       type: "text",
       class: "mono",
-      maxlength: "5",
+      maxlength: "3",
       value: hintedCode || "",
       style: "font-size:18px;padding:6px 10px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;width:120px;text-align:center;",
       oninput: (event) => {
