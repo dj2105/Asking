@@ -22,6 +22,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import { BOT_UID, buildStartOptions, parseStartValue } from "../lib/SinglePlayerBot.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -629,6 +630,44 @@ export default {
     advancedWrap.appendChild(applyBtn);
     card.appendChild(advancedWrap);
 
+    const singleStartRow = el("div", {
+      style:
+        "display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;margin-top:6px;",
+    });
+    const singleStartBtn = el(
+      "button",
+      {
+        class: "btn primary",
+        type: "button",
+        disabled: "",
+        onclick: async () => {
+          await prepareSinglePlayer();
+        },
+      },
+      "Single-player START"
+    );
+    const singleStartSelect = el("select", {
+      class: "mono",
+      style: "min-width:200px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.2);",
+      onchange: () => reflectStartState(),
+    });
+    buildStartOptions().forEach((opt) => {
+      singleStartSelect.appendChild(el("option", { value: opt.value }, opt.label));
+    });
+    singleStartRow.appendChild(singleStartBtn);
+    singleStartRow.appendChild(singleStartSelect);
+    card.appendChild(singleStartRow);
+    card.appendChild(
+      el(
+        "div",
+        {
+          class: "mono small",
+          style: "text-align:center;opacity:0.82;margin-top:-4px;margin-bottom:6px;",
+        },
+        "Jaime is replaced by a bot (50–80% correct)."
+      )
+    );
+
     const startBtn = el(
       "button",
       {
@@ -790,6 +829,8 @@ export default {
     function reflectStartState() {
       const code = clampCode(codeInput.value);
       const ready = code.length >= 3;
+      singleStartBtn.disabled = !ready;
+      singleStartBtn.classList.toggle("throb", ready);
       startBtn.disabled = !ready;
       startBtn.classList.toggle("throb", ready);
       if (!ready) {
@@ -865,6 +906,71 @@ export default {
         console.error("[keyroom] failed to prepare room", err);
         status.textContent = err?.message || "Failed to prepare room.";
         startBtn.disabled = false;
+        reflectStartState();
+      }
+    }
+
+    async function prepareSinglePlayer() {
+      const code = clampCode(codeInput.value);
+      if (code.length < 3) {
+        status.textContent = "Enter a valid room code.";
+        return;
+      }
+      singleStartBtn.disabled = true;
+      singleStartBtn.classList.remove("throb");
+      startBtn.disabled = true;
+      startBtn.classList.remove("throb");
+      status.textContent = "Preparing single-player room…";
+
+      const chosenPacks = {
+        questions: selectionFromValue(selects.questions.value),
+        maths: selectionFromValue(selects.maths.value),
+      };
+
+      const { state, round } = parseStartValue(singleStartSelect.value);
+      const correctChance = Math.round((Math.random() * 0.3 + 0.5) * 100) / 100;
+      const botConfig = {
+        enabled: true,
+        correctChance,
+        startState: state,
+        startRound: round,
+        guestUid: BOT_UID,
+      };
+
+      try {
+        const ref = roomRef(code);
+        const snap = await getDoc(ref);
+        const createPayload = {
+          state: "seeding",
+          round,
+          chosenPacks,
+          bot: botConfig,
+          seeds: { progress: 5, message: "Assigning packs…" },
+          countdown: { startAt: null },
+          links: { guestReady: true },
+          timestamps: { createdAt: serverTimestamp(), updatedAt: serverTimestamp() },
+        };
+        const updatePayload = {
+          state: "seeding",
+          round,
+          chosenPacks,
+          bot: botConfig,
+          seeds: { progress: 5, message: "Assigning packs…" },
+          "countdown.startAt": null,
+          "links.guestReady": true,
+          "timestamps.updatedAt": serverTimestamp(),
+        };
+        if (!snap.exists()) {
+          await setDoc(ref, createPayload);
+        } else {
+          await updateDoc(ref, updatePayload);
+        }
+        setStoredRole(code, "host");
+        status.textContent = `Room ${code} primed for single-player. Routing to seeding…`;
+        location.hash = `#/seeding?code=${code}`;
+      } catch (err) {
+        console.error("[keyroom] failed to prepare single-player room", err);
+        status.textContent = err?.message || "Failed to prepare single-player room.";
         reflectStartState();
       }
     }
