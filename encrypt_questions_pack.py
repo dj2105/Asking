@@ -16,8 +16,9 @@ Usage:
   python encrypt_questions_pack.py AAA-questions.json
 """
 
-import sys, json, base64, hashlib, secrets, re
+import sys, json, base64, hashlib, secrets
 from datetime import datetime, timezone
+from pathlib import Path
 
 # ---- crypto via PyCryptodome (optional) ----
 try:
@@ -142,9 +143,6 @@ def must(cond, msg):
     if not cond:
         raise SystemExit(msg)
 
-def is_room(s: str) -> bool:
-    return bool(re.fullmatch(r"[A-Z]{3}", s or ""))
-
 # ----------------- schema + conversion -----------------
 
 def convert_item_if_needed(item: dict) -> dict:
@@ -215,8 +213,7 @@ def normalize_pack(pack: dict) -> dict:
         pack["version"] = "jemima-questions-1"
 
     meta = pack.get("meta") or {}
-    room = meta.get("roomCode")
-    must(is_room(room), "Questions: meta.roomCode must be 3 uppercase letters (e.g., 'CAT')")
+    # roomCode is optional: generated later when packs are uploaded
     if "generatedAt" not in meta:
         meta["generatedAt"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00","Z")
     meta.setdefault("hostUid", "demo-host")
@@ -239,7 +236,6 @@ def normalize_pack(pack: dict) -> dict:
 
 def validate_final(pack: dict):
     must(pack["version"] == "jemima-questions-1", "Questions: version must be 'jemima-questions-1'")
-    must(is_room(pack["meta"]["roomCode"]), "Questions: invalid roomCode")
     rounds = pack["rounds"]
     for n in ("1","2","3","4","5"):
         rd = rounds.get(n)
@@ -284,7 +280,8 @@ def seal(pack: dict, out_path: str):
         json.dump(envelope, f, ensure_ascii=False, indent=2)
 
     print("Wrote:", out_path)
-    print("roomCode:", pack["meta"]["roomCode"])
+    room_code = pack["meta"].get("roomCode")
+    print("roomCode:", room_code or "<generated after upload>")
     print("version:", pack["version"])
     print("generatedAt:", pack["meta"]["generatedAt"])
     print("checksum:", checksum[:16])
@@ -303,7 +300,12 @@ def main():
     pack = normalize_pack(raw)
     validate_final(pack)
 
-    out_path = sys.argv[2] if len(sys.argv) > 2 else f"{pack['meta']['roomCode']}-questions.sealed"
+    if len(sys.argv) > 2:
+        out_path = sys.argv[2]
+    else:
+        room_code = pack["meta"].get("roomCode")
+        fallback_name = f"{Path(in_path).stem}-questions.sealed"
+        out_path = f"{room_code}-questions.sealed" if room_code else fallback_name
     seal(pack, out_path)
 
 if __name__ == "__main__":
