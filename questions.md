@@ -3,38 +3,23 @@
 This file defines how to author and validate trivia question packs for the two-player game. It is intended to be exported as `agent.md` for other projects.
 
 ## Pack structure
-- **Format:** JSON object with `version`, optional `meta`, and a `rounds` array of exactly five rounds.
-- **Rounds:** Each round contains a `round` number (1–5), `hostItems` (three questions for Daniel/Host), and `guestItems` (three questions for Jaime/Guest).
-- **Total questions:** 30 per pack (3 host + 3 guest questions per round).
-- **Question shape:**
-  - `subject` (string)
-  - `difficulty_tier` (string; e.g., `easy`, `medium`, `hard` — see ramping below)
-  - `question` (string)
-  - `correct_answer` (string) — one indisputably correct option
-  - `distractors` (object) with `easy`, `medium`, and `hard` strings — three plausible but incorrect options
-- **Maths blocks / overrides:** Not required for question packs.
+- **Format:** JSON object with a `rounds` array of exactly five rounds. Packs may also appear nested inside larger JSON/TXT blobs; only the inner structure matters.
+- **Rounds:** Each round contains six questions in an `items` array. The first three become `hostItems` for Daniel, the last three become `guestItems` for Jaime.
+- **Total questions:** 30 per pack (6 per round). Empty slots are not allowed.
+- **Question shape (lenient):**
+  - `question` (string) — or synonyms `prompt`, `text`, `card`.
+  - `correct_answer` (string) — or synonyms `answer`, `correct`, `solution`.
+  - `distractors` (object) with `easy`, `medium`, `hard` strings **or** any mix of wrong answers in arrays/option lists; the game normalises into three distractors.
+  - Optional: `subject`/`category`/`topic`, `difficulty_tier`/`difficulty`/`tier`/`level`, `explanation`/`note`/`comment`, `id`/`uid`.
+- **Interludes (optional):** `interludes` can be attached per round (array of short strings).
 - **Room codes:** Must **not** be included in packs; they are generated only when a game starts.
 
-## Difficulty ramping
-- **Rounds → question difficulty**
-  - Round 1: all questions tagged **easy**.
-  - Rounds 2 & 3: all questions tagged **medium**.
-  - Rounds 4 & 5: all questions tagged **hard**.
-- **Ramping intent:** Difficulty should rise steadily across rounds for both players.
-- **Distractor mix:** Each question always carries three distractors labeled `easy`, `medium`, and `hard`. The game engine chooses which one to show based on the round:
-  - Round 1 (easy questions): use **hard** distractors.
-  - Round 2 (medium questions): use **easy** distractors.
-  - Round 3 (medium questions): use **hard** distractors.
-  - Round 4 (hard questions): use **easy** distractors.
-  - Round 5 (hard questions): use **hard** distractors.
-
 ## Validation guidance
-Validation should ensure the structure matches this spec while staying lenient enough to accept minor cosmetic differences. Recommended checks:
-- Five rounds present; each round has `round`, `hostItems`, and `guestItems` with three questions each.
-- Each question has a non-empty `question`, `correct_answer`, and `distractors.easy|medium|hard`.
-- Difficulty tags follow the round mapping (round 1 = easy, rounds 2–3 = medium, rounds 4–5 = hard).
-- No `roomCode` field is present.
-- Extra harmless metadata (timestamps, authorship notes, tags) may be included and should not cause rejection.
+Key Room accepts the following shapes and normalises them before seeding Firestore:
+- Rounds can be an ordered array or an object keyed by round numbers.
+- Every round must yield exactly six valid questions; otherwise the pack is rejected.
+- Each question needs a non-empty prompt and correct answer. Distractors are auto-derived when missing or duplicated.
+- Extra metadata is tolerated and preserved where possible. Pack-level `notes` are kept if present.
 
 ## Topic guidance (optional)
 Packs do **not** need to fit a single category, but authors can draw inspiration from these topic tiers:

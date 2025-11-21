@@ -12,12 +12,11 @@ Use this file as the `agent.md` for generating Jemima’s history maths packs. E
   - **1 point** — if nobody earns 5/3/2 points, the single closest total takes the safety net (both get 1 point on a tie).
 
 ## JSON shape
-Produce `version: "jemima-maths-timeline-1"` payloads with no room codes or lobby details. Packs may contain a single maths game under `maths`, or multiple games under `games`.
+Produce lenient payloads with no room codes or lobby details. Packs may contain a single maths game under `maths`, or multiple games under `games`. Key Room auto-fills totals and scoring margins if omitted.
 
 ### Single game (`maths`)
 ```
 {
-  "version": "jemima-maths-timeline-1",
   "maths": {
     "title": "String",
     "question": "Instructional string (e.g., Enter the year for each event (1–4 digits).)",
@@ -25,11 +24,11 @@ Produce `version: "jemima-maths-timeline-1"` payloads with no room codes or lobb
       { "prompt": "Concise event title", "year": 1066 },
       ... five total, strictly increasing years ...
     ],
-    "total": 0,                // sum of the five years
+    "total": 0,                // optional; computed if missing
     "scoring": {
-      "targetTotal": 0,        // equals total
-      "sharpshooterMargin": 0, // ±2% of total, rounded
-      "ballparkMargin": 0,     // ±5% of total, rounded
+      "targetTotal": 0,        // optional; computed if missing
+      "sharpshooterMargin": 0, // optional; defaults to ±2% of total, rounded
+      "ballparkMargin": 0,     // optional; defaults to ±5% of total, rounded
       "perfectPoints": 5,
       "sharpshooterPoints": 3,
       "ballparkPoints": 2,
@@ -44,7 +43,6 @@ Produce `version: "jemima-maths-timeline-1"` payloads with no room codes or lobb
 ### Multi-game bundle (`games`)
 ```
 {
-  "version": "jemima-maths-timeline-1",
   "games": [ { ...maths object... }, { ... }, ... ]
 }
 ```
