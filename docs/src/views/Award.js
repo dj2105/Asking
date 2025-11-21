@@ -251,6 +251,13 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
 
+    const bonusBanner = el("div", { class: "award-bonus award-bonus--pending" });
+    const bonusStar = el("div", { class: "award-bonus__icon" }, "★");
+    const bonusText = el("div", { class: "mono award-bonus__text" }, "Bonus pending…");
+    bonusBanner.appendChild(bonusStar);
+    bonusBanner.appendChild(bonusText);
+    root.appendChild(bonusBanner);
+
     const card = el("div", { class: "card award-card" });
     const cardTitle = el("div", { class: "mono award-card__heading" }, "SCORES");
     const scoreboard = el("div", { class: "award-scoreboard" });
@@ -366,6 +373,8 @@ export default {
       const data = latestRoomData || {};
       const hostMap = (data.scores || {}).host || {};
       const guestMap = (data.scores || {}).guest || {};
+      const bonusHostMap = ((data.speedBonuses || {}).host) || {};
+      const bonusGuestMap = ((data.speedBonuses || {}).guest) || {};
       const limit = Math.min(Math.max(Number(round) || 1, 1), 5);
       const getValue = (map, index, fallback) => {
         const direct = getRoundMapValue(map, index);
@@ -378,11 +387,44 @@ export default {
       let hostTotal = 0;
       let guestTotal = 0;
       for (let i = 1; i <= limit; i += 1) {
-        hostTotal += getValue(hostMap, i, roundScores.host);
-        guestTotal += getValue(guestMap, i, roundScores.guest);
+        hostTotal += getValue(hostMap, i, roundScores.host) + Number(getValue(bonusHostMap, i, 0));
+        guestTotal += getValue(guestMap, i, roundScores.guest) + Number(getValue(bonusGuestMap, i, 0));
       }
       hostScoreValue.textContent = String(hostTotal);
       guestScoreValue.textContent = String(guestTotal);
+    };
+
+    const refreshBonus = () => {
+      const timings = latestRoomData.timings || {};
+      const bonuses = latestRoomData.speedBonuses || {};
+      const hostTime = normaliseTimingEntry(getRoundMapValue(timings.host || {}, round));
+      const guestTime = normaliseTimingEntry(getRoundMapValue(timings.guest || {}, round));
+      const hostBonus = Number(getRoundMapValue(bonuses.host || {}, round) || 0);
+      const guestBonus = Number(getRoundMapValue(bonuses.guest || {}, round) || 0);
+      const myBonus = myRole === "host" ? hostBonus : guestBonus;
+      const oppBonus = myRole === "host" ? guestBonus : hostBonus;
+
+      bonusBanner.classList.remove("award-bonus--win", "award-bonus--lose", "award-bonus--pending");
+
+      if (hostTime === null || guestTime === null) {
+        bonusBanner.classList.add("award-bonus--pending");
+        bonusText.textContent = "Waiting for year submissions…";
+        return;
+      }
+
+      const delta = Math.abs(hostTime - guestTime);
+      const deltaLabel = `${delta.toFixed(delta >= 10 ? 1 : 2)} seconds`;
+
+      if (myBonus > oppBonus) {
+        bonusBanner.classList.add("award-bonus--win");
+        bonusText.textContent = `You were ${deltaLabel} faster than ${oppName} in round ${round}: +1 Bonus!`;
+      } else if (oppBonus > myBonus) {
+        bonusBanner.classList.add("award-bonus--lose");
+        bonusText.textContent = `${oppName} was ${deltaLabel} faster than you in round ${round}: No Bonus!`;
+      } else {
+        bonusBanner.classList.add("award-bonus--pending");
+        bonusText.textContent = `Round ${round} finished level: No Bonus.`;
+      }
     };
 
     const DEFAULT_CLUE_PLACEHOLDER = "Jemima’s clue will appear soon.";
@@ -396,16 +438,9 @@ export default {
       const mergedData = { ...baseData, maths: mathsSource };
       const clueText = resolveRoundClue(mergedData, round) || DEFAULT_CLUE_PLACEHOLDER;
       jemimaClue.textContent = clueText;
-      const revealText = resolveRoundReveal(mergedData, round);
-      const fasterRole = determineFasterRole(baseData, round);
-      if (fasterRole === myRole && revealText) {
-        jemimaReveal.textContent = revealText;
-        jemimaReveal.classList.remove("award-reveal--hidden");
-      } else {
-        jemimaReveal.textContent = "";
-        if (!jemimaReveal.classList.contains("award-reveal--hidden")) {
-          jemimaReveal.classList.add("award-reveal--hidden");
-        }
+      jemimaReveal.textContent = "";
+      if (!jemimaReveal.classList.contains("award-reveal--hidden")) {
+        jemimaReveal.classList.add("award-reveal--hidden");
       }
     };
 
@@ -419,27 +454,32 @@ export default {
       recomputeRoundScores();
       const myScore = myRole === "host" ? roundScores.host : roundScores.guest;
       const oppScore = myRole === "host" ? roundScores.guest : roundScores.host;
+      const bonusMap = latestRoomData.speedBonuses || {};
+      const myBonus = Number(getRoundMapValue((bonusMap[myRole] || {}), round) || 0);
+      const oppBonus = Number(getRoundMapValue((bonusMap[oppRole] || {}), round) || 0);
 
       reviewWrap.appendChild(renderQuestionSection({
         heading: "YOUR QUESTIONS",
         items: myItems,
         answers: myAnswers,
         round,
-        score: myScore,
+        score: myScore + myBonus,
       }));
       reviewWrap.appendChild(renderQuestionSection({
         heading: `${oppName.toUpperCase()}’S QUESTIONS`,
         items: oppItems,
         answers: oppAnswers,
         round,
-        score: oppScore,
+        score: oppScore + oppBonus,
       }));
       updateScoreboardTotals();
+      refreshBonus();
     };
 
     const refreshSummary = () => {
       recomputeRoundScores();
       updateScoreboardTotals();
+      refreshBonus();
     };
 
     refreshReviews();

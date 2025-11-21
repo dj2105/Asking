@@ -764,6 +764,15 @@ body.layout-top .stage-center.stage-center--solo {
   box-shadow: none;
 }
 
+.round-panel__nav {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.round-panel__nav:disabled {
+  opacity: 0.6;
+}
+
 .round-panel__answer {
   width: 100%;
   border-radius: 14px;
@@ -806,6 +815,51 @@ body.layout-top .stage-center.stage-center--solo {
 
 .marking-buttons.is-hidden {
   display: none;
+}
+
+.marking-year {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.marking-year.is-hidden {
+  display: none;
+}
+
+.marking-year__label {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.marking-year__input {
+  width: 200px;
+  text-align: center;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(15, 23, 42, 0.24);
+  background: rgba(255, 255, 255, 0.96);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.marking-year__input::placeholder {
+  color: rgba(15, 23, 42, 0.35);
+  letter-spacing: 0.18em;
+}
+
+.marking-year__submit {
+  width: 100%;
+  max-width: 220px;
+}
+
+.marking-year__note {
+  color: var(--muted);
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
 }
 
 
@@ -1428,6 +1482,41 @@ input[type="number"]:focus,
   background: rgba(226, 232, 240, 0.35);
   border-radius: 999px;
   align-self: center;
+}
+
+.award-bonus {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1.5px solid var(--soft-line);
+  background: var(--card);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  margin-bottom: 18px;
+}
+
+.award-bonus__icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.award-bonus__text {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.award-bonus--win .award-bonus__icon {
+  color: var(--accent-strong);
+}
+
+.award-bonus--lose .award-bonus__icon {
+  color: rgba(15, 23, 42, 0.4);
+}
+
+.award-bonus--pending .award-bonus__icon {
+  color: rgba(15, 23, 42, 0.32);
 }
 
 .award-card {

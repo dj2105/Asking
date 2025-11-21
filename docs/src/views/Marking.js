@@ -75,6 +75,25 @@ const markValue = (value) => {
   return VERDICT.UNKNOWN;
 };
 
+function getRoundMapValue(map = {}, roundNumber) {
+  if (!map || typeof map !== "object") return undefined;
+  if (map[roundNumber] !== undefined) return map[roundNumber];
+  const key = String(roundNumber);
+  if (map[key] !== undefined) return map[key];
+  return undefined;
+}
+
+function normaliseTimingEntry(entry) {
+  if (!entry || typeof entry !== "object") return null;
+  const totalSeconds = typeof entry.totalSeconds === "number" ? entry.totalSeconds : null;
+  if (totalSeconds !== null && !Number.isNaN(totalSeconds)) return totalSeconds;
+  const totalMs = typeof entry.totalMs === "number" ? entry.totalMs : null;
+  if (totalMs !== null && !Number.isNaN(totalMs)) return totalMs / 1000;
+  const total = typeof entry.total === "number" ? entry.total : null;
+  if (total !== null && !Number.isNaN(total)) return total;
+  return null;
+}
+
 const DEFAULT_HEADING = "MARKING";
 const JEMIMA_HEADING = "JEMIMA";
 
@@ -248,6 +267,24 @@ export default {
     content.appendChild(answerBox);
     content.appendChild(verdictRow);
 
+    const yearWrap = el("div", { class: "marking-year is-hidden" });
+    const yearLabel = el("div", { class: "mono marking-year__label" }, "ENTER THE YEAR");
+    const yearInput = el("input", {
+      class: "marking-year__input mono",
+      type: "text",
+      inputmode: "numeric",
+      pattern: "[0-9]*",
+      maxlength: "4",
+      placeholder: "YEAR",
+    });
+    const yearSubmit = el("button", { class: "btn marking-year__submit", type: "button", disabled: "" }, "SUBMIT");
+    const yearNote = el("div", { class: "mono marking-year__note" }, "1–2026 only.");
+    yearWrap.appendChild(yearLabel);
+    yearWrap.appendChild(yearInput);
+    yearWrap.appendChild(yearSubmit);
+    yearWrap.appendChild(yearNote);
+    content.appendChild(yearWrap);
+
     const readyBtn = el(
       "button",
       {
@@ -316,6 +353,7 @@ export default {
     const setMarkingVisible = (visible) => {
       answerBox.classList.toggle("is-hidden", !visible);
       verdictRow.classList.toggle("is-hidden", !visible);
+      if (visible) setYearVisible(false);
     };
 
     let idx = 0;
@@ -331,12 +369,17 @@ export default {
     let showingClue = false;
     let fallbackMaths = {};
     let latestRoomData = {};
+    let markingComplete = false;
+    let yearDraft = "";
+    let yearSubmitted = false;
+    let yearSubmitting = false;
 
     let alive = true;
     let stopRoomWatch = null;
     let guardAllowNavigation = false;
     let guardReverting = false;
     const lockedHash = location.hash;
+    let timerStarted = false;
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -523,16 +566,60 @@ export default {
       renderSteps();
     };
 
-    const enterWaitingState = () => {
+    const setYearVisible = (visible) => {
+      yearWrap.classList.toggle("is-hidden", !visible);
+    };
+
+    const clampYearDraft = (value = "") => {
+      const cleaned = String(value || "")
+        .replace(/[^0-9]/g, "")
+        .slice(0, 4);
+      yearDraft = cleaned;
+      return yearDraft;
+    };
+
+    const isYearValid = (value) => {
+      const num = Number(value);
+      return Number.isInteger(num) && num >= 1 && num <= 2026;
+    };
+
+    const refreshYearForm = () => {
+      yearInput.value = yearDraft;
+      const valid = isYearValid(yearDraft);
+      yearSubmit.disabled = yearSubmitting || !valid;
+    };
+
+    const showYearEntry = ({ animate = true } = {}) => {
+      const clueText = getClueText();
+      const render = () => {
+        setHeading(JEMIMA_HEADING);
+        setPrompt(clueText, { status: false, variant: "clue" });
+        hideStatusNote();
+        setMarkingVisible(false);
+        setVerdictsEnabled(false);
+        setYearVisible(true);
+        refreshYearForm();
+      };
+      if (animate) animateSwap(render);
+      else render();
+      startRoundTimer();
+      resumeRoundTimer(timerContext);
+    };
+
+    const enterWaitingState = ({ afterYear = false } = {}) => {
       published = true;
       showingClue = false;
       steps.classList.add("is-hidden");
       setMarkingVisible(false);
       setVerdictsEnabled(false);
+      if (afterYear) {
+        setYearVisible(false);
+        pauseRoundTimer(timerContext);
+        clearRoundTimer(timerContext);
+      }
       showWaitingPrompt();
       renderSteps();
       reflectVerdicts();
-      clearRoundTimer(timerContext);
     };
 
     const showMark = (targetIdx, { animate = true } = {}) => {
@@ -542,6 +629,7 @@ export default {
       idx = targetIdx;
       setVerdictsEnabled(!published && !submitting);
       hideReadyPrompt();
+      setYearVisible(false);
       const render = () => {
         const current = triplet[idx] || {};
         const questionText = current.question || "(missing question)";
@@ -560,7 +648,10 @@ export default {
       };
       if (animate) animateSwap(render);
       else render();
-      if (!published && !submitting) resumeRoundTimer(timerContext);
+      if (!published && !submitting) {
+        startRoundTimer();
+        resumeRoundTimer(timerContext);
+      }
     };
 
     const findNextPending = (fromIndex) => {
@@ -624,9 +715,21 @@ export default {
 
     const timerContext = { code, role: myRole, round };
 
+    const startRoundTimer = () => {
+      if (timerStarted || yearSubmitted) return;
+      resumeRoundTimer(timerContext);
+      timerStarted = true;
+    };
+
+    const preloadGuess = getRoundMapValue(((roomData0.mathsGuesses || {})[myRole] || {}), round);
+    if (Number.isInteger(preloadGuess)) {
+      yearDraft = String(preloadGuess);
+      yearSubmitted = true;
+    }
+
     const setLoadingState = (text) => {
       hideReadyPrompt();
-      pauseRoundTimer(timerContext);
+      startRoundTimer();
       setHeading(DEFAULT_HEADING);
       setPrompt(text, { status: true });
       hideStatusNote();
@@ -659,9 +762,13 @@ export default {
     const alreadyAck = Boolean(((roomData0.markingAck || {})[myRole] || {})[round]);
     const marksComplete = isFullyMarked();
 
-    if (alreadyAck && marksComplete) {
+    if (yearSubmitted) {
       setVerdictsEnabled(false);
-      enterWaitingState();
+      enterWaitingState({ afterYear: true });
+    } else if (alreadyAck && marksComplete) {
+      markingComplete = true;
+      published = true;
+      showYearEntry({ animate: false });
     } else if (marksComplete) {
       showReadyPrompt({ animate: false });
     } else {
@@ -725,6 +832,10 @@ export default {
           const ackGuest = Boolean(((roomData.markingAck || {}).guest || {})[round]);
           if (!(ackHost && ackGuest)) return;
 
+          const guessHost = getRoundMapValue((roomData.mathsGuesses || {}).host || {}, round);
+          const guessGuest = getRoundMapValue((roomData.mathsGuesses || {}).guest || {}, round);
+          if (!Number.isInteger(guessHost) || !Number.isInteger(guessGuest)) return;
+
           const roundSnapCur = await tx.get(rdRef);
           const roundData = roundSnapCur.exists() ? (roundSnapCur.data() || {}) : {};
           const answersHost = (((roomData.answers || {}).host || {})[round] || []);
@@ -736,11 +847,24 @@ export default {
           const roundGuestScore = countCorrectAnswers(answersGuest, guestItems);
           const currentRound = Number(roomData.round) || round;
 
+          const timings = roomData.timings || {};
+          const hostTime = normaliseTimingEntry(getRoundMapValue(timings.host || {}, round));
+          const guestTime = normaliseTimingEntry(getRoundMapValue(timings.guest || {}, round));
+          let hostBonus = 0;
+          let guestBonus = 0;
+          if (hostTime !== null && guestTime !== null) {
+            const epsilon = 0.01;
+            if (hostTime + epsilon < guestTime) hostBonus = 1;
+            else if (guestTime + epsilon < hostTime) guestBonus = 1;
+          }
+
           tx.update(rRef, {
             state: "award",
             round: currentRound,
             [`scores.host.${currentRound}`]: roundHostScore,
             [`scores.guest.${currentRound}`]: roundGuestScore,
+            [`speedBonuses.host.${currentRound}`]: hostBonus,
+            [`speedBonuses.guest.${currentRound}`]: guestBonus,
             "timestamps.updatedAt": serverTimestamp(),
           });
         });
@@ -758,33 +882,61 @@ export default {
       readyBtn.classList.remove("throb");
       renderSteps();
       setVerdictsEnabled(false);
-      pauseRoundTimer(timerContext);
-      showWaitingPrompt();
       reflectVerdicts();
-      const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
-      const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
       const payload = marks.map((value) => markValue(value));
 
       const patch = {
         [`marking.${myRole}.${round}`]: payload,
         [`markingAck.${myRole}.${round}`]: true,
-        [`timings.${myRole}.${round}`]: { totalSeconds },
         "timestamps.updatedAt": serverTimestamp(),
       };
 
       try {
         await updateDoc(rRef, patch);
         submitting = false;
-        enterWaitingState();
+        markingComplete = true;
+        published = true;
+        showYearEntry({ animate: false });
       } catch (err) {
         console.warn("[marking] submit failed:", err);
         submitting = false;
         readyBtn.disabled = false;
         readyBtn.textContent = "READY";
         setVerdictsEnabled(true);
+        startRoundTimer();
         resumeRoundTimer(timerContext);
         renderSteps();
         showReadyPrompt({ animate: false });
+      }
+    };
+
+    const submitYear = async () => {
+      if (yearSubmitting || yearSubmitted) return;
+      const parsed = parseInt(yearDraft || "", 10);
+      if (!isYearValid(parsed)) return;
+      yearSubmitting = true;
+      refreshYearForm();
+      pauseRoundTimer(timerContext);
+      const totalSecondsRaw = getRoundTimerTotal(timerContext) / 1000;
+      const totalSeconds = Math.max(0, Math.round(totalSecondsRaw * 100) / 100);
+
+      const patch = {
+        [`mathsGuesses.${myRole}.${round}`]: parsed,
+        [`timings.${myRole}.${round}`]: { totalSeconds },
+        "timestamps.updatedAt": serverTimestamp(),
+      };
+
+      try {
+        await updateDoc(rRef, patch);
+        yearSubmitted = true;
+        yearSubmitting = false;
+        enterWaitingState({ afterYear: true });
+      } catch (err) {
+        console.warn("[marking] failed to submit year:", err);
+        yearSubmitting = false;
+        startRoundTimer();
+        resumeRoundTimer(timerContext);
+        refreshYearForm();
       }
     };
 
@@ -827,6 +979,12 @@ export default {
     btnRight.addEventListener("click", () => handleVerdict(VERDICT.RIGHT, btnRight));
     btnWrong.addEventListener("click", () => handleVerdict(VERDICT.WRONG, btnWrong));
     btnUnknown.addEventListener("click", () => handleVerdict(VERDICT.UNKNOWN, btnUnknown));
+
+    yearInput.addEventListener("input", () => {
+      clampYearDraft(yearInput.value);
+      refreshYearForm();
+    });
+    yearSubmit.addEventListener("click", submitYear);
 
     stepButtons.forEach((btn, i) => {
       btn.addEventListener("click", () => {
@@ -879,21 +1037,41 @@ export default {
       const markingAck = data.markingAck || {};
       const ackMine = Boolean(((markingAck[myRole] || {})[round]));
       const ackOpp = Boolean(((markingAck[oppRole] || {})[round]));
+      const guessesMap = data.mathsGuesses || {};
+      const myGuessValue = getRoundMapValue((guessesMap[myRole] || {}), round);
+      const oppGuessValue = getRoundMapValue((guessesMap[oppRole] || {}), round);
+      const marksCompleteNow = isFullyMarked();
 
-      if (ackMine && !published) {
+      if (ackMine) {
+        markingComplete = true;
+        published = true;
+      }
+
+      if (Number.isInteger(myGuessValue) && !yearSubmitted) {
+        yearDraft = String(myGuessValue);
+        yearSubmitted = true;
+        enterWaitingState({ afterYear: true });
+      } else if (ackMine && !yearSubmitted && marksCompleteNow) {
         const incoming = (((data.marking || {})[myRole] || {})[round] || marks);
         marks = marks.map((_, i) => markValue(incoming[i]));
         submitting = false;
-        enterWaitingState();
-      } else if (!ackMine && showingClue && !submitting && isFullyMarked()) {
+        showYearEntry({ animate: false });
+      } else if (!ackMine && showingClue && !submitting && marksCompleteNow) {
         showReadyPrompt({ animate: false });
       }
 
-      if (published && alive) {
+      if (yearSubmitted && alive) {
         showWaitingPrompt();
       }
 
-      if (myRole === "host" && stateName === "marking" && ackMine && ackOpp) {
+      if (
+        myRole === "host" &&
+        stateName === "marking" &&
+        ackMine &&
+        ackOpp &&
+        Number.isInteger(myGuessValue) &&
+        Number.isInteger(oppGuessValue)
+      ) {
         finalizeRound();
       }
     }, (err) => {
