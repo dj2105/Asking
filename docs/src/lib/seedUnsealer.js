@@ -23,7 +23,7 @@ const PASSWORD_DEMO = "DEMO-ONLY"; // TODO: externalise to env/config.
 export const PACK_VERSION_FULL = "jemima-pack-1";
 export const PACK_VERSION_HALF = "jemima-halfpack-1";
 export const PACK_VERSION_QUESTIONS = "jemima-questionpack-1";
-export const PACK_VERSION_MATHS = "jemima-maths-chain-2";
+export const PACK_VERSION_MATHS = "jemima-maths-timeline-1";
 const PBKDF2_ITERATIONS = 150_000;
 
 function assert(condition, message) {
@@ -221,17 +221,40 @@ function validateMaths(pack) {
   assert(typeof meta.generatedAt === "string" && !Number.isNaN(Date.parse(meta.generatedAt)), "Pack generatedAt invalid.");
 
   const maths = pack.maths || {};
-  assert(Array.isArray(maths.clues) && maths.clues.length === 5, "Maths clues must contain 5 entries.");
-  maths.clues.forEach((clue, idx) => {
-    assert(typeof clue === "string" && clue.trim(), `Maths clue ${idx + 1} missing.`);
+  assert(Array.isArray(maths.events) && maths.events.length === 5, "Maths events must contain 5 entries.");
+  let lastYear = 0;
+  maths.events.forEach((event, idx) => {
+    assert(event && typeof event === "object", `Maths event ${idx + 1} missing.`);
+    assert(typeof event.prompt === "string" && event.prompt.trim(), `Maths event ${idx + 1} prompt missing.`);
+    assert(Number.isInteger(event.year) && event.year >= 1 && event.year <= 2025, `Maths event ${idx + 1} year invalid.`);
+    assert(
+      idx === 0 || event.year > lastYear,
+      "Maths events must be in chronological order (each newer than the last)."
+    );
+    lastYear = event.year;
   });
-  assert(Array.isArray(maths.reveals) && maths.reveals.length === 5, "Maths reveals must contain 5 entries.");
-  maths.reveals.forEach((reveal, idx) => {
-    const ok = typeof reveal === "string" ? reveal.trim() : typeof reveal === "object";
-    assert(ok, `Maths reveal ${idx + 1} missing.`);
-  });
-  assert(typeof maths.question === "string" && maths.question.trim(), "Maths question missing.");
-  assert(Number.isInteger(maths.answer), "Maths answer must be an integer.");
+
+  const sumYears = maths.events.reduce((total, event) => total + (Number.isInteger(event.year) ? event.year : 0), 0);
+  if (maths.total != null) {
+    assert(Number.isInteger(maths.total) && maths.total === sumYears, "Maths total must match summed event years.");
+  }
+
+  if (maths.scoring) {
+    const scoring = maths.scoring;
+    const { sharpshooterPercent, ballparkPercent, sharpshooterMargin, ballparkMargin, safetyNetPoints } = scoring;
+    assert(typeof scoring === "object", "Maths scoring must be an object.");
+    if (sharpshooterPercent != null) assert(Number(scoring.sharpshooterPercent) > 0, "Scoring sharpshooterPercent invalid.");
+    if (ballparkPercent != null) assert(Number(scoring.ballparkPercent) > 0, "Scoring ballparkPercent invalid.");
+    if (sharpshooterMargin != null) assert(Number.isInteger(sharpshooterMargin) && sharpshooterMargin >= 0, "Sharpshooter margin invalid.");
+    if (ballparkMargin != null) assert(Number.isInteger(ballparkMargin) && ballparkMargin >= 0, "Ballpark margin invalid.");
+    if (safetyNetPoints != null) assert(Number.isInteger(safetyNetPoints), "Safety-net points invalid.");
+  }
+
+  if (Array.isArray(maths.clues)) {
+    maths.clues.forEach((clue, idx) => {
+      assert(typeof clue === "string" && clue.trim(), `Maths clue ${idx + 1} missing.`);
+    });
+  }
 
   return { code };
 }

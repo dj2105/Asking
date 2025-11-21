@@ -92,6 +92,10 @@ function resolveRoundClue(roomData = {}, round = 1) {
   if (direct) return direct;
   const maths = roomData.maths || {};
   const arrIndex = roundNumber - 1;
+  if (Array.isArray(maths.events) && arrIndex >= 0 && arrIndex < maths.events.length) {
+    const viaEvent = normaliseClueValue(maths.events[arrIndex]?.prompt);
+    if (viaEvent) return viaEvent;
+  }
   if (Array.isArray(maths.clues) && arrIndex >= 0 && arrIndex < maths.clues.length) {
     const viaMaths = normaliseClueValue(maths.clues[arrIndex]);
     if (viaMaths) return viaMaths;
@@ -107,6 +111,14 @@ function resolveRoundReveal(roomData = {}, round = 1) {
   if (direct) return direct;
   const maths = roomData.maths || {};
   const arrIndex = roundNumber - 1;
+  if (
+    Array.isArray(maths.events) &&
+    arrIndex >= 0 &&
+    arrIndex < maths.events.length
+  ) {
+    const viaEvent = normaliseRevealValue(maths.events[arrIndex]?.prompt);
+    if (viaEvent) return viaEvent;
+  }
   if (
     Array.isArray(maths.reveals) &&
     arrIndex >= 0 &&

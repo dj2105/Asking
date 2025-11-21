@@ -1,0 +1,380 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "roomCode": "FKH",
+    "generatedAt": "2025-01-15T09:30:00.000Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "space",
+          "difficulty_tier": "pub",
+          "question": "Which planet completes an orbit of the Sun in about 88 Earth days?",
+          "correct_answer": "Mercury",
+          "distractors": {
+            "easy": "Venus",
+            "medium": "Mars",
+            "hard": "Ceres"
+          }
+        },
+        {
+          "subject": "film",
+          "difficulty_tier": "pub",
+          "question": "Which actor voiced Woody in “Toy Story”?",
+          "correct_answer": "Tom Hanks",
+          "distractors": {
+            "easy": "Tim Allen",
+            "medium": "Billy Crystal",
+            "hard": "John Goodman"
+          }
+        },
+        {
+          "subject": "food",
+          "difficulty_tier": "pub",
+          "question": "Which spice gives paella its golden colour?",
+          "correct_answer": "Saffron",
+          "distractors": {
+            "easy": "Turmeric",
+            "medium": "Paprika",
+            "hard": "Annatto"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Who wrote the novel “Beloved”?",
+          "correct_answer": "Toni Morrison",
+          "distractors": {
+            "easy": "Alice Walker",
+            "medium": "Maya Angelou",
+            "hard": "Zora Neale Hurston"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "enthusiast",
+          "question": "What is the chemical symbol for tungsten?",
+          "correct_answer": "W",
+          "distractors": {
+            "easy": "Tu",
+            "medium": "Tg",
+            "hard": "Ta"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which African lake feeds the Nile River?",
+          "correct_answer": "Lake Victoria",
+          "distractors": {
+            "easy": "Lake Tanganyika",
+            "medium": "Lake Albert",
+            "hard": "Lake Turkana"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "mythology",
+          "difficulty_tier": "pub",
+          "question": "Which Norse god wields the hammer Mjölnir?",
+          "correct_answer": "Thor",
+          "distractors": {
+            "easy": "Odin",
+            "medium": "Freyr",
+            "hard": "Heimdall"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which duo recorded the album “Random Access Memories”?",
+          "correct_answer": "Daft Punk",
+          "distractors": {
+            "easy": "Justice",
+            "medium": "Chromeo",
+            "hard": "Air"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "pub",
+          "question": "What does the acronym “URL” stand for?",
+          "correct_answer": "Uniform Resource Locator",
+          "distractors": {
+            "easy": "Universal Reference Link",
+            "medium": "Unified Resource List",
+            "hard": "Universal Resource Locator"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which city hosted the first modern Olympic Games in 1896?",
+          "correct_answer": "Athens",
+          "distractors": {
+            "easy": "Paris",
+            "medium": "Rome",
+            "hard": "St. Louis"
+          }
+        },
+        {
+          "subject": "architecture",
+          "difficulty_tier": "pub",
+          "question": "Which structure is also known as the “Gherkin” in London?",
+          "correct_answer": "30 St Mary Axe",
+          "distractors": {
+            "easy": "The Shard",
+            "medium": "Canary Wharf Tower",
+            "hard": "City Hall"
+          }
+        },
+        {
+          "subject": "sports",
+          "difficulty_tier": "pub",
+          "question": "How many players start on the ice for one ice hockey team?",
+          "correct_answer": "Six",
+          "distractors": {
+            "easy": "Five",
+            "medium": "Seven",
+            "hard": "Eight"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "enthusiast",
+          "question": "Which scientist proposed the uncertainty principle?",
+          "correct_answer": "Werner Heisenberg",
+          "distractors": {
+            "easy": "Albert Einstein",
+            "medium": "Niels Bohr",
+            "hard": "Erwin Schrödinger"
+          }
+        },
+        {
+          "subject": "games",
+          "difficulty_tier": "pub",
+          "question": "Which classic arcade game features ghosts named Blinky, Pinky, Inky, and Clyde?",
+          "correct_answer": "Pac-Man",
+          "distractors": {
+            "easy": "Space Invaders",
+            "medium": "Ms. Pac-Man",
+            "hard": "Dig Dug"
+          }
+        },
+        {
+          "subject": "fashion",
+          "difficulty_tier": "pub",
+          "question": "Which footwear brand popularised Air cushioning?",
+          "correct_answer": "Nike",
+          "distractors": {
+            "easy": "Adidas",
+            "medium": "Reebok",
+            "hard": "New Balance"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "film",
+          "difficulty_tier": "enthusiast",
+          "question": "Which cinematographer is known for “Blade Runner 2049”?",
+          "correct_answer": "Roger Deakins",
+          "distractors": {
+            "easy": "Emmanuel Lubezki",
+            "medium": "Greig Fraser",
+            "hard": "Janusz Kamiński"
+          }
+        },
+        {
+          "subject": "food",
+          "difficulty_tier": "pub",
+          "question": "Which fermented drink is traditionally made with tea, sugar, and SCOBY?",
+          "correct_answer": "Kombucha",
+          "distractors": {
+            "easy": "Kvass",
+            "medium": "Kefir",
+            "hard": "Jun"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "enthusiast",
+          "question": "Which poet wrote “Do not go gentle into that good night”?",
+          "correct_answer": "Dylan Thomas",
+          "distractors": {
+            "easy": "W. B. Yeats",
+            "medium": "Philip Larkin",
+            "hard": "Seamus Heaney"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which desert covers much of northern Africa?",
+          "correct_answer": "The Sahara Desert",
+          "distractors": {
+            "easy": "The Kalahari Desert",
+            "medium": "The Arabian Desert",
+            "hard": "The Nubian Desert"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "enthusiast",
+          "question": "Which company created the open-source browser engine Chromium?",
+          "correct_answer": "Google",
+          "distractors": {
+            "easy": "Mozilla",
+            "medium": "Apple",
+            "hard": "Opera Software"
+          }
+        },
+        {
+          "subject": "culture",
+          "difficulty_tier": "pub",
+          "question": "Which Japanese garment wraps left side over right for daily wear?",
+          "correct_answer": "Kimono",
+          "distractors": {
+            "easy": "Yukata",
+            "medium": "Hakama",
+            "hard": "Haori"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "specialist",
+          "question": "Which scientist isolated the electron charge via the oil-drop experiment?",
+          "correct_answer": "Robert Millikan",
+          "distractors": {
+            "easy": "J. J. Thomson",
+            "medium": "Ernest Rutherford",
+            "hard": "Luis Alvarez"
+          }
+        },
+        {
+          "subject": "television",
+          "difficulty_tier": "pub",
+          "question": "Which show features the fictional town of Pawnee, Indiana?",
+          "correct_answer": "Parks and Recreation",
+          "distractors": {
+            "easy": "Schitt's Creek",
+            "medium": "Community",
+            "hard": "30 Rock"
+          }
+        },
+        {
+          "subject": "space",
+          "difficulty_tier": "enthusiast",
+          "question": "Which NASA rover landed on Mars in 2012?",
+          "correct_answer": "Curiosity",
+          "distractors": {
+            "easy": "Opportunity",
+            "medium": "Spirit",
+            "hard": "Perseverance"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "music",
+          "difficulty_tier": "enthusiast",
+          "question": "Which composer created the “Enigma Variations”?",
+          "correct_answer": "Edward Elgar",
+          "distractors": {
+            "easy": "Benjamin Britten",
+            "medium": "Ralph Vaughan Williams",
+            "hard": "Gustav Holst"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which ship carried the Pilgrims to North America in 1620?",
+          "correct_answer": "Mayflower",
+          "distractors": {
+            "easy": "Santa María",
+            "medium": "Endeavour",
+            "hard": "Discovery"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "pub",
+          "question": "Which vitamin is primarily produced when skin is exposed to sunlight?",
+          "correct_answer": "Vitamin D",
+          "distractors": {
+            "easy": "Vitamin C",
+            "medium": "Vitamin B12",
+            "hard": "Vitamin K"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "games",
+          "difficulty_tier": "pub",
+          "question": "Which tabletop role-playing game uses a twenty-sided die for most checks?",
+          "correct_answer": "Dungeons & Dragons",
+          "distractors": {
+            "easy": "Pathfinder",
+            "medium": "Shadowrun",
+            "hard": "Call of Cthulhu"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "enthusiast",
+          "question": "Which mountain range forms the spine of Italy?",
+          "correct_answer": "The Apennines",
+          "distractors": {
+            "easy": "The Alps",
+            "medium": "The Pyrenees",
+            "hard": "The Dinaric Alps"
+          }
+        },
+        {
+          "subject": "film",
+          "difficulty_tier": "enthusiast",
+          "question": "Who composed the iconic two-note motif for “Jaws”?",
+          "correct_answer": "John Williams",
+          "distractors": {
+            "easy": "Hans Zimmer",
+            "medium": "James Horner",
+            "hard": "Alan Silvestri"
+          }
+        }
+      ]
+    }
+  ],
+  "integrity": {
+    "checksum": "1b6eaaa59db212a043d525e02661e47da473751ab491f9d6928e0071a00b88ab",
+    "verified": true
+  }
+}

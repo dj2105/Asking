@@ -3,7 +3,7 @@
 encrypt_maths_pack.py
 
 Seal a Jemima maths pack JSON using AES-256-GCM with PBKDF2-HMAC-SHA256 (150k).
-Supports the latest chain spec ("jemima-maths-chain-2").
+Supports the timeline spec ("jemima-maths-timeline-1").
 
 Output: <ROOM>-maths.sealed
 """
@@ -23,8 +23,8 @@ except ModuleNotFoundError:  # pragma: no cover
 
 PASSWORD = b"DEMO-ONLY"           # <-- replace in production
 PBKDF2_ROUNDS = 150_000
-ALLOWED_VERSIONS = {"jemima-maths-chain-2"}
-DEFAULT_VERSION = "jemima-maths-chain-2"
+ALLOWED_VERSIONS = {"jemima-maths-timeline-1"}
+DEFAULT_VERSION = "jemima-maths-timeline-1"
 
 # ------------------------- helpers & crypto -------------------------
 
@@ -150,28 +150,22 @@ def room_ok(s: str) -> bool:
     return bool(re.fullmatch(r"[A-Z]{3}", s or ""))
 
 def validate_chain_pack(p: dict):
-    must(p.get("version") == "jemima-maths-chain-2", "Wrong version for maths pack.")
+    must(p.get("version") == "jemima-maths-timeline-1", "Wrong version for maths pack.")
     maths = p.get("maths") or {}
-    clues = maths.get("clues")
-    reveals = maths.get("reveals")
-    must(isinstance(clues, list) and len(clues) == 5, "Maths: need exactly 5 clues.")
-    must(isinstance(reveals, list) and len(reveals) == 5, "Maths: need exactly 5 reveals.")
-    for idx, clue in enumerate(clues, start=1):
-        must(isinstance(clue, str) and clue.strip(), f"Maths: clue {idx} missing or empty.")
-    for idx, reveal in enumerate(reveals, start=1):
-        if isinstance(reveal, str):
-            must(reveal.strip(), f"Maths: reveal {idx} empty.")
-        elif isinstance(reveal, dict):
-            txt = (
-                (reveal.get("prompt") if isinstance(reveal.get("prompt"), str) else None)
-                or (reveal.get("text") if isinstance(reveal.get("text"), str) else None)
-                or (reveal.get("value") if isinstance(reveal.get("value"), str) else None)
-            )
-            must(txt and txt.strip(), f"Maths: reveal {idx} missing text.")
-        else:
-            must(False, f"Maths: reveal {idx} must be string or object.")
+    events = maths.get("events")
+    must(isinstance(events, list) and len(events) == 5, "Maths: need exactly 5 events.")
+    last = 0
+    total = 0
+    for idx, evt in enumerate(events, start=1):
+        must(isinstance(evt, dict), f"Maths event {idx} missing.")
+        must(isinstance(evt.get("prompt"), str) and evt["prompt"].strip(), f"Maths event {idx} prompt missing.")
+        must(isinstance(evt.get("year"), int) and 1 <= evt["year"] <= 2025, f"Maths event {idx} year invalid.")
+        must(idx == 1 or evt["year"] > last, "Events must be chronological")
+        last = evt["year"]
+        total += evt["year"]
+    if maths.get("total") is not None:
+        must(maths["total"] == total, "Maths total must match summed years.")
     must(isinstance(maths.get("question"), str) and maths["question"].strip(), "Maths: question missing.")
-    must(isinstance(maths.get("answer"), int), "Maths: answer must be an integer.")
 
 # ------------------------------ main ------------------------------
 

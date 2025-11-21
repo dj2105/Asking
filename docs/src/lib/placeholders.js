@@ -295,40 +295,47 @@ export function padItems(list = []) {
 
 function normalizeMaths(maths = null) {
   const src = maths && typeof maths === "object" ? maths : {};
-  const rawClues = Array.isArray(src.clues)
-    ? src.clues
-    : Array.isArray(src.beats)
-    ? src.beats
-    : [];
-  const clues = rawClues.slice(0, 5).map((clue) =>
-    typeof clue === "string" && clue.trim() ? clue.trim() : PLACEHOLDER
-  );
-  while (clues.length < 5) clues.push(PLACEHOLDER);
-
-  const rawReveals = Array.isArray(src.reveals) ? src.reveals.slice(0, 5) : [];
-  const reveals = rawReveals.map((entry) => {
-    if (typeof entry === "string" && entry.trim()) return entry.trim();
-    if (entry && typeof entry === "object") {
-      const text =
-        (typeof entry.prompt === "string" && entry.prompt.trim()) ||
-        (typeof entry.text === "string" && entry.text.trim()) ||
-        (typeof entry.value === "string" && entry.value.trim());
-      if (text) return text;
-    }
-    return PLACEHOLDER;
+  const rawEvents = Array.isArray(src.events) ? src.events.slice(0, 5) : [];
+  const events = rawEvents.map((evt, idx) => {
+    const prompt = typeof evt?.prompt === "string" && evt.prompt.trim() ? evt.prompt.trim() : PLACEHOLDER;
+    const year = Number.isInteger(evt?.year) ? evt.year : 0;
+    return { prompt, year, order: idx + 1 };
   });
-  while (reveals.length < 5) reveals.push(PLACEHOLDER);
+  while (events.length < 5) {
+    events.push({ prompt: PLACEHOLDER, year: 0, order: events.length + 1 });
+  }
+
+  const clues = events.map((evt) => evt.prompt);
+  const reveals = Array.isArray(src.reveals)
+    ? src.reveals.slice(0, 5).map((reveal, idx) =>
+        typeof reveal === "string" && reveal.trim()
+          ? reveal.trim()
+          : typeof reveal === "object" && reveal?.prompt
+          ? String(reveal.prompt).trim()
+          : clues[idx]
+      )
+    : clues;
 
   const question =
     typeof src.question === "string" && src.question.trim()
       ? src.question.trim()
-      : "All tallied, what number does Jemima finish on? ___";
-  const answer = Number.isInteger(src.answer) ? src.answer : 0;
-  const full_sum =
-    typeof src.full_sum === "string" && src.full_sum.trim() ? src.full_sum.trim() : "";
-  const location = typeof src.location === "string" && src.location.trim() ? src.location.trim() : PLACEHOLDER;
+      : "Enter the year for each event (1–4 digits).";
+  const totalFromEvents = events.reduce((sum, evt) => sum + (Number.isInteger(evt.year) ? evt.year : 0), 0);
+  const total = Number.isInteger(src.total) ? src.total : totalFromEvents;
+  const answer = Number.isInteger(src.answer) ? src.answer : total;
 
-  return { clues, reveals, question, answer, full_sum, location };
+  const scoring = src.scoring && typeof src.scoring === "object" ? { ...src.scoring } : {};
+  if (!Number.isInteger(scoring.sharpshooterMargin)) scoring.sharpshooterMargin = Math.round(total * 0.02);
+  if (!Number.isInteger(scoring.ballparkMargin)) scoring.ballparkMargin = Math.round(total * 0.05);
+  if (!Number.isInteger(scoring.perfectPoints)) scoring.perfectPoints = 5;
+  if (!Number.isInteger(scoring.sharpshooterPoints)) scoring.sharpshooterPoints = 3;
+  if (!Number.isInteger(scoring.ballparkPoints)) scoring.ballparkPoints = 2;
+  if (!Number.isInteger(scoring.safetyNetPoints)) scoring.safetyNetPoints = 1;
+  if (!Number.isFinite(scoring.sharpshooterPercent)) scoring.sharpshooterPercent = 0.02;
+  if (!Number.isFinite(scoring.ballparkPercent)) scoring.ballparkPercent = 0.05;
+  scoring.targetTotal = Number.isInteger(scoring.targetTotal) ? scoring.targetTotal : total;
+
+  return { clues, reveals, question, answer, total, events, scoring };
 }
 
 export async function buildPlaceholderRounds() {

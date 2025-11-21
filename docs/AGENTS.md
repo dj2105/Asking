@@ -64,7 +64,7 @@ Sealed Content (single source of trivia)
                 – Full pack (version jemima-pack-1): 5 rounds of host+guest items, round clues, maths block, integrity checksum.
                 – Half pack (jemima-halfpack-1): host OR guest items only; maths optional.
                 – Question override (jemima-questionpack-1): replaces both sides’ question items.
-                – Maths override (jemima-maths-chain-2): replaces only the maths block.
+                – Maths override (jemima-maths-timeline-1): replaces only the maths block.
         •       Key Room lets Daniel mix these: start from a full pack, then layer optional question/host/guest/maths overrides. Missing items are padded with “<empty>”.
         •       Decryption: AES-GCM envelope, PBKDF2 150k iters, TextDecoder. Password default = DEMO-ONLY.
         •       Integrity: SHA-256 over canonical JSON (integrity.checksum) and verified flag true.

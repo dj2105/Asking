@@ -1,0 +1,380 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "roomCode": "DOI",
+    "generatedAt": "2025-01-12T12:00:00.000Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "astronomy",
+          "difficulty_tier": "pub",
+          "question": "Which planet sports the storm called the Great Red Spot?",
+          "correct_answer": "Jupiter",
+          "distractors": {
+            "easy": "Mars",
+            "medium": "Saturn",
+            "hard": "Neptune"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which Beatle wrote the song “Here Comes the Sun”?",
+          "correct_answer": "George Harrison",
+          "distractors": {
+            "easy": "John Lennon",
+            "medium": "Paul McCartney",
+            "hard": "Ringo Starr"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which river flows through the city of Budapest?",
+          "correct_answer": "The Danube",
+          "distractors": {
+            "easy": "The Rhine",
+            "medium": "The Vistula",
+            "hard": "The Dniester"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "film",
+          "difficulty_tier": "pub",
+          "question": "Who directed the movie “Jurassic Park”?",
+          "correct_answer": "Steven Spielberg",
+          "distractors": {
+            "easy": "George Lucas",
+            "medium": "James Cameron",
+            "hard": "Ridley Scott"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Which novel opens with the line “Call me Ishmael”?",
+          "correct_answer": "Moby-Dick",
+          "distractors": {
+            "easy": "Treasure Island",
+            "medium": "Twenty Thousand Leagues Under the Sea",
+            "hard": "The Old Man and the Sea"
+          }
+        },
+        {
+          "subject": "games",
+          "difficulty_tier": "pub",
+          "question": "Which board game tasks players with building rail routes across maps?",
+          "correct_answer": "Ticket to Ride",
+          "distractors": {
+            "easy": "Monopoly",
+            "medium": "Power Grid",
+            "hard": "Railways of the World"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which empire built the city of Machu Picchu?",
+          "correct_answer": "The Inca Empire",
+          "distractors": {
+            "easy": "The Aztec Empire",
+            "medium": "The Maya Civilization",
+            "hard": "The Chavín Culture"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "pub",
+          "question": "What does the “CPU” in computing stand for?",
+          "correct_answer": "Central Processing Unit",
+          "distractors": {
+            "easy": "Computer Power Unit",
+            "medium": "Core Processing Utility",
+            "hard": "Central Program Unit"
+          }
+        },
+        {
+          "subject": "art",
+          "difficulty_tier": "pub",
+          "question": "Which painter is famous for the work “Girl with a Pearl Earring”?",
+          "correct_answer": "Johannes Vermeer",
+          "distractors": {
+            "easy": "Claude Monet",
+            "medium": "Jan van Eyck",
+            "hard": "Frans Hals"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "nature",
+          "difficulty_tier": "pub",
+          "question": "What is the term for animals active during twilight?",
+          "correct_answer": "Crepuscular",
+          "distractors": {
+            "easy": "Nocturnal",
+            "medium": "Diurnal",
+            "hard": "Matutinal"
+          }
+        },
+        {
+          "subject": "sports",
+          "difficulty_tier": "pub",
+          "question": "In tennis, what is the term for a score of zero?",
+          "correct_answer": "Love",
+          "distractors": {
+            "easy": "Blank",
+            "medium": "Nil",
+            "hard": "Scratch"
+          }
+        },
+        {
+          "subject": "television",
+          "difficulty_tier": "pub",
+          "question": "Which series features the fictional paper company Dunder Mifflin?",
+          "correct_answer": "The Office (U.S.)",
+          "distractors": {
+            "easy": "Parks and Recreation",
+            "medium": "Brooklyn Nine-Nine",
+            "hard": "30 Rock"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "enthusiast",
+          "question": "Which element is named after the planet Uranus?",
+          "correct_answer": "Uranium",
+          "distractors": {
+            "easy": "Neptunium",
+            "medium": "Plutonium",
+            "hard": "Cerium"
+          }
+        },
+        {
+          "subject": "culinary",
+          "difficulty_tier": "pub",
+          "question": "Which Italian cheese is traditionally shaved over Caesar salad?",
+          "correct_answer": "Parmigiano-Reggiano",
+          "distractors": {
+            "easy": "Mozzarella",
+            "medium": "Grana Padano",
+            "hard": "Pecorino Romano"
+          }
+        },
+        {
+          "subject": "travel",
+          "difficulty_tier": "pub",
+          "question": "Which city is served by Hartsfield-Jackson International Airport?",
+          "correct_answer": "Atlanta",
+          "distractors": {
+            "easy": "Chicago",
+            "medium": "Dallas",
+            "hard": "Charlotte"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "mythology",
+          "difficulty_tier": "pub",
+          "question": "Which Greek hero slew the Minotaur?",
+          "correct_answer": "Theseus",
+          "distractors": {
+            "easy": "Hercules",
+            "medium": "Perseus",
+            "hard": "Bellerophon"
+          }
+        },
+        {
+          "subject": "design",
+          "difficulty_tier": "pub",
+          "question": "What colour is associated with the Pantone number 17-5104 “Ultimate Gray”?",
+          "correct_answer": "Gray",
+          "distractors": {
+            "easy": "Blue",
+            "medium": "Charcoal",
+            "hard": "Silver"
+          }
+        },
+        {
+          "subject": "theatre",
+          "difficulty_tier": "enthusiast",
+          "question": "Which playwright created “The Curious Incident of the Dog in the Night-Time”?",
+          "correct_answer": "Simon Stephens",
+          "distractors": {
+            "easy": "Patrick Ness",
+            "medium": "Nick Stafford",
+            "hard": "Lee Hall"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "language",
+          "difficulty_tier": "pub",
+          "question": "Which language gave English the word “bungalow”?",
+          "correct_answer": "Hindi",
+          "distractors": {
+            "easy": "Malay",
+            "medium": "Gujarati",
+            "hard": "Urdu"
+          }
+        },
+        {
+          "subject": "fashion",
+          "difficulty_tier": "pub",
+          "question": "Which designer is synonymous with the wrap dress?",
+          "correct_answer": "Diane von Fürstenberg",
+          "distractors": {
+            "easy": "Donatella Versace",
+            "medium": "Stella McCartney",
+            "hard": "Carolina Herrera"
+          }
+        },
+        {
+          "subject": "spaceflight",
+          "difficulty_tier": "enthusiast",
+          "question": "Which mission carried the first reusable Space Shuttle orbiter?",
+          "correct_answer": "STS-1",
+          "distractors": {
+            "easy": "Apollo 11",
+            "medium": "STS-41-B",
+            "hard": "STS-5"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "architecture",
+          "difficulty_tier": "pub",
+          "question": "Which architect designed the Guggenheim Museum in Bilbao?",
+          "correct_answer": "Frank Gehry",
+          "distractors": {
+            "easy": "I. M. Pei",
+            "medium": "Zaha Hadid",
+            "hard": "Santiago Calatrava"
+          }
+        },
+        {
+          "subject": "comics",
+          "difficulty_tier": "pub",
+          "question": "What is the civilian name of Black Panther?",
+          "correct_answer": "T’Challa",
+          "distractors": {
+            "easy": "M’Baku",
+            "medium": "Shuri",
+            "hard": "N'Jadaka"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "enthusiast",
+          "question": "Which scientist gave us the three laws of planetary motion?",
+          "correct_answer": "Johannes Kepler",
+          "distractors": {
+            "easy": "Isaac Newton",
+            "medium": "Galileo Galilei",
+            "hard": "Tycho Brahe"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "television",
+          "difficulty_tier": "pub",
+          "question": "Which cooking competition crowns the “Star Baker”?",
+          "correct_answer": "The Great British Bake Off",
+          "distractors": {
+            "easy": "Top Chef",
+            "medium": "MasterChef",
+            "hard": "The Final Table"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "enthusiast",
+          "question": "Who penned the Discworld novel “Guards! Guards!”?",
+          "correct_answer": "Terry Pratchett",
+          "distractors": {
+            "easy": "Douglas Adams",
+            "medium": "Neil Gaiman",
+            "hard": "Jasper Fforde"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which African country is nicknamed the “Rainbow Nation”?",
+          "correct_answer": "South Africa",
+          "distractors": {
+            "easy": "Kenya",
+            "medium": "Namibia",
+            "hard": "Botswana"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "history",
+          "difficulty_tier": "enthusiast",
+          "question": "Which treaty ended World War I between Germany and the Allies?",
+          "correct_answer": "Treaty of Versailles",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Treaty of Trianon",
+            "hard": "Treaty of Brest-Litovsk"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which singer released the album “Future Nostalgia”?",
+          "correct_answer": "Dua Lipa",
+          "distractors": {
+            "easy": "Lorde",
+            "medium": "Charli XCX",
+            "hard": "Caroline Polachek"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "specialist",
+          "question": "Which particle carries the strong nuclear force between quarks?",
+          "correct_answer": "Gluon",
+          "distractors": {
+            "easy": "Photon",
+            "medium": "W boson",
+            "hard": "Higgs boson"
+          }
+        }
+      ]
+    }
+  ],
+  "integrity": {
+    "checksum": "ea92197098849164c611eb9bf4d43c042a2d4cff072af9b4c578ae264a150276",
+    "verified": true
+  }
+}

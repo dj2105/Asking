@@ -79,6 +79,13 @@ function buildRoundsFromPack(pack) {
 
 function buildClueMap(maths) {
   const map = {};
+  if (Array.isArray(maths?.events)) {
+    maths.events.forEach((event, idx) => {
+      if (typeof event?.prompt === "string" && event.prompt.trim()) {
+        map[idx + 1] = event.prompt.trim();
+      }
+    });
+  }
   if (Array.isArray(maths?.clues)) {
     maths.clues.forEach((clue, idx) => {
       if (typeof clue === "string" && clue.trim()) {
@@ -91,6 +98,13 @@ function buildClueMap(maths) {
 
 function buildRevealMap(maths) {
   const map = {};
+  if (Array.isArray(maths?.events)) {
+    maths.events.forEach((event, idx) => {
+      if (typeof event?.prompt === "string" && event.prompt.trim()) {
+        map[idx + 1] = event.prompt.trim();
+      }
+    });
+  }
   if (Array.isArray(maths?.reveals)) {
     maths.reveals.forEach((reveal, idx) => {
       if (typeof reveal === "string" && reveal.trim()) {

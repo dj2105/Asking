@@ -55,8 +55,9 @@ function loadDraft(code, role) {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     return {
-      answer: typeof parsed.answer === "string" ? parsed.answer : "",
-      backup: typeof parsed.backup === "string" ? parsed.backup : "",
+      answers: Array.isArray(parsed.answers)
+        ? parsed.answers.map((value) => (typeof value === "string" ? value : String(value ?? "")))
+        : [],
     };
   } catch (err) {
     return null;
@@ -68,8 +69,7 @@ function saveDraft(code, role, data) {
     const store = window.localStorage;
     if (!store) return;
     store.setItem(draftKey(code, role), JSON.stringify({
-      answer: data.answer ?? "",
-      backup: data.backup ?? "",
+      answers: Array.isArray(data.answers) ? data.answers : [],
     }));
   } catch (err) {
     // ignore storage errors
@@ -93,40 +93,65 @@ function playerName(role) {
 function ensureMathsResults(roomData = {}) {
   const maths = roomData.maths || {};
   const answers = roomData.mathsAnswers || {};
-  const expected = Number(maths.answer);
-  const hostEntry = answers.host || {};
-  const guestEntry = answers.guest || {};
+  const events = Array.isArray(maths.events) ? maths.events : [];
+  if (!events.length) return null;
 
-  if (!Number.isFinite(expected)) return null;
-  const hostValue = Number(hostEntry.value);
-  const guestValue = Number(guestEntry.value);
-  if (!Number.isFinite(hostValue) || !Number.isFinite(guestValue)) return null;
-  if (Number.isFinite(hostEntry.delta) && Number.isFinite(guestEntry.delta)) return null;
+  const targetTotal = Number.isInteger(maths.total)
+    ? maths.total
+    : events.reduce((sum, evt) => sum + (Number.isInteger(evt.year) ? evt.year : 0), 0);
+  if (!Number.isInteger(targetTotal)) return null;
 
-  const hostDelta = Math.abs(hostValue - expected);
-  const guestDelta = Math.abs(guestValue - expected);
+  const normalizeEntry = (entry = {}) => {
+    const values = Array.isArray(entry.events)
+      ? entry.events
+          .map((value) => Number(value))
+          .filter((num) => Number.isInteger(num))
+      : [];
+    if (!values.length) return { ready: false };
+    const total = Number.isInteger(entry.total) ? entry.total : values.reduce((sum, num) => sum + num, 0);
+    return { events: values, total, ready: Number.isInteger(total) };
+  };
 
-  let hostPoints = 0;
-  let guestPoints = 0;
-  if (hostDelta === 0 && guestDelta === 0) {
-    hostPoints = 3;
-    guestPoints = 3;
-  } else if (hostDelta === 0) {
-    hostPoints = 3;
-  } else if (guestDelta === 0) {
-    guestPoints = 3;
-  } else if (hostDelta < guestDelta) {
-    hostPoints = 1;
-  } else if (guestDelta < hostDelta) {
-    guestPoints = 1;
-  } else {
-    hostPoints = 1;
-    guestPoints = 1;
+  const hostEntry = normalizeEntry(answers.host);
+  const guestEntry = normalizeEntry(answers.guest);
+
+  if (!hostEntry.ready || !guestEntry.ready) return null;
+  if (Number.isFinite(answers.host?.points) && Number.isFinite(answers.guest?.points)) return null;
+
+  const scoring = maths.scoring || {};
+  const sharpshooterMargin = Number.isInteger(scoring.sharpshooterMargin)
+    ? scoring.sharpshooterMargin
+    : Math.round(targetTotal * (Number(scoring.sharpshooterPercent) || 0.02));
+  const ballparkMargin = Number.isInteger(scoring.ballparkMargin)
+    ? scoring.ballparkMargin
+    : Math.round(targetTotal * (Number(scoring.ballparkPercent) || 0.05));
+
+  const basePoints = (delta) => {
+    if (delta === 0) return scoring.perfectPoints || 5;
+    if (delta <= sharpshooterMargin) return scoring.sharpshooterPoints || 3;
+    if (delta <= ballparkMargin) return scoring.ballparkPoints || 2;
+    return 0;
+  };
+
+  const hostDelta = Math.abs(hostEntry.total - targetTotal);
+  const guestDelta = Math.abs(guestEntry.total - targetTotal);
+  let hostPoints = basePoints(hostDelta);
+  let guestPoints = basePoints(guestDelta);
+
+  if (hostPoints === 0 && guestPoints === 0) {
+    const safety = scoring.safetyNetPoints || 1;
+    if (hostDelta < guestDelta) hostPoints = safety;
+    else if (guestDelta < hostDelta) guestPoints = safety;
+    else {
+      hostPoints = safety;
+      guestPoints = safety;
+    }
   }
 
   return {
-    host: { value: hostValue, delta: hostDelta, points: hostPoints },
-    guest: { value: guestValue, delta: guestDelta, points: guestPoints },
+    host: { events: hostEntry.events, total: hostEntry.total, delta: hostDelta, points: hostPoints },
+    guest: { events: guestEntry.events, total: guestEntry.total, delta: guestDelta, points: guestPoints },
+    targetTotal,
   };
 }
 
@@ -146,17 +171,13 @@ export default {
     const card = el("div", { class: "card" });
     const heading = el("h2", { class: "view-heading" }, "Jemima’s Maths");
     const questionText = el("div", { class: "mono maths-question__prompt maths-question__prompt--single" }, "");
-    const answerLabel = el("label", { class: "mono maths-input-label" }, "Your answer");
-    const answerInput = el("input", { type: "number", class: "input maths-input", placeholder: "Enter answer" });
-    const backupLabel = el("label", { class: "mono maths-input-label" }, "Backup / working (optional)");
-    const backupInput = el("input", { type: "number", class: "input maths-input", placeholder: "Optional second number" });
-    const helperNote = el("div", { class: "mono small maths-helper" }, "Integers only. Drafts save automatically.");
-    const inputsWrap = el("div", { class: "maths-form" }, [
-      answerLabel,
-      answerInput,
-      backupLabel,
-      backupInput,
-    ]);
+    const helperNote = el(
+      "div",
+      { class: "mono small maths-helper" },
+      "Single years only (1–4 digits, AD). Drafts save automatically."
+    );
+    const eventsWrap = el("div", { class: "maths-form maths-form--events" });
+    const totalPreview = el("div", { class: "mono small maths-helper maths-helper--total" }, "Your running total: 0");
 
     const done = el("button", { class: "btn maths-submit", disabled: "" }, "Send to Jemima");
     const waitMsg = el("div", { class: "mono small wait-note" }, "");
@@ -165,7 +186,8 @@ export default {
     card.appendChild(heading);
     card.appendChild(questionText);
     card.appendChild(helperNote);
-    card.appendChild(inputsWrap);
+    card.appendChild(eventsWrap);
+    card.appendChild(totalPreview);
     card.appendChild(done);
     card.appendChild(waitMsg);
 
@@ -199,49 +221,87 @@ export default {
     }
 
     const mathsData = room0.maths || {};
-    questionText.textContent = mathsData.question || "";
+    const events = Array.isArray(mathsData.events) && mathsData.events.length
+      ? mathsData.events.slice(0, 5)
+      : (Array.isArray(mathsData.clues)
+          ? mathsData.clues.slice(0, 5).map((prompt) => ({ prompt }))
+          : []);
+    while (events.length < 5) {
+      events.push({ prompt: `Event ${events.length + 1}`, year: null });
+    }
+
+    questionText.textContent = mathsData.title || mathsData.question || "Timeline totals";
 
     if (myRole === "host") {
       await ensureBotMaths({ code, roomData: room0 });
     }
 
     const draft = loadDraft(code, myRole) || {};
-    if (typeof draft.answer === "string") answerInput.value = draft.answer;
-    if (typeof draft.backup === "string") backupInput.value = draft.backup;
+    let answers = events.map((_, idx) => (draft.answers?.[idx] ?? ""));
+    const inputs = [];
 
     const updateDraft = () => {
-      saveDraft(code, myRole, {
-        answer: answerInput.value,
-        backup: backupInput.value,
-      });
+      saveDraft(code, myRole, { answers });
     };
 
-    answerInput.addEventListener("input", () => {
-      updateDraft();
-      validate();
-    });
-    backupInput.addEventListener("input", () => {
-      updateDraft();
-      validate();
-    });
-
-    const validateInteger = (value, required) => {
-      if (!value && !required) return true;
-      if (!value && required) return false;
+    const validateInteger = (value) => {
+      if (!value) return false;
       const num = Number(value);
-      return Number.isInteger(num);
+      const trimmed = String(Math.trunc(num));
+      return (
+        Number.isInteger(num) &&
+        num >= 1 &&
+        num <= 9999 &&
+        trimmed.length >= 1 &&
+        trimmed.length <= 4
+      );
+    };
+
+    const updateTotal = () => {
+      const total = answers.reduce((sum, value) => {
+        const num = Number(value);
+        return Number.isInteger(num) ? sum + num : sum;
+      }, 0);
+      totalPreview.textContent = `Your running total: ${total}`;
     };
 
     const validate = () => {
-      const answerOk = validateInteger(answerInput.value.trim(), true);
-      const backupOk = validateInteger(backupInput.value.trim(), false);
-      const ready = answerOk && backupOk;
+      const ready = answers.length === events.length && answers.every((value) => validateInteger(value));
       done.disabled = !ready;
       done.classList.toggle("throb", ready);
-      backupInput.classList.toggle("input--error", !backupOk);
-      answerInput.classList.toggle("input--error", !answerOk);
+      inputs.forEach((input, idx) => {
+        input.classList.toggle("input--error", !validateInteger(answers[idx]));
+      });
     };
 
+    eventsWrap.innerHTML = "";
+    events.forEach((event, idx) => {
+      const label = el(
+        "label",
+        { class: "mono maths-input-label" },
+        `${idx + 1}. ${event.prompt || "Event"}`
+      );
+      const input = el("input", {
+        type: "number",
+        inputmode: "numeric",
+        min: "1",
+        max: "9999",
+        class: "input maths-input",
+        placeholder: "Enter year",
+      });
+      if (answers[idx]) input.value = answers[idx];
+      input.addEventListener("input", () => {
+        answers[idx] = input.value.trim();
+        updateDraft();
+        updateTotal();
+        validate();
+      });
+      inputs.push(input);
+      const row = el("div", { class: "maths-event" }, [label, input]);
+      eventsWrap.appendChild(row);
+    });
+
+    updateTotal();
     validate();
 
     let submitted = false;
@@ -249,9 +309,7 @@ export default {
 
     const publish = async () => {
       if (submitted || done.disabled) return;
-      const rawAnswer = answerInput.value.trim();
-      const rawBackup = backupInput.value.trim();
-      if (!validateInteger(rawAnswer, true) || !validateInteger(rawBackup, false)) {
+      if (!answers.every((value) => validateInteger(value))) {
         validate();
         return;
       }
@@ -259,8 +317,8 @@ export default {
       done.disabled = true;
       done.classList.remove("throb");
 
-      const payload = { value: Number(rawAnswer) };
-      if (rawBackup) payload.backup = Number(rawBackup);
+      const numericAnswers = answers.map((value) => Number(value));
+      const payload = { events: numericAnswers, total: numericAnswers.reduce((sum, num) => sum + num, 0) };
 
       const patch = {
         [`mathsAnswers.${myRole}`]: payload,
@@ -293,9 +351,13 @@ export default {
 
       const answersMap = data.mathsAnswers || {};
       const entryMine = answersMap[myRole] || {};
-      if (Number.isFinite(entryMine.value) && !submitted) {
-        answerInput.value = String(entryMine.value);
-        if (Number.isFinite(entryMine.backup)) backupInput.value = String(entryMine.backup);
+      if (Array.isArray(entryMine.events) && !submitted) {
+        answers = entryMine.events.map((value) => String(value));
+        inputs.forEach((input, idx) => {
+          input.value = answers[idx] ?? "";
+        });
+        updateTotal();
+        validate();
         submitted = true;
         done.disabled = true;
         done.classList.remove("throb");

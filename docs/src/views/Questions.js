@@ -86,12 +86,20 @@ const resolveClue = (roomData = {}, fallbackMaths = {}, round = 1) => {
   if (roomData && typeof roomData === "object") {
     const direct = normaliseClue(roomData.clues?.[roundNumber]);
     if (direct) return direct;
+    if (Array.isArray(roomData.maths?.events) && arrIndex >= 0) {
+      const eventPrompt = normaliseClue(roomData.maths.events[arrIndex]?.prompt);
+      if (eventPrompt) return eventPrompt;
+    }
     if (Array.isArray(roomData.maths?.clues) && arrIndex >= 0) {
       const mathsClue = normaliseClue(roomData.maths.clues[arrIndex]);
       if (mathsClue) return mathsClue;
     }
   }
   if (fallbackMaths && typeof fallbackMaths === "object" && arrIndex >= 0) {
+    if (Array.isArray(fallbackMaths.events)) {
+      const eventPrompt = normaliseClue(fallbackMaths.events[arrIndex]?.prompt);
+      if (eventPrompt) return eventPrompt;
+    }
     if (Array.isArray(fallbackMaths.clues)) {
       const fallback = normaliseClue(fallbackMaths.clues[arrIndex]);
       if (fallback) return fallback;

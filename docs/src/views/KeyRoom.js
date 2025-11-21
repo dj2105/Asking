@@ -258,67 +258,89 @@ function normalizeQuestionItem(raw = {}) {
 function tryNormalizeMathsPack(candidate) {
   if (!candidate || typeof candidate !== "object") return { detected: false };
   const mathsSource = candidate.maths && typeof candidate.maths === "object" ? candidate.maths : candidate;
-  const hasMarker =
-    mathsSource &&
-    (Array.isArray(mathsSource.clues) ||
-      Array.isArray(mathsSource.reveals) ||
-      typeof mathsSource.question === "string");
+  const normalizeTimeline = (source) => {
+    const events = Array.isArray(source?.events)
+      ? source.events
+          .slice(0, 5)
+          .map((entry) => ({
+            prompt: cleanText(entry?.prompt),
+            year: Number.isInteger(entry?.year) ? entry.year : Number(entry?.year),
+          }))
+      : [];
+
+    if (events.length !== 5) {
+      return { ok: false, reason: "Maths pack requires 5 chronological events." };
+    }
+
+    let lastYear = 0;
+    for (let i = 0; i < events.length; i += 1) {
+      const evt = events[i];
+      if (!evt.prompt) return { ok: false, reason: `Maths event ${i + 1} missing a prompt.` };
+      if (!Number.isInteger(evt.year) || evt.year < 1 || evt.year > 2025) {
+        return { ok: false, reason: `Maths event ${i + 1} year must be 1–2025.` };
+      }
+      if (i > 0 && evt.year < lastYear) {
+        return { ok: false, reason: "Maths events must be chronological." };
+      }
+      lastYear = evt.year;
+    }
+
+    const total = events.reduce((sum, evt) => sum + evt.year, 0);
+    if (source.total != null && Number(source.total) !== total) {
+      return { ok: false, reason: "Maths total must match summed event years." };
+    }
+
+    const scoring = source.scoring && typeof source.scoring === "object" ? source.scoring : {};
+    const sharpshooterMargin = Number.isInteger(scoring.sharpshooterMargin)
+      ? scoring.sharpshooterMargin
+      : Math.round(total * 0.02);
+    const ballparkMargin = Number.isInteger(scoring.ballparkMargin) ? scoring.ballparkMargin : Math.round(total * 0.05);
+    const notes = cleanText(candidate.notes || source.notes);
+
+    const data = {
+      maths: {
+        title: cleanText(source.title) || "History in Five Dates",
+        intro: cleanText(source.intro),
+        note: cleanText(source.note),
+        events,
+        total,
+        question: cleanText(source.question) || "Enter the year for each event (1–4 digits).",
+        scoring: {
+          targetTotal: total,
+          sharpshooterMargin,
+          ballparkMargin,
+          sharpshooterPercent: scoring.sharpshooterPercent || 0.02,
+          ballparkPercent: scoring.ballparkPercent || 0.05,
+          perfectPoints: scoring.perfectPoints || 5,
+          sharpshooterPoints: scoring.sharpshooterPoints || 3,
+          ballparkPoints: scoring.ballparkPoints || 2,
+          safetyNetPoints: scoring.safetyNetPoints || 1,
+        },
+        clues: events.map((evt) => evt.prompt),
+        reveals: Array.isArray(source.reveals) ? source.reveals.slice(0, 5) : events.map((evt) => evt.prompt),
+        answer: total,
+      },
+    };
+    if (notes) data.notes = notes;
+    return { ok: true, data };
+  };
+
+  const hasMarker = Array.isArray(mathsSource?.events) || Array.isArray(mathsSource?.clues) || Array.isArray(mathsSource?.games);
   if (!hasMarker) return { detected: false };
 
-  const location = cleanText(mathsSource.location);
-  const question = cleanText(mathsSource.question || mathsSource.prompt || mathsSource.riddle);
-  const answerRaw = mathsSource.answer ?? mathsSource.solution;
-  const fullSum = cleanText(mathsSource.full_sum || mathsSource.fullSum);
-  const clues = Array.isArray(mathsSource.clues) ? mathsSource.clues : mathsSource.beats;
-  const reveals = mathsSource.reveals;
-
-  if (!location) {
-    return { detected: true, valid: false, reason: "Maths pack missing location." };
-  }
-  if (!question || !question.includes("___")) {
-    return { detected: true, valid: false, reason: "Maths question must contain ___ placeholder." };
-  }
-  const answerNumber = Number(answerRaw);
-  if (!Number.isInteger(answerNumber)) {
-    return { detected: true, valid: false, reason: "Maths answer must be an integer." };
-  }
-  const normalizedClues = Array.isArray(clues)
-    ? clues
-        .slice(0, 5)
-        .map((entry) => cleanText(entry))
-        .filter((entry) => entry)
-    : [];
-  while (normalizedClues.length < 5) normalizedClues.push("");
-  if (normalizedClues.some((entry) => !entry)) {
-    return { detected: true, valid: false, reason: "Maths pack requires 5 clues." };
-  }
-  const normalizedReveals = Array.isArray(reveals)
-    ? reveals
-        .slice(0, 5)
-        .map((entry) => (typeof entry === "object" ? cleanText(entry?.prompt || entry?.text || entry?.value) : cleanText(entry)))
-        .filter((entry) => entry)
-    : [];
-  while (normalizedReveals.length < 5) normalizedReveals.push("");
-  if (normalizedReveals.some((entry) => !entry)) {
-    return { detected: true, valid: false, reason: "Maths pack requires 5 reveals." };
-  }
-  if (!fullSum) {
-    return { detected: true, valid: false, reason: "Maths pack missing full_sum." };
+  if (Array.isArray(mathsSource.games)) {
+    const dataList = [];
+    for (let i = 0; i < mathsSource.games.length; i += 1) {
+      const res = normalizeTimeline(mathsSource.games[i]);
+      if (!res.ok) return { detected: true, valid: false, reason: `Game ${i + 1}: ${res.reason}` };
+      dataList.push(res.data);
+    }
+    return { detected: true, valid: true, dataList };
   }
 
-  const notes = cleanText(candidate.notes || mathsSource.notes);
-  const data = {
-    maths: {
-      location,
-      question,
-      answer: answerNumber,
-      full_sum: fullSum,
-      clues: normalizedClues,
-      reveals: normalizedReveals,
-    },
-  };
-  if (notes) data.notes = notes;
-  return { detected: true, valid: true, data };
+  const single = normalizeTimeline(mathsSource);
+  if (!single.ok) return { detected: true, valid: false, reason: single.reason };
+  return { detected: true, valid: true, dataList: [single.data] };
 }
 
 function extractPacks(value) {
@@ -347,7 +369,10 @@ function extractPacks(value) {
     const maths = tryNormalizeMathsPack(node);
     if (maths.detected) {
       if (maths.valid) {
-        packs.push({ kind: "maths", data: maths.data });
+        const bundle = Array.isArray(maths.dataList) ? maths.dataList : maths.data ? [maths.data] : [];
+        bundle.forEach((data, idx) => {
+          packs.push({ kind: "maths", data, sourceName: maths.dataList?.length > 1 ? `Game ${idx + 1}` : undefined });
+        });
       } else {
         console.warn(`[KeyRoom] Rejected maths pack at ${trace}: ${maths.reason}`);
         rejected += 1;
@@ -390,8 +415,9 @@ function buildPackOptionLabel(kind, pack) {
     return `${source || "Questions pack"} (${pack.rounds?.length ? "30 questions" : "unknown"})`;
   }
   const source = pack.sourceName || pack.notes || pack.id;
-  const location = pack.maths?.location ? ` · ${pack.maths.location}` : "";
-  return `${source || "Maths pack"}${location}`;
+  const title = pack.maths?.title || "Maths pack";
+  const total = Number.isInteger(pack.maths?.total) ? ` · total ${pack.maths.total}` : "";
+  return `${source || "Maths pack"} · ${title}${total}`;
 }
 
 export default {

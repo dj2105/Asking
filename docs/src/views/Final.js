@@ -462,50 +462,65 @@ function renderRoundReview(container, roomData = {}, roundsData = {}) {
 }
 
 function renderMaths(mathSection, maths = {}, mathsAnswers = {}) {
-  const question = maths.question || "Jemima’s final question";
-  const correct = Number.isFinite(Number(maths.answer)) ? Number(maths.answer) : null;
+  const events = Array.isArray(maths.events) ? maths.events : [];
+  const targetTotal = Number.isInteger(maths.total)
+    ? maths.total
+    : events.reduce((sum, evt) => sum + (Number.isInteger(evt?.year) ? evt.year : 0), 0);
   const host = mathsAnswers.host || {};
   const guest = mathsAnswers.guest || {};
   mathSection.innerHTML = "";
-  mathSection.appendChild(el("div", { class: "mono final-maths__question" }, question));
-  if (Number.isFinite(correct)) {
-    mathSection.appendChild(el("div", { class: "mono final-maths__answer" }, `Correct answer: ${correct}`));
-  }
-  if (Array.isArray(maths.clues) && maths.clues.some((clue) => typeof clue === "string" && clue.trim())) {
-    const cluesHeading = el("div", { class: "mono final-maths__clues-heading" }, "Clues");
-    const cluesList = el("ul", { class: "final-maths__clues" });
-    maths.clues.forEach((clue, idx) => {
-      if (typeof clue !== "string" || !clue.trim()) return;
-      cluesList.appendChild(
-        el(
-          "li",
-          { class: "mono final-maths__clue" },
-          `Round ${idx + 1}: ${clue.trim()}`
-        )
-      );
+  const title = maths.title || maths.question || "Timeline totals";
+  mathSection.appendChild(el("div", { class: "mono final-maths__question" }, title));
+  if (events.length) {
+    const list = el("ol", { class: "final-maths__clues" });
+    events.forEach((event, idx) => {
+      const row = el("li", { class: "mono final-maths__clue" }, [
+        el("div", {}, `Round ${idx + 1}: ${event?.prompt || "Event"}`),
+        Number.isInteger(event?.year)
+          ? el("div", { class: "small" }, `Year: ${event.year}`)
+          : null,
+      ].filter(Boolean));
+      list.appendChild(row);
     });
-    if (cluesList.childNodes.length) {
-      mathSection.appendChild(cluesHeading);
-      mathSection.appendChild(cluesList);
-    }
+    mathSection.appendChild(list);
   }
+  if (Number.isInteger(targetTotal)) {
+    mathSection.appendChild(
+      el("div", { class: "mono final-maths__answer" }, `Correct total: ${targetTotal}`)
+    );
+    const scoring = maths.scoring || {};
+    const sharp = Number.isInteger(scoring.sharpshooterMargin)
+      ? scoring.sharpshooterMargin
+      : Math.round(targetTotal * 0.02);
+    const ball = Number.isInteger(scoring.ballparkMargin)
+      ? scoring.ballparkMargin
+      : Math.round(targetTotal * 0.05);
+    mathSection.appendChild(
+      el(
+        "div",
+        { class: "mono small final-maths__helper" },
+        `3 pts within ±${sharp}; 2 pts within ±${ball}; safety net goes to the closest if neither hits those bands.`
+      )
+    );
+  }
+
   const table = el("table", { class: "final-maths__table" });
   table.appendChild(el("thead", {}, el("tr", {}, [
     el("th", { class: "mono" }, "Player"),
-    el("th", { class: "mono" }, "Answer"),
+    el("th", { class: "mono" }, "Total"),
     el("th", { class: "mono" }, "Δ"),
     el("th", { class: "mono" }, "Points"),
   ])));
   const tbody = el("tbody");
   tbody.appendChild(el("tr", {}, [
     el("td", { class: "mono" }, "Daniel"),
-    el("td", { class: "mono" }, formatPoints(host.value)),
+    el("td", { class: "mono" }, formatPoints(host.total)),
     el("td", { class: "mono" }, formatDelta(host.delta)),
     el("td", { class: "mono" }, formatPoints(host.points)),
   ]));
   tbody.appendChild(el("tr", {}, [
     el("td", { class: "mono" }, "Jaime"),
-    el("td", { class: "mono" }, formatPoints(guest.value)),
+    el("td", { class: "mono" }, formatPoints(guest.total)),
     el("td", { class: "mono" }, formatDelta(guest.delta)),
     el("td", { class: "mono" }, formatPoints(guest.points)),
   ]));
