@@ -1,0 +1,29 @@
+{
+  "version": "jemima-maths-timeline-1",
+  "maths": {
+    "title": "Guardians of the Planet",
+    "question": "Write the AD year for each environmental milestone (1–4 digits) and total your answers.",
+    "intro": "Key decisions and protections that shaped modern conservation.",
+    "events": [
+      { "prompt": "Yellowstone is designated the first US national park.", "year": 1872 },
+      { "prompt": "The first Earth Day rallies millions for environmental reform.", "year": 1970 },
+      { "prompt": "Nations sign the Montreal Protocol to phase out ozone-depleting substances.", "year": 1987 },
+      { "prompt": "The Kyoto Protocol is adopted to limit greenhouse gas emissions.", "year": 1997 },
+      { "prompt": "The Paris Agreement on climate change is adopted at COP21.", "year": 2015 }
+    ],
+    "clues": [
+      "Yellowstone becomes the first US national park.",
+      "First Earth Day demonstrations.",
+      "Montreal Protocol targets ozone-depleting chemicals.",
+      "Kyoto Protocol sets greenhouse gas targets.",
+      "Paris Agreement adopted at COP21."
+    ],
+    "reveals": [
+      "Yellowstone becomes the first US national park.",
+      "First Earth Day demonstrations.",
+      "Montreal Protocol targets ozone-depleting chemicals.",
+      "Kyoto Protocol sets greenhouse gas targets.",
+      "Paris Agreement adopted at COP21."
+    ]
+  }
+}

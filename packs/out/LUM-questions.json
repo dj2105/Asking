@@ -1,0 +1,361 @@
+{
+  "version": "jemima-questionpack-1",
+  "notes": "General knowledge mix with balanced host/guest items per round.",
+  "rounds": [
+    {
+      "round": 1,
+      "items": [
+        {
+          "subject": "earth science",
+          "difficulty_tier": "pub",
+          "question": "Which hardness scale begins with talc at 1 and ends with diamond at 10?",
+          "correct_answer": "The Mohs scale",
+          "distractors": {
+            "easy": "The Richter scale",
+            "medium": "The Beaufort scale",
+            "hard": "The Kelvin scale"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which treaty formally ended World War I between Germany and the Allied Powers?",
+          "correct_answer": "The Treaty of Versailles",
+          "distractors": {
+            "easy": "Treaty of Paris",
+            "medium": "Treaty of Utrecht",
+            "hard": "Treaty of Ghent"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Who wrote the novel \"One Hundred Years of Solitude\"?",
+          "correct_answer": "Gabriel García Márquez",
+          "distractors": {
+            "easy": "Isabel Allende",
+            "medium": "Mario Vargas Llosa",
+            "hard": "Jorge Luis Borges"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which sea separates Saudi Arabia from northeastern Africa?",
+          "correct_answer": "The Red Sea",
+          "distractors": {
+            "easy": "The Persian Gulf",
+            "medium": "The Arabian Sea",
+            "hard": "The Caspian Sea"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which Baroque composer wrote the violin concertos known as \"The Four Seasons\"?",
+          "correct_answer": "Antonio Vivaldi",
+          "distractors": {
+            "easy": "Johann Sebastian Bach",
+            "medium": "George Frideric Handel",
+            "hard": "Arcangelo Corelli"
+          }
+        },
+        {
+          "subject": "economics",
+          "difficulty_tier": "pub",
+          "question": "What is the official currency of South Korea?",
+          "correct_answer": "The won",
+          "distractors": {
+            "easy": "The yen",
+            "medium": "The yuan",
+            "hard": "The baht"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "items": [
+        {
+          "subject": "chemistry",
+          "difficulty_tier": "pub",
+          "question": "What term describes a solid turning directly into a gas without passing through a liquid phase?",
+          "correct_answer": "Sublimation",
+          "distractors": {
+            "easy": "Condensation",
+            "medium": "Evaporation",
+            "hard": "Deposition"
+          }
+        },
+        {
+          "subject": "politics",
+          "difficulty_tier": "pub",
+          "question": "Which leader launched the Great Leap Forward campaign in 1958?",
+          "correct_answer": "Mao Zedong",
+          "distractors": {
+            "easy": "Chiang Kai-shek",
+            "medium": "Deng Xiaoping",
+            "hard": "Ho Chi Minh"
+          }
+        },
+        {
+          "subject": "art",
+          "difficulty_tier": "pub",
+          "question": "Which artist painted the surreal work \"The Persistence of Memory\" featuring melting clocks?",
+          "correct_answer": "Salvador Dalí",
+          "distractors": {
+            "easy": "Pablo Picasso",
+            "medium": "Joan Miró",
+            "hard": "René Magritte"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "The cor anglais belongs to which family of orchestral instruments?",
+          "correct_answer": "The woodwind family",
+          "distractors": {
+            "easy": "The brass family",
+            "medium": "The string family",
+            "hard": "The percussion family"
+          }
+        },
+        {
+          "subject": "sports history",
+          "difficulty_tier": "pub",
+          "question": "Which city hosted the first modern Olympic Games in 1896?",
+          "correct_answer": "Athens",
+          "distractors": {
+            "easy": "Paris",
+            "medium": "London",
+            "hard": "Stockholm"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which continent has the smallest land area?",
+          "correct_answer": "Australia",
+          "distractors": {
+            "easy": "Europe",
+            "medium": "South America",
+            "hard": "Antarctica"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "items": [
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which African lake feeds the White Nile and is the continent's largest by area?",
+          "correct_answer": "Lake Victoria",
+          "distractors": {
+            "easy": "Lake Tanganyika",
+            "medium": "Lake Malawi",
+            "hard": "Lake Turkana"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Which novel opens with the line \"Call me Ishmael\"?",
+          "correct_answer": "Moby-Dick",
+          "distractors": {
+            "easy": "Treasure Island",
+            "medium": "The Old Man and the Sea",
+            "hard": "The Scarlet Letter"
+          }
+        },
+        {
+          "subject": "physics",
+          "difficulty_tier": "pub",
+          "question": "What fundamental constant is approximately 6.626 × 10^-34 joule-seconds?",
+          "correct_answer": "Planck's constant",
+          "distractors": {
+            "easy": "The speed of light",
+            "medium": "Avogadro's number",
+            "hard": "Boltzmann's constant"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which volcano's eruption buried the Roman city of Pompeii?",
+          "correct_answer": "Mount Vesuvius",
+          "distractors": {
+            "easy": "Mount Etna",
+            "medium": "Mount Stromboli",
+            "hard": "Mount Tambora"
+          }
+        },
+        {
+          "subject": "sports",
+          "difficulty_tier": "pub",
+          "question": "Which sport uses an apparatus called a pommel horse?",
+          "correct_answer": "Artistic gymnastics",
+          "distractors": {
+            "easy": "Pole vault",
+            "medium": "Show jumping",
+            "hard": "Platform diving"
+          }
+        },
+        {
+          "subject": "languages",
+          "difficulty_tier": "pub",
+          "question": "What is the primary official language of Brazil?",
+          "correct_answer": "Portuguese",
+          "distractors": {
+            "easy": "Spanish",
+            "medium": "French",
+            "hard": "Quechua"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "items": [
+        {
+          "subject": "science history",
+          "difficulty_tier": "pub",
+          "question": "Who was the first woman to win a Nobel Prize?",
+          "correct_answer": "Marie Curie",
+          "distractors": {
+            "easy": "Rosalind Franklin",
+            "medium": "Dorothy Hodgkin",
+            "hard": "Lise Meitner"
+          }
+        },
+        {
+          "subject": "earth science",
+          "difficulty_tier": "pub",
+          "question": "Which gas makes up about 78% of Earth's atmosphere?",
+          "correct_answer": "Nitrogen",
+          "distractors": {
+            "easy": "Oxygen",
+            "medium": "Carbon dioxide",
+            "hard": "Argon"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which civilisation built the mountaintop citadel of Machu Picchu?",
+          "correct_answer": "The Inca Empire",
+          "distractors": {
+            "easy": "The Maya",
+            "medium": "The Aztecs",
+            "hard": "The Olmec"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "What is the capital city of New Zealand?",
+          "correct_answer": "Wellington",
+          "distractors": {
+            "easy": "Auckland",
+            "medium": "Christchurch",
+            "hard": "Dunedin"
+          }
+        },
+        {
+          "subject": "film",
+          "difficulty_tier": "pub",
+          "question": "Which director co-founded Studio Ghibli and directed \"Spirited Away\"?",
+          "correct_answer": "Hayao Miyazaki",
+          "distractors": {
+            "easy": "Isao Takahata",
+            "medium": "Makoto Shinkai",
+            "hard": "Mamoru Hosoda"
+          }
+        },
+        {
+          "subject": "mathematics",
+          "difficulty_tier": "pub",
+          "question": "Which mathematician introduced the Fibonacci sequence to Europe in the 1202 book Liber Abaci?",
+          "correct_answer": "Leonardo of Pisa",
+          "distractors": {
+            "easy": "René Descartes",
+            "medium": "Euclid",
+            "hard": "Omar Khayyam"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "items": [
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which ship transported the Pilgrims to North America in 1620?",
+          "correct_answer": "The Mayflower",
+          "distractors": {
+            "easy": "The Santa María",
+            "medium": "The Endeavour",
+            "hard": "The Beagle"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "pub",
+          "question": "Which scientist popularised the term \"antibiotic\" after discovering penicillin?",
+          "correct_answer": "Alexander Fleming",
+          "distractors": {
+            "easy": "Louis Pasteur",
+            "medium": "Robert Koch",
+            "hard": "Joseph Lister"
+          }
+        },
+        {
+          "subject": "chemistry",
+          "difficulty_tier": "pub",
+          "question": "Which metal has the chemical symbol Sn?",
+          "correct_answer": "Tin",
+          "distractors": {
+            "easy": "Silver",
+            "medium": "Tungsten",
+            "hard": "Antimony"
+          }
+        },
+        {
+          "subject": "theatre",
+          "difficulty_tier": "pub",
+          "question": "Which playwright wrote \"A Streetcar Named Desire\"?",
+          "correct_answer": "Tennessee Williams",
+          "distractors": {
+            "easy": "Arthur Miller",
+            "medium": "Eugene O'Neill",
+            "hard": "Edward Albee"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "What is the largest desert in Asia?",
+          "correct_answer": "The Gobi Desert",
+          "distractors": {
+            "easy": "The Thar Desert",
+            "medium": "The Arabian Desert",
+            "hard": "The Kyzylkum Desert"
+          }
+        },
+        {
+          "subject": "biology",
+          "difficulty_tier": "pub",
+          "question": "Which diagram is used to predict patterns of genetic inheritance?",
+          "correct_answer": "A Punnett square",
+          "distractors": {
+            "easy": "A Venn diagram",
+            "medium": "A phylogenetic tree",
+            "hard": "A Kaplan–Meier curve"
+          }
+        }
+      ]
+    }
+  ]
+}

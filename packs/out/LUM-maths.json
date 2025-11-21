@@ -1,0 +1,29 @@
+{
+  "version": "jemima-maths-timeline-1",
+  "maths": {
+    "title": "Signals Through Time",
+    "question": "Enter the year each communication leap occurred (AD, 1–4 digits), then total your five answers.",
+    "intro": "Five milestones that shrank distances between people.",
+    "events": [
+      { "prompt": "Johannes Gutenberg completes his movable-type printing press in Mainz.", "year": 1440 },
+      { "prompt": "Relation: First printed weekly newspaper appears in Strasbourg.", "year": 1605 },
+      { "prompt": "Samuel Morse sends the telegraph message 'What hath God wrought' between Washington and Baltimore.", "year": 1844 },
+      { "prompt": "Alexander Graham Bell makes the first successful telephone call.", "year": 1876 },
+      { "prompt": "Ray Tomlinson sends the first network email using the @ symbol.", "year": 1971 }
+    ],
+    "clues": [
+      "Gutenberg press perfected in Mainz.",
+      "First printed weekly newspaper issued in Strasbourg.",
+      "Morse telegraph message 'What hath God wrought' is sent.",
+      "Bell completes the first clear telephone call.",
+      "First network email sent with the @ separator."
+    ],
+    "reveals": [
+      "Gutenberg press perfected in Mainz.",
+      "First printed weekly newspaper issued in Strasbourg.",
+      "Morse telegraph message 'What hath God wrought' is sent.",
+      "Bell completes the first clear telephone call.",
+      "First network email sent with the @ separator."
+    ]
+  }
+}

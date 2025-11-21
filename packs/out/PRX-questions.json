@@ -1,0 +1,361 @@
+{
+  "version": "jemima-questionpack-1",
+  "notes": "Fresh general knowledge set spanning science, history, and arts.",
+  "rounds": [
+    {
+      "round": 1,
+      "items": [
+        {
+          "subject": "astronomy",
+          "difficulty_tier": "pub",
+          "question": "Which scientist discovered four large moons of Jupiter in 1610?",
+          "correct_answer": "Galileo Galilei",
+          "distractors": {
+            "easy": "Nicolaus Copernicus",
+            "medium": "Johannes Kepler",
+            "hard": "Tycho Brahe"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which inland sea sits between Ukraine and Turkey?",
+          "correct_answer": "The Black Sea",
+          "distractors": {
+            "easy": "The Baltic Sea",
+            "medium": "The Caspian Sea",
+            "hard": "The Aegean Sea"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Who wrote the novel \"Beloved\"?",
+          "correct_answer": "Toni Morrison",
+          "distractors": {
+            "easy": "Alice Walker",
+            "medium": "Zora Neale Hurston",
+            "hard": "Maya Angelou"
+          }
+        },
+        {
+          "subject": "physics",
+          "difficulty_tier": "pub",
+          "question": "What is the SI unit of electrical resistance?",
+          "correct_answer": "The ohm",
+          "distractors": {
+            "easy": "The watt",
+            "medium": "The coulomb",
+            "hard": "The tesla"
+          }
+        },
+        {
+          "subject": "ancient history",
+          "difficulty_tier": "pub",
+          "question": "Which early Mesopotamian civilisation is credited with developing cuneiform writing?",
+          "correct_answer": "The Sumerians",
+          "distractors": {
+            "easy": "The Assyrians",
+            "medium": "The Babylonians",
+            "hard": "The Hittites"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "What is the highest mountain in Africa?",
+          "correct_answer": "Mount Kilimanjaro",
+          "distractors": {
+            "easy": "Mount Kenya",
+            "medium": "Mount Stanley",
+            "hard": "Mount Meru"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "items": [
+        {
+          "subject": "sports history",
+          "difficulty_tier": "pub",
+          "question": "Which city hosted the 2008 Summer Olympics?",
+          "correct_answer": "Beijing",
+          "distractors": {
+            "easy": "Athens",
+            "medium": "Sydney",
+            "hard": "Seoul"
+          }
+        },
+        {
+          "subject": "architecture",
+          "difficulty_tier": "pub",
+          "question": "Which monument in India was commissioned by Shah Jahan in memory of his wife Mumtaz Mahal?",
+          "correct_answer": "The Taj Mahal",
+          "distractors": {
+            "easy": "The Red Fort",
+            "medium": "Humayun's Tomb",
+            "hard": "The Qutub Minar"
+          }
+        },
+        {
+          "subject": "science history",
+          "difficulty_tier": "pub",
+          "question": "Which naturalist proposed the theory of evolution by natural selection alongside Charles Darwin?",
+          "correct_answer": "Alfred Russel Wallace",
+          "distractors": {
+            "easy": "Gregor Mendel",
+            "medium": "Thomas Huxley",
+            "hard": "Ernst Haeckel"
+          }
+        },
+        {
+          "subject": "biology",
+          "difficulty_tier": "pub",
+          "question": "What is the largest internal organ in the human body?",
+          "correct_answer": "The liver",
+          "distractors": {
+            "easy": "The heart",
+            "medium": "The pancreas",
+            "hard": "The spleen"
+          }
+        },
+        {
+          "subject": "engineering",
+          "difficulty_tier": "pub",
+          "question": "Which swinging weight regulates the timekeeping of a classic grandfather clock?",
+          "correct_answer": "A pendulum",
+          "distractors": {
+            "easy": "A gyroscope",
+            "medium": "A flywheel",
+            "hard": "A balance spring"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which U.S. state carries the nickname the Keystone State?",
+          "correct_answer": "Pennsylvania",
+          "distractors": {
+            "easy": "Ohio",
+            "medium": "New Jersey",
+            "hard": "Maryland"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "items": [
+        {
+          "subject": "botany",
+          "difficulty_tier": "pub",
+          "question": "What is the process by which plants lose water vapour through tiny openings in their leaves?",
+          "correct_answer": "Transpiration",
+          "distractors": {
+            "easy": "Respiration",
+            "medium": "Germination",
+            "hard": "Fixation"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Who composed the ballet \"The Rite of Spring\"?",
+          "correct_answer": "Igor Stravinsky",
+          "distractors": {
+            "easy": "Sergei Prokofiev",
+            "medium": "Maurice Ravel",
+            "hard": "Dmitri Shostakovich"
+          }
+        },
+        {
+          "subject": "mathematics",
+          "difficulty_tier": "pub",
+          "question": "Andrew Wiles proved which long-standing conjecture about whole numbers?",
+          "correct_answer": "Fermat's Last Theorem",
+          "distractors": {
+            "easy": "Goldbach's Conjecture",
+            "medium": "The Twin Prime Conjecture",
+            "hard": "The Riemann Hypothesis"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which ocean current carries warm water from the Gulf of Mexico toward Western Europe?",
+          "correct_answer": "The Gulf Stream",
+          "distractors": {
+            "easy": "The Humboldt Current",
+            "medium": "The Kuroshio Current",
+            "hard": "The Labrador Current"
+          }
+        },
+        {
+          "subject": "chemistry",
+          "difficulty_tier": "pub",
+          "question": "Which metal was historically called quicksilver?",
+          "correct_answer": "Mercury",
+          "distractors": {
+            "easy": "Lead",
+            "medium": "Tin",
+            "hard": "Cadmium"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which African country borders both the Atlantic and Indian Oceans?",
+          "correct_answer": "South Africa",
+          "distractors": {
+            "easy": "Namibia",
+            "medium": "Mozambique",
+            "hard": "Tanzania"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "items": [
+        {
+          "subject": "archaeology",
+          "difficulty_tier": "pub",
+          "question": "Which Egyptian pharaoh's tomb was famously uncovered intact in 1922?",
+          "correct_answer": "Tutankhamun",
+          "distractors": {
+            "easy": "Ramses II",
+            "medium": "Akhenaten",
+            "hard": "Seti I"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "What is the capital city of Canada?",
+          "correct_answer": "Ottawa",
+          "distractors": {
+            "easy": "Toronto",
+            "medium": "Vancouver",
+            "hard": "Montreal"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Which author created the character Elizabeth Bennet?",
+          "correct_answer": "Jane Austen",
+          "distractors": {
+            "easy": "Charlotte Brontë",
+            "medium": "George Eliot",
+            "hard": "Mary Shelley"
+          }
+        },
+        {
+          "subject": "physics",
+          "difficulty_tier": "pub",
+          "question": "Which particle is the carrier of the electromagnetic force?",
+          "correct_answer": "The photon",
+          "distractors": {
+            "easy": "The proton",
+            "medium": "The neutrino",
+            "hard": "The muon"
+          }
+        },
+        {
+          "subject": "architecture",
+          "difficulty_tier": "pub",
+          "question": "Which American architect designed the house known as Fallingwater?",
+          "correct_answer": "Frank Lloyd Wright",
+          "distractors": {
+            "easy": "Louis Sullivan",
+            "medium": "Eero Saarinen",
+            "hard": "Mies van der Rohe"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which river forms much of the border between France and Germany?",
+          "correct_answer": "The Rhine",
+          "distractors": {
+            "easy": "The Rhône",
+            "medium": "The Moselle",
+            "hard": "The Meuse"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "items": [
+        {
+          "subject": "archaeology",
+          "difficulty_tier": "pub",
+          "question": "Which ancient Mesoamerican city contains the Pyramid of the Sun?",
+          "correct_answer": "Teotihuacan",
+          "distractors": {
+            "easy": "Chichén Itzá",
+            "medium": "Tikal",
+            "hard": "Monte Albán"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Who led the Salt March protesting British rule in 1930?",
+          "correct_answer": "Mahatma Gandhi",
+          "distractors": {
+            "easy": "Jawaharlal Nehru",
+            "medium": "Subhas Chandra Bose",
+            "hard": "B. R. Ambedkar"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which island nation in the North Atlantic has Reykjavík as its capital?",
+          "correct_answer": "Iceland",
+          "distractors": {
+            "easy": "Ireland",
+            "medium": "Greenland",
+            "hard": "Faroe Islands"
+          }
+        },
+        {
+          "subject": "medicine",
+          "difficulty_tier": "pub",
+          "question": "Which physician pioneered vaccination using cowpox to prevent smallpox?",
+          "correct_answer": "Edward Jenner",
+          "distractors": {
+            "easy": "Jonas Salk",
+            "medium": "Louis Pasteur",
+            "hard": "Joseph Lister"
+          }
+        },
+        {
+          "subject": "poetry",
+          "difficulty_tier": "pub",
+          "question": "What is the term for a line of verse written in five iambic feet?",
+          "correct_answer": "Iambic pentameter",
+          "distractors": {
+            "easy": "Trochaic tetrameter",
+            "medium": "Dactylic hexameter",
+            "hard": "Spondaic trimeter"
+          }
+        },
+        {
+          "subject": "space",
+          "difficulty_tier": "pub",
+          "question": "Which NASA spacecraft was the first reusable orbiter, debuting in 1981?",
+          "correct_answer": "Space Shuttle Columbia",
+          "distractors": {
+            "easy": "Space Shuttle Challenger",
+            "medium": "Space Shuttle Discovery",
+            "hard": "Space Shuttle Atlantis"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,361 @@
+{
+  "version": "jemima-questionpack-1",
+  "notes": "World culture and science mix without repeated prompts.",
+  "rounds": [
+    {
+      "round": 1,
+      "items": [
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which river flows through the city of Rome?",
+          "correct_answer": "The Tiber",
+          "distractors": {
+            "easy": "The Seine",
+            "medium": "The Danube",
+            "hard": "The Po"
+          }
+        },
+        {
+          "subject": "art",
+          "difficulty_tier": "pub",
+          "question": "Who painted \"Girl with a Pearl Earring\"?",
+          "correct_answer": "Johannes Vermeer",
+          "distractors": {
+            "easy": "Rembrandt",
+            "medium": "Jan van Eyck",
+            "hard": "Frans Hals"
+          }
+        },
+        {
+          "subject": "chemistry",
+          "difficulty_tier": "pub",
+          "question": "What is the chemical formula for ozone?",
+          "correct_answer": "O₃",
+          "distractors": {
+            "easy": "CO₂",
+            "medium": "N₂O",
+            "hard": "SO₂"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which US city is nicknamed the Gateway to the West for its iconic arch?",
+          "correct_answer": "St. Louis",
+          "distractors": {
+            "easy": "Chicago",
+            "medium": "Denver",
+            "hard": "Kansas City"
+          }
+        },
+        {
+          "subject": "physics",
+          "difficulty_tier": "pub",
+          "question": "Who developed the general theory of relativity?",
+          "correct_answer": "Albert Einstein",
+          "distractors": {
+            "easy": "Niels Bohr",
+            "medium": "Werner Heisenberg",
+            "hard": "Max Planck"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Which author created the detective Hercule Poirot?",
+          "correct_answer": "Agatha Christie",
+          "distractors": {
+            "easy": "Dorothy L. Sayers",
+            "medium": "Arthur Conan Doyle",
+            "hard": "Ngaio Marsh"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "items": [
+        {
+          "subject": "economics",
+          "difficulty_tier": "pub",
+          "question": "Which Nordic country uses the krone as its currency?",
+          "correct_answer": "Denmark",
+          "distractors": {
+            "easy": "Sweden",
+            "medium": "Finland",
+            "hard": "Iceland"
+          }
+        },
+        {
+          "subject": "space",
+          "difficulty_tier": "pub",
+          "question": "What was the name of the first artificial Earth satellite?",
+          "correct_answer": "Sputnik 1",
+          "distractors": {
+            "easy": "Vostok 1",
+            "medium": "Explorer 1",
+            "hard": "Luna 2"
+          }
+        },
+        {
+          "subject": "biology",
+          "difficulty_tier": "pub",
+          "question": "Which organ in the human body produces insulin?",
+          "correct_answer": "The pancreas",
+          "distractors": {
+            "easy": "The liver",
+            "medium": "The gallbladder",
+            "hard": "The spleen"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which composer wrote the opera \"Carmen\"?",
+          "correct_answer": "Georges Bizet",
+          "distractors": {
+            "easy": "Giacomo Puccini",
+            "medium": "Giuseppe Verdi",
+            "hard": "Jean-Baptiste Lully"
+          }
+        },
+        {
+          "subject": "military history",
+          "difficulty_tier": "pub",
+          "question": "Which 1815 battle ended Napoleon's Hundred Days and led to his final exile?",
+          "correct_answer": "The Battle of Waterloo",
+          "distractors": {
+            "easy": "The Battle of Trafalgar",
+            "medium": "The Battle of Leipzig",
+            "hard": "The Battle of Austerlitz"
+          }
+        },
+        {
+          "subject": "environment",
+          "difficulty_tier": "pub",
+          "question": "What is the world's largest coral reef system?",
+          "correct_answer": "The Great Barrier Reef",
+          "distractors": {
+            "easy": "The Red Sea Coral Reef",
+            "medium": "The Mesoamerican Barrier Reef",
+            "hard": "The Maldives Atolls"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "items": [
+        {
+          "subject": "chemistry",
+          "difficulty_tier": "pub",
+          "question": "Which element forms the crystal lattice of a diamond?",
+          "correct_answer": "Carbon",
+          "distractors": {
+            "easy": "Silicon",
+            "medium": "Graphite",
+            "hard": "Quartz"
+          }
+        },
+        {
+          "subject": "politics",
+          "difficulty_tier": "pub",
+          "question": "Who was the first African American president of the United States?",
+          "correct_answer": "Barack Obama",
+          "distractors": {
+            "easy": "Colin Powell",
+            "medium": "Jesse Jackson",
+            "hard": "Thurgood Marshall"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which Asian capital city stands on the banks of the Han River?",
+          "correct_answer": "Seoul",
+          "distractors": {
+            "easy": "Bangkok",
+            "medium": "Hanoi",
+            "hard": "Manila"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which large woodwind instrument uses a double reed and is longer than an oboe?",
+          "correct_answer": "The bassoon",
+          "distractors": {
+            "easy": "The clarinet",
+            "medium": "The saxophone",
+            "hard": "The shawm"
+          }
+        },
+        {
+          "subject": "space",
+          "difficulty_tier": "pub",
+          "question": "Which mission first landed humans on the Moon?",
+          "correct_answer": "Apollo 11",
+          "distractors": {
+            "easy": "Apollo 8",
+            "medium": "Apollo 12",
+            "hard": "Apollo 14"
+          }
+        },
+        {
+          "subject": "culture",
+          "difficulty_tier": "pub",
+          "question": "Which holiday marks the end of the Islamic holy month of Ramadan?",
+          "correct_answer": "Eid al-Fitr",
+          "distractors": {
+            "easy": "Eid al-Adha",
+            "medium": "Nowruz",
+            "hard": "Ashura"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "items": [
+        {
+          "subject": "art",
+          "difficulty_tier": "pub",
+          "question": "Which painter co-founded Cubism alongside Pablo Picasso?",
+          "correct_answer": "Georges Braque",
+          "distractors": {
+            "easy": "Henri Matisse",
+            "medium": "Juan Gris",
+            "hard": "Paul Klee"
+          }
+        },
+        {
+          "subject": "biology",
+          "difficulty_tier": "pub",
+          "question": "What term describes animals that are most active at dawn and dusk?",
+          "correct_answer": "Crepuscular",
+          "distractors": {
+            "easy": "Nocturnal",
+            "medium": "Diurnal",
+            "hard": "Apohemeral"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which country is nicknamed the Land of a Thousand Lakes?",
+          "correct_answer": "Finland",
+          "distractors": {
+            "easy": "Norway",
+            "medium": "Sweden",
+            "hard": "Estonia"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "pub",
+          "question": "Which Shakespeare play centres on the feud between the Montagues and Capulets?",
+          "correct_answer": "Romeo and Juliet",
+          "distractors": {
+            "easy": "Hamlet",
+            "medium": "Othello",
+            "hard": "Coriolanus"
+          }
+        },
+        {
+          "subject": "biology",
+          "difficulty_tier": "pub",
+          "question": "Which gas is released as a by-product of photosynthesis in plants?",
+          "correct_answer": "Oxygen",
+          "distractors": {
+            "easy": "Carbon monoxide",
+            "medium": "Methane",
+            "hard": "Nitrogen"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which Russian mountain range is commonly used as the boundary between Europe and Asia?",
+          "correct_answer": "The Ural Mountains",
+          "distractors": {
+            "easy": "The Caucasus",
+            "medium": "The Carpathians",
+            "hard": "The Altai"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "items": [
+        {
+          "subject": "philosophy",
+          "difficulty_tier": "pub",
+          "question": "Which ancient Greek philosopher wrote \"The Republic\"?",
+          "correct_answer": "Plato",
+          "distractors": {
+            "easy": "Socrates",
+            "medium": "Aristotle",
+            "hard": "Epicurus"
+          }
+        },
+        {
+          "subject": "biology",
+          "difficulty_tier": "pub",
+          "question": "What protein in red blood cells binds to oxygen for transport?",
+          "correct_answer": "Hemoglobin",
+          "distractors": {
+            "easy": "Keratin",
+            "medium": "Collagen",
+            "hard": "Myosin"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which city was known as Edo until 1868?",
+          "correct_answer": "Tokyo",
+          "distractors": {
+            "easy": "Kyoto",
+            "medium": "Osaka",
+            "hard": "Nara"
+          }
+        },
+        {
+          "subject": "geology",
+          "difficulty_tier": "pub",
+          "question": "What type of rock is marble?",
+          "correct_answer": "Metamorphic rock",
+          "distractors": {
+            "easy": "Igneous rock",
+            "medium": "Sedimentary rock",
+            "hard": "Volcaniclastic rock"
+          }
+        },
+        {
+          "subject": "science history",
+          "difficulty_tier": "pub",
+          "question": "Which 19th-century idea introduced by Charles Darwin described evolution by natural selection?",
+          "correct_answer": "Darwinism",
+          "distractors": {
+            "easy": "Lamarckism",
+            "medium": "Catastrophism",
+            "hard": "Vitalism"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Which African country was historically known as Abyssinia?",
+          "correct_answer": "Ethiopia",
+          "distractors": {
+            "easy": "Eritrea",
+            "medium": "Somalia",
+            "hard": "Djibouti"
+          }
+        }
+      ]
+    }
+  ]
+}
