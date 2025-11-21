@@ -11,63 +11,38 @@ Targets: modern mobile/desktop. Primary test rigs: iPad Safari + Windows 10/11 C
 North Star
         •       Two players, two devices, fixed roles: Daniel = Host, Jaime = Guest. Roles are claimed once and never overwritten.
         •       Host prepares the room locally (packs + code) and only syncs the moments other screens need: countdowns, awards, final.
-        •       Content comes from sealed packs (full + optional overrides). No live LLM/API calls during play.
+        •       Content comes from locally uploaded JSON/TXT packs (questions + maths). No live LLM/API calls during play.
 
 ⸻
 
 Source Layout (authoritative)
 
 project-root/
-├─ public/
-│  ├─ index.html               # single entry point; injects firebase config + mounts /src/main.js
-│  ├─ styles.css               # Courier-first design system
-│  └─ src/
-│     ├─ main.js               # hash router + score strip mounting
-│     ├─ roomWatcher.js        # central state observer → navigation
-│     ├─ lib/
-│     │  ├─ firebase.js        # init, anon auth, db helpers
-│     │  ├─ seedUnsealer.js    # decrypt/validate sealed packs, seed Firestore
-│     │  ├─ ScoreStrip.js      # shared scoreboard overlay
-│     │  ├─ MathsPane.js       # pinned inverted maths info box
-│     │  └─ util.js            # clampCode, hash params, storage helpers, crypto utils
-│     └─ views/
-│        ├─ Lobby.js           # guest join & watcher launcher
-│        ├─ KeyRoom.js         # host prep: load packs, pick/share code, stage rooms
-│        ├─ CodeRoom.js        # host waiting room post-seed
-│        ├─ SeedProgress.js    # legacy seeding screen (jump support)
-│        ├─ Countdown.js
-│        ├─ Questions.js
-│        ├─ Marking.js
-│        ├─ Interlude.js
-│        ├─ Award.js
-│        ├─ Maths.js
-│        ├─ Final.js
-│        └─ Rejoin.js          # role-aware resume portal
-├─ firebase.json
-├─ firestore.rules
-├─ firebase.config             # injected at run/deploy; not committed
-└─ docs/
-   ├─ index.html               # documentation microsite entry point (in-repo preview)
-   ├─ styles.css               # shared styling for documentation pages
-   ├─ documents/
-   │  └─ pr-preview.md         # persisted guidance for preparing preview deploy notes
-   ├─ packs/                   # static assets referenced from docs/index.html
-   └─ ops/                     # operational runbooks and supporting assets
+├─ docs/
+│  ├─ index.html               # documentation microsite entry point (in-repo preview)
+│  ├─ styles.css               # shared styling for documentation pages
+│  ├─ src/
+│  │  ├─ main.js               # hash router + score strip mounting
+│  │  ├─ roomWatcher.js        # central state observer → navigation
+│  │  ├─ lib/                  # firebase init, pack ingestion, helpers
+│  │  └─ views/                # Lobby, KeyRoom, CodeRoom, Countdown, Questions, Marking, Award, Maths, Final, Rejoin
+│  ├─ documents/               # persisted guidance for preview deploy notes
+│  ├─ packs/                   # static assets referenced from docs/index.html
+│  └─ ops/                     # operational runbooks and supporting assets
+├─ questions.md                # question pack shape
+├─ dates.md                    # maths pack shape
+└─ packs/                      # local pack storage during development
 
-Keep new modules under /public/src/lib or /public/src/views. Use relative ESM imports.
+Keep new modules under /docs/src/lib or /docs/src/views. Use relative ESM imports.
 
 ⸻
 
-Sealed Content (single source of trivia)
-        •       Filenames end with .sealed. Any base name works; room codes are chosen in Key Room.
-        •       Supported envelopes:
-                – Full pack (version jemima-pack-1): 5 rounds of host+guest items, round clues, maths block, integrity checksum.
-                – Half pack (jemima-halfpack-1): host OR guest items only; maths optional.
-                – Question override (jemima-questionpack-1): replaces both sides’ question items.
-                – Maths override (jemima-maths-timeline-1): replaces only the maths block.
-        •       Key Room lets Daniel mix these: start from a full pack, then layer optional question/host/guest/maths overrides. Missing items are padded with “<empty>”.
-        •       Decryption: AES-GCM envelope, PBKDF2 150k iters, TextDecoder. Password default = DEMO-ONLY.
-        •       Integrity: SHA-256 over canonical JSON (integrity.checksum) and verified flag true.
+Pack ingestion (current Key Room flow)
+        •       Upload loose JSON or TXT files; Key Room auto-extracts embedded JSON values and hunts for valid packs.
+        •       Questions packs = five rounds, each with six items (first 3 hostItems, last 3 guestItems). Optional interludes per round. Total items must be 30.
+        •       Maths packs = timeline games with exactly five chronological events (years 1–2025). Can be a single game or a bundle under games[]. Scoring margins auto-filled when missing.
+        •       Multiple packs can live in a single file. Invalid candidates are skipped with console warnings; accepted packs are stored in Firestore collections for reuse.
+        •       No .sealed envelopes, no room codes inside pack files, and no legacy checksum/integrity requirements.
 
 ⸻
 
@@ -100,9 +75,9 @@ Do not overwrite claimed UIDs. Never mix host/guest items.
 Gameplay Flow (canonical)
 
 1) Key Room (Daniel)
-        •       Opens with code picker (manual or Random) and pack dropzones.
-        •       Upload order flexible: base full pack, then optional overrides (questions/host/guest/maths). Status log shows what’s loaded.
-        •       START seeds Firestore, writes assembled pack, sets state="coderoom", clears countdown, stores code locally, then routes to Code Room.
+        •       Opens with code picker (manual or Random) and pack dropzones for questions + maths uploads.
+        •       Accepts JSON/TXT containing multiple packs; normalizes to rounds/items for questions and timeline events for maths. Live counters show available packs.
+        •       Host can choose Random, Specific, or Placeholder sources per pack type. START seeds Firestore with the chosen packs, sets state="coderoom", clears countdown, stores code locally, then routes to Code Room.
         •       Jump & prepare tool can reseed + fast-forward to any phase for rehearsal; exposes host hash and guest link.
 
 2) Code Room (Daniel)
