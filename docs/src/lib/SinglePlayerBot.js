@@ -150,11 +150,15 @@ export async function ensureBotMarking({ code, round, roomData, roundData }) {
     return isRight ? "right" : "wrong";
   });
 
+  const mathsYear = Number(roomData?.maths?.events?.[round - 1]?.year);
+  const guessedYear = Number.isInteger(mathsYear) ? mathsYear : 2000 + round;
+
   const rRef = doc(db, "rooms", clampCode(code));
   try {
     await updateDoc(rRef, {
       [`marking.guest.${round}`]: marks,
       [`markingAck.guest.${round}`]: true,
+      [`mathsGuesses.guest.${round}`]: guessedYear,
       [`timings.guest.${round}`]: { totalSeconds: 0 },
       "timestamps.updatedAt": serverTimestamp(),
     });

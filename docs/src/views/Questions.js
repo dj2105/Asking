@@ -214,10 +214,21 @@ export default {
     );
     readyBtn.style.display = "none";
 
+    const toMarkingBtn = el(
+      "button",
+      {
+        class: "btn round-panel__submit mono btn-ready round-panel__nav",
+        type: "button",
+      },
+      "GO TO MARKING"
+    );
+    toMarkingBtn.style.display = "none";
+
     panel.appendChild(heading);
     panel.appendChild(steps);
     panel.appendChild(content);
     panel.appendChild(readyBtn);
+    panel.appendChild(toMarkingBtn);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -285,6 +296,9 @@ export default {
     let showingClue = false;
     let fallbackMaths = {};
     let latestRoomData = {};
+    let markingAvailable = false;
+    let timerStarted = false;
+    let submittedAlready = false;
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -462,6 +476,7 @@ export default {
       showWaitingPrompt();
       renderSteps();
       renderChoices();
+      renderMarkingButton();
       pauseRoundTimer(timerContext);
     };
 
@@ -530,6 +545,7 @@ export default {
       readyBtn.classList.remove("throb");
       readyBtn.classList.add("round-panel__submit--waiting");
       clearAdvanceTimer();
+      renderMarkingButton();
     };
 
     const rRef = roomRef(code);
@@ -559,9 +575,26 @@ export default {
 
     const timerContext = { code, role: myRole, round };
 
+    const startRoundTimer = () => {
+      if (timerStarted) return;
+      resumeRoundTimer(timerContext);
+      timerStarted = true;
+    };
+
+    const renderMarkingButton = () => {
+      if (!published) {
+        toMarkingBtn.style.display = "none";
+        return;
+      }
+      toMarkingBtn.style.display = "";
+      toMarkingBtn.disabled = !markingAvailable;
+      toMarkingBtn.textContent = markingAvailable ? "GO TO MARKING" : waitingLabel;
+      toMarkingBtn.classList.toggle("throb", markingAvailable);
+    };
+
     const setLoadingState = (text) => {
       hideReadyPrompt();
-      pauseRoundTimer(timerContext);
+      startRoundTimer();
       setHeading(DEFAULT_HEADING);
       setPrompt(text, { status: true });
       hideStatusNote();
@@ -618,7 +651,7 @@ export default {
       return { question, options: [optA, optB], correct };
     });
 
-    const submittedAlready = Boolean(((room0.submitted || {})[myRole] || {})[round]);
+    submittedAlready = Boolean(((room0.submitted || {})[myRole] || {})[round]);
     if (existingAns.length) {
       for (let i = 0; i < Math.min(existingAns.length, chosen.length); i += 1) {
         const entry = existingAns[i] || {};
@@ -627,6 +660,10 @@ export default {
     }
 
     const prefilledComplete = isRoundComplete();
+
+    if (!submittedAlready) {
+      startRoundTimer();
+    }
 
     if (submittedAlready) {
       enterWaitingState();
@@ -737,6 +774,11 @@ export default {
       });
     });
 
+    toMarkingBtn.addEventListener("click", () => {
+      if (!markingAvailable) return;
+      goTo(`#/marking?code=${code}&round=${round}`);
+    });
+
     readyBtn.addEventListener("click", async () => {
       if (published || submitting) return;
       if (!isRoundComplete()) return;
@@ -789,8 +831,15 @@ export default {
       }
 
       if (data.state === "marking") {
-        goTo(`#/marking?code=${code}&round=${round}`);
-        return;
+        markingAvailable = true;
+        renderMarkingButton();
+        if (!published) {
+          goTo(`#/marking?code=${code}&round=${round}`);
+          return;
+        }
+      } else {
+        markingAvailable = false;
+        renderMarkingButton();
       }
 
       if (data.state === "countdown") {

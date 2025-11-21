@@ -43,14 +43,16 @@ function formatDelta(value) {
   return "0";
 }
 
-function computeTotals(scores = {}, mathsAnswers = {}) {
+function computeTotals(scores = {}, mathsAnswers = {}, speedBonuses = {}) {
   const hostRounds = scores.host || {};
   const guestRounds = scores.guest || {};
+  const hostBonuses = speedBonuses.host || {};
+  const guestBonuses = speedBonuses.guest || {};
   let hostQuestions = 0;
   let guestQuestions = 0;
   for (let r = 1; r <= 5; r += 1) {
-    hostQuestions += Number(hostRounds[r] || 0);
-    guestQuestions += Number(guestRounds[r] || 0);
+    hostQuestions += Number(hostRounds[r] || 0) + Number(hostBonuses[r] || 0);
+    guestQuestions += Number(guestRounds[r] || 0) + Number(guestBonuses[r] || 0);
   }
   const hostMaths = Number((mathsAnswers.host || {}).points || 0);
   const guestMaths = Number((mathsAnswers.guest || {}).points || 0);
@@ -247,7 +249,11 @@ function renderStatsList(list, roomData = {}, roundsData = {}) {
   list.innerHTML = "";
   const marking = roomData.marking || {};
   const timings = roomData.timings || {};
-  const totals = computeTotals(roomData.scores || {}, roomData.mathsAnswers || {});
+  const totals = computeTotals(
+    roomData.scores || {},
+    roomData.mathsAnswers || {},
+    roomData.speedBonuses || {}
+  );
 
   const hostVerdicts = collectVerdicts(marking, "host");
   const guestVerdicts = collectVerdicts(marking, "guest");
@@ -269,16 +275,16 @@ function renderStatsList(list, roomData = {}, roundsData = {}) {
   const guestFastest = guestTimes.length ? Math.min(...guestTimes) : null;
   const hostTotalTime = hostTimes.length ? hostTimes.reduce((sum, value) => sum + value, 0) : null;
   const guestTotalTime = guestTimes.length ? guestTimes.reduce((sum, value) => sum + value, 0) : null;
-  let speedLine = "Marking speed: awaiting data.";
+  let speedLine = "Round speed: awaiting data.";
   if (hostTimes.length || guestTimes.length) {
     let speedKicker = "Neck and neck on fastest marks.";
     if (hostFastest !== null && guestFastest !== null) {
       const epsilon = 0.01;
-      if (hostFastest + epsilon < guestFastest) speedKicker = "Daniel was the faster marker overall.";
-      else if (guestFastest + epsilon < hostFastest) speedKicker = "Jaime was the faster marker overall.";
+      if (hostFastest + epsilon < guestFastest) speedKicker = "Daniel was the quicker player overall.";
+      else if (guestFastest + epsilon < hostFastest) speedKicker = "Jaime was the quicker player overall.";
     }
     speedLine =
-      `Marking speed: Daniel fastest ${formatSeconds(hostFastest)} (total ${formatSeconds(hostTotalTime)}) • ` +
+      `Round speed: Daniel fastest ${formatSeconds(hostFastest)} (total ${formatSeconds(hostTotalTime)}) • ` +
       `Jaime fastest ${formatSeconds(guestFastest)} (total ${formatSeconds(guestTotalTime)}). ${speedKicker}`;
   }
 
@@ -340,6 +346,9 @@ function renderRoundReview(container, roomData = {}, roundsData = {}) {
       : [];
     const hostScore = countCorrectAnswers(answersHost, hostItems);
     const guestScore = countCorrectAnswers(answersGuest, guestItems);
+    const speedBonuses = roomData.speedBonuses || {};
+    const hostBonus = Number(getRoundMapValue(speedBonuses.host || {}, round) || 0);
+    const guestBonus = Number(getRoundMapValue(speedBonuses.guest || {}, round) || 0);
 
     const hostTiming = formatSeconds(normaliseTimingEntry(getRoundMapValue(timings.host || {}, round)));
     const guestTiming = formatSeconds(normaliseTimingEntry(getRoundMapValue(timings.guest || {}, round)));
@@ -367,12 +376,12 @@ function renderRoundReview(container, roomData = {}, roundsData = {}) {
     summary.appendChild(el(
       "span",
       { class: "mono final-round__summary-score" },
-      `Daniel ${hostScore}/3 • Jaime ${guestScore}/3`
+      `Daniel ${hostScore + hostBonus} pts • Jaime ${guestScore + guestBonus} pts`
     ));
     summary.appendChild(el(
       "span",
       { class: "mono final-round__summary-timing" },
-      `Marking — Daniel ${hostTiming} • Jaime ${guestTiming}`
+      `Round time — Daniel ${hostTiming} • Jaime ${guestTiming}`
     ));
     if (clue) {
       summary.appendChild(el("span", { class: "mono final-round__summary-clue" }, `Clue: ${clue}`));
@@ -590,7 +599,7 @@ export default {
       const scores = roomData.scores || {};
       const maths = roomData.maths || {};
       const mathsAnswers = roomData.mathsAnswers || {};
-      const totals = computeTotals(scores, mathsAnswers);
+      const totals = computeTotals(scores, mathsAnswers, data.speedBonuses || {});
       winnerBanner.textContent = winnerLabel(totals);
       renderScoreBridge(bridgeRowsContainer, totals);
       renderStatsList(statsList, roomData, roundsData);

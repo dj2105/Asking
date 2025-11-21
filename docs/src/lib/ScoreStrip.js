@@ -80,13 +80,16 @@ function ensureResizeListener() {
 
 function computeScores(roomData = {}) {
   const scores = roomData.scores || {};
+  const bonuses = roomData.speedBonuses || {};
   const hostRounds = scores.host || {};
   const guestRounds = scores.guest || {};
+  const hostBonuses = bonuses.host || {};
+  const guestBonuses = bonuses.guest || {};
   let hostScore = 0;
   let guestScore = 0;
   for (let r = 1; r <= 5; r += 1) {
-    hostScore += Number(hostRounds[r] || 0);
-    guestScore += Number(guestRounds[r] || 0);
+    hostScore += Number(hostRounds[r] || 0) + Number(hostBonuses[r] || 0);
+    guestScore += Number(guestRounds[r] || 0) + Number(guestBonuses[r] || 0);
   }
   return { hostScore, guestScore };
 }
