@@ -1,0 +1,380 @@
+{
+  "version": "jemima-questionpack-1",
+  "meta": {
+    "roomCode": "HBR",
+    "generatedAt": "2025-01-20T18:45:00.000Z",
+    "hostUid": "demo-host",
+    "guestUid": "demo-guest"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "pub",
+          "question": "Which gas makes up most of Earth's atmosphere?",
+          "correct_answer": "Nitrogen",
+          "distractors": {
+            "easy": "Oxygen",
+            "medium": "Carbon dioxide",
+            "hard": "Argon"
+          }
+        },
+        {
+          "subject": "film",
+          "difficulty_tier": "pub",
+          "question": "Which director won the Oscar for “The Shape of Water”?",
+          "correct_answer": "Guillermo del Toro",
+          "distractors": {
+            "easy": "Alejandro González Iñárritu",
+            "medium": "Alfonso Cuarón",
+            "hard": "Denis Villeneuve"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which pop star released the single “Levitating”?",
+          "correct_answer": "Dua Lipa",
+          "distractors": {
+            "easy": "Ariana Grande",
+            "medium": "Kylie Minogue",
+            "hard": "Sigrid"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "history",
+          "difficulty_tier": "pub",
+          "question": "Who was the first president of South Africa elected after apartheid?",
+          "correct_answer": "Nelson Mandela",
+          "distractors": {
+            "easy": "Thabo Mbeki",
+            "medium": "Jacob Zuma",
+            "hard": "Cyril Ramaphosa"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "pub",
+          "question": "Which sea separates Saudi Arabia and Africa?",
+          "correct_answer": "The Red Sea",
+          "distractors": {
+            "easy": "The Arabian Sea",
+            "medium": "The Persian Gulf",
+            "hard": "The Gulf of Aden"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "pub",
+          "question": "Which company created the Swift programming language?",
+          "correct_answer": "Apple",
+          "distractors": {
+            "easy": "Microsoft",
+            "medium": "Google",
+            "hard": "Adobe"
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "hostItems": [
+        {
+          "subject": "nature",
+          "difficulty_tier": "pub",
+          "question": "What is a young swan called?",
+          "correct_answer": "Cygnet",
+          "distractors": {
+            "easy": "Gosling",
+            "medium": "Signet",
+            "hard": "Squab"
+          }
+        },
+        {
+          "subject": "literature",
+          "difficulty_tier": "enthusiast",
+          "question": "Which author created the detective Hercule Poirot?",
+          "correct_answer": "Agatha Christie",
+          "distractors": {
+            "easy": "Dorothy L. Sayers",
+            "medium": "Ngaio Marsh",
+            "hard": "Margery Allingham"
+          }
+        },
+        {
+          "subject": "sports",
+          "difficulty_tier": "pub",
+          "question": "Which sport awards the Stanley Cup?",
+          "correct_answer": "Ice hockey",
+          "distractors": {
+            "easy": "Basketball",
+            "medium": "Baseball",
+            "hard": "Lacrosse"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "film",
+          "difficulty_tier": "enthusiast",
+          "question": "Which cinematographer is famed for his work on “Inception”?",
+          "correct_answer": "Wally Pfister",
+          "distractors": {
+            "easy": "Hoyte van Hoytema",
+            "medium": "Linus Sandgren",
+            "hard": "Claudio Miranda"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "enthusiast",
+          "question": "Which branch of physics studies the behaviour of very low temperatures?",
+          "correct_answer": "Cryogenics",
+          "distractors": {
+            "easy": "Thermodynamics",
+            "medium": "Cryonics",
+            "hard": "Low-temperature plasma physics"
+          }
+        },
+        {
+          "subject": "music",
+          "difficulty_tier": "pub",
+          "question": "Which composer wrote the “Moonlight Sonata”?",
+          "correct_answer": "Ludwig van Beethoven",
+          "distractors": {
+            "easy": "Franz Schubert",
+            "medium": "Frédéric Chopin",
+            "hard": "Robert Schumann"
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "hostItems": [
+        {
+          "subject": "technology",
+          "difficulty_tier": "enthusiast",
+          "question": "Which protocol secures websites with the “https” prefix?",
+          "correct_answer": "TLS (Transport Layer Security)",
+          "distractors": {
+            "easy": "SSL (Secure Socket Layer)",
+            "medium": "SSH (Secure Shell)",
+            "hard": "IPsec (Internet Protocol Security)"
+          }
+        },
+        {
+          "subject": "geography",
+          "difficulty_tier": "enthusiast",
+          "question": "Which mountain is the highest peak in South America?",
+          "correct_answer": "Aconcagua",
+          "distractors": {
+            "easy": "Mount Fitz Roy",
+            "medium": "Ojos del Salado",
+            "hard": "Huáscarán"
+          }
+        },
+        {
+          "subject": "culture",
+          "difficulty_tier": "pub",
+          "question": "Which holiday celebrates the end of Ramadan?",
+          "correct_answer": "Eid al-Fitr",
+          "distractors": {
+            "easy": "Eid al-Adha",
+            "medium": "Ramadan",
+            "hard": "Nowruz"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "history",
+          "difficulty_tier": "enthusiast",
+          "question": "Which queen led the defeat of the Spanish Armada in 1588?",
+          "correct_answer": "Elizabeth I",
+          "distractors": {
+            "easy": "Mary I",
+            "medium": "Catherine de' Medici",
+            "hard": "Anne of Denmark"
+          }
+        },
+        {
+          "subject": "science",
+          "difficulty_tier": "specialist",
+          "question": "Which particle physicist proposed the existence of the Higgs boson?",
+          "correct_answer": "Peter Higgs",
+          "distractors": {
+            "easy": "Murray Gell-Mann",
+            "medium": "Sheldon Glashow",
+            "hard": "Leon Lederman"
+          }
+        },
+        {
+          "subject": "television",
+          "difficulty_tier": "pub",
+          "question": "Which series features the character David Rose?",
+          "correct_answer": "Schitt's Creek",
+          "distractors": {
+            "easy": "Arrested Development",
+            "medium": "Grace and Frankie",
+            "hard": "Kim's Convenience"
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "hostItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "enthusiast",
+          "question": "Which scientist developed the theory of general relativity?",
+          "correct_answer": "Albert Einstein",
+          "distractors": {
+            "easy": "Max Planck",
+            "medium": "Hendrik Lorentz",
+            "hard": "Hermann Minkowski"
+          }
+        },
+        {
+          "subject": "games",
+          "difficulty_tier": "pub",
+          "question": "Which video game series stars the adventurer Lara Croft?",
+          "correct_answer": "Tomb Raider",
+          "distractors": {
+            "easy": "Uncharted",
+            "medium": "Prince of Persia",
+            "hard": "Mirror's Edge"
+          }
+        },
+        {
+          "subject": "food",
+          "difficulty_tier": "pub",
+          "question": "Which grain is traditionally used to brew sake?",
+          "correct_answer": "Rice",
+          "distractors": {
+            "easy": "Barley",
+            "medium": "Millet",
+            "hard": "Sorghum"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "literature",
+          "difficulty_tier": "enthusiast",
+          "question": "Which poet wrote “Because I could not stop for Death”?",
+          "correct_answer": "Emily Dickinson",
+          "distractors": {
+            "easy": "Sylvia Plath",
+            "medium": "Anne Sexton",
+            "hard": "Christina Rossetti"
+          }
+        },
+        {
+          "subject": "fashion",
+          "difficulty_tier": "pub",
+          "question": "Which designer introduced the “New Look” in 1947?",
+          "correct_answer": "Christian Dior",
+          "distractors": {
+            "easy": "Coco Chanel",
+            "medium": "Balenciaga",
+            "hard": "Givenchy"
+          }
+        },
+        {
+          "subject": "space",
+          "difficulty_tier": "enthusiast",
+          "question": "Which telescope launched in 2021 to succeed Hubble?",
+          "correct_answer": "James Webb Space Telescope",
+          "distractors": {
+            "easy": "Spitzer Space Telescope",
+            "medium": "Chandra X-ray Observatory",
+            "hard": "Kepler Space Telescope"
+          }
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "hostItems": [
+        {
+          "subject": "music",
+          "difficulty_tier": "enthusiast",
+          "question": "Which composer wrote the opera “The Magic Flute”?",
+          "correct_answer": "Wolfgang Amadeus Mozart",
+          "distractors": {
+            "easy": "Gioachino Rossini",
+            "medium": "Joseph Haydn",
+            "hard": "Christoph Willibald Gluck"
+          }
+        },
+        {
+          "subject": "technology",
+          "difficulty_tier": "pub",
+          "question": "Which company first released the Walkman portable cassette player?",
+          "correct_answer": "Sony",
+          "distractors": {
+            "easy": "Panasonic",
+            "medium": "Philips",
+            "hard": "JVC"
+          }
+        },
+        {
+          "subject": "history",
+          "difficulty_tier": "enthusiast",
+          "question": "Which treaty created the European Union in 1993?",
+          "correct_answer": "Maastricht Treaty",
+          "distractors": {
+            "easy": "Lisbon Treaty",
+            "medium": "Schengen Agreement",
+            "hard": "Treaty of Rome"
+          }
+        }
+      ],
+      "guestItems": [
+        {
+          "subject": "science",
+          "difficulty_tier": "specialist",
+          "question": "Which law in electromagnetism states that the line integral of magnetic field around a closed loop equals the enclosed current?",
+          "correct_answer": "Ampère's circuital law",
+          "distractors": {
+            "easy": "Gauss's law",
+            "medium": "Faraday's law of induction",
+            "hard": "Biot–Savart law"
+          }
+        },
+        {
+          "subject": "film",
+          "difficulty_tier": "enthusiast",
+          "question": "Which actor portrayed Jack in “The Nightmare Before Christmas”?",
+          "correct_answer": "Chris Sarandon (singing by Danny Elfman)",
+          "distractors": {
+            "easy": "Johnny Depp",
+            "medium": "Danny Elfman",
+            "hard": "Catherine O'Hara"
+          }
+        },
+        {
+          "subject": "culture",
+          "difficulty_tier": "pub",
+          "question": "Which festival is known as the Festival of Lights in India?",
+          "correct_answer": "Diwali",
+          "distractors": {
+            "easy": "Holi",
+            "medium": "Navratri",
+            "hard": "Vaisakhi"
+          }
+        }
+      ]
+    }
+  ],
+  "integrity": {
+    "checksum": "ea2d94a3463c970e713c56223ed67698a88b54cde6cfe6d8e5f07552abefe648",
+    "verified": true
+  }
+}

@@ -29,7 +29,7 @@ function writePack(filename, data) {
 function mathsPack(code, overrides = {}) {
   const generatedAt = overrides.generatedAt || isoNow();
   return {
-    version: 'jemima-maths-1',
+    version: 'jemima-maths-timeline-1',
     meta: {
       roomCode: code,
       generatedAt,
@@ -37,6 +37,40 @@ function mathsPack(code, overrides = {}) {
       guestUid: 'demo-guest',
     },
     maths: overrides.maths,
+  };
+}
+
+function buildTimelineMaths({ events = [], title, intro, note }) {
+  const ordered = events
+    .filter((evt) => typeof evt?.prompt === 'string' && Number.isInteger(evt?.year))
+    .slice(0, 5);
+  const total = ordered.reduce((sum, evt) => sum + evt.year, 0);
+  const sharpshooterMargin = Math.round(total * 0.02);
+  const ballparkMargin = Math.round(total * 0.05);
+
+  return {
+    title: title || 'History in Five Dates',
+    intro:
+      intro ||
+      'Each round reveals a moment in history. Jot the year (1–4 digits), then add your five answers together.',
+    note: note || 'Years are AD only; closest total takes the round.',
+    events: ordered,
+    clues: ordered.map((evt) => evt.prompt),
+    reveals: ordered.map((evt) => ({ prompt: evt.prompt })),
+    question: 'Enter the year you think this event happened (1–4 digits).',
+    answer: total,
+    total,
+    scoring: {
+      targetTotal: total,
+      sharpshooterMargin,
+      ballparkMargin,
+      sharpshooterPercent: 0.02,
+      ballparkPercent: 0.05,
+      perfectPoints: 5,
+      sharpshooterPoints: 3,
+      ballparkPoints: 2,
+      safetyNetPoints: 1,
+    },
   };
 }
 
@@ -61,23 +95,16 @@ function buildPacks() {
     filename: 'DOI-maths.json',
     data: mathsPack('DOI', {
       generatedAt: '2025-01-12T12:00:00.000Z',
-      maths: {
-        location: 'Rooftop herb garden',
-        beats: [
-          'I clipped eight sprigs of rosemary for tonight\'s stew before guests arrived.',
-          'Two neighbours came up early, so I doubled the bundle to share the aroma.',
-          'Before dinner I gifted five sprigs so they could season their roasts.',
-          'Finally I hung one sprig to dry for tomorrow\'s roast.',
+      maths: buildTimelineMaths({
+        title: 'Ancient to Modern Shockwaves',
+        events: [
+          { prompt: 'Eruption of Mount Vesuvius destroys Pompeii.', year: 79 },
+          { prompt: 'Fall of the Western Roman Empire (Romulus Augustulus is deposed).', year: 476 },
+          { prompt: 'The Fall of Constantinople to the Ottoman Empire.', year: 1453 },
+          { prompt: 'Assassination of Abraham Lincoln.', year: 1865 },
+          { prompt: 'Russia launches a full-scale invasion of Ukraine.', year: 2022 },
         ],
-        questions: [
-          'How many rosemary sprigs are left for cooking? ___',
-          'What was the largest number of sprigs I held at once? ___',
-        ],
-        answers: [
-          10,
-          16,
-        ],
-      },
+      }),
     }),
   });
 
@@ -459,23 +486,16 @@ function buildPacks() {
     filename: 'FKH-maths.json',
     data: mathsPack('FKH', {
       generatedAt: '2025-01-15T09:30:00.000Z',
-      maths: {
-        location: 'Community pottery studio',
-        beats: [
-          'I stacked eight clay blocks on the studio table before class.',
-          'A kiln delivery rolled in four more blocks to add to the stack.',
-          'Midway through, we recycled five blocks into slip for glazing.',
-          'Before locking up I shaped two new blocks from the leftover scraps.',
+      maths: buildTimelineMaths({
+        title: 'Milestones of Exploration',
+        events: [
+          { prompt: 'Signing of the Magna Carta at Runnymede.', year: 1215 },
+          { prompt: 'Christopher Columbus reaches the Americas.', year: 1492 },
+          { prompt: 'The Wright brothers complete the first powered flight at Kitty Hawk.', year: 1903 },
+          { prompt: 'Neil Armstrong walks on the Moon during Apollo 11.', year: 1969 },
+          { prompt: 'NASA and ESA launch the James Webb Space Telescope.', year: 2021 },
         ],
-        questions: [
-          'How many clay blocks remain for tomorrow\'s class? ___',
-          'What was the highest number of clay blocks on the table today? ___',
-        ],
-        answers: [
-          9,
-          12,
-        ],
-      },
+      }),
     }),
   });
 
@@ -857,23 +877,16 @@ function buildPacks() {
     filename: 'HBR-maths.json',
     data: mathsPack('HBR', {
       generatedAt: '2025-01-20T18:45:00.000Z',
-      maths: {
-        location: 'Seaside lighthouse kitchen',
-        beats: [
-          'I polished six brass lanterns before the evening tour arrived.',
-          'A scout troop showed up, so I brought six more lanterns up from storage.',
-          'After the storm warning, I loaned seven lanterns to the harbour master.',
-          'Before bed I set aside three lanterns for overnight watch duty.',
+      maths: buildTimelineMaths({
+        title: 'Turning Points & Firsts',
+        events: [
+          { prompt: 'Gutenberg completes the first printed Bible in Mainz.', year: 1455 },
+          { prompt: 'Delegates sign the United States Declaration of Independence.', year: 1776 },
+          { prompt: 'Athens hosts the first modern Olympic Games.', year: 1896 },
+          { prompt: 'The Berlin Wall falls, opening the border.', year: 1989 },
+          { prompt: 'Astronomers release the first image of a black hole (M87*).', year: 2019 },
         ],
-        questions: [
-          'How many lanterns stay with me overnight? ___',
-          'What was the highest number of lanterns in my care this evening? ___',
-        ],
-        answers: [
-          2,
-          12,
-        ],
-      },
+      }),
     }),
   });
 

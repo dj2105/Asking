@@ -4,30 +4,29 @@ You are Codex. Generate **two JSON files** in `/packs/out/` for a new Jemima’s
 
 ---
 
-## (1) MATHS PACK
+## (1) MATHS PACK — TIMELINE EDITION
 **Filename:** `<ROOM>-maths.json`
 
 **Requirements:**
-- `"version": "jemima-maths-chain-1"`
+- `"version": "jemima-maths-timeline-1"`
 - `"meta.roomCode"` = a unique 3-letter uppercase code not yet used in `/packs/out` or `/packs/sealed`
 - `"meta.generatedAt"` = current UTC ISO timestamp
 - `"meta.hostUid"` = `"demo-host"`
 - `"meta.guestUid"` = `"demo-guest"`
-- `"maths"` object:
-  - `"beats"` → array of **5** short story beats, told by Jemima in first person.
-    - No visible numerals. Each beat applies an operation (+, −, ×, ÷, double, half, add, subtract, etc.).
-    - Beats connect into a playful, logical story. Each may mention everyday facts (cats, food, travel, etc.).
-  - `"reveals"` → array of **5** reveal lines:
-    - Exactly **two** are `"type": "total"` (rounds 2–4).
-    - Others are `"obvious"` or `"specific"`.
-    - Beat 5 reveal must **not** be `"total"`.
-    - Numerals and units shown as **bold**: e.g. `**42 kilometres**`.
-  - `"question"` → one short line with a blank, e.g. “What’s the final number? ___”
-  - `"answer"` → integer
-- `"results"`:
-  - `"passage"` = the 5 beats rewritten as a single paragraph **with numbers and units inserted**, using bold.
-  - `"finalAnswer"` = `{ "value": <integer>, "label": "Final total" }`
-- No `"location"` field. No notes.
+- `"maths"` object **or** `"games"` array of maths objects. Each maths object must contain:
+  - `"events"` → array of **5** historical prompts, ordered from oldest to most recent.
+    - Each event has `"prompt"` (string) and `"year"` (integer, 1–2025).
+    - Events should be widely recognised so players can make educated guesses.
+  - `"total"` = sum of the five years.
+  - `"title"` (string) — concise headline for the set.
+  - `"question"` (string) — short instruction, e.g. “Enter the year for each event (1–4 digits).”
+  - `"scoring"` → margins and points (defaults allowed):
+    - `targetTotal` (integer) matches `total`.
+    - `sharpshooterMargin` = ±2% of total (round to nearest int).
+    - `ballparkMargin` = ±5% of total (round to nearest int).
+    - `perfectPoints` = 5, `sharpshooterPoints` = 3, `ballparkPoints` = 2, `safetyNetPoints` = 1 (closest if neither hits the bands).
+  - Convenience mirrors (optional): `"clues"` and `"reveals"` repeat the event prompts; `"answer"` may duplicate `"total"`.
+- If `"games"` is provided, include 1–5 maths objects; Key Room will split them into individually playable maths packs.
 
 ---
 

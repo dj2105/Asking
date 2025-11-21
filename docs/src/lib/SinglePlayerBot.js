@@ -210,16 +210,29 @@ export async function ensureBotMaths({ code, roomData }) {
   const bot = normaliseBotConfig(roomData?.bot);
   if (!bot.enabled) return null;
   const existing = roomData?.mathsAnswers?.guest;
-  if (existing && Number.isFinite(existing.value)) return existing;
+  if (existing && Array.isArray(existing.events)) return existing;
 
-  const target = Number(roomData?.maths?.answer);
-  const base = Number.isFinite(target) ? target : 10;
+  const events = Array.isArray(roomData?.maths?.events)
+    ? roomData.maths.events
+    : [];
+  const targetTotal = Number.isInteger(roomData?.maths?.total)
+    ? roomData.maths.total
+    : events.reduce((sum, evt) => sum + (Number.isInteger(evt?.year) ? evt.year : 0), 0);
+
   const chooseCorrect = Math.random() <= bot.correctChance;
-  const guess = chooseCorrect ? base : base + (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 5));
+  const guessEvents = events.length
+    ? events.map((evt) => {
+        const baseYear = Number.isInteger(evt?.year) ? evt.year : 1;
+        if (chooseCorrect) return baseYear;
+        const jitter = 1 + Math.floor(Math.random() * 15);
+        return Math.max(1, baseYear + (Math.random() < 0.5 ? -jitter : jitter));
+      })
+    : [1000, 1100, 1200, 1300, 1400];
+  const guessTotal = guessEvents.reduce((sum, year) => sum + year, 0);
+  const payload = { events: guessEvents, total: guessTotal || targetTotal || 0 };
 
   const rRef = doc(db, "rooms", clampCode(code));
   try {
-    const payload = { value: guess };
     await updateDoc(rRef, {
       "mathsAnswers.guest": payload,
       "mathsAnswersAck.guest": true,

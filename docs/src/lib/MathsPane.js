@@ -39,8 +39,14 @@ function resolveClue(roomData = {}, fallbackMaths = {}, round = 1) {
   const fromRoom = clueFromMap(roomData.clues, round);
   if (fromRoom) return fromRoom;
 
+  const fromRoomEvents = clueFromArray(roomData.maths?.events?.map((evt) => evt?.prompt), round);
+  if (fromRoomEvents) return fromRoomEvents;
+
   const fromRoomMaths = clueFromArray(roomData.maths?.clues, round);
   if (fromRoomMaths) return fromRoomMaths;
+
+  const fromFallbackEvents = clueFromArray(fallbackMaths?.events?.map((evt) => evt?.prompt), round);
+  if (fromFallbackEvents) return fromFallbackEvents;
 
   const fromFallbackMaths = clueFromArray(fallbackMaths?.clues, round);
   if (fromFallbackMaths) return fromFallbackMaths;

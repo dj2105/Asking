@@ -299,7 +299,7 @@ def _prepare_question_payload(now: _dt.datetime) -> dict[str, Any]:
 
 def _prepare_maths_payload(now: _dt.datetime) -> dict[str, Any]:
     tpl = json.loads(json.dumps(_load_template(MATHS_TEMPLATE)))
-    tpl.setdefault("version", "jemima-maths-chain-2")
+    tpl.setdefault("version", "jemima-maths-timeline-1")
     meta = tpl.setdefault("meta", {})
     meta.setdefault("hostUid", "demo-host")
     meta.setdefault("guestUid", "demo-guest")
@@ -569,6 +569,11 @@ def _seed_firestore(pack: dict[str, Any], seed_source: dict[str, Any]) -> None:
 
     maths = pack.get("maths", {})
     clues_map = {str(idx + 1): clue for idx, clue in enumerate(maths.get("clues") or []) if isinstance(clue, str)}
+    if not clues_map and isinstance(maths.get("events"), list):
+        for idx, event in enumerate(maths["events"][:5]):
+            prompt = event.get("prompt") if isinstance(event, dict) else None
+            if isinstance(prompt, str) and prompt.strip():
+                clues_map[str(idx + 1)] = prompt.strip()
     reveals_map = {}
     for idx, reveal in enumerate(maths.get("reveals") or []):
         text = None
