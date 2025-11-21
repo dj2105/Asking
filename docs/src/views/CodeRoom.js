@@ -7,6 +7,7 @@
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { clampCode, copyToClipboard, setStoredRole } from "../lib/util.js";
+import { ensureBotCountdown } from "../lib/SinglePlayerBot.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -143,6 +144,10 @@ export default {
         currentState = data.state || "";
         const round = Number(data.round) || 1;
         const guestPresent = Boolean(data.links?.guestReady);
+
+        if (currentState === "coderoom") {
+          ensureBotCountdown(code, data, round);
+        }
 
         if (currentState === "coderoom") {
           status.textContent = guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime…";

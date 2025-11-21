@@ -1,9 +1,9 @@
 export const PLACEHOLDER = "<empty>";
 
 const FALLBACK_QUESTION_PACK_PATHS = [
-  "../../packs/out/DOI-questions.json",
-  "../../packs/out/FKH-questions.json",
-  "../../packs/out/HBR-questions.json",
+  "../../packs/out/MRT-questions.json",
+  "../../packs/out/LUM-questions.json",
+  "../../packs/out/PRX-questions.json",
 ];
 
 const FALLBACK_MATHS_PACK_PATHS = [
