@@ -95,7 +95,7 @@ function normaliseTimingEntry(entry) {
 }
 
 const DEFAULT_HEADING = "MARKING";
-const JEMIMA_HEADING = "JEMIMA";
+const JEMIMA_HEADING = "WHICH YEAR...?";
 
 function balanceQuestionText(input = "") {
   const raw = String(input || "").replace(/\s+/g, " ").trim();
@@ -268,21 +268,17 @@ export default {
     content.appendChild(verdictRow);
 
     const yearWrap = el("div", { class: "marking-year is-hidden" });
-    const yearLabel = el("div", { class: "mono marking-year__label" }, "ENTER THE YEAR");
     const yearInput = el("input", {
       class: "marking-year__input mono",
       type: "text",
       inputmode: "numeric",
       pattern: "[0-9]*",
       maxlength: "4",
-      placeholder: "YEAR",
+      placeholder: "",
     });
     const yearSubmit = el("button", { class: "btn marking-year__submit", type: "button", disabled: "" }, "SUBMIT");
-    const yearNote = el("div", { class: "mono marking-year__note" }, "1–2026 only.");
-    yearWrap.appendChild(yearLabel);
     yearWrap.appendChild(yearInput);
     yearWrap.appendChild(yearSubmit);
-    yearWrap.appendChild(yearNote);
     content.appendChild(yearWrap);
 
     const readyBtn = el(
@@ -291,7 +287,7 @@ export default {
         class: "btn round-panel__submit mono btn-ready",
         type: "button",
       },
-      "READY"
+      "SUBMIT"
     );
     readyBtn.style.display = "none";
 
@@ -529,7 +525,7 @@ export default {
       showingClue = false;
       readyBtn.style.display = "none";
       readyBtn.disabled = false;
-      readyBtn.textContent = "READY";
+      readyBtn.textContent = "SUBMIT";
       readyBtn.classList.remove("round-panel__submit--ready");
       readyBtn.classList.remove("round-panel__submit--waiting");
       if (!readyBtn.classList.contains("btn-ready")) {
@@ -547,15 +543,15 @@ export default {
 
     const showReadyPrompt = ({ animate = true } = {}) => {
       if (published || submitting) return;
-      showingClue = true;
+      showingClue = false;
       const render = () => {
         setHeading(DEFAULT_HEADING);
-        setPrompt(getClueText(), { status: false, variant: "clue" });
+        setPrompt("Submit your marks.", { status: true });
         hideStatusNote();
         setMarkingVisible(false);
         readyBtn.style.display = "";
         readyBtn.disabled = false;
-        readyBtn.textContent = "READY";
+        readyBtn.textContent = "SUBMIT";
         readyBtn.classList.add("btn-ready");
         readyBtn.classList.add("round-panel__submit--ready");
         readyBtn.classList.remove("round-panel__submit--waiting");
@@ -587,6 +583,7 @@ export default {
       yearInput.value = yearDraft;
       const valid = isYearValid(yearDraft);
       yearSubmit.disabled = yearSubmitting || !valid;
+      yearSubmit.classList.toggle("marking-year__submit--visible", valid && !yearSubmitting);
     };
 
     const showYearEntry = ({ animate = true } = {}) => {
@@ -901,7 +898,7 @@ export default {
         console.warn("[marking] submit failed:", err);
         submitting = false;
         readyBtn.disabled = false;
-        readyBtn.textContent = "READY";
+        readyBtn.textContent = "SUBMIT";
         setVerdictsEnabled(true);
         startRoundTimer();
         resumeRoundTimer(timerContext);

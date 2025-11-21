@@ -158,14 +158,27 @@ function determineFasterRole(roomData = {}, round = 1) {
   return null;
 }
 
-function renderQuestionSection({ heading, items, answers, round, score }) {
+function renderQuestionSection({ heading, items, answers, round, score, bonus = 0 }) {
   const block = el("div", { class: "award-box award-box--questions" });
   const header = el("div", { class: "award-box__header" });
   header.appendChild(el("div", { class: "mono award-box__title" }, heading));
   if (typeof score === "number" && !Number.isNaN(score)) {
-    header.appendChild(
-      el("div", { class: "mono award-round-score" }, String(score))
-    );
+    const badgeWrap = el("div", { class: "award-round-badges" });
+    const scoreBadge = el("div", { class: "mono award-round-score" }, String(score));
+    const hasBonus = Number(bonus) > 0;
+    if (hasBonus) {
+      badgeWrap.classList.add("award-round-badges--with-star");
+      badgeWrap.appendChild(scoreBadge);
+      badgeWrap.appendChild(
+        el("div", { class: "award-speed-star" }, [
+          el("div", { class: "award-speed-star__value" }, "+1"),
+          el("div", { class: "award-speed-star__label" }, "fastest"),
+        ])
+      );
+    } else {
+      badgeWrap.appendChild(scoreBadge);
+    }
+    header.appendChild(badgeWrap);
   }
   block.appendChild(header);
 
@@ -251,13 +264,6 @@ export default {
     container.innerHTML = "";
     const root = el("div", { class: "view view-award" });
 
-    const bonusBanner = el("div", { class: "award-bonus award-bonus--pending" });
-    const bonusStar = el("div", { class: "award-bonus__icon" }, "★");
-    const bonusText = el("div", { class: "mono award-bonus__text" }, "Bonus pending…");
-    bonusBanner.appendChild(bonusStar);
-    bonusBanner.appendChild(bonusText);
-    root.appendChild(bonusBanner);
-
     const card = el("div", { class: "card award-card" });
     const cardTitle = el("div", { class: "mono award-card__heading" }, "SCORES");
     const scoreboard = el("div", { class: "award-scoreboard" });
@@ -283,20 +289,6 @@ export default {
     card.appendChild(reviewWrap);
 
     root.appendChild(card);
-
-    const jemimaCard = el("div", { class: "card award-card award-card--jemima" });
-    const jemimaTitle = el("div", { class: "mono award-card__heading" }, "JEMIMA");
-    const jemimaClue = el("div", { class: "mono award-clue" }, "");
-    const jemimaReveal = el(
-      "div",
-      { class: "mono award-reveal award-reveal--hidden" },
-      ""
-    );
-    jemimaCard.appendChild(jemimaTitle);
-    jemimaCard.appendChild(jemimaClue);
-    jemimaCard.appendChild(jemimaReveal);
-
-    root.appendChild(jemimaCard);
 
     const continueRow = el("div", { class: "award-continue-row" });
     const continueBtn = el(
@@ -362,7 +354,6 @@ export default {
     };
 
     let latestRoomData = roomData0;
-    let fallbackMaths = roomData0.maths || {};
 
     const recomputeRoundScores = () => {
       roundScores.host = countCorrect(reviewData.hostAnswers, reviewData.hostItems);
@@ -394,56 +385,6 @@ export default {
       guestScoreValue.textContent = String(guestTotal);
     };
 
-    const refreshBonus = () => {
-      const timings = latestRoomData.timings || {};
-      const bonuses = latestRoomData.speedBonuses || {};
-      const hostTime = normaliseTimingEntry(getRoundMapValue(timings.host || {}, round));
-      const guestTime = normaliseTimingEntry(getRoundMapValue(timings.guest || {}, round));
-      const hostBonus = Number(getRoundMapValue(bonuses.host || {}, round) || 0);
-      const guestBonus = Number(getRoundMapValue(bonuses.guest || {}, round) || 0);
-      const myBonus = myRole === "host" ? hostBonus : guestBonus;
-      const oppBonus = myRole === "host" ? guestBonus : hostBonus;
-
-      bonusBanner.classList.remove("award-bonus--win", "award-bonus--lose", "award-bonus--pending");
-
-      if (hostTime === null || guestTime === null) {
-        bonusBanner.classList.add("award-bonus--pending");
-        bonusText.textContent = "Waiting for year submissions…";
-        return;
-      }
-
-      const delta = Math.abs(hostTime - guestTime);
-      const deltaLabel = `${delta.toFixed(delta >= 10 ? 1 : 2)} seconds`;
-
-      if (myBonus > oppBonus) {
-        bonusBanner.classList.add("award-bonus--win");
-        bonusText.textContent = `You were ${deltaLabel} faster than ${oppName} in round ${round}: +1 Bonus!`;
-      } else if (oppBonus > myBonus) {
-        bonusBanner.classList.add("award-bonus--lose");
-        bonusText.textContent = `${oppName} was ${deltaLabel} faster than you in round ${round}: No Bonus!`;
-      } else {
-        bonusBanner.classList.add("award-bonus--pending");
-        bonusText.textContent = `Round ${round} finished level: No Bonus.`;
-      }
-    };
-
-    const DEFAULT_CLUE_PLACEHOLDER = "Jemima’s clue will appear soon.";
-
-    const updateJemimaCard = () => {
-      const baseData = latestRoomData || {};
-      const mathsSource =
-        baseData.maths && typeof baseData.maths === "object"
-          ? baseData.maths
-          : fallbackMaths;
-      const mergedData = { ...baseData, maths: mathsSource };
-      const clueText = resolveRoundClue(mergedData, round) || DEFAULT_CLUE_PLACEHOLDER;
-      jemimaClue.textContent = clueText;
-      jemimaReveal.textContent = "";
-      if (!jemimaReveal.classList.contains("award-reveal--hidden")) {
-        jemimaReveal.classList.add("award-reveal--hidden");
-      }
-    };
-
     const refreshReviews = () => {
       reviewWrap.innerHTML = "";
       const myItems = myRole === "host" ? reviewData.hostItems : reviewData.guestItems;
@@ -464,6 +405,7 @@ export default {
         answers: myAnswers,
         round,
         score: myScore + myBonus,
+        bonus: myBonus,
       }));
       reviewWrap.appendChild(renderQuestionSection({
         heading: `${oppName.toUpperCase()}’S QUESTIONS`,
@@ -471,20 +413,18 @@ export default {
         answers: oppAnswers,
         round,
         score: oppScore + oppBonus,
+        bonus: oppBonus,
       }));
       updateScoreboardTotals();
-      refreshBonus();
     };
 
     const refreshSummary = () => {
       recomputeRoundScores();
       updateScoreboardTotals();
-      refreshBonus();
     };
 
     refreshReviews();
     refreshSummary();
-    updateJemimaCard();
 
     let ackMine = Boolean(((roomData0.awardAck || {})[myRole] || {})[round]);
     let ackOpp = Boolean(((roomData0.awardAck || {})[oppRole] || {})[round]);
@@ -579,7 +519,6 @@ export default {
       const data = snap.data() || {};
       latestRoomData = data;
       if (data.maths && typeof data.maths === "object") {
-        fallbackMaths = data.maths;
       }
 
       const stateName = String(data.state || "").toLowerCase();
@@ -599,7 +538,6 @@ export default {
         reviewData.guestAnswers = Array.isArray(answersGuest) ? answersGuest : [];
         refreshReviews();
         refreshSummary();
-        updateJemimaCard();
       }
 
       const ackData = data.awardAck || {};
@@ -638,7 +576,6 @@ export default {
       }
       if (stateName !== "award") {
         refreshSummary();
-        updateJemimaCard();
       }
     }, (err) => {
       console.warn("[award] snapshot error:", err);

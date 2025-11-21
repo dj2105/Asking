@@ -486,7 +486,7 @@ export default {
     const codeInput = el("input", {
       type: "text",
       class: "mono",
-      maxlength: "5",
+      maxlength: "3",
       value: hintedCode || "",
       style: "font-size:18px;padding:6px 10px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;width:120px;text-align:center;",
       oninput: (event) => {
@@ -860,7 +860,7 @@ export default {
       startBtn.disabled = !ready;
       startBtn.classList.toggle("throb", ready);
       if (!ready) {
-        status.textContent = "Enter a 3–5 character code to enable Start.";
+        status.textContent = "Enter a 3 character code to enable Start.";
         return;
       }
       const qMode = selectionFromValue(selects.questions.value).mode;
@@ -879,7 +879,7 @@ export default {
     function generateCode() {
       const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let out = "";
-      for (let i = 0; i < 4; i += 1) {
+      for (let i = 0; i < 3; i += 1) {
         const idx = Math.floor(Math.random() * alphabet.length);
         out += alphabet[idx];
       }
@@ -1012,4 +1012,3 @@ export default {
     this._cleanup = null;
   },
 };
-

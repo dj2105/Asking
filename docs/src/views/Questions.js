@@ -18,13 +18,13 @@ import {
 } from "firebase/firestore";
 
 import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
-import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
+import { clampCode, getHashParams, getStoredRole, timeUntil } from "../lib/util.js";
 import { ensureBotGuestAnswers } from "../lib/SinglePlayerBot.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
 const DEFAULT_HEADING = "QUESTIONS";
-const JEMIMA_HEADING = "JEMIMA";
+const JEMIMA_HEADING = "WHICH YEAR...?";
 
 function balanceQuestionText(input = "") {
   const raw = String(input || "").replace(/\s+/g, " ").trim();
@@ -210,7 +210,7 @@ export default {
         class: "btn round-panel__submit mono btn-ready",
         type: "button",
       },
-      "READY"
+      "SUBMIT"
     );
     readyBtn.style.display = "none";
 
@@ -296,9 +296,16 @@ export default {
     let showingClue = false;
     let fallbackMaths = {};
     let latestRoomData = {};
-    let markingAvailable = false;
     let timerStarted = false;
     let submittedAlready = false;
+    let oppSubmitted = false;
+    let myMarkingReady = false;
+    let oppMarkingReady = false;
+    let goToMarkingClicked = false;
+    let markingCountdownStartAt = null;
+    let clueDelayTimer = null;
+    let countdownTimer = null;
+    let mathsClueVisible = false;
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -432,7 +439,7 @@ export default {
       showingClue = false;
       readyBtn.style.display = "none";
       readyBtn.disabled = false;
-      readyBtn.textContent = "READY";
+      readyBtn.textContent = "SUBMIT";
       readyBtn.classList.remove("round-panel__submit--ready");
       readyBtn.classList.remove("round-panel__submit--waiting");
       if (!readyBtn.classList.contains("btn-ready")) {
@@ -450,15 +457,15 @@ export default {
 
     const showReadyPrompt = ({ animate = true } = {}) => {
       if (published || submitting) return;
-      showingClue = true;
+      showingClue = false;
       const render = () => {
         setHeading(DEFAULT_HEADING);
-        setPrompt(getClueText(), { status: false, variant: "clue" });
+        setPrompt("All answers selected. Submit to lock in.", { status: true });
         hideStatusNote();
         setChoicesVisible(false);
         readyBtn.style.display = "";
         readyBtn.disabled = false;
-        readyBtn.textContent = "READY";
+        readyBtn.textContent = "SUBMIT";
         readyBtn.classList.add("btn-ready");
         readyBtn.classList.add("round-panel__submit--ready");
         readyBtn.classList.remove("round-panel__submit--waiting");
@@ -469,15 +476,79 @@ export default {
       renderSteps();
     };
 
-    const enterWaitingState = () => {
+    const clearClueDelay = () => {
+      if (clueDelayTimer) {
+        clearTimeout(clueDelayTimer);
+        clueDelayTimer = null;
+      }
+    };
+
+    const clearCountdownTimer = () => {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+    };
+
+    const renderMarkingCountdown = () => {
+      if (!markingCountdownStartAt) return;
+      const ms = timeUntil(markingCountdownStartAt);
+      const secs = Math.max(0, Math.ceil(ms / 1000));
+      showStatusNote(`Starting marking in ${secs}…`);
+      toMarkingBtn.style.display = "none";
+    };
+
+    const applySubmittedFrame = () => {
       published = true;
       showingClue = false;
       steps.classList.add("is-hidden");
-      showWaitingPrompt();
-      renderSteps();
-      renderChoices();
-      renderMarkingButton();
+      setChoicesVisible(false);
+      readyBtn.style.display = "none";
       pauseRoundTimer(timerContext);
+    };
+
+    const showWaitingForOpponent = () => {
+      toMarkingBtn.style.display = "none";
+      showStatusNote(waitingLabel);
+    };
+
+    const renderGoToMarkingCTA = () => {
+      if (markingCountdownStartAt) {
+        renderMarkingCountdown();
+        return;
+      }
+      if (myMarkingReady || goToMarkingClicked) {
+        showWaitingForOpponent();
+        return;
+      }
+      hideStatusNote();
+      toMarkingBtn.style.display = "";
+      toMarkingBtn.disabled = false;
+      toMarkingBtn.textContent = "GO TO MARKING";
+      toMarkingBtn.classList.add("throb");
+    };
+
+    const showPostSubmitClue = () => {
+      mathsClueVisible = true;
+      applySubmittedFrame();
+      setHeading(JEMIMA_HEADING);
+      setPrompt(getClueText(), { status: false, variant: "clue" });
+      hideStatusNote();
+      toMarkingBtn.style.display = "none";
+      clearClueDelay();
+      clueDelayTimer = setTimeout(() => {
+        clueDelayTimer = null;
+        renderGoToMarkingCTA();
+      }, 5000);
+    };
+
+    const showPostSubmitNoClue = () => {
+      mathsClueVisible = false;
+      applySubmittedFrame();
+      setHeading(DEFAULT_HEADING);
+      setPrompt("Ready for marking.", { status: true });
+      hideStatusNote();
+      renderGoToMarkingCTA();
     };
 
     const showQuestion = (targetIdx, { animate = true } = {}) => {
@@ -535,7 +606,7 @@ export default {
       const clueText = getClueText();
       setHeading(JEMIMA_HEADING);
       setPrompt(clueText, { status: false, variant: "clue" });
-      showStatusNote(waitingLabel);
+      showWaitingForOpponent();
       setChoicesVisible(false);
       readyBtn.style.display = "none";
       readyBtn.disabled = true;
@@ -545,7 +616,6 @@ export default {
       readyBtn.classList.remove("throb");
       readyBtn.classList.add("round-panel__submit--waiting");
       clearAdvanceTimer();
-      renderMarkingButton();
     };
 
     const rRef = roomRef(code);
@@ -586,10 +656,11 @@ export default {
         toMarkingBtn.style.display = "none";
         return;
       }
-      toMarkingBtn.style.display = "";
-      toMarkingBtn.disabled = !markingAvailable;
-      toMarkingBtn.textContent = markingAvailable ? "GO TO MARKING" : waitingLabel;
-      toMarkingBtn.classList.toggle("throb", markingAvailable);
+      if (clueDelayTimer) {
+        toMarkingBtn.style.display = "none";
+        return;
+      }
+      renderGoToMarkingCTA();
     };
 
     const setLoadingState = (text) => {
@@ -652,6 +723,12 @@ export default {
     });
 
     submittedAlready = Boolean(((room0.submitted || {})[myRole] || {})[round]);
+    oppSubmitted = Boolean(((room0.submitted || {})[oppRole] || {})[round]);
+    myMarkingReady = Boolean(((room0.markingReady || {})[myRole] || {})[round]);
+    oppMarkingReady = Boolean(((room0.markingReady || {})[oppRole] || {})[round]);
+    if (myMarkingReady) {
+      goToMarkingClicked = true;
+    }
     if (existingAns.length) {
       for (let i = 0; i < Math.min(existingAns.length, chosen.length); i += 1) {
         const entry = existingAns[i] || {};
@@ -666,7 +743,11 @@ export default {
     }
 
     if (submittedAlready) {
-      enterWaitingState();
+      if (!oppSubmitted) {
+        showPostSubmitClue();
+      } else {
+        showPostSubmitNoClue();
+      }
     } else if (triplet.every((entry) => entry.question && entry.options?.length === 2)) {
       if (prefilledComplete) {
         showReadyPrompt({ animate: false });
@@ -774,25 +855,48 @@ export default {
       });
     });
 
-    toMarkingBtn.addEventListener("click", () => {
-      if (!markingAvailable) return;
-      goTo(`#/marking?code=${code}&round=${round}`);
-    });
+    const handleGoToMarkingClick = async () => {
+      if (myMarkingReady || goToMarkingClicked) {
+        renderGoToMarkingCTA();
+        return;
+      }
+      goToMarkingClicked = true;
+      toMarkingBtn.disabled = true;
+      toMarkingBtn.classList.remove("throb");
+      showWaitingForOpponent();
+      try {
+        await updateDoc(rRef, {
+          [`markingReady.${myRole}.${round}`]: true,
+          "timestamps.updatedAt": serverTimestamp(),
+        });
+        myMarkingReady = true;
+        renderGoToMarkingCTA();
+      } catch (err) {
+        console.warn("[questions] failed to signal marking ready:", err);
+        goToMarkingClicked = false;
+        toMarkingBtn.disabled = false;
+        renderGoToMarkingCTA();
+      }
+    };
 
-    readyBtn.addEventListener("click", async () => {
-      if (published || submitting) return;
-      if (!isRoundComplete()) return;
-      submitting = true;
-      clearAdvanceTimer();
-      readyBtn.disabled = true;
-      readyBtn.classList.remove("throb");
-      renderSteps();
-      showWaitingPrompt();
+    toMarkingBtn.addEventListener("click", handleGoToMarkingClick);
 
-      const payload = triplet.map((entry, i) => ({
-        question: entry.question || "",
-        chosen: chosen[i] || "",
-        correct: entry.correct || "",
+      readyBtn.addEventListener("click", async () => {
+        if (published || submitting) return;
+        if (!isRoundComplete()) return;
+        submitting = true;
+        clearAdvanceTimer();
+        readyBtn.disabled = true;
+        readyBtn.classList.remove("throb");
+        renderSteps();
+        setPrompt("Submitting answers…", { status: true });
+        hideStatusNote();
+        setChoicesVisible(false);
+
+        const payload = triplet.map((entry, i) => ({
+          question: entry.question || "",
+          chosen: chosen[i] || "",
+          correct: entry.correct || "",
       }));
 
       const patch = {
@@ -801,21 +905,26 @@ export default {
         "timestamps.updatedAt": serverTimestamp(),
       };
 
-      try {
-        console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
-        await updateDoc(rRef, patch);
-        submitting = false;
-        enterWaitingState();
-      } catch (err) {
-        console.warn("[questions] publish failed:", err);
-        submitting = false;
-        readyBtn.disabled = false;
-        readyBtn.textContent = "READY";
-        resumeRoundTimer(timerContext);
-        renderSteps();
-        showReadyPrompt({ animate: false });
-      }
-    });
+        try {
+          console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
+          await updateDoc(rRef, patch);
+          submitting = false;
+          oppSubmitted = Boolean((((latestRoomData.submitted || {})[oppRole] || {})[round]));
+          if (!oppSubmitted) {
+            showPostSubmitClue();
+          } else {
+            showPostSubmitNoClue();
+          }
+        } catch (err) {
+          console.warn("[questions] publish failed:", err);
+          submitting = false;
+          readyBtn.disabled = false;
+          readyBtn.textContent = "SUBMIT";
+          resumeRoundTimer(timerContext);
+          renderSteps();
+          showReadyPrompt({ animate: false });
+        }
+      });
 
     const stopWatcherRef = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
@@ -830,18 +939,6 @@ export default {
         applyPalette(effectiveRound());
       }
 
-      if (data.state === "marking") {
-        markingAvailable = true;
-        renderMarkingButton();
-        if (!published) {
-          goTo(`#/marking?code=${code}&round=${round}`);
-          return;
-        }
-      } else {
-        markingAvailable = false;
-        renderMarkingButton();
-      }
-
       if (data.state === "countdown") {
         goTo(`#/countdown?code=${code}&round=${data.round || round}`);
         return;
@@ -852,29 +949,82 @@ export default {
         return;
       }
 
+      if (data.state === "marking") {
+        renderMarkingButton();
+        if (!published) {
+          goTo(`#/marking?code=${code}&round=${round}`);
+          return;
+        }
+      }
+
       const answersForMe = (((data.answers || {})[myRole] || {})[round]) || [];
       const answersForOpp = (((data.answers || {})[oppRole] || {})[round]) || [];
       const myServerDone = Boolean(((data.submitted || {})[myRole] || {})[round]) || (Array.isArray(answersForMe) && answersForMe.length >= 3);
       const oppServerDone = Boolean(((data.submitted || {})[oppRole] || {})[round]) || (Array.isArray(answersForOpp) && answersForOpp.length >= 3);
+      oppSubmitted = oppServerDone;
+
+      const markingReadyMap = data.markingReady || {};
+      myMarkingReady = Boolean(((markingReadyMap[myRole] || {})[round]));
+      oppMarkingReady = Boolean(((markingReadyMap[oppRole] || {})[round]));
+      if (myMarkingReady) goToMarkingClicked = true;
+
+      const countdownData = data.markingCountdown || {};
+      const countdownRound = Number(countdownData.round);
+      const incomingCountdown = countdownRound === round ? Number(countdownData.startAt) || null : null;
+      if (incomingCountdown && incomingCountdown !== markingCountdownStartAt) {
+        markingCountdownStartAt = incomingCountdown;
+        renderMarkingCountdown();
+        if (!countdownTimer) {
+          countdownTimer = setInterval(renderMarkingCountdown, 320);
+        }
+      } else if (!incomingCountdown && markingCountdownStartAt) {
+        markingCountdownStartAt = null;
+        clearCountdownTimer();
+        hideStatusNote();
+      }
 
       if (myServerDone && !published) {
-        enterWaitingState();
+        if (!oppServerDone) {
+          showPostSubmitClue();
+        } else {
+          showPostSubmitNoClue();
+        }
       } else if (!myServerDone && showingClue && !submitting) {
         showReadyPrompt({ animate: false });
       }
 
       if (published && alive) {
-        showWaitingPrompt();
+        renderMarkingButton();
+        if (mathsClueVisible) {
+          showWaitingPrompt();
+        }
       }
 
       if (myRole === "host" && data.state === "questions") {
-        const myDone = myServerDone;
-        const oppDone = oppServerDone;
-        if (myDone && oppDone) {
+        if (myMarkingReady && oppMarkingReady && !incomingCountdown) {
           try {
-            console.log(`[flow] questions -> marking | code=${code} round=${round} role=${myRole}`);
+            const startAt = Date.now() + 3000;
+            markingCountdownStartAt = startAt;
+            renderMarkingCountdown();
+            if (!countdownTimer) {
+              countdownTimer = setInterval(renderMarkingCountdown, 320);
+            }
+            await updateDoc(rRef, {
+              "markingCountdown.startAt": startAt,
+              "markingCountdown.round": round,
+              "timestamps.updatedAt": serverTimestamp(),
+            });
+          } catch (err) {
+            console.warn("[questions] failed to arm marking countdown:", err);
+          }
+        }
+
+        if (markingCountdownStartAt && timeUntil(markingCountdownStartAt) <= 0) {
+          try {
             await updateDoc(rRef, {
               state: "marking",
+              "markingCountdown.startAt": null,
+              "markingCountdown.round": null,
               "timestamps.updatedAt": serverTimestamp(),
             });
           } catch (err) {
@@ -893,6 +1043,8 @@ export default {
       clearAdvanceTimer();
       clearSwapTimer();
       clearStepLabelTimer();
+      clearClueDelay();
+      clearCountdownTimer();
       try { stopWatcher && stopWatcher(); } catch {}
       pauseRoundTimer(timerContext);
       window.removeEventListener("hashchange", handleHashChange);

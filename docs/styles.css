@@ -821,7 +821,7 @@ body.layout-top .stage-center.stage-center--solo {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   align-items: center;
   margin-top: 12px;
 }
@@ -830,36 +830,39 @@ body.layout-top .stage-center.stage-center--solo {
   display: none;
 }
 
-.marking-year__label {
-  font-weight: 700;
-  letter-spacing: 0.12em;
-}
-
 .marking-year__input {
-  width: 200px;
+  width: 120px;
+  height: 68px;
   text-align: center;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1.5px solid rgba(15, 23, 42, 0.24);
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(185, 28, 28, 0.32);
   background: rgba(255, 255, 255, 0.96);
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: 0.08em;
+  color: #b91c1c;
+  font-family: "Nunito", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  box-shadow: inset 0 12px 24px -20px rgba(185, 28, 28, 0.4);
 }
 
 .marking-year__input::placeholder {
-  color: rgba(15, 23, 42, 0.35);
-  letter-spacing: 0.18em;
+  color: rgba(185, 28, 28, 0.5);
+  letter-spacing: 0.12em;
 }
 
 .marking-year__submit {
-  width: 100%;
-  max-width: 220px;
+  min-width: 180px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.marking-year__note {
-  color: var(--muted);
-  font-size: 0.86rem;
-  letter-spacing: 0.06em;
+.marking-year__submit--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 
@@ -1592,6 +1595,49 @@ input[type="number"]:focus,
   font-size: 1.1rem;
   line-height: 1;
   flex-shrink: 0;
+}
+
+.award-round-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.award-round-badges--with-star .award-round-score {
+  margin-right: -6px;
+}
+
+.award-speed-star {
+  width: 52px;
+  height: 52px;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  background: linear-gradient(135deg, #f9e08e, #f4c542 45%, #e0ac36 70%, #b87417 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18), inset 0 2px 8px rgba(255, 255, 255, 0.26);
+}
+
+.award-speed-star__value {
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: #5c3504;
+}
+
+.award-speed-star__label {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f2d27a;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.award-speed-star.is-hidden {
+  display: none;
 }
 
 .award-fastest {

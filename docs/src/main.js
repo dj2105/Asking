@@ -297,7 +297,7 @@ async function mountRoute() {
 
   const wantsScoreStrip = !STRIP_EXCLUDE.has(actualRoute);
   const codeParam = (qs.get("code") || "").toUpperCase();
-  const code = codeParam.replace(/[^A-Z0-9]/g, "").slice(0, 5);
+  const code = codeParam.replace(/[^A-Z0-9]/g, "").slice(0, 3);
 
   if (wantsScoreStrip && code) {
     ScoreStrip.mount(app, { code });

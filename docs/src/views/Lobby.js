@@ -3,7 +3,7 @@
 // - NEVER creates rooms, NEVER routes to KeyRoom.
 // - If code doesn’t exist → inline “Room not found” (stay here).
 // - If room exists → (optionally) claim guest slot if free, then ALWAYS route to `#/watcher?code=XYZ`.
-// - Input allows 3–5 char codes; Start button gently throbs when actionable.
+// - Input allows exactly 3 char codes; Start button gently throbs when actionable.
 
 import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -59,7 +59,7 @@ export default {
       type: "text",
       autocomplete: "off",
       autocapitalize: "characters",
-      maxlength: "5",
+      maxlength: "3",
       placeholder: "CAT",
       class: "lobby-code-input",
       value: initialCode,

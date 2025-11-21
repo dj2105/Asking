@@ -19,7 +19,7 @@ function clampCode(value) {
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 5);
+    .slice(0, 3);
 }
 
 function makeKey({ code, role, round }) {
