@@ -1,0 +1,29 @@
+{
+  "version": "jemima-maths-timeline-1",
+  "maths": {
+    "title": "Steps to the Stars",
+    "question": "Add up the years of each spaceflight milestone (AD, 1–4 digits). Closest total wins.",
+    "intro": "From the first human in orbit to the newest rover on Mars.",
+    "events": [
+      { "prompt": "Yuri Gagarin orbits Earth aboard Vostok 1.", "year": 1961 },
+      { "prompt": "Apollo 11 lands the first humans on the Moon.", "year": 1969 },
+      { "prompt": "Voyager 1 launches toward the outer planets and beyond.", "year": 1977 },
+      { "prompt": "Zarya, the first module of the International Space Station, reaches orbit.", "year": 1998 },
+      { "prompt": "NASA's Perseverance rover touches down in Jezero Crater on Mars.", "year": 2021 }
+    ],
+    "clues": [
+      "Yuri Gagarin's Vostok 1 orbit.",
+      "Apollo 11 Moon landing.",
+      "Voyager 1 launch toward the outer planets.",
+      "Zarya module starts the ISS.",
+      "Perseverance rover lands on Mars."
+    ],
+    "reveals": [
+      "Yuri Gagarin's Vostok 1 orbit.",
+      "Apollo 11 Moon landing.",
+      "Voyager 1 launch toward the outer planets.",
+      "Zarya module starts the ISS.",
+      "Perseverance rover lands on Mars."
+    ]
+  }
+}
