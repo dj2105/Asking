@@ -139,16 +139,16 @@ export async function ensureBotMarking({ code, round, roomData, roundData }) {
   if (Array.isArray(existing) && existing.length >= 3) return existing;
 
   const hostAnswers = (((roomData?.answers || {}).host || {})[round]) || [];
-  if (!hostAnswers.length) return null;
-
   const hostItems = Array.isArray(roundData?.hostItems) ? roundData.hostItems.slice(0, 3) : [];
-  const marks = hostAnswers.map((entry, idx) => {
-    const ans = entry || {};
-    const item = hostItems[idx] || {};
-    const correctText = extractOptionText(item, round);
-    const isRight = ans.chosen && ans.chosen === (ans.correct || correctText);
-    return isRight ? "right" : "wrong";
-  });
+  const marks = hostAnswers.length
+    ? hostAnswers.map((entry, idx) => {
+      const ans = entry || {};
+      const item = hostItems[idx] || {};
+      const correctText = extractOptionText(item, round);
+      const isRight = ans.chosen && ans.chosen === (ans.correct || correctText);
+      return isRight ? "right" : "wrong";
+    })
+    : hostItems.map(() => "wrong");
 
   const rRef = doc(db, "rooms", clampCode(code));
   try {
