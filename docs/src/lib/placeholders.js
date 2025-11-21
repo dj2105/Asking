@@ -133,12 +133,27 @@ function convertFallbackQuestionPack(raw = {}) {
   for (let i = 1; i <= 5; i += 1) {
     rounds[i] = { hostItems: [], guestItems: [] };
   }
-  const sourceRounds = raw?.rounds || {};
-  Object.entries(sourceRounds).forEach(([key, value]) => {
-    const roundNum = Number.parseInt(key, 10);
+  const sourceRounds = Array.isArray(raw?.rounds)
+    ? raw.rounds
+    : raw?.rounds && typeof raw.rounds === "object"
+    ? Object.entries(raw.rounds).map(([key, value]) => ({ key, value }))
+    : [];
+
+  sourceRounds.forEach((entry, idx) => {
+    const { key, value = {} } =
+      typeof entry === "object" && !Array.isArray(entry) && "value" in entry
+        ? entry
+        : { key: entry?.round ?? idx + 1, value: entry };
+
+    const roundNum = Number.parseInt(entry?.round ?? key, 10);
     if (!Number.isInteger(roundNum) || roundNum < 1 || roundNum > 5) return;
-    const hostItems = Array.isArray(value?.hostItems) ? value.hostItems : [];
-    const guestItems = Array.isArray(value?.guestItems) ? value.guestItems : [];
+
+    const items = Array.isArray(value?.items) ? value.items : [];
+    const hostItems = Array.isArray(value?.hostItems) ? value.hostItems : items.slice(0, 3);
+    const guestItems = Array.isArray(value?.guestItems)
+      ? value.guestItems
+      : items.slice(hostItems.length, hostItems.length + 3);
+
     hostItems.forEach((item) => {
       const converted = convertFallbackQuestionItem(item);
       if (converted) rounds[roundNum].hostItems.push(converted);
