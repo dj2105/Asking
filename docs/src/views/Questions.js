@@ -19,7 +19,12 @@ import {
 
 import { resumeRoundTimer, pauseRoundTimer } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole, timeUntil } from "../lib/util.js";
-import { ensureBotGuestAnswers } from "../lib/SinglePlayerBot.js";
+import {
+  BOT_ACTION_DELAY_MS,
+  ensureBotGuestAnswers,
+  getBotSectionStartFromData,
+  hasBot,
+} from "../lib/SinglePlayerBot.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
@@ -284,6 +289,17 @@ export default {
       choicesWrap.classList.toggle("is-hidden", !visible);
     };
 
+    const setPromptVisible = (visible) => {
+      prompt.style.display = visible ? "" : "none";
+    };
+
+    const applySubmitReadyLayout = (active) => {
+      const hideQa = active && !published && !submitting;
+      setPromptVisible(!hideQa);
+      setChoicesVisible(!hideQa);
+      content.classList.toggle("round-panel__content--submit-ready", hideQa);
+    };
+
     let idx = 0;
     const chosen = ["", "", ""];
     let triplet = [];
@@ -308,6 +324,8 @@ export default {
     let mathsClueVisible = false;
     let submissionRank = null;
     let submittedScreen = null;
+    let botQuestionsStartAt = null;
+    let goToMarkingUnlocked = false;
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -411,10 +429,13 @@ export default {
       applyStepLabels();
       steps.classList.toggle("is-hidden", published || submitting);
       steps.classList.toggle("is-complete", isRoundComplete());
-      const allowActive = !(published || submitting || showingClue);
+      const dormant = readyPreviewMode || published || submitting;
+      steps.classList.toggle("is-dormant", dormant);
+      const allowActive = !(published || submitting || showingClue || readyPreviewMode);
+      const allowAnswered = !readyPreviewMode;
       stepButtons.forEach((btn, i) => {
         btn.classList.toggle("is-active", allowActive && i === idx);
-        btn.classList.toggle("is-answered", Boolean(chosen[i]));
+        btn.classList.toggle("is-answered", allowAnswered && Boolean(chosen[i]));
         btn.disabled = triplet.length === 0 || published || submitting;
       });
     };
@@ -456,6 +477,7 @@ export default {
       hideStatusNote();
       setHeading(DEFAULT_HEADING);
       heading.style.display = "";
+      applySubmitReadyLayout(false);
     };
 
     const getClueText = () => {
@@ -473,7 +495,7 @@ export default {
         setHeading(DEFAULT_HEADING);
         setPrompt("", { status: false });
         hideStatusNote();
-        setChoicesVisible(true);
+        applySubmitReadyLayout(true);
         readyBtn.style.display = "";
         readyBtn.disabled = false;
         readyBtn.textContent = "SUBMIT";
@@ -510,6 +532,8 @@ export default {
       content.classList.remove("round-panel__content--ready-preview");
       heading.style.display = "";
       steps.classList.add("is-hidden");
+      setPromptVisible(true);
+      content.classList.remove("round-panel__content--submit-ready");
       setChoicesVisible(false);
       readyBtn.style.display = "none";
       pauseRoundTimer(timerContext);
@@ -525,6 +549,7 @@ export default {
       const awaitingMarkingStart = myMarkingReady || goToMarkingClicked;
       toMarkingBtn.style.display = "";
       if (waitingForOpponent) {
+        goToMarkingUnlocked = false;
         toMarkingBtn.disabled = true;
         toMarkingBtn.textContent = waitingLabel;
         toMarkingBtn.classList.add("round-panel__submit--waiting");
@@ -533,6 +558,7 @@ export default {
         return;
       }
       if (awaitingMarkingStart) {
+        goToMarkingUnlocked = false;
         toMarkingBtn.disabled = true;
         toMarkingBtn.textContent = waitingLabel;
         toMarkingBtn.classList.add("round-panel__submit--waiting");
@@ -542,10 +568,14 @@ export default {
       }
       hideStatusNote();
       toMarkingBtn.disabled = false;
-      toMarkingBtn.textContent = "READY";
+      toMarkingBtn.textContent = "GO TO MARKING";
       toMarkingBtn.classList.remove("round-panel__submit--waiting");
       toMarkingBtn.classList.add("round-panel__submit--ready");
       toMarkingBtn.classList.add("throb");
+      if (!goToMarkingUnlocked) {
+        console.debug("[questions] go-to-marking unlocked");
+        goToMarkingUnlocked = true;
+      }
     };
 
     const showFirstSubmissionHold = () => {
@@ -586,7 +616,7 @@ export default {
         setHeading(DEFAULT_HEADING);
         setPrompt(current.question || "", { status: false, variant: "question" });
         hideStatusNote();
-        setChoicesVisible(true);
+        applySubmitReadyLayout(false);
         choiceButtons.forEach((btn) => {
           btn.classList.remove("is-blinking");
           btn.classList.remove("is-blinking-fast");
@@ -631,6 +661,7 @@ export default {
     const room0 = roomSnap0.data() || {};
     latestRoomData = room0;
     fallbackMaths = room0.maths || {};
+    botQuestionsStartAt = getBotSectionStartFromData(room0, "questions", round) || botQuestionsStartAt;
     if (!round) {
       const roomRound = Number(room0.round);
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
@@ -658,6 +689,21 @@ export default {
       timerStarted = true;
     };
 
+    const getBotDueAt = () => {
+      if (!hasBot(latestRoomData)) return null;
+      const startFromData = getBotSectionStartFromData(latestRoomData, "questions", round);
+      if (startFromData && !botQuestionsStartAt) botQuestionsStartAt = startFromData;
+      const start = botQuestionsStartAt || startFromData;
+      if (!start) return null;
+      return start + BOT_ACTION_DELAY_MS;
+    };
+
+    const isBotPastCutoff = () => {
+      const dueAt = getBotDueAt();
+      if (!dueAt) return false;
+      return Date.now() >= dueAt;
+    };
+
     const setSubmissionRank = (rank, reason = "") => {
       if (!rank) return null;
       if (submissionRank !== rank) {
@@ -670,7 +716,10 @@ export default {
 
     const inferSubmissionRank = (reason = "snapshot") => {
       if (!submittedAlready) return null;
-      if (!oppSubmitted) return setSubmissionRank("first", reason);
+      if (!oppSubmitted) {
+        if (isBotPastCutoff()) return setSubmissionRank("second", reason);
+        return setSubmissionRank("first", reason);
+      }
       if (submissionRank) return submissionRank;
       if (!myMarkingReady && oppMarkingReady) return setSubmissionRank("first", reason);
       if (myMarkingReady && !oppMarkingReady) return setSubmissionRank("second", reason);
@@ -693,6 +742,7 @@ export default {
       setPrompt(text, { status: true });
       hideStatusNote();
       setChoicesVisible(false);
+      applySubmitReadyLayout(false);
       renderSteps();
     };
 
@@ -720,7 +770,8 @@ export default {
     if (!alive) return;
 
     if (myRole === "host") {
-      await ensureBotGuestAnswers({ code, round, roomData: latestRoomData, roundData: rd });
+      const startAt = await ensureBotGuestAnswers({ code, round, roomData: latestRoomData, roundData: rd });
+      if (startAt) botQuestionsStartAt = startAt;
     }
 
     const myItems = (myRole === "host" ? rd.hostItems : rd.guestItems) || [];
@@ -918,7 +969,7 @@ export default {
 
     toMarkingBtn.addEventListener("click", handleGoToMarkingClick);
 
-      readyBtn.addEventListener("click", async () => {
+    readyBtn.addEventListener("click", async () => {
         if (published || submitting) return;
         if (!isRoundComplete()) return;
         submitting = true;
@@ -931,24 +982,31 @@ export default {
         setChoicesVisible(false);
 
         const opponentAlreadySubmitted = oppSubmitted;
+        const pastBotCutoff = isBotPastCutoff();
         const payload = triplet.map((entry, i) => ({
           question: entry.question || "",
           chosen: chosen[i] || "",
           correct: entry.correct || "",
         }));
 
-      const patch = {
-        [`answers.${myRole}.${round}`]: payload,
-        [`submitted.${myRole}.${round}`]: true,
-        "timestamps.updatedAt": serverTimestamp(),
-      };
+        const patch = {
+          [`answers.${myRole}.${round}`]: payload,
+          [`submitted.${myRole}.${round}`]: true,
+          "timestamps.updatedAt": serverTimestamp(),
+        };
 
         try {
           console.log(`[flow] submit answers | code=${code} round=${round} role=${myRole}`);
           await updateDoc(rRef, patch);
           submitting = false;
           oppSubmitted = Boolean((((latestRoomData.submitted || {})[oppRole] || {})[round]));
-          const iAmSecond = opponentAlreadySubmitted || oppSubmitted;
+          const iAmSecond = opponentAlreadySubmitted || oppSubmitted || pastBotCutoff;
+          console.debug(
+            "[questions] submit pressed — opponentSubmitted=%s cutoffPassed=%s → %s",
+            opponentAlreadySubmitted,
+            pastBotCutoff,
+            iAmSecond ? "second" : "first"
+          );
           setSubmissionRank(iAmSecond ? "second" : "first", "submit");
           if (iAmSecond) {
             await signalMarkingReady({ silent: true });
@@ -970,6 +1028,7 @@ export default {
     const stopWatcherRef = onSnapshot(rRef, async (snap) => {
       const data = snap.data() || {};
       latestRoomData = data;
+      botQuestionsStartAt = getBotSectionStartFromData(data, "questions", round) || botQuestionsStartAt;
 
       const nextRound = Number(data.round) || round;
       if (nextRound !== round) {
