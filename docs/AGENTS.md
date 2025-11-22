@@ -27,9 +27,9 @@ project-root/
 │  │  ├─ lib/                  # firebase init, pack ingestion, helpers
 │  │  └─ views/                # Lobby, KeyRoom, CodeRoom, Countdown, Questions, Marking, Award, Maths, Final, Rejoin
 │  ├─ documents/               # persisted guidance for preview deploy notes
-│  ├─ packs/                   # 
-│  │  ├─ready
-│  │  ├─placeholder
+│  ├─ packs/                   # in-repo packs (served as static assets)
+│  │  ├─ready                  # surfaced in Key Room as “available” packs, consumed first
+│  │  ├─placeholder            # used when placeholder mode is selected; used packs get merged here
 │  └─ ops/                     # operational runbooks and supporting assets
 ├─ questions.md                # question pack shape
 └─ dates.md                    # maths pack shape
@@ -40,6 +40,8 @@ Keep new modules under /docs/src/lib or /docs/src/views. Use relative ESM import
 
 Pack ingestion (current Key Room flow)
         •       Upload loose JSON or TXT files; Key Room auto-extracts embedded JSON values and hunts for valid packs.
+        •       Local packs live under docs/packs: /ready entries appear in the available list; once selected they are moved into the placeholder pool (localStorage tracked) and disappear from “ready”.
+        •       Placeholder questions pull a random full pack from docs/packs/placeholder (plus any used ready packs). Maths placeholders draw from the same folder.
         •       Questions packs = five rounds, each with six items (first 3 hostItems, last 3 guestItems). Optional interludes per round. Total items must be 30.
         •       Maths packs = timeline games with exactly five chronological events (years 1–2025). Can be a single game or a bundle under games[]. Scoring margins auto-filled when missing.
         •       Multiple packs can live in a single file. Invalid candidates are skipped with console warnings; accepted packs are stored in Firestore collections for reuse.
