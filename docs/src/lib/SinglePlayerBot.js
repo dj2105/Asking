@@ -132,6 +132,7 @@ export async function ensureBotGuestAnswers({ code, round, roomData, roundData }
         [`answers.guest.${round}`]: payload,
         [`submitted.guest.${round}`]: true,
         "links.guestReady": true,
+        [`markingReady.guest.${round}`]: true,
         "timestamps.updatedAt": serverTimestamp(),
       });
     } catch (err) {
