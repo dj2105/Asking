@@ -23,8 +23,7 @@ import {
 } from "firebase/firestore";
 import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
 import { BOT_UID, buildStartOptions, parseStartValue } from "../lib/SinglePlayerBot.js";
-import { listReadyPacks } from "../lib/localPackStore.js";
-
+import { ensureLocalPackCache, listReadyPacks } from "../lib/localPackStore.js";
 const roomRef = (code) => doc(db, "rooms", code);
 
 const PACK_KIND_CONFIG = {
@@ -424,6 +423,7 @@ function buildPackOptionLabel(kind, pack) {
 export default {
   async mount(container) {
     await ensureAuth();
+    await ensureLocalPackCache();
 
     const hue = Math.floor(Math.random() * 360);
     document.documentElement.style.setProperty("--ink-h", String(hue));

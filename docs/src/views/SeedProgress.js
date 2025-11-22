@@ -21,6 +21,7 @@ import { clampCode, getHashParams } from "../lib/util.js";
 import { buildPlaceholderRounds, buildPlaceholderMaths, padItems, clone } from "../lib/placeholders.js";
 import { normaliseBotConfig, startHash } from "../lib/SinglePlayerBot.js";
 import {
+  ensureLocalPackCache,
   findReadyPack,
   pickRandomReady,
   pickRandomPlaceholder,
@@ -321,6 +322,7 @@ async function writeRounds(code, rounds) {
 export default {
   async mount(container) {
     await ensureAuth();
+    await ensureLocalPackCache();
 
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");

@@ -1,18 +1,30 @@
 // /src/lib/localPackStore.js
 // Loads local pack JSON files from docs/packs and manages lifecycle.
 
-const READY_QUESTION_MODULES = import.meta.glob("../../packs/ready/*-questions.json", { eager: true });
-const READY_MATHS_MODULES = import.meta.glob("../../packs/ready/*-maths.json", { eager: true });
-const PLACEHOLDER_QUESTION_MODULES = import.meta.glob("../../packs/placeholder/*-questions.json", { eager: true });
-const PLACEHOLDER_MATHS_MODULES = import.meta.glob("../../packs/placeholder/*-maths.json", { eager: true });
-
 const STORAGE_KEY = "jemima.usedReadyPacks";
 
-function normaliseModule(mod) {
-  if (!mod) return null;
-  if (mod.default) return mod.default;
-  return mod;
-}
+const DEFAULT_MANIFEST = {
+  ready: {
+    questions: ["PRX-questions.json"],
+    maths: ["PRX-maths.json"],
+  },
+  placeholder: {
+    questions: ["LUM-questions.json", "MRT-questions.json"],
+    maths: ["LUM-maths.json", "MRT-maths.json"],
+  },
+};
+
+const readyCache = {
+  questions: [],
+  maths: [],
+};
+
+const placeholderCache = {
+  questions: [],
+  maths: [],
+};
+
+let loadPromise = null;
 
 function deriveId(path) {
   try {
@@ -23,24 +35,74 @@ function deriveId(path) {
   }
 }
 
-function buildPackList(modules, kind) {
-  return Object.entries(modules).map(([path, mod]) => {
-    const data = normaliseModule(mod) || {};
-    const id = deriveId(path);
-    const notes = typeof data.notes === "string" && data.notes.trim() ? data.notes.trim() : undefined;
-    return { id, data, kind, notes, origin: "local" };
-  });
+function buildEntry(kind, id, data) {
+  if (!data) return null;
+  const notes = typeof data.notes === "string" && data.notes.trim() ? data.notes.trim() : undefined;
+  return { id, data, kind, notes, origin: "local" };
 }
 
-const readyCache = {
-  questions: buildPackList(READY_QUESTION_MODULES, "questions"),
-  maths: buildPackList(READY_MATHS_MODULES, "maths"),
-};
+async function fetchJson(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (_err) {
+    return null;
+  }
+}
 
-const placeholderCache = {
-  questions: buildPackList(PLACEHOLDER_QUESTION_MODULES, "questions"),
-  maths: buildPackList(PLACEHOLDER_MATHS_MODULES, "maths"),
-};
+async function loadManifest() {
+  const manifestUrl = new URL("../../packs/manifest.json", import.meta.url);
+  const manifest = await fetchJson(manifestUrl);
+  if (!manifest || typeof manifest !== "object") return DEFAULT_MANIFEST;
+  const toList = (value) => (Array.isArray(value) ? value : []);
+  return {
+    ready: {
+      questions: toList(manifest.ready?.questions),
+      maths: toList(manifest.ready?.maths),
+    },
+    placeholder: {
+      questions: toList(manifest.placeholder?.questions),
+      maths: toList(manifest.placeholder?.maths),
+    },
+  };
+}
+
+async function loadPacks() {
+  const manifest = await loadManifest();
+
+  const buckets = [
+    { cache: readyCache, entries: manifest.ready, folder: "ready" },
+    { cache: placeholderCache, entries: manifest.placeholder, folder: "placeholder" },
+  ];
+
+  await Promise.all(
+    buckets.map(async ({ cache, entries, folder }) => {
+      const { questions = [], maths = [] } = entries || {};
+      cache.questions = [];
+      cache.maths = [];
+
+      const loadOne = async (file, kind) => {
+        const url = new URL(`../../packs/${folder}/${file}`, import.meta.url);
+        const data = await fetchJson(url);
+        const entry = buildEntry(kind, deriveId(file), data);
+        if (entry) cache[kind].push(entry);
+      };
+
+      await Promise.all([
+        ...questions.map((file) => loadOne(file, "questions")),
+        ...maths.map((file) => loadOne(file, "maths")),
+      ]);
+    })
+  );
+}
+
+export async function ensureLocalPackCache() {
+  if (!loadPromise) {
+    loadPromise = loadPacks();
+  }
+  await loadPromise;
+}
 
 function hasStorage() {
   return typeof localStorage !== "undefined";

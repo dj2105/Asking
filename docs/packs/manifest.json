@@ -1,0 +1,10 @@
+{
+  "ready": {
+    "questions": ["PRX-questions.json"],
+    "maths": ["PRX-maths.json"]
+  },
+  "placeholder": {
+    "questions": ["LUM-questions.json", "MRT-questions.json"],
+    "maths": ["LUM-maths.json", "MRT-maths.json"]
+  }
+}
