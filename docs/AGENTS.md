@@ -27,11 +27,12 @@ project-root/
 │  │  ├─ lib/                  # firebase init, pack ingestion, helpers
 │  │  └─ views/                # Lobby, KeyRoom, CodeRoom, Countdown, Questions, Marking, Award, Maths, Final, Rejoin
 │  ├─ documents/               # persisted guidance for preview deploy notes
-│  ├─ packs/                   # static assets referenced from docs/index.html
+│  ├─ packs/                   # 
+│  │  ├─ready
+│  │  ├─placeholder
 │  └─ ops/                     # operational runbooks and supporting assets
 ├─ questions.md                # question pack shape
-├─ dates.md                    # maths pack shape
-└─ packs/                      # local pack storage during development
+└─ dates.md                    # maths pack shape
 
 Keep new modules under /docs/src/lib or /docs/src/views. Use relative ESM imports.
 
