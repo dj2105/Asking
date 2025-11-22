@@ -4,6 +4,9 @@ Project
 
 Jemima’s Asking — Two-player quiz duel
 Stack: Vanilla JS (ESM) served from /public, Firebase (Anon Auth + Firestore) + LocalStorage + hand-rolled CSS.
+        •       /docs is shipped as plain ESM from static hosting (no Vite/Vercel bundler). Do not introduce bundler-only APIs.
+        •       Avoid import.meta.glob and similar helpers anywhere under docs/src — stick to standard ESM + fetch.
+        •       Local packs (ready + placeholder) flow through docs/packs/manifest.json and docs/src/lib/localPackStore.js.
 Targets: modern mobile/desktop. Primary test rigs: iPad Safari + Windows 10/11 Chromium.
 
 ⸻
@@ -35,6 +38,11 @@ project-root/
 └─ dates.md                    # maths pack shape
 
 Keep new modules under /docs/src/lib or /docs/src/views. Use relative ESM imports.
+
+Pack loading (local vs remote)
+        •       Local packs → docs/packs/**/*.json surfaced via localPackStore (manifest-driven, cached + used tracking).
+        •       Remote packs → Firestore collections exposed via firebase.js helpers.
+        •       Placeholder fallback → placeholders.js utilities + generated defaults.
 
 ⸻
 
