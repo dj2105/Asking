@@ -12,6 +12,11 @@ const MIN_CORRECTNESS = 0.5;
 const MAX_CORRECTNESS = 0.8;
 const DEFAULT_STATE = "coderoom";
 const START_STATES = ["coderoom", "countdown", "questions", "marking", "award", "maths", "final"];
+const BOT_ACTION_DELAY_MS = 30_000;
+const guestAnswerTimers = new Map();
+const markingTimers = new Map();
+
+const timerKey = (code, round, label) => `${clampCode(code)}:${round}:${label}`;
 
 function clampRound(raw) {
   const n = Number(raw);
@@ -117,19 +122,26 @@ export async function ensureBotGuestAnswers({ code, round, roomData, roundData }
     };
   });
 
+  const key = timerKey(code, round, "answers");
+  if (guestAnswerTimers.has(key)) return null;
+
   const rRef = doc(db, "rooms", clampCode(code));
-  try {
-    await updateDoc(rRef, {
-      [`answers.guest.${round}`]: payload,
-      [`submitted.guest.${round}`]: true,
-      "links.guestReady": true,
-      "timestamps.updatedAt": serverTimestamp(),
-    });
-    return payload;
-  } catch (err) {
-    console.warn("[bot] failed to seed guest answers", err);
-    return null;
-  }
+  const timer = setTimeout(async () => {
+    try {
+      await updateDoc(rRef, {
+        [`answers.guest.${round}`]: payload,
+        [`submitted.guest.${round}`]: true,
+        "links.guestReady": true,
+        "timestamps.updatedAt": serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn("[bot] failed to seed guest answers", err);
+    } finally {
+      guestAnswerTimers.delete(key);
+    }
+  }, BOT_ACTION_DELAY_MS);
+  guestAnswerTimers.set(key, timer);
+  return null;
 }
 
 export async function ensureBotMarking({ code, round, roomData, roundData }) {
@@ -153,20 +165,27 @@ export async function ensureBotMarking({ code, round, roomData, roundData }) {
   const mathsYear = Number(roomData?.maths?.events?.[round - 1]?.year);
   const guessedYear = Number.isInteger(mathsYear) ? mathsYear : 2000 + round;
 
+  const key = timerKey(code, round, "marking");
+  if (markingTimers.has(key)) return marks;
+
   const rRef = doc(db, "rooms", clampCode(code));
-  try {
-    await updateDoc(rRef, {
-      [`marking.guest.${round}`]: marks,
-      [`markingAck.guest.${round}`]: true,
-      [`mathsGuesses.guest.${round}`]: guessedYear,
-      [`timings.guest.${round}`]: { totalSeconds: 0 },
-      "timestamps.updatedAt": serverTimestamp(),
-    });
-    return marks;
-  } catch (err) {
-    console.warn("[bot] failed to mark host answers", err);
-    return null;
-  }
+  const timer = setTimeout(async () => {
+    try {
+      await updateDoc(rRef, {
+        [`marking.guest.${round}`]: marks,
+        [`markingAck.guest.${round}`]: true,
+        [`mathsGuesses.guest.${round}`]: guessedYear,
+        [`timings.guest.${round}`]: { totalSeconds: 0 },
+        "timestamps.updatedAt": serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn("[bot] failed to mark host answers", err);
+    } finally {
+      markingTimers.delete(key);
+    }
+  }, BOT_ACTION_DELAY_MS);
+  markingTimers.set(key, timer);
+  return marks;
 }
 
 export async function ensureBotAwardAck({ code, round, roomData }) {
