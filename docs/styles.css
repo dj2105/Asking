@@ -473,6 +473,16 @@ body.layout-top .stage-center.stage-center--solo {
   padding-bottom: 0;
 }
 
+.round-panel__steps.is-dormant .round-panel__step,
+.round-panel__steps.is-dormant .round-panel__step.is-active,
+.round-panel__steps.is-dormant .round-panel__step.is-answered,
+.round-panel__steps.is-dormant .round-panel__step.is-answered.is-active {
+  background: var(--step-bg);
+  border-color: var(--step-border);
+  color: var(--step-text);
+  opacity: 0.64;
+}
+
 .round-panel__step {
   --step-bg: rgba(15, 23, 42, 0.12);
   --step-border: rgba(148, 163, 184, 0.42);

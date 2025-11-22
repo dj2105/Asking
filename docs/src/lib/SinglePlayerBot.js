@@ -12,11 +12,13 @@ const MIN_CORRECTNESS = 0.5;
 const MAX_CORRECTNESS = 0.8;
 const DEFAULT_STATE = "coderoom";
 const START_STATES = ["coderoom", "countdown", "questions", "marking", "award", "maths", "final"];
-const BOT_ACTION_DELAY_MS = 30_000;
+export const BOT_ACTION_DELAY_MS = 30_000;
 const guestAnswerTimers = new Map();
 const markingTimers = new Map();
+const sectionStarts = new Map();
 
 const timerKey = (code, round, label) => `${clampCode(code)}:${round}:${label}`;
+const sectionKey = (code, round, phase) => `${clampCode(code)}:${phase}:${round}`;
 
 function clampRound(raw) {
   const n = Number(raw);
@@ -41,6 +43,46 @@ function clampStartState(raw) {
 
 function randomChance() {
   return Math.random() * (MAX_CORRECTNESS - MIN_CORRECTNESS) + MIN_CORRECTNESS;
+}
+
+function readBotSectionStart(roomData = {}, phase, round) {
+  if (!phase || !round) return null;
+  const map = (roomData.botTimers || {})[phase] || {};
+  const value = map[round] ?? map[String(round)];
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
+async function ensureBotSectionStart({ code, round, phase, roomData }) {
+  const key = sectionKey(code, round, phase);
+  if (sectionStarts.has(key)) return sectionStarts.get(key);
+
+  const existing = readBotSectionStart(roomData, phase, round);
+  if (existing) {
+    sectionStarts.set(key, existing);
+    return existing;
+  }
+
+  const startAt = Date.now();
+  sectionStarts.set(key, startAt);
+
+  // botTimers.{phase}.{round} = epoch ms when the bot began that section (single-player pacing)
+  const rRef = doc(db, "rooms", clampCode(code));
+  try {
+    await updateDoc(rRef, {
+      [`botTimers.${phase}.${round}`]: startAt,
+      "timestamps.updatedAt": serverTimestamp(),
+    });
+  } catch (err) {
+    console.warn("[bot] failed to record bot section start", err);
+  }
+
+  return startAt;
+}
+
+export function getBotSectionStartFromData(roomData = {}, phase, round) {
+  return readBotSectionStart(roomData, phase, round);
 }
 
 export function normaliseBotConfig(raw = {}) {
@@ -125,6 +167,10 @@ export async function ensureBotGuestAnswers({ code, round, roomData, roundData }
   const key = timerKey(code, round, "answers");
   if (guestAnswerTimers.has(key)) return null;
 
+  const startAt = await ensureBotSectionStart({ code, round, phase: "questions", roomData });
+  const elapsed = Date.now() - startAt;
+  const delayMs = Math.max(0, BOT_ACTION_DELAY_MS - elapsed);
+
   const rRef = doc(db, "rooms", clampCode(code));
   const timer = setTimeout(async () => {
     try {
@@ -133,6 +179,7 @@ export async function ensureBotGuestAnswers({ code, round, roomData, roundData }
         [`submitted.guest.${round}`]: true,
         "links.guestReady": true,
         [`markingReady.guest.${round}`]: true,
+        [`timings.guest.${round}`]: { totalSeconds: Math.round(BOT_ACTION_DELAY_MS / 1000) },
         "timestamps.updatedAt": serverTimestamp(),
       });
     } catch (err) {
@@ -140,9 +187,9 @@ export async function ensureBotGuestAnswers({ code, round, roomData, roundData }
     } finally {
       guestAnswerTimers.delete(key);
     }
-  }, BOT_ACTION_DELAY_MS);
+  }, delayMs);
   guestAnswerTimers.set(key, timer);
-  return null;
+  return startAt;
 }
 
 export async function ensureBotMarking({ code, round, roomData, roundData }) {
@@ -169,6 +216,10 @@ export async function ensureBotMarking({ code, round, roomData, roundData }) {
   const key = timerKey(code, round, "marking");
   if (markingTimers.has(key)) return marks;
 
+  const startAt = await ensureBotSectionStart({ code, round, phase: "marking", roomData });
+  const elapsed = Date.now() - startAt;
+  const delayMs = Math.max(0, BOT_ACTION_DELAY_MS - elapsed);
+
   const rRef = doc(db, "rooms", clampCode(code));
   const timer = setTimeout(async () => {
     try {
@@ -176,7 +227,7 @@ export async function ensureBotMarking({ code, round, roomData, roundData }) {
         [`marking.guest.${round}`]: marks,
         [`markingAck.guest.${round}`]: true,
         [`mathsGuesses.guest.${round}`]: guessedYear,
-        [`timings.guest.${round}`]: { totalSeconds: 0 },
+        [`timings.guest.${round}`]: { totalSeconds: Math.round(BOT_ACTION_DELAY_MS / 1000) },
         "timestamps.updatedAt": serverTimestamp(),
       });
     } catch (err) {
@@ -184,9 +235,9 @@ export async function ensureBotMarking({ code, round, roomData, roundData }) {
     } finally {
       markingTimers.delete(key);
     }
-  }, BOT_ACTION_DELAY_MS);
+  }, delayMs);
   markingTimers.set(key, timer);
-  return marks;
+  return startAt;
 }
 
 export async function ensureBotAwardAck({ code, round, roomData }) {
