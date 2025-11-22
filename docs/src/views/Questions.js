@@ -550,7 +550,7 @@ export default {
 
     const showFirstSubmissionHold = () => {
       mathsClueVisible = true;
-      submissionRank = "first";
+      setSubmissionRank("first", "ui:first-submission");
       if (submittedScreen === "first") {
         renderFirstSubmitButton();
         return;
@@ -566,7 +566,7 @@ export default {
 
     const showSecondSubmissionWaiting = () => {
       mathsClueVisible = false;
-      submissionRank = "second";
+      setSubmissionRank("second", "ui:second-submission");
       submittedScreen = "second";
       applySubmittedFrame();
       heading.style.display = "none";
@@ -658,14 +658,24 @@ export default {
       timerStarted = true;
     };
 
-    const inferSubmissionRank = () => {
+    const setSubmissionRank = (rank, reason = "") => {
+      if (!rank) return null;
+      if (submissionRank !== rank) {
+        const suffix = reason ? ` via ${reason}` : "";
+        console.debug(`[questions] submission rank decided: ${rank}${suffix}`);
+      }
+      submissionRank = rank;
+      return submissionRank;
+    };
+
+    const inferSubmissionRank = (reason = "snapshot") => {
       if (!submittedAlready) return null;
-      if (!oppSubmitted) return "first";
-      if (!myMarkingReady && oppMarkingReady) return "first";
-      if (myMarkingReady && !oppMarkingReady) return "second";
+      if (!oppSubmitted) return setSubmissionRank("first", reason);
       if (submissionRank) return submissionRank;
-      if (!myMarkingReady && !oppMarkingReady) return "first";
-      return "second";
+      if (!myMarkingReady && oppMarkingReady) return setSubmissionRank("first", reason);
+      if (myMarkingReady && !oppMarkingReady) return setSubmissionRank("second", reason);
+      if (!myMarkingReady && !oppMarkingReady) return setSubmissionRank("first", reason);
+      return setSubmissionRank("second", reason);
     };
 
     const renderMarkingButton = () => {
@@ -755,8 +765,7 @@ export default {
       startRoundTimer();
     }
 
-    const initialSubmissionRank = inferSubmissionRank();
-    if (initialSubmissionRank) submissionRank = initialSubmissionRank;
+    const initialSubmissionRank = inferSubmissionRank("initial-state");
 
     if (submittedAlready) {
       if (initialSubmissionRank === "first") {
@@ -940,6 +949,7 @@ export default {
           submitting = false;
           oppSubmitted = Boolean((((latestRoomData.submitted || {})[oppRole] || {})[round]));
           const iAmSecond = opponentAlreadySubmitted || oppSubmitted;
+          setSubmissionRank(iAmSecond ? "second" : "first", "submit");
           if (iAmSecond) {
             await signalMarkingReady({ silent: true });
             showSecondSubmissionWaiting();
@@ -1013,7 +1023,7 @@ export default {
         hideStatusNote();
       }
 
-      const inferredRank = inferSubmissionRank();
+      const inferredRank = inferSubmissionRank("snapshot");
       if (inferredRank) submissionRank = inferredRank;
 
       if (myServerDone && !published) {
