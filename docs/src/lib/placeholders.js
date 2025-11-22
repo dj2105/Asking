@@ -1,7 +1,6 @@
-export const PLACEHOLDER = "<empty>";
+import { ensureLocalPackCache, listPlaceholderPacks } from "./localPackStore.js";
 
-const PLACEHOLDER_QUESTION_PACKS = () => import.meta.glob("../../packs/placeholder/*-questions.json", { eager: true });
-const PLACEHOLDER_MATHS_PACKS = () => import.meta.glob("../../packs/placeholder/*-maths.json", { eager: true });
+export const PLACEHOLDER = "<empty>";
 
 const FALLBACK_SUBJECT = "General Knowledge";
 const FALLBACK_DIFFICULTY = "medium";
@@ -205,10 +204,12 @@ export function drawFallbackItems(pool, role, round, count) {
 async function loadFallbackQuestionPacks() {
   if (!fallbackQuestionPackPromise) {
     fallbackQuestionPackPromise = (async () => {
-      const modules = PLACEHOLDER_QUESTION_PACKS();
-      return Object.values(modules)
-        .map((mod) => mod?.default || mod)
-        .filter((entry) => entry && typeof entry === "object");
+      await ensureLocalPackCache();
+      const packs = listPlaceholderPacks("questions");
+      return (Array.isArray(packs) ? packs : [])
+        .map((pack) => pack?.data)
+        .filter((entry) => entry && typeof entry === "object")
+        .map((entry) => clone(entry));
     })();
   }
   return fallbackQuestionPackPromise;
@@ -218,9 +219,10 @@ export async function loadFallbackMathsOptions() {
   if (!fallbackMathsOptionsPromise) {
     fallbackMathsOptionsPromise = (async () => {
       const options = [];
-      const modules = PLACEHOLDER_MATHS_PACKS();
-      Object.values(modules).forEach((mod) => {
-        const maths = (mod?.default || mod)?.maths;
+      await ensureLocalPackCache();
+      const packs = listPlaceholderPacks("maths");
+      (Array.isArray(packs) ? packs : []).forEach((pack) => {
+        const maths = pack?.data?.maths;
         if (maths && typeof maths === "object") options.push(clone(maths));
       });
       return options;
