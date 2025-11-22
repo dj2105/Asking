@@ -270,6 +270,10 @@ body.layout-top .stage-center.stage-center--solo {
   gap: 28px;
 }
 
+.round-panel.round-panel--ready-preview {
+  gap: 20px;
+}
+
 .route-stage[data-motion] .card,
 .route-stage[data-motion] .round-panel {
   animation-duration: var(--card-motion-duration);
@@ -574,6 +578,18 @@ body.layout-top .stage-center.stage-center--solo {
   transition: opacity 0.24s ease, transform 0.24s ease;
 }
 
+.round-panel__content.round-panel__content--ready-preview {
+  gap: 12px;
+}
+
+.round-panel__content.round-panel__content--ready-preview .round-panel__question {
+  display: none;
+}
+
+.round-panel__content.round-panel__content--ready-preview .round-panel__choices {
+  gap: 12px;
+}
+
 .round-panel__content.round-panel__content--status {
   justify-content: center;
   align-items: center;
@@ -697,6 +713,14 @@ body.layout-top .stage-center.stage-center--solo {
   border-color: var(--choice-selected-border);
   box-shadow: 0 22px 40px -18px rgba(37, 99, 235, 0.38);
   transform: translateY(-1px);
+}
+
+.round-panel__choice.is-ready-preview {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(148, 163, 184, 0.35);
+  color: rgba(15, 23, 42, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  transform: none;
 }
 
 .round-panel__choice.is-selected:hover:not(:disabled) {
