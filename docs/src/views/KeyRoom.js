@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
 import { BOT_UID, buildStartOptions, parseStartValue } from "../lib/SinglePlayerBot.js";
+import { ensureLocalPackCache, listReadyPacks } from "../lib/localPackStore.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -423,6 +424,7 @@ function buildPackOptionLabel(kind, pack) {
 export default {
   async mount(container) {
     await ensureAuth();
+    await ensureLocalPackCache();
 
     const hue = Math.floor(Math.random() * 360);
     document.documentElement.style.setProperty("--ink-h", String(hue));
@@ -571,6 +573,8 @@ export default {
 
     const packSections = {};
     const selects = {};
+    const remotePackData = { questions: [], maths: [] };
+    const localPackData = { questions: [], maths: [] };
     const packData = { questions: [], maths: [] };
 
     Object.entries(PACK_KIND_CONFIG).forEach(([kind, config]) => {
@@ -713,31 +717,54 @@ export default {
       populateSelect(kind, select, []);
     });
 
-    const attachWatcher = (kind) => {
-      const targetRef = kind === "questions" ? packsQuestionsRef() : packsMathsRef();
-      const q = query(targetRef, where("status", "==", "available"));
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          packData[kind] = snapshot.docs
-            .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-            .sort((a, b) => {
-              const aTime = a.uploadedAt && typeof a.uploadedAt.toMillis === "function" ? a.uploadedAt.toMillis() : 0;
-              const bTime = b.uploadedAt && typeof b.uploadedAt.toMillis === "function" ? b.uploadedAt.toMillis() : 0;
-              return bTime - aTime;
-            });
-          renderPackList(kind);
-          populateSelect(kind, selects[kind], packData[kind]);
-          updateAvailability();
-          reflectStartState();
-        },
-        (err) => {
-          console.warn("[keyroom] pack watcher failed", kind, err);
+    const refreshPackData = (kind) => {
+      const merged = [...localPackData[kind]];
+      remotePackData[kind].forEach((pack) => {
+        if (!merged.some((entry) => entry.id === pack.id)) {
+          merged.push(pack);
         }
-      );
-      unsubscribers.push(unsubscribe);
+      });
+      packData[kind] = merged;
+      renderPackList(kind);
+      populateSelect(kind, selects[kind], packData[kind]);
+      updateAvailability();
+      reflectStartState();
     };
 
+    const refreshLocalPacks = () => {
+      localPackData.questions = listReadyPacks("questions");
+      localPackData.maths = listReadyPacks("maths");
+      refreshPackData("questions");
+      refreshPackData("maths");
+    };
+
+    const attachWatcher = (kind) => {
+      try {
+        const targetRef = kind === "questions" ? packsQuestionsRef() : packsMathsRef();
+        const q = query(targetRef, where("status", "==", "available"));
+        const unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            remotePackData[kind] = snapshot.docs
+              .map((docSnap) => ({ id: docSnap.id, origin: "remote", ...docSnap.data() }))
+              .sort((a, b) => {
+                const aTime = a.uploadedAt && typeof a.uploadedAt.toMillis === "function" ? a.uploadedAt.toMillis() : 0;
+                const bTime = b.uploadedAt && typeof b.uploadedAt.toMillis === "function" ? b.uploadedAt.toMillis() : 0;
+                return bTime - aTime;
+              });
+            refreshPackData(kind);
+          },
+          (err) => {
+            console.warn("[keyroom] pack watcher failed", kind, err);
+          }
+        );
+        unsubscribers.push(unsubscribe);
+      } catch (err) {
+        console.warn("[keyroom] skipping remote pack watcher", kind, err);
+      }
+    };
+
+    refreshLocalPacks();
     attachWatcher("questions");
     attachWatcher("maths");
 
@@ -816,8 +843,10 @@ export default {
         const metaLines = [];
         if (kind === "questions") metaLines.push("30 questions");
         if (kind === "maths" && pack.maths?.location) metaLines.push(pack.maths.location);
+        const origin = pack.origin === "local" ? "docs/packs/ready" : null;
         const uploaded = formatTimestamp(pack.uploadedAt);
         if (uploaded) metaLines.push(uploaded);
+        if (origin) metaLines.push(origin);
         metaLines.push(`ID: ${pack.id}`);
         block.appendChild(el("div", { style: "opacity:0.75;" }, metaLines.join(" · ")));
         if (pack.notes) {

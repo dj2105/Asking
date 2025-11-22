@@ -1,47 +1,18 @@
 export const PLACEHOLDER = "<empty>";
 
-const FALLBACK_QUESTION_PACK_PATHS = [
-  "../../packs/out/MRT-questions.json",
-  "../../packs/out/LUM-questions.json",
-  "../../packs/out/PRX-questions.json",
-];
-
-const FALLBACK_MATHS_PACK_PATHS = [
-  "../../packs/out/DOI-maths.json",
-  "../../packs/out/FKH-maths.json",
-  "../../packs/out/HBR-maths.json",
-];
+const PLACEHOLDER_QUESTION_PACKS = () => import.meta.glob("../../packs/placeholder/*-questions.json", { eager: true });
+const PLACEHOLDER_MATHS_PACKS = () => import.meta.glob("../../packs/placeholder/*-maths.json", { eager: true });
 
 const FALLBACK_SUBJECT = "General Knowledge";
 const FALLBACK_DIFFICULTY = "medium";
 
 let fallbackQuestionPoolPromise = null;
+let fallbackQuestionPackPromise = null;
 let fallbackMathsOptionsPromise = null;
 
 function sameNormalized(a, b) {
   if (typeof a !== "string" || typeof b !== "string") return false;
   return a.trim().toLowerCase() === b.trim().toLowerCase();
-}
-
-function resolveStaticUrl(relativePath) {
-  try {
-    return new URL(relativePath, import.meta.url).href;
-  } catch (_err) {
-    return null;
-  }
-}
-
-async function fetchJsonMaybe(relativePath) {
-  const url = resolveStaticUrl(relativePath);
-  if (!url) return null;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (err) {
-    console.warn("[placeholders] failed to fetch", relativePath, err);
-    return null;
-  }
 }
 
 function normalizeFallbackOptions(options = []) {
@@ -185,8 +156,7 @@ export async function loadFallbackQuestionPool() {
     fallbackQuestionPoolPromise = (async () => {
       const pool = { host: makeEmptyRolePool(), guest: makeEmptyRolePool() };
       const seen = { host: new Set(), guest: new Set() };
-      for (const path of FALLBACK_QUESTION_PACK_PATHS) {
-        const json = await fetchJsonMaybe(path);
+      for (const json of await loadFallbackQuestionPacks()) {
         if (!json) continue;
         const converted = convertFallbackQuestionPack(json);
         for (let round = 1; round <= 5; round += 1) {
@@ -232,17 +202,27 @@ export function drawFallbackItems(pool, role, round, count) {
   return selected;
 }
 
+async function loadFallbackQuestionPacks() {
+  if (!fallbackQuestionPackPromise) {
+    fallbackQuestionPackPromise = (async () => {
+      const modules = PLACEHOLDER_QUESTION_PACKS();
+      return Object.values(modules)
+        .map((mod) => mod?.default || mod)
+        .filter((entry) => entry && typeof entry === "object");
+    })();
+  }
+  return fallbackQuestionPackPromise;
+}
+
 export async function loadFallbackMathsOptions() {
   if (!fallbackMathsOptionsPromise) {
     fallbackMathsOptionsPromise = (async () => {
       const options = [];
-      for (const path of FALLBACK_MATHS_PACK_PATHS) {
-        const json = await fetchJsonMaybe(path);
-        const maths = json?.maths;
-        if (maths && typeof maths === "object") {
-          options.push(clone(maths));
-        }
-      }
+      const modules = PLACEHOLDER_MATHS_PACKS();
+      Object.values(modules).forEach((mod) => {
+        const maths = (mod?.default || mod)?.maths;
+        if (maths && typeof maths === "object") options.push(clone(maths));
+      });
       return options;
     })();
   }
@@ -354,6 +334,25 @@ function normalizeMaths(maths = null) {
 }
 
 export async function buildPlaceholderRounds() {
+  const packs = await loadFallbackQuestionPacks();
+  if (Array.isArray(packs) && packs.length) {
+    const idx = Math.floor(Math.random() * packs.length);
+    const chosen = packs[idx];
+    const converted = convertFallbackQuestionPack(chosen);
+    const rounds = [];
+    for (let round = 1; round <= 5; round += 1) {
+      const hostItems = padItems(converted[round]?.hostItems || []);
+      const guestItems = padItems(converted[round]?.guestItems || []);
+      const entry = { round, hostItems, guestItems };
+      const interludes = Array.isArray(chosen?.rounds?.[round - 1]?.interludes)
+        ? chosen.rounds[round - 1].interludes.filter((text) => typeof text === "string" && text.trim())
+        : [];
+      if (interludes.length) entry.interludes = interludes;
+      rounds.push(entry);
+    }
+    return rounds;
+  }
+
   const pool = await loadFallbackQuestionPool();
   const rounds = [];
   for (let round = 1; round <= 5; round += 1) {

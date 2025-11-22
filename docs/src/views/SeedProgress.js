@@ -20,6 +20,13 @@ import {
 import { clampCode, getHashParams } from "../lib/util.js";
 import { buildPlaceholderRounds, buildPlaceholderMaths, padItems, clone } from "../lib/placeholders.js";
 import { normaliseBotConfig, startHash } from "../lib/SinglePlayerBot.js";
+import {
+  ensureLocalPackCache,
+  findReadyPack,
+  pickRandomReady,
+  pickRandomPlaceholder,
+  markReadyPackUsed,
+} from "../lib/localPackStore.js";
 
 const DEFAULT_HOST_UID = "daniel-001";
 const DEFAULT_GUEST_UID = "jaime-001";
@@ -144,32 +151,67 @@ async function fetchSpecificPack(kind, packId) {
 async function resolveQuestionsPack(chosen, logEl, updateSeeds) {
   const selection = { mode: chosen.mode, packId: chosen.packId || null };
   if (selection.mode === "none") {
-    logLine(logEl, "Questions pack skipped — using placeholders.");
+    logLine(logEl, "Questions pack skipped — using placeholder file.");
+    const placeholderPack = pickRandomPlaceholder("questions");
+    if (placeholderPack?.data) {
+      const roundsFromPack = buildRoundsFromPack(placeholderPack.data);
+      if (roundsFromPack) {
+        logLine(logEl, `Placeholder questions assigned from ${placeholderPack.id}.`);
+        return { rounds: roundsFromPack, selection };
+      }
+    }
     return { rounds: await buildPlaceholderRounds(), selection };
   }
 
   if (selection.mode === "specific" && selection.packId) {
-    logLine(logEl, `Loading questions pack ${selection.packId}…`);
-    await updateSeeds("Loading selected questions pack…", 20);
-    const fetched = await fetchSpecificPack("questions", selection.packId);
-    if (fetched?.data) {
-      const rounds = buildRoundsFromPack(fetched.data);
+    const local = findReadyPack("questions", selection.packId);
+    if (local?.data) {
+      logLine(logEl, `Loading local questions pack ${selection.packId}…`);
+      const rounds = buildRoundsFromPack(local.data);
       if (rounds) {
-        logLine(logEl, `Loaded questions pack ${selection.packId}.`);
-        return {
-          rounds,
-          selection: { ...selection, assignedPackId: fetched.id },
-          usedPackId: fetched.id,
-        };
+        markReadyPackUsed("questions", local.id);
+        logLine(logEl, `Loaded local questions pack ${selection.packId}.`);
+        return { rounds, selection: { ...selection, assignedPackId: local.id }, usedLocalPackId: local.id };
       }
-      logLine(logEl, `Questions pack ${selection.packId} invalid — falling back.`);
+      logLine(logEl, `Local questions pack ${selection.packId} invalid — falling back.`);
     } else {
-      logLine(logEl, `Questions pack ${selection.packId} not available — falling back.`);
+      logLine(logEl, `Loading questions pack ${selection.packId}…`);
+      await updateSeeds("Loading selected questions pack…", 20);
+      const fetched = await fetchSpecificPack("questions", selection.packId);
+      if (fetched?.data) {
+        const rounds = buildRoundsFromPack(fetched.data);
+        if (rounds) {
+          logLine(logEl, `Loaded questions pack ${selection.packId}.`);
+          return {
+            rounds,
+            selection: { ...selection, assignedPackId: fetched.id },
+            usedPackId: fetched.id,
+          };
+        }
+        logLine(logEl, `Questions pack ${selection.packId} invalid — falling back.`);
+      } else {
+        logLine(logEl, `Questions pack ${selection.packId} not available — falling back.`);
+      }
     }
   }
 
   logLine(logEl, "Selecting random questions pack…");
   await updateSeeds("Selecting random questions pack…", 25);
+  const localRandom = pickRandomReady("questions");
+  if (localRandom?.data) {
+    const rounds = buildRoundsFromPack(localRandom.data);
+    if (rounds) {
+      markReadyPackUsed("questions", localRandom.id);
+      logLine(logEl, `Assigned local questions pack ${localRandom.id}.`);
+      return {
+        rounds,
+        selection: { ...selection, assignedPackId: localRandom.id },
+        usedLocalPackId: localRandom.id,
+      };
+    }
+    logLine(logEl, `Local questions pack ${localRandom.id} invalid — checking uploads.`);
+  }
+
   const randomPack = await pickRandomAvailable("questions");
   if (randomPack?.data) {
     const rounds = buildRoundsFromPack(randomPack.data);
@@ -197,10 +239,25 @@ async function resolveMathsPack(chosen, logEl, updateSeeds) {
   const selection = { mode: chosen.mode, packId: chosen.packId || null };
   if (selection.mode === "none") {
     logLine(logEl, "Maths pack skipped — using placeholder maths.");
+    const placeholder = pickRandomPlaceholder("maths");
+    if (placeholder?.data?.maths) {
+      return { maths: cloneMaths(placeholder.data.maths), selection };
+    }
     return { maths: await buildPlaceholderMaths(), selection };
   }
 
   if (selection.mode === "specific" && selection.packId) {
+    const local = findReadyPack("maths", selection.packId);
+    if (local?.data?.maths) {
+      logLine(logEl, `Loading local maths pack ${selection.packId}…`);
+      markReadyPackUsed("maths", local.id);
+      return {
+        maths: cloneMaths(local.data.maths),
+        selection: { ...selection, assignedPackId: local.id },
+        usedLocalPackId: local.id,
+      };
+    }
+
     logLine(logEl, `Loading maths pack ${selection.packId}…`);
     await updateSeeds("Loading selected maths pack…", 35);
     const fetched = await fetchSpecificPack("maths", selection.packId);
@@ -217,6 +274,17 @@ async function resolveMathsPack(chosen, logEl, updateSeeds) {
 
   logLine(logEl, "Selecting random maths pack…");
   await updateSeeds("Selecting random maths pack…", 40);
+  const localRandom = pickRandomReady("maths");
+  if (localRandom?.data?.maths) {
+    markReadyPackUsed("maths", localRandom.id);
+    logLine(logEl, `Assigned local maths pack ${localRandom.id}.`);
+    return {
+      maths: cloneMaths(localRandom.data.maths),
+      selection: { ...selection, assignedPackId: localRandom.id },
+      usedLocalPackId: localRandom.id,
+    };
+  }
+
   const randomPack = await pickRandomAvailable("maths");
   if (randomPack?.data?.maths) {
     logLine(logEl, `Assigned maths pack ${randomPack.id}.`);
@@ -254,6 +322,7 @@ async function writeRounds(code, rounds) {
 export default {
   async mount(container) {
     await ensureAuth();
+    await ensureLocalPackCache();
 
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
@@ -395,9 +464,15 @@ export default {
         const moved = await movePackToUsed("questions", questionsResult.usedPackId, { roomCode: code });
         if (!moved) throw new Error("Failed to archive questions pack.");
       }
+      if (questionsResult.usedLocalPackId) {
+        logLine(logEl, `Local questions pack ${questionsResult.usedLocalPackId} moved to placeholders.`);
+      }
       if (mathsResult.usedPackId) {
         const moved = await movePackToUsed("maths", mathsResult.usedPackId, { roomCode: code });
         if (!moved) throw new Error("Failed to archive maths pack.");
+      }
+      if (mathsResult.usedLocalPackId) {
+        logLine(logEl, `Local maths pack ${mathsResult.usedLocalPackId} moved to placeholders.`);
       }
 
       await updateSeeds("Pack ready.", 100);
