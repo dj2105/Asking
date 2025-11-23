@@ -2936,6 +2936,203 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* Retro 8-bit makeover */
+:root.theme-retro {
+  --card-width: min(520px, calc(100vw - 28px));
+  --radius: 6px;
+  --shadow: none;
+  --shadow-soft: none;
+}
+
+body.retro-active {
+  background: #000000 !important;
+  color: var(--panel-text, #f5f5f5);
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.01em;
+}
+
+body.retro-active::before { display: none !important; }
+
+body.retro-active #app {
+  padding-top: clamp(48px, 10vh, 120px);
+  padding-bottom: clamp(60px, 12vh, 140px);
+}
+
+.retro-card,
+body.retro-active .card,
+body.retro-active .round-panel {
+  background: var(--panel-bg, #00ffd0);
+  color: var(--panel-text, #001b12);
+  border: 2px solid var(--panel-border, #000000);
+  border-radius: var(--radius, 8px);
+  box-shadow: none;
+  position: relative;
+  isolation: isolate;
+}
+
+.retro-card-shadow::before,
+body.retro-active .card::before,
+body.retro-active .round-panel::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: -6px;
+  bottom: -6px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--retro-pattern, #002a59) 70%, transparent) 0 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  background-color: color-mix(in srgb, var(--retro-pattern, #002a59) 50%, transparent);
+  border: 2px solid var(--panel-border, #000000);
+  border-radius: var(--radius, 8px);
+  z-index: -1;
+  opacity: 0.8;
+}
+
+body.retro-active .card,
+body.retro-active .round-panel {
+  padding: 28px clamp(20px, 6vw, 40px);
+  gap: 18px;
+}
+
+body.retro-active .mono,
+body.retro-active .title,
+body.retro-active h1,
+body.retro-active h2,
+body.retro-active h3,
+body.retro-active .section-heading,
+body.retro-active .round-panel__heading,
+body.retro-active .stage-overlay__title {
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body.retro-active .title { font-size: 1.6rem; }
+
+body.retro-active .countdown-big {
+  color: var(--panel-text, #ffffff);
+  text-shadow: 0 0 12px var(--accent, #ff00ff);
+}
+
+body.retro-active input[type="text"],
+body.retro-active input[type="number"],
+body.retro-active .input,
+body.retro-active textarea {
+  font-family: "Courier New", monospace;
+  border-radius: 4px;
+  border: 2px solid var(--panel-border, #000000);
+  background: color-mix(in srgb, var(--panel-bg, #111111) 92%, #000000 8%);
+  color: var(--panel-text, #f5f5f5);
+  box-shadow: none;
+}
+
+body.retro-active input[type="text"]:focus,
+body.retro-active input[type="number"]:focus,
+body.retro-active .input:focus,
+body.retro-active textarea:focus {
+  outline: 2px solid var(--accent, #ff00ff);
+  box-shadow: none;
+}
+
+body.retro-active .btn {
+  font-family: "Courier New", monospace;
+  border-radius: 4px;
+  background: var(--accent, #ff00ff);
+  color: #000000;
+  border: 2px solid var(--panel-border, #000000);
+  box-shadow: none;
+  position: relative;
+  isolation: isolate;
+  padding: 14px 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  --btn-shadow-offset: 4px;
+}
+
+body.retro-active .btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translate(var(--btn-shadow-offset), var(--btn-shadow-offset));
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--retro-pattern, #111111) 70%, transparent) 0 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  border: 2px solid var(--panel-border, #000000);
+  z-index: -1;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+body.retro-active .btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+body.retro-active .btn:active:not(:disabled),
+body.retro-active .btn.is-pressed {
+  transform: translate(var(--btn-shadow-offset), var(--btn-shadow-offset));
+}
+
+body.retro-active .btn:active::after,
+body.retro-active .btn.is-pressed::after {
+  transform: translate(0, 0);
+  opacity: 0;
+}
+
+body.retro-active .btn:disabled {
+  opacity: 0.55;
+  filter: grayscale(0.5);
+}
+
+body.retro-active .pill,
+body.retro-active .round-panel__step {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--panel-border, #000000);
+  background: transparent;
+  color: var(--panel-text, #f5f5f5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+body.retro-active .round-panel__step.is-active,
+body.retro-active .round-panel__step[aria-current="true"],
+body.retro-active .pill.is-active,
+body.retro-active .pill.is-selected {
+  background: var(--accent, #ff00ff);
+  color: #000000;
+}
+
+.retro-stripe-transition {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--accent, #ff00ff) 90%, transparent) 0px,
+    color-mix(in srgb, var(--accent, #ff00ff) 90%, transparent) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  animation: retroStripeWipe 0.42s ease-out forwards;
+}
+
+@keyframes retroStripeWipe {
+  0% { transform: translateY(-100%); opacity: 1; }
+  40% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
