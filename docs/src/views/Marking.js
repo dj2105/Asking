@@ -600,6 +600,10 @@ export default {
         setHeading(JEMIMA_HEADING);
         setPrompt(clueText, { status: false, variant: "clue" });
         hideStatusNote();
+        readyBtn.style.display = "none";
+        readyBtn.classList.remove("round-panel__submit--ready");
+        readyBtn.classList.remove("round-panel__submit--waiting");
+        readyBtn.classList.remove("throb");
         setMarkingVisible(false);
         setVerdictsEnabled(false);
         setYearVisible(true);
