@@ -820,6 +820,7 @@ body.layout-top .stage-center.stage-center--solo {
   width: 100%;
   border-radius: 999px;
   border: 1.5px solid var(--soft-line);
+  background: var(--bg-soft);
   background: color-mix(in srgb, var(--bg-soft) 94%, transparent);
   color: var(--ink);
   font-weight: 700;
