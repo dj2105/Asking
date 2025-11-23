@@ -27,6 +27,7 @@ import {
 } from "../lib/RoundTimer.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 import { ensureBotMarking } from "../lib/SinglePlayerBot.js";
+import { applyStageTheme } from "../lib/theme.js";
 
 const VERDICT = { RIGHT: "right", WRONG: "wrong", UNKNOWN: "unknown" };
 
@@ -111,41 +112,6 @@ function balanceQuestionText(input = "") {
   return `${firstLine}\n${secondLine}`;
 }
 
-function createPaletteApplier(hue, accentHue) {
-  return (roundNumber = 1) => {
-    const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
-    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty(
-      "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
-    );
-    document.documentElement.style.setProperty(
-      "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
-    );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
-    );
-  };
-}
-
 const normaliseClue = (value) => {
   if (typeof value === "string") return value.trim();
   return "";
@@ -187,10 +153,7 @@ export default {
     const code = clampCode(params.get("code") || "");
     let round = parseInt(params.get("round") || "1", 10) || 1;
 
-    const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
-    applyPalette(round || 1);
+    applyStageTheme("marking", round || 1);
 
     container.innerHTML = "";
 
@@ -1019,7 +982,7 @@ export default {
           timerContext.round = round;
           unlockStepLabels();
           renderSteps();
-          applyPalette(effectiveRound());
+          applyStageTheme("marking", effectiveRound());
         }
       }
 

@@ -32,6 +32,7 @@ import {
   getStoredRole,
 } from "../lib/util.js";
 import { ensureBotCountdown } from "../lib/SinglePlayerBot.js";
+import { applyStageTheme } from "../lib/theme.js";
 
 function el(tag, attrs = {}, kids = []) {
   const node = document.createElement(tag);
@@ -58,9 +59,7 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    // per-view hue
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme("countdown", round);
 
     container.innerHTML = "";
 
@@ -90,10 +89,12 @@ export default {
     let roundReady = false;
     let stopRoundWatch = null;
     const roundsCol = roundSubColRef(code);
+    let lastTickValue = null;
 
     // Allow round label to follow doc updates (e.g., if host armed next round before guest arrived)
     if (Number(room0.round)) {
       round = Number(room0.round);
+      applyStageTheme("countdown", round);
     }
 
     const watchRoundDoc = (rNum) => {
@@ -118,6 +119,7 @@ export default {
         round = Number(data.round);
         roundReady = false;
         watchRoundDoc(round);
+        applyStageTheme("countdown", round);
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
@@ -162,7 +164,14 @@ export default {
 
       const remainMs = timeUntil(countdownStartAt);
       const secs = Math.ceil(remainMs / 1000);
-      timer.textContent = String(secs > 0 ? secs : 0);
+      const nextValue = secs > 0 ? secs : 0;
+      if (nextValue !== lastTickValue) {
+        timer.textContent = String(nextValue);
+        timer.classList.remove("is-pulsing");
+        void timer.offsetWidth;
+        timer.classList.add("is-pulsing");
+        lastTickValue = nextValue;
+      }
 
       if (remainMs <= 0 && !hasFlipped) {
         if (!roundReady) {
