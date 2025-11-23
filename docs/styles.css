@@ -483,6 +483,19 @@ body.layout-top .stage-center.stage-center--solo {
   opacity: 0.64;
 }
 
+.round-panel__steps.is-submit-ready .round-panel__step,
+.round-panel__steps.is-submit-ready .round-panel__step.is-active,
+.round-panel__steps.is-submit-ready .round-panel__step.is-answered,
+.round-panel__steps.is-submit-ready .round-panel__step.is-answered.is-active {
+  --step-bg: rgba(37, 99, 235, 0.18);
+  --step-border: rgba(37, 99, 235, 0.48);
+  --step-text: #1e40af;
+  background: var(--step-bg);
+  border-color: var(--step-border);
+  color: var(--step-text);
+  box-shadow: none;
+}
+
 .round-panel__step {
   --step-bg: rgba(15, 23, 42, 0.12);
   --step-border: rgba(148, 163, 184, 0.42);
