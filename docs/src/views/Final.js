@@ -10,6 +10,7 @@ import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, collection, onSnapshot } from "firebase/firestore";
 
 import { clampCode, getHashParams } from "../lib/util.js";
+import { applyStageTheme } from "../lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -543,6 +544,8 @@ export default {
 
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
+
+    applyStageTheme("final", 5, code);
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-final" });
