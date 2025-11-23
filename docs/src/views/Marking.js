@@ -280,7 +280,11 @@ export default {
       maxlength: "4",
       placeholder: "",
     });
-    const yearSubmit = el("button", { class: "btn marking-year__submit", type: "button", disabled: "" }, "SUBMIT");
+    const yearSubmit = el(
+      "button",
+      { class: "btn btn-ready marking-year__submit", type: "button", disabled: "" },
+      "SUBMIT"
+    );
     yearWrap.appendChild(yearInput);
     yearWrap.appendChild(yearSubmit);
     content.appendChild(yearWrap);
@@ -297,8 +301,8 @@ export default {
 
     panel.appendChild(heading);
     panel.appendChild(steps);
-    panel.appendChild(readyBtn);
     panel.appendChild(content);
+    panel.appendChild(readyBtn);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -596,6 +600,10 @@ export default {
         setHeading(JEMIMA_HEADING);
         setPrompt(clueText, { status: false, variant: "clue" });
         hideStatusNote();
+        readyBtn.style.display = "none";
+        readyBtn.classList.remove("round-panel__submit--ready");
+        readyBtn.classList.remove("round-panel__submit--waiting");
+        readyBtn.classList.remove("throb");
         setMarkingVisible(false);
         setVerdictsEnabled(false);
         setYearVisible(true);
