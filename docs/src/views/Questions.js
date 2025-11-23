@@ -169,6 +169,10 @@ export default {
 
     container.innerHTML = "";
 
+    try {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    } catch {}
+
     const root = el("div", { class: "view view-questions stage-center" });
     const panel = el("div", { class: "round-panel" });
     const heading = el("h2", { class: "round-panel__heading mono" }, DEFAULT_HEADING);
@@ -237,6 +241,11 @@ export default {
     panel.appendChild(toMarkingBtn);
     root.appendChild(panel);
 
+    const markingCountdownOverlay = el("div", { class: "marking-countdown-overlay is-hidden" });
+    const markingCountdownValue = el("div", { class: "mono countdown-big" }, "3");
+    markingCountdownOverlay.appendChild(markingCountdownValue);
+    root.appendChild(markingCountdownOverlay);
+
     const backOverlay = el("div", { class: "back-confirm" });
     const backPanel = el("div", { class: "back-confirm__panel mono" });
     const backTitle = el("div", { class: "back-confirm__title" }, "RETURN TO LOBBY?");
@@ -299,6 +308,7 @@ export default {
       setPromptVisible(!hideQa);
       setChoicesVisible(!hideQa);
       content.classList.toggle("round-panel__content--submit-ready", hideQa);
+      content.style.display = hideQa ? "none" : "";
     };
 
     let idx = 0;
@@ -330,6 +340,7 @@ export default {
     let submittedScreen = null;
     let botQuestionsStartAt = null;
     let goToMarkingUnlocked = false;
+    let waitingForOpponentAfterClick = false;
 
     const effectiveRound = () => {
       return Number.isFinite(round) && round > 0 ? round : 1;
@@ -431,14 +442,16 @@ export default {
 
     const renderSteps = () => {
       applyStepLabels();
+      const inSubmitReady = readyPreviewMode && !published && !submitting;
       steps.classList.toggle("is-hidden", published || submitting);
       steps.classList.toggle("is-complete", isRoundComplete());
-      const dormant = readyPreviewMode || published || submitting;
+      const dormant = published || submitting;
       steps.classList.toggle("is-dormant", dormant);
       const allowActive = !(published || submitting || showingClue || readyPreviewMode);
       const allowAnswered = !readyPreviewMode;
       stepButtons.forEach((btn, i) => {
-        btn.classList.toggle("is-active", allowActive && i === idx);
+        const isActive = allowActive && i === idx && !inSubmitReady;
+        btn.classList.toggle("is-active", isActive);
         btn.classList.toggle("is-answered", allowAnswered && Boolean(chosen[i]));
         btn.disabled = triplet.length === 0 || published || submitting;
       });
@@ -552,11 +565,17 @@ export default {
       if (!markingCountdownStartAt) return;
       const ms = timeUntil(markingCountdownStartAt);
       const secs = Math.max(0, Math.ceil(ms / 1000));
-      showStatusNote(`Starting marking in ${secs}…`);
+      hideStatusNote();
+      markingCountdownValue.textContent = String(secs);
+      markingCountdownOverlay.classList.remove("is-hidden");
       toMarkingBtn.style.display = "none";
       if (myRole === "host" && ms <= 0) {
         attemptMarkingFlip("countdown-tick");
       }
+    };
+
+    const hideMarkingCountdown = () => {
+      markingCountdownOverlay.classList.add("is-hidden");
     };
 
     const applySubmittedFrame = () => {
@@ -569,9 +588,11 @@ export default {
       steps.classList.add("is-hidden");
       setPromptVisible(true);
       content.classList.remove("round-panel__content--submit-ready");
+      content.style.display = "";
       setChoicesVisible(false);
       readyBtn.style.display = "none";
       pauseRoundTimer(timerContext);
+      hideMarkingCountdown();
     };
 
     const renderFirstSubmitButton = () => {
@@ -582,8 +603,11 @@ export default {
       }
       const waitingForOpponent = !oppSubmitted;
       const awaitingMarkingStart = myMarkingReady || goToMarkingClicked;
+      if (waitingForOpponentAfterClick && !waitingForOpponent) {
+        waitingForOpponentAfterClick = false;
+      }
       toMarkingBtn.style.display = "";
-      if (waitingForOpponent) {
+      if (awaitingMarkingStart) {
         goToMarkingUnlocked = false;
         toMarkingBtn.disabled = true;
         toMarkingBtn.textContent = waitingLabel;
@@ -592,8 +616,7 @@ export default {
         toMarkingBtn.classList.remove("throb");
         return;
       }
-      if (awaitingMarkingStart) {
-        goToMarkingUnlocked = false;
+      if (waitingForOpponentAfterClick && waitingForOpponent) {
         toMarkingBtn.disabled = true;
         toMarkingBtn.textContent = waitingLabel;
         toMarkingBtn.classList.add("round-panel__submit--waiting");
@@ -999,8 +1022,21 @@ export default {
     };
 
     const handleGoToMarkingClick = async () => {
+      const opponentDone = oppSubmitted;
+      if (!opponentDone) {
+        waitingForOpponentAfterClick = true;
+        toMarkingBtn.disabled = true;
+        toMarkingBtn.textContent = waitingLabel;
+        toMarkingBtn.classList.add("round-panel__submit--waiting");
+        toMarkingBtn.classList.remove("round-panel__submit--ready");
+        toMarkingBtn.classList.remove("throb");
+      }
       const ok = await signalMarkingReady();
       if (!ok) {
+        renderFirstSubmitButton();
+        return;
+      }
+      if (!opponentDone) {
         renderFirstSubmitButton();
         return;
       }
@@ -1129,6 +1165,7 @@ export default {
         markingCountdownStartAt = null;
         clearCountdownTimer();
         hideStatusNote();
+        hideMarkingCountdown();
       }
 
       const inferredRank = inferSubmissionRank("snapshot");

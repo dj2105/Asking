@@ -165,19 +165,7 @@ function renderQuestionSection({ heading, items, answers, round, score, bonus = 
   if (typeof score === "number" && !Number.isNaN(score)) {
     const badgeWrap = el("div", { class: "award-round-badges" });
     const scoreBadge = el("div", { class: "mono award-round-score" }, String(score));
-    const hasBonus = Number(bonus) > 0;
-    if (hasBonus) {
-      badgeWrap.classList.add("award-round-badges--with-star");
-      badgeWrap.appendChild(scoreBadge);
-      badgeWrap.appendChild(
-        el("div", { class: "award-speed-star" }, [
-          el("div", { class: "award-speed-star__value" }, "+1"),
-          el("div", { class: "award-speed-star__label" }, "fastest"),
-        ])
-      );
-    } else {
-      badgeWrap.appendChild(scoreBadge);
-    }
+    badgeWrap.appendChild(scoreBadge);
     header.appendChild(badgeWrap);
   }
   block.appendChild(header);
@@ -262,10 +250,15 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
+
+    try {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    } catch {}
     const root = el("div", { class: "view view-award" });
 
     const card = el("div", { class: "card award-card" });
     const cardTitle = el("div", { class: "mono award-card__heading" }, "SCORES");
+    const fastestBanner = el("div", { class: "mono award-fastest-banner is-hidden" }, "");
     const scoreboard = el("div", { class: "award-scoreboard" });
     const hostScoreValue = el("div", { class: "mono award-scoreboard__value" }, "0");
     const hostScoreLabel = el("div", { class: "mono award-scoreboard__label" }, "DANIEL");
@@ -285,6 +278,7 @@ export default {
     const reviewWrap = el("div", { class: "award-review" });
 
     card.appendChild(cardTitle);
+    card.appendChild(fastestBanner);
     card.appendChild(scoreboard);
     card.appendChild(reviewWrap);
 
@@ -385,6 +379,31 @@ export default {
       guestScoreValue.textContent = String(guestTotal);
     };
 
+    const updateFastestBanner = () => {
+      const bonusMap = latestRoomData.speedBonuses || {};
+      const hostBonus = Number(getRoundMapValue((bonusMap.host || {}), round) || 0);
+      const guestBonus = Number(getRoundMapValue((bonusMap.guest || {}), round) || 0);
+      let fastestRole = null;
+      let bonusValue = 0;
+      if (hostBonus > guestBonus && hostBonus > 0) {
+        fastestRole = "host";
+        bonusValue = hostBonus;
+      } else if (guestBonus > hostBonus && guestBonus > 0) {
+        fastestRole = "guest";
+        bonusValue = guestBonus;
+      }
+
+      if (!fastestRole) {
+        fastestBanner.classList.add("is-hidden");
+        fastestBanner.textContent = "";
+        return;
+      }
+
+      const fastestName = fastestRole === "host" ? "Daniel" : "Jaime";
+      fastestBanner.textContent = `⭐ FASTEST PLAYER: ${fastestName} · +${bonusValue}`;
+      fastestBanner.classList.remove("is-hidden");
+    };
+
     const refreshReviews = () => {
       reviewWrap.innerHTML = "";
       const myItems = myRole === "host" ? reviewData.hostItems : reviewData.guestItems;
@@ -421,6 +440,7 @@ export default {
     const refreshSummary = () => {
       recomputeRoundScores();
       updateScoreboardTotals();
+      updateFastestBanner();
     };
 
     refreshReviews();
