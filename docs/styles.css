@@ -263,11 +263,11 @@ body.layout-top .stage-center.stage-center--solo {
   border-radius: var(--radius);
   color: var(--card-ink);
   box-shadow: var(--shadow);
-  padding: 40px clamp(28px, 6vw, 44px);
+  padding: 38px clamp(26px, 6vw, 42px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 22px;
 }
 
 .round-panel.round-panel--ready-preview {
@@ -595,7 +595,7 @@ body.layout-top .stage-center.stage-center--solo {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 16px;
   align-items: stretch;
   justify-content: flex-start;
   transition: opacity 0.24s ease, transform 0.24s ease;
@@ -625,11 +625,11 @@ body.layout-top .stage-center.stage-center--solo {
 }
 
 .round-panel__content.round-panel__content--comment {
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   text-align: center;
-  min-height: 200px;
-  gap: 20px;
+  min-height: 0;
+  gap: 12px;
 }
 
 .round-panel__content.is-leaving {
@@ -882,10 +882,10 @@ body.layout-top .stage-center.stage-center--solo {
 }
 
 .marking-year__input {
-  width: 96px;
-  height: 62px;
+  width: 82px;
+  height: 58px;
   text-align: center;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 12px;
   border: 1.5px solid rgba(185, 28, 28, 0.32);
   background: rgba(255, 255, 255, 0.96);
@@ -1243,7 +1243,7 @@ input[type="number"]:focus,
 .marking-countdown-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(5, 7, 16, 0.78);
   display: flex;
   align-items: center;
   justify-content: center;
