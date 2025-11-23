@@ -59,7 +59,7 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    applyStageTheme("countdown", round);
+    applyStageTheme("countdown", round, code);
 
     container.innerHTML = "";
 
@@ -67,8 +67,10 @@ export default {
       window.scrollTo({ top: 0, behavior: "instant" });
     } catch {}
     const root = el("div", { class: "view view-countdown stage-center stage-center--solo" });
+    const panel = el("div", { class: "card countdown-card" });
     const timer = el("div", { class: "mono countdown-big" }, "3");
-    root.appendChild(timer);
+    panel.appendChild(timer);
+    root.appendChild(panel);
     container.appendChild(root);
 
     const rRef = roomRef(code);
@@ -94,7 +96,7 @@ export default {
     // Allow round label to follow doc updates (e.g., if host armed next round before guest arrived)
     if (Number(room0.round)) {
       round = Number(room0.round);
-      applyStageTheme("countdown", round);
+      applyStageTheme("countdown", round, code);
     }
 
     const watchRoundDoc = (rNum) => {
@@ -119,7 +121,7 @@ export default {
         round = Number(data.round);
         roundReady = false;
         watchRoundDoc(round);
-        applyStageTheme("countdown", round);
+        applyStageTheme("countdown", round, code);
       }
 
       const remoteStart = Number(data?.countdown?.startAt || 0) || 0;
