@@ -25,6 +25,7 @@ import {
   getBotSectionStartFromData,
   hasBot,
 } from "../lib/SinglePlayerBot.js";
+import { applyStageTheme } from "../lib/theme.js";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
@@ -44,41 +45,6 @@ function balanceQuestionText(input = "") {
   const secondLine = words.slice(firstCount).join(" ");
   if (!secondLine || secondLine.split(" ").length <= 1) return raw;
   return `${firstLine}\n${secondLine}`;
-}
-
-function createPaletteApplier(hue, accentHue) {
-  return (roundNumber = 1) => {
-    const depth = Math.max(0, Math.min((roundNumber || 1) - 1, 5));
-    const inkLight = 12 + depth * 1.3;
-    const paperLight = 92 - depth * 1.6;
-    const accentSoftLight = 88 - depth * 1.0;
-    const accentStrongLight = Math.max(22, 26 - depth * 0.6);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
-    document.documentElement.style.setProperty("--ink-s", "64%");
-    document.documentElement.style.setProperty("--ink-l", `${inkLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty("--paper-s", "38%");
-    document.documentElement.style.setProperty("--paper-l", `${paperLight.toFixed(1)}%`);
-    document.documentElement.style.setProperty(
-      "--muted",
-      `hsla(${hue}, 24%, ${Math.max(inkLight + 16, 32).toFixed(1)}%, 0.78)`
-    );
-    document.documentElement.style.setProperty(
-      "--soft-line",
-      `hsla(${hue}, 32%, ${Math.max(inkLight + 6, 26).toFixed(1)}%, 0.22)`
-    );
-    document.documentElement.style.setProperty(
-      "--card",
-      `hsla(${hue}, 30%, ${Math.min(paperLight + 3, 96).toFixed(1)}%, 0.96)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-soft",
-      `hsl(${accentHue}, 68%, ${accentSoftLight.toFixed(1)}%)`
-    );
-    document.documentElement.style.setProperty(
-      "--accent-strong",
-      `hsl(${accentHue}, 52%, ${accentStrongLight.toFixed(1)}%)`
-    );
-  };
 }
 
 const normaliseClue = (value) => {
@@ -162,10 +128,7 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    const hue = Math.floor(Math.random() * 360);
-    const accentHue = (hue + 180) % 360;
-    const applyPalette = createPaletteApplier(hue, accentHue);
-    applyPalette(round || 1);
+    applyStageTheme("questions", round || 1);
 
     container.innerHTML = "";
 
@@ -193,7 +156,15 @@ export default {
     });
 
     const content = el("div", { class: "round-panel__content" });
-    const prompt = el("div", { class: "round-panel__question mono" }, "");
+    const promptText = el("span", { class: "round-panel__question-text" }, "");
+    const prompt = el("div", { class: "round-panel__question mono" }, [
+      promptText,
+      el("span", { class: "typing-dots", "aria-hidden": "true" }, [
+        el("span", { class: "typing-dots__dot" }, ""),
+        el("span", { class: "typing-dots__dot" }, ""),
+        el("span", { class: "typing-dots__dot" }, ""),
+      ]),
+    ]);
     const statusNote = el(
       "div",
       { class: "round-panel__status-note mono is-hidden" },
@@ -269,14 +240,17 @@ export default {
     root.appendChild(backOverlay);
     container.appendChild(root);
 
-    const setPrompt = (text, { status = false, variant = "question" } = {}) => {
+    const setPrompt = (text, { status = false, variant = "question", showDots = false } = {}) => {
       const displayText = status ? String(text || "") : balanceQuestionText(text);
-      prompt.textContent = displayText;
+      promptText.textContent = displayText;
       const isClue = !status && variant === "clue";
       prompt.classList.toggle("round-panel__question--status", status);
       prompt.classList.toggle("round-panel__question--clue", isClue);
       content.classList.toggle("round-panel__content--status", status);
       content.classList.toggle("round-panel__content--comment", isClue);
+      prompt.classList.toggle("has-typing-dots", Boolean(showDots));
+      const dots = prompt.querySelector(".typing-dots");
+      if (dots) dots.style.display = showDots ? "inline-flex" : "none";
     };
 
     const showStatusNote = (text) => {
@@ -305,10 +279,8 @@ export default {
 
     const applySubmitReadyLayout = (active) => {
       const hideQa = active && !published && !submitting;
-      setPromptVisible(!hideQa);
-      setChoicesVisible(!hideQa);
       content.classList.toggle("round-panel__content--submit-ready", hideQa);
-      content.style.display = hideQa ? "none" : "";
+      panel.classList.toggle("round-panel--submit-ready", hideQa);
     };
 
     let idx = 0;
@@ -589,7 +561,8 @@ export default {
       steps.classList.add("is-hidden");
       setPromptVisible(true);
       content.classList.remove("round-panel__content--submit-ready");
-      content.style.display = "";
+      panel.classList.remove("round-panel--submit-ready");
+      panel.classList.remove("round-panel--maths-clue");
       setChoicesVisible(false);
       readyBtn.style.display = "none";
       pauseRoundTimer(timerContext);
@@ -646,6 +619,7 @@ export default {
       }
       submittedScreen = "first";
       applySubmittedFrame();
+      panel.classList.add("round-panel--maths-clue");
       setHeading("WHICH YEAR?");
       heading.style.display = "";
       setPrompt(getClueText(), { status: false, variant: "clue" });
@@ -658,8 +632,9 @@ export default {
       setSubmissionRank("second", "ui:second-submission");
       submittedScreen = "second";
       applySubmittedFrame();
+      panel.classList.remove("round-panel--maths-clue");
       heading.style.display = "none";
-      setPrompt(`Waiting for ${oppName}.`, { status: true });
+      setPrompt(`Waiting for ${oppName}.`, { status: true, showDots: true });
       hideStatusNote();
       toMarkingBtn.style.display = "none";
     };
@@ -726,7 +701,7 @@ export default {
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
     }
 
-    applyPalette(effectiveRound());
+    applyStageTheme("questions", effectiveRound());
 
     renderSteps();
 
@@ -798,7 +773,7 @@ export default {
       hideReadyPrompt();
       startRoundTimer();
       setHeading(DEFAULT_HEADING);
-      setPrompt(text, { status: true });
+      setPrompt(text, { status: true, showDots: true });
       hideStatusNote();
       setChoicesVisible(false);
       applySubmitReadyLayout(false);
@@ -1054,7 +1029,7 @@ export default {
         readyBtn.disabled = true;
         readyBtn.classList.remove("throb");
         renderSteps();
-        setPrompt("Submitting answers…", { status: true });
+        setPrompt("Submitting answers…", { status: true, showDots: true });
         hideStatusNote();
         setChoicesVisible(false);
 
@@ -1113,7 +1088,7 @@ export default {
         timerContext.round = round;
         unlockStepLabels();
         renderSteps();
-        applyPalette(effectiveRound());
+        applyStageTheme("questions", effectiveRound());
       }
 
       if (data.state === "countdown") {
