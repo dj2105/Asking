@@ -63,6 +63,10 @@ export default {
     document.documentElement.style.setProperty("--ink-h", String(hue));
 
     container.innerHTML = "";
+
+    try {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    } catch {}
     const root = el("div", { class: "view view-countdown stage-center stage-center--solo" });
     const timer = el("div", { class: "mono countdown-big" }, "3");
     root.appendChild(timer);

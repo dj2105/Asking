@@ -194,6 +194,10 @@ export default {
 
     container.innerHTML = "";
 
+    try {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    } catch {}
+
     const root = el("div", { class: "view view-marking stage-center" });
     const panel = el("div", { class: "round-panel" });
     const heading = el("h2", { class: "round-panel__heading mono" }, DEFAULT_HEADING);
@@ -293,8 +297,8 @@ export default {
 
     panel.appendChild(heading);
     panel.appendChild(steps);
-    panel.appendChild(content);
     panel.appendChild(readyBtn);
+    panel.appendChild(content);
     root.appendChild(panel);
 
     const backOverlay = el("div", { class: "back-confirm" });
@@ -546,7 +550,7 @@ export default {
       showingClue = false;
       const render = () => {
         setHeading(DEFAULT_HEADING);
-        setPrompt("Submit your marks.", { status: true });
+        setPrompt("", { status: false });
         hideStatusNote();
         setMarkingVisible(false);
         readyBtn.style.display = "";

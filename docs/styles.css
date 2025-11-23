@@ -600,6 +600,10 @@ body.layout-top .stage-center.stage-center--solo {
   gap: 12px;
 }
 
+.round-panel__content.round-panel__content--submit-ready {
+  display: none;
+}
+
 .round-panel__content.round-panel__content--status {
   justify-content: center;
   align-items: center;
@@ -865,8 +869,8 @@ body.layout-top .stage-center.stage-center--solo {
 }
 
 .marking-year__input {
-  width: 120px;
-  height: 68px;
+  width: 96px;
+  height: 62px;
   text-align: center;
   padding: 10px 12px;
   border-radius: 12px;
@@ -1223,6 +1227,25 @@ input[type="number"]:focus,
 }
 .countdown-note { font-size: .95rem; opacity: .85; }
 
+.marking-countdown-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 24;
+  padding: 24px;
+}
+
+.marking-countdown-overlay.is-hidden {
+  display: none;
+}
+
+.marking-countdown-overlay .countdown-big {
+  font-size: 4.2rem;
+}
+
 /* QA lists (Marking) */
 .qa-list { margin-top: 6px; }
 .mark-card {
@@ -1570,6 +1593,23 @@ input[type="number"]:focus,
   letter-spacing: 0.22em;
   text-transform: uppercase;
   text-align: center;
+}
+
+.award-fastest-banner {
+  width: 100%;
+  background: linear-gradient(135deg, #facc15, #fbbf24);
+  color: #78350f;
+  padding: 10px 14px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+.award-fastest-banner.is-hidden {
+  display: none;
 }
 
 .award-card--jemima {
