@@ -113,11 +113,22 @@ const CARD_MOTIONS = [
 
 let lastCardMotion = "";
 
+const RETRO_CARD_TARGETS = [".card", ".round-panel"];
+
 function pickCardMotion() {
   const pool = CARD_MOTIONS.filter((value) => value !== lastCardMotion);
   const choice = pool.length ? pool[Math.floor(Math.random() * pool.length)] : CARD_MOTIONS[0];
   lastCardMotion = choice;
   return choice;
+}
+
+function applyRetroCardChrome(scope) {
+  if (!scope) return;
+  RETRO_CARD_TARGETS.forEach((selector) => {
+    scope.querySelectorAll(selector).forEach((node) => {
+      node.classList.add("retro-card", "retro-card-shadow");
+    });
+  });
 }
 
 function clampRoundIndex(raw) {
@@ -321,6 +332,8 @@ async function mountRoute() {
     if (wantsScoreStrip && code) {
       ScoreStrip.update({ code });
     }
+
+    applyRetroCardChrome(app);
 
     ScrollReset.reset(actualRoute, qs);
   } catch (e) {
