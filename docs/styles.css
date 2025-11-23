@@ -2938,18 +2938,22 @@ h1,h2,h3,h4, button, input, select, textarea { font-family: inherit; }
 
 /* Retro 8-bit makeover */
 :root.theme-retro {
-  --card-width: min(520px, calc(100vw - 28px));
-  --radius: 6px;
+  --card-width: min(500px, calc(100vw - 28px));
+  --radius: 0px;
   --shadow: none;
   --shadow-soft: none;
 }
 
 body.retro-active {
   background: #000000 !important;
-  color: var(--panel-text, #f5f5f5);
+  color: var(--ink-strong, #00ffd0);
   font-family: "Courier New", monospace;
-  letter-spacing: 0.01em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  image-rendering: pixelated;
 }
+
+body.retro-active * { font-weight: 700; }
 
 body.retro-active::before { display: none !important; }
 
@@ -2962,12 +2966,13 @@ body.retro-active #app {
 body.retro-active .card,
 body.retro-active .round-panel {
   background: var(--panel-bg, #00ffd0);
-  color: var(--panel-text, #001b12);
-  border: 2px solid var(--panel-border, #000000);
-  border-radius: var(--radius, 8px);
+  color: var(--panel-text, #000000);
+  border: 3px solid var(--panel-border, #000000);
+  border-radius: var(--radius, 0px);
   box-shadow: none;
   position: relative;
   isolation: isolate;
+  overflow: hidden;
 }
 
 .retro-card-shadow::before,
@@ -2975,27 +2980,27 @@ body.retro-active .card::before,
 body.retro-active .round-panel::before {
   content: "";
   position: absolute;
-  top: 6px;
-  left: 6px;
-  right: -6px;
-  bottom: -6px;
+  top: 8px;
+  left: 8px;
+  right: -8px;
+  bottom: -8px;
   background-image: repeating-linear-gradient(
-    45deg,
-    color-mix(in srgb, var(--retro-pattern, #002a59) 70%, transparent) 0 6px,
+    90deg,
+    color-mix(in srgb, var(--retro-pattern, #004a80) 100%, #000000 30%) 0 6px,
     transparent 6px,
     transparent 12px
   );
-  background-color: color-mix(in srgb, var(--retro-pattern, #002a59) 50%, transparent);
-  border: 2px solid var(--panel-border, #000000);
-  border-radius: var(--radius, 8px);
+  background-color: #000000;
+  border: 3px solid var(--panel-border, #000000);
+  border-radius: var(--radius, 0px);
   z-index: -1;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 body.retro-active .card,
 body.retro-active .round-panel {
-  padding: 28px clamp(20px, 6vw, 40px);
-  gap: 18px;
+  padding: 26px clamp(18px, 6vw, 38px);
+  gap: 16px;
 }
 
 body.retro-active .mono,
@@ -3014,8 +3019,12 @@ body.retro-active .stage-overlay__title {
 body.retro-active .title { font-size: 1.6rem; }
 
 body.retro-active .countdown-big {
-  color: var(--panel-text, #ffffff);
-  text-shadow: 0 0 12px var(--accent, #ff00ff);
+  color: #000000;
+  text-shadow: 0 0 8px var(--ink-strong, #00ffd0);
+  background: var(--panel-bg, #00ffd0);
+  display: inline-block;
+  padding: 12px 18px;
+  border: 3px solid #000000;
 }
 
 body.retro-active input[type="text"],
@@ -3023,34 +3032,36 @@ body.retro-active input[type="number"],
 body.retro-active .input,
 body.retro-active textarea {
   font-family: "Courier New", monospace;
-  border-radius: 4px;
-  border: 2px solid var(--panel-border, #000000);
-  background: color-mix(in srgb, var(--panel-bg, #111111) 92%, #000000 8%);
-  color: var(--panel-text, #f5f5f5);
+  border-radius: 0;
+  border: 3px solid var(--panel-border, #000000);
+  background: color-mix(in srgb, var(--panel-bg, #111111) 82%, #000000 18%);
+  color: #000000;
   box-shadow: none;
+  padding: 12px 10px;
 }
 
 body.retro-active input[type="text"]:focus,
 body.retro-active input[type="number"]:focus,
 body.retro-active .input:focus,
 body.retro-active textarea:focus {
-  outline: 2px solid var(--accent, #ff00ff);
-  box-shadow: none;
+  outline: 3px solid var(--panel-border, #000000);
+  box-shadow: 0 0 0 3px var(--panel-bg, #00ffd0);
 }
 
 body.retro-active .btn {
   font-family: "Courier New", monospace;
-  border-radius: 4px;
-  background: var(--accent, #ff00ff);
+  border-radius: 0;
+  background: var(--accent, #00ffd0);
   color: #000000;
-  border: 2px solid var(--panel-border, #000000);
+  border: 3px solid var(--panel-border, #000000);
   box-shadow: none;
   position: relative;
   isolation: isolate;
   padding: 14px 22px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  --btn-shadow-offset: 4px;
+  --btn-shadow-offset: 5px;
+  image-rendering: pixelated;
 }
 
 body.retro-active .btn::after {
@@ -3060,17 +3071,17 @@ body.retro-active .btn::after {
   transform: translate(var(--btn-shadow-offset), var(--btn-shadow-offset));
   background: repeating-linear-gradient(
     135deg,
-    color-mix(in srgb, var(--retro-pattern, #111111) 70%, transparent) 0 6px,
+    color-mix(in srgb, var(--retro-pattern, #111111) 100%, #000000 30%) 0 6px,
     transparent 6px,
     transparent 12px
   );
-  border: 2px solid var(--panel-border, #000000);
+  border: 3px solid var(--panel-border, #000000);
   z-index: -1;
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  transition: opacity 0.1s ease, transform 0.1s ease;
 }
 
 body.retro-active .btn:hover:not(:disabled) {
-  filter: brightness(1.05);
+  filter: brightness(1.08);
 }
 
 body.retro-active .btn:active:not(:disabled),
@@ -3085,52 +3096,102 @@ body.retro-active .btn.is-pressed::after {
 }
 
 body.retro-active .btn:disabled {
-  opacity: 0.55;
-  filter: grayscale(0.5);
+  opacity: 0.6;
+  filter: grayscale(1);
 }
 
 body.retro-active .pill,
 body.retro-active .round-panel__step {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  border-radius: 50%;
-  border: 2px solid var(--panel-border, #000000);
-  background: transparent;
-  color: var(--panel-text, #f5f5f5);
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 0;
+  border: 3px solid var(--panel-border, #000000);
+  background: #000000;
+  color: var(--ink-strong, #00ffd0);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: none;
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--retro-pattern, #111111) 80%, #000000 20%);
 }
 
 body.retro-active .round-panel__step.is-active,
 body.retro-active .round-panel__step[aria-current="true"],
 body.retro-active .pill.is-active,
 body.retro-active .pill.is-selected {
-  background: var(--accent, #ff00ff);
+  background: var(--accent, #00ffd0);
   color: #000000;
 }
 
-.retro-stripe-transition {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  background: repeating-linear-gradient(
-    0deg,
-    color-mix(in srgb, var(--accent, #ff00ff) 90%, transparent) 0px,
-    color-mix(in srgb, var(--accent, #ff00ff) 90%, transparent) 8px,
-    transparent 8px,
-    transparent 16px
-  );
-  animation: retroStripeWipe 0.42s ease-out forwards;
+body.retro-active .round-panel__status-note,
+body.retro-active .round-panel__answer-value,
+body.retro-active .round-panel__answer-label,
+body.retro-active .round-panel__question,
+body.retro-active .round-panel__heading,
+body.retro-active .round-panel__content {
+  color: #000000;
 }
 
-@keyframes retroStripeWipe {
-  0% { transform: translateY(-100%); opacity: 1; }
-  40% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(0); opacity: 0; }
+body.retro-active .round-panel__status-note {
+  background: #000000;
+  color: var(--ink-strong, #00ffd0);
+  padding: 10px 12px;
+  border: 3px solid var(--panel-border, #000000);
+}
+
+body.retro-active .marking-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+body.retro-active .marking-button {
+  background: #000000;
+  border: 3px solid var(--panel-border, #000000);
+  color: var(--ink-strong, #00ffd0);
+  width: 84px;
+  height: 84px;
+  position: relative;
+  font-size: 0;
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--retro-pattern, #111111) 80%, #000000 20%);
+  border-radius: 0;
+}
+
+body.retro-active .marking-button::after {
+  content: "";
+  position: absolute;
+  inset: 20px;
+  background-color: var(--ink-strong, #00ffd0);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+body.retro-active .marking-button--tick::after {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><path fill='black' d='M0 8h2v2H0zM2 10h2v2H2zM4 12h2v2H4zM6 10h2v2H6zM8 8h2v2H8zM10 6h2v2h-2zM12 4h2v2h-2z'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><path fill='black' d='M0 8h2v2H0zM2 10h2v2H2zM4 12h2v2H4zM6 10h2v2H6zM8 8h2v2H8zM10 6h2v2h-2zM12 4h2v2h-2z'/></svg>");
+}
+
+body.retro-active .marking-button--unknown::after {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><path fill='black' d='M4 2h8v2H4zM4 4h2v2H4zM10 4h2v4h-2zM6 6h2v2H6zM8 8h2v2H8zM8 12h2v2H8zM4 12h2v2H4z'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><path fill='black' d='M4 2h8v2H4zM4 4h2v2H4zM10 4h2v4h-2zM6 6h2v2H6zM8 8h2v2H8zM8 12h2v2H8zM4 12h2v2H4z'/></svg>");
+}
+
+body.retro-active .marking-button--cross::after {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><path fill='black' d='M2 2h2v2H2zM4 4h2v2H4zM6 6h2v2H6zM8 8h2v2H8zM10 10h2v2h-2zM12 12h2v2h-2zM12 2h2v2h-2zM10 4h2v2h-2zM8 6h2v2H8zM6 8h2v2H6zM4 10h2v2H4zM2 12h2v2H2z'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><path fill='black' d='M2 2h2v2H2zM4 4h2v2H4zM6 6h2v2H6zM8 8h2v2H8zM10 10h2v2h-2zM12 12h2v2h-2zM12 2h2v2h-2zM10 4h2v2h-2zM8 6h2v2H8zM6 8h2v2H6zM4 10h2v2H4zM2 12h2v2H2z'/></svg>");
+}
+
+body.retro-active .marking-button[aria-pressed="true"] {
+  background: var(--accent, #00ffd0);
+  color: #000000;
+  box-shadow: 0 0 0 0 transparent;
+}
+
+body.retro-active .marking-button[aria-pressed="true"]::after {
+  background-color: #000000;
 }
 
 @media (prefers-reduced-motion: reduce) {

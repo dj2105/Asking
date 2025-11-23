@@ -122,20 +122,6 @@ function pickCardMotion() {
   return choice;
 }
 
-function triggerStripeTransition() {
-  try {
-    const existing = document.querySelector(".retro-stripe-transition");
-    if (existing?.parentElement) existing.remove();
-    const overlay = document.createElement("div");
-    overlay.className = "retro-stripe-transition";
-    overlay.setAttribute("aria-hidden", "true");
-    document.body?.appendChild(overlay);
-    overlay.addEventListener("animationend", () => {
-      try { overlay.remove(); } catch {}
-    }, { once: true });
-  } catch {}
-}
-
 function applyRetroCardChrome(scope) {
   if (!scope) return;
   RETRO_CARD_TARGETS.forEach((selector) => {
@@ -301,8 +287,6 @@ async function mountRoute() {
   const importer = load || VIEW_MAP.lobby;
 
   console.log(`[router] mount ${actualRoute}`);
-
-  triggerStripeTransition();
 
   applyLayoutMode(actualRoute);
 
