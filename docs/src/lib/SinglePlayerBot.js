@@ -148,7 +148,21 @@ export async function ensureBotGuestAnswers({ code, round, roomData, roundData }
   if (!bot.enabled) return null;
   const answersMap = roomData?.answers || {};
   const existing = (answersMap.guest || {})[round];
-  if (Array.isArray(existing) && existing.length >= 3) return null;
+  const markingReady = Boolean(((roomData?.markingReady || {}).guest || {})[round]);
+  if (Array.isArray(existing) && existing.length >= 3) {
+    if (!markingReady) {
+      const rRef = doc(db, "rooms", clampCode(code));
+      try {
+        await updateDoc(rRef, {
+          [`markingReady.guest.${round}`]: true,
+          "timestamps.updatedAt": serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn("[bot] failed to backfill bot marking readiness", err);
+      }
+    }
+    return null;
+  }
 
   const guestItems = Array.isArray(roundData?.guestItems) ? roundData.guestItems.slice(0, 3) : [];
   if (!guestItems.length) return null;

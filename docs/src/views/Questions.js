@@ -30,6 +30,7 @@ const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
 const DEFAULT_HEADING = "QUESTIONS";
 const JEMIMA_HEADING = "WHICH YEAR...?";
+const MARKING_READY_GRACE_MS = 10_000;
 
 function balanceQuestionText(input = "") {
   const raw = String(input || "").replace(/\s+/g, " ").trim();
@@ -321,6 +322,9 @@ export default {
     let goToMarkingClicked = false;
     let markingCountdownStartAt = null;
     let countdownTimer = null;
+    let markingFlipInFlight = false;
+    let bothMarkingReadySince = null;
+    let fallbackTriggeredAt = null;
     let mathsClueVisible = false;
     let submissionRank = null;
     let submittedScreen = null;
@@ -516,12 +520,43 @@ export default {
       }
     };
 
+    const attemptMarkingFlip = async (reason = "tick") => {
+      if (!markingCountdownStartAt) return;
+      if (myRole !== "host") return;
+      const ms = timeUntil(markingCountdownStartAt);
+      if (ms > 0) return;
+      if (markingFlipInFlight) return;
+      markingFlipInFlight = true;
+      console.debug(
+        "[questions] attempting marking flip (%s) — round=%s startAt=%s",
+        reason,
+        round,
+        markingCountdownStartAt
+      );
+      try {
+        await updateDoc(rRef, {
+          state: "marking",
+          "markingCountdown.startAt": null,
+          "markingCountdown.round": null,
+          "timestamps.updatedAt": serverTimestamp(),
+        });
+        console.debug("[questions] marking flip succeeded (round %s)", round);
+      } catch (err) {
+        console.warn("[questions] failed to flip to marking (%s):", reason, err);
+      } finally {
+        markingFlipInFlight = false;
+      }
+    };
+
     const renderMarkingCountdown = () => {
       if (!markingCountdownStartAt) return;
       const ms = timeUntil(markingCountdownStartAt);
       const secs = Math.max(0, Math.ceil(ms / 1000));
       showStatusNote(`Starting marking in ${secs}…`);
       toMarkingBtn.style.display = "none";
+      if (myRole === "host" && ms <= 0) {
+        attemptMarkingFlip("countdown-tick");
+      }
     };
 
     const applySubmittedFrame = () => {
@@ -942,6 +977,11 @@ export default {
         toMarkingBtn.classList.remove("throb");
       }
       try {
+        console.debug(
+          "[questions] signalling marking ready (silent=%s) — round=%s",
+          silent,
+          round
+        );
         await updateDoc(rRef, {
           [`markingReady.${myRole}.${round}`]: true,
           "timestamps.updatedAt": serverTimestamp(),
@@ -1066,6 +1106,15 @@ export default {
       myMarkingReady = Boolean(((markingReadyMap[myRole] || {})[round]));
       oppMarkingReady = Boolean(((markingReadyMap[oppRole] || {})[round]));
       if (myMarkingReady) goToMarkingClicked = true;
+      if (myMarkingReady && oppMarkingReady) {
+        if (!bothMarkingReadySince) {
+          bothMarkingReadySince = Date.now();
+          console.debug("[questions] both players ready for marking (round %s)", round);
+        }
+      } else {
+        bothMarkingReadySince = null;
+        fallbackTriggeredAt = null;
+      }
 
       const countdownData = data.markingCountdown || {};
       const countdownRound = Number(countdownData.round);
@@ -1104,6 +1153,13 @@ export default {
 
       if (myRole === "host" && data.state === "questions") {
         if (myMarkingReady && oppMarkingReady && !incomingCountdown) {
+          console.debug(
+            "[questions] host arming marking countdown — my=%s opp=%s incoming=%s round=%s",
+            myMarkingReady,
+            oppMarkingReady,
+            incomingCountdown,
+            round
+          );
           try {
             const startAt = Date.now() + 3000;
             markingCountdownStartAt = startAt;
@@ -1116,21 +1172,45 @@ export default {
               "markingCountdown.round": round,
               "timestamps.updatedAt": serverTimestamp(),
             });
+            console.debug("[questions] marking countdown armed for round %s", round);
           } catch (err) {
             console.warn("[questions] failed to arm marking countdown:", err);
           }
         }
 
         if (markingCountdownStartAt && timeUntil(markingCountdownStartAt) <= 0) {
-          try {
-            await updateDoc(rRef, {
-              state: "marking",
-              "markingCountdown.startAt": null,
-              "markingCountdown.round": null,
-              "timestamps.updatedAt": serverTimestamp(),
-            });
-          } catch (err) {
-            console.warn("[questions] failed to flip to marking:", err);
+          await attemptMarkingFlip("snapshot");
+        }
+      }
+
+      if (bothMarkingReadySince && data.state === "questions") {
+        const elapsed = Date.now() - bothMarkingReadySince;
+        if (elapsed > MARKING_READY_GRACE_MS) {
+          const now = Date.now();
+          if (!fallbackTriggeredAt || now - fallbackTriggeredAt > 4000) {
+            fallbackTriggeredAt = now;
+            if (myRole === "host") {
+              console.warn(
+                "[questions] forcing marking state after grace period — elapsed=%sms round=%s",
+                elapsed,
+                round
+              );
+              try {
+                await updateDoc(rRef, {
+                  state: "marking",
+                  "markingCountdown.startAt": null,
+                  "markingCountdown.round": null,
+                  "timestamps.updatedAt": serverTimestamp(),
+                });
+              } catch (err) {
+                console.warn("[questions] fallback marking flip failed:", err);
+              }
+            } else {
+              console.warn(
+                "[questions] waiting for host to flip to marking — ready for %sms",
+                elapsed
+              );
+            }
           }
         }
       }
