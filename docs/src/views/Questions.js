@@ -447,6 +447,7 @@ export default {
       steps.classList.toggle("is-complete", isRoundComplete());
       const dormant = published || submitting;
       steps.classList.toggle("is-dormant", dormant);
+      steps.classList.toggle("is-submit-ready", inSubmitReady);
       const allowActive = !(published || submitting || showingClue || readyPreviewMode);
       const allowAnswered = !readyPreviewMode;
       stepButtons.forEach((btn, i) => {
