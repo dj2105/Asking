@@ -18,6 +18,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { clampCode, getHashParams } from "../lib/util.js";
+import { applyStageTheme } from "../lib/theme.js";
 import { buildPlaceholderRounds, buildPlaceholderMaths, padItems, clone } from "../lib/placeholders.js";
 import { normaliseBotConfig, startHash } from "../lib/SinglePlayerBot.js";
 import {
@@ -327,8 +328,7 @@ export default {
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme("keyroom", 1);
 
     container.innerHTML = "";
     const root = el("div", { class: "view view-seeding" });

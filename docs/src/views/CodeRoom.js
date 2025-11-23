@@ -8,6 +8,7 @@ import { ensureAuth, db } from "../lib/firebase.js";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { clampCode, copyToClipboard, setStoredRole } from "../lib/util.js";
 import { ensureBotCountdown } from "../lib/SinglePlayerBot.js";
+import { applyStageTheme } from "../lib/theme.js";
 
 const roomRef = (code) => doc(db, "rooms", code);
 
@@ -33,8 +34,7 @@ export default {
   async mount(container, params = {}) {
     await ensureAuth();
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme("coderoom", 1);
 
     const code = clampCode(params.code || "");
     if (!code) {
@@ -58,6 +58,26 @@ export default {
     }, code);
     card.appendChild(codeBlock);
 
+    const statusText = el("span", {}, "Waiting for Jaime");
+    const status = el(
+      "div",
+      { class: "mono has-typing-dots", style: "margin-top:20px;min-height:20px;text-align:center;" },
+      [
+        statusText,
+        el("span", { class: "typing-dots", "aria-hidden": "true" }, [
+          el("span", { class: "typing-dots__dot" }, ""),
+          el("span", { class: "typing-dots__dot" }, ""),
+          el("span", { class: "typing-dots__dot" }, ""),
+        ]),
+      ]
+    );
+    const statusDots = status.querySelector(".typing-dots");
+    const setStatus = (text, showDots = false) => {
+      statusText.textContent = text;
+      if (statusDots) statusDots.style.display = showDots ? "inline-flex" : "none";
+      status.classList.toggle("has-typing-dots", Boolean(showDots));
+    };
+
     const copyLink = el(
       "button",
       {
@@ -65,18 +85,14 @@ export default {
         type: "button",
         onclick: async () => {
           const ok = await copyToClipboard(formatShareUrl(code));
-          if (ok) status.textContent = "Link copied.";
+          if (ok) setStatus("Link copied.");
         },
       },
       "Copy join link"
     );
     card.appendChild(el("div", { style: "text-align:center;margin-top:8px;" }, copyLink));
 
-    const status = el(
-      "div",
-      { class: "mono", style: "margin-top:20px;min-height:20px;text-align:center;" },
-      "Waiting for Jaime…"
-    );
+    setStatus("Waiting for Jaime", true);
     card.appendChild(status);
 
     const guestBadge = el(
@@ -136,7 +152,7 @@ export default {
       roomRef(code),
       (snap) => {
         if (!snap.exists()) {
-          status.textContent = "Room missing. Returning to Key Room.";
+        setStatus("Room missing. Returning to Key Room.");
           setTimeout(() => { location.hash = "#/keyroom"; }, 600);
           return;
         }
@@ -150,13 +166,16 @@ export default {
         }
 
         if (currentState === "coderoom") {
-          status.textContent = guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime…";
+          setStatus(
+            guestPresent ? "Jaime joined. Arming countdown…" : "Waiting for Jaime",
+            !guestPresent
+          );
           guestBadge.textContent = guestPresent ? "Guest connected." : "";
         } else if (currentState === "keyroom") {
-          status.textContent = "Back in the Key Room.";
+          setStatus("Back in the Key Room.");
           guestBadge.textContent = guestPresent ? "Guest already linked." : "";
         } else {
-          status.textContent = `State: ${currentState}`;
+          setStatus(`State: ${currentState}`);
           guestBadge.textContent = guestPresent ? "Guest connected." : "";
         }
 

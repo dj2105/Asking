@@ -17,6 +17,7 @@ import {
 
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 import { ensureBotAwardAck } from "../lib/SinglePlayerBot.js";
+import { applyStageTheme } from "../lib/theme.js";
 
 const CONTINUE_LEAD_MS = 3_000;
 
@@ -246,8 +247,7 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme("award", round);
 
     container.innerHTML = "";
 

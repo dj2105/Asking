@@ -19,6 +19,7 @@ import {
 import * as MathsPaneMod from "../lib/MathsPane.js";
 import { clampCode, getHashParams, getStoredRole } from "../lib/util.js";
 import { ensureBotMaths } from "../lib/SinglePlayerBot.js";
+import { applyStageTheme } from "../lib/theme.js";
 const mountMathsPane =
   (typeof MathsPaneMod?.default === "function" ? MathsPaneMod.default :
    typeof MathsPaneMod?.mount === "function" ? MathsPaneMod.mount :
@@ -162,8 +163,7 @@ export default {
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
 
-    const hue = Math.floor(Math.random() * 360);
-    document.documentElement.style.setProperty("--ink-h", String(hue));
+    applyStageTheme("maths", 5);
 
     container.innerHTML = "";
 
@@ -180,11 +180,19 @@ export default {
       { class: "mono small maths-helper" },
       "Single years only (1–4 digits, AD). Drafts save automatically."
     );
+    const waitText = el("span", { class: "wait-note__text" }, "");
     const eventsWrap = el("div", { class: "maths-form maths-form--events" });
     const totalPreview = el("div", { class: "mono small maths-helper maths-helper--total" }, "Your running total: 0");
 
     const done = el("button", { class: "btn maths-submit", disabled: "" }, "Send to Jemima");
-    const waitMsg = el("div", { class: "mono small wait-note" }, "");
+    const waitMsg = el("div", { class: "mono small wait-note has-typing-dots" }, [
+      waitText,
+      el("span", { class: "typing-dots", "aria-hidden": "true" }, [
+        el("span", { class: "typing-dots__dot" }, ""),
+        el("span", { class: "typing-dots__dot" }, ""),
+        el("span", { class: "typing-dots__dot" }, ""),
+      ]),
+    ]);
     waitMsg.style.display = "none";
 
     card.appendChild(heading);
@@ -214,7 +222,7 @@ export default {
     const oppName = playerName(oppRole);
     const myName = playerName(myRole);
     heading.textContent = `${myName} — Jemima’s Maths`;
-    waitMsg.textContent = `Waiting for ${oppName}…`;
+    waitText.textContent = `Waiting for ${oppName}`;
 
     try {
       if (mountMathsPane && room0.maths) {
