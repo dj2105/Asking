@@ -277,10 +277,15 @@ export default {
       prompt.style.display = visible ? "" : "none";
     };
 
-    const applySubmitReadyLayout = (active) => {
+    const applySubmitReadyLayout = (active, { forceChoicesVisible = null } = {}) => {
       const hideQa = active && !published && !submitting;
+      const choicesVisible =
+        typeof forceChoicesVisible === "boolean" ? forceChoicesVisible : !hideQa;
+      setPromptVisible(!hideQa);
+      setChoicesVisible(choicesVisible);
+      const hideContent = hideQa && !choicesVisible;
       content.classList.toggle("round-panel__content--submit-ready", hideQa);
-      panel.classList.toggle("round-panel--submit-ready", hideQa);
+      content.style.display = hideContent ? "none" : "";
     };
 
     let idx = 0;
@@ -484,8 +489,9 @@ export default {
       const render = () => {
         setHeading(DEFAULT_HEADING);
         setPrompt("", { status: false });
+        setChoicesVisible(true);
         hideStatusNote();
-        applySubmitReadyLayout(true);
+        applySubmitReadyLayout(true, { forceChoicesVisible: true });
         readyBtn.style.display = "";
         readyBtn.disabled = false;
         readyBtn.textContent = "SUBMIT";
@@ -649,8 +655,9 @@ export default {
         const current = triplet[idx] || {};
         setHeading(DEFAULT_HEADING);
         setPrompt(current.question || "", { status: false, variant: "question" });
+        setChoicesVisible(true);
         hideStatusNote();
-        applySubmitReadyLayout(false);
+        applySubmitReadyLayout(false, { forceChoicesVisible: true });
         choiceButtons.forEach((btn) => {
           btn.classList.remove("is-blinking");
           btn.classList.remove("is-blinking-fast");
@@ -775,8 +782,8 @@ export default {
       setHeading(DEFAULT_HEADING);
       setPrompt(text, { status: true, showDots: true });
       hideStatusNote();
+      applySubmitReadyLayout(false, { forceChoicesVisible: false });
       setChoicesVisible(false);
-      applySubmitReadyLayout(false);
       renderSteps();
     };
 
