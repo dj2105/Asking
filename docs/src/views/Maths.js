@@ -163,7 +163,7 @@ export default {
     const params = getHashParams();
     const code = clampCode(params.get("code") || "");
 
-    applyStageTheme("maths", 5);
+    applyStageTheme("maths", 5, code);
 
     container.innerHTML = "";
 

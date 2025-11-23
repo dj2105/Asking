@@ -128,7 +128,7 @@ export default {
     const requestedRound = parseInt(params.get("round") || "", 10);
     let round = Number.isFinite(requestedRound) && requestedRound > 0 ? requestedRound : null;
 
-    applyStageTheme("questions", round || 1);
+    applyStageTheme("questions", round || 1, code);
 
     container.innerHTML = "";
 
@@ -708,7 +708,7 @@ export default {
       round = Number.isFinite(roomRound) && roomRound > 0 ? roomRound : 1;
     }
 
-    applyStageTheme("questions", effectiveRound());
+    applyStageTheme("questions", effectiveRound(), code);
 
     renderSteps();
 
@@ -1095,7 +1095,7 @@ export default {
         timerContext.round = round;
         unlockStepLabels();
         renderSteps();
-        applyStageTheme("questions", effectiveRound());
+        applyStageTheme("questions", effectiveRound(), code);
       }
 
       if (data.state === "countdown") {
