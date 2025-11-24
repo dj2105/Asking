@@ -153,7 +153,7 @@ export default {
     const code = clampCode(params.get("code") || "");
     let round = parseInt(params.get("round") || "1", 10) || 1;
 
-    applyStageTheme("marking", round || 1);
+    applyStageTheme("marking", round || 1, code);
 
     container.innerHTML = "";
 
@@ -982,7 +982,7 @@ export default {
           timerContext.round = round;
           unlockStepLabels();
           renderSteps();
-          applyStageTheme("marking", effectiveRound());
+          applyStageTheme("marking", effectiveRound(), code);
         }
       }
 
