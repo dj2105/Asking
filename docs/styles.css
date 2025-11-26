@@ -44,130 +44,9 @@ html[class*=" theme-"] {
   transition: background-color 400ms ease, color 400ms ease;
 }
 
-html.theme-dawn {
-  --bg: #f5f7ff;
-  --bg-soft: #ffffff;
-  --ink: #111827;
-  --accent: #60a5fa;
-  --accent-soft: #dbeafe;
-  --soft-line: rgba(17, 24, 39, 0.08);
-  --muted: rgba(17, 24, 39, 0.64);
-  --sky-1: rgba(96, 165, 250, 0.46);
-  --sky-2: rgba(59, 130, 246, 0.32);
-  --sky-3: rgba(129, 140, 248, 0.26);
-  --sky-4: rgba(224, 231, 255, 0.2);
-}
-
-html.theme-midday {
-  --bg: #e0f2fe;
-  --bg-soft: #f9fafb;
-  --ink: #0f172a;
-  --accent: #0284c7;
-  --accent-soft: #bae6fd;
-  --soft-line: rgba(15, 23, 42, 0.1);
-  --muted: rgba(15, 23, 42, 0.7);
-  --sky-1: rgba(14, 165, 233, 0.38);
-  --sky-2: rgba(234, 179, 8, 0.22);
-  --sky-3: rgba(3, 105, 161, 0.32);
-  --sky-4: rgba(186, 230, 253, 0.26);
-}
-
-html.theme-sunset {
-  --bg: #fef3c7;
-  --bg-soft: #fffbeb;
-  --ink: #1f2933;
-  --accent: #fb923c;
-  --accent-soft: #fed7aa;
-  --soft-line: rgba(31, 41, 51, 0.12);
-  --muted: rgba(31, 41, 51, 0.72);
-  --sky-1: rgba(251, 146, 60, 0.4);
-  --sky-2: rgba(217, 119, 6, 0.32);
-  --sky-3: rgba(251, 191, 36, 0.3);
-  --sky-4: rgba(254, 243, 199, 0.22);
-}
-
-html.theme-dusk {
-  --bg: #1e293b;
-  --bg-soft: #0f172a;
-  --ink: #e5e7eb;
-  --accent: #ec4899;
-  --accent-soft: #f9a8d4;
-  --soft-line: rgba(229, 231, 235, 0.14);
-  --muted: rgba(226, 232, 240, 0.76);
-  --sky-1: rgba(236, 72, 153, 0.34);
-  --sky-2: rgba(59, 130, 246, 0.26);
-  --sky-3: rgba(14, 165, 233, 0.24);
-  --sky-4: rgba(15, 23, 42, 0.52);
-}
-
-html.theme-night {
-  --bg: #020617;
-  --bg-soft: #0b1120;
-  --ink: #e5e7eb;
-  --accent: #38bdf8;
-  --accent-soft: #1d4ed8;
-  --soft-line: rgba(226, 232, 240, 0.18);
-  --muted: rgba(226, 232, 240, 0.78);
-  --sky-1: rgba(56, 189, 248, 0.32);
-  --sky-2: rgba(37, 99, 235, 0.32);
-  --sky-3: rgba(147, 197, 253, 0.18);
-  --sky-4: rgba(8, 47, 73, 0.5);
-}
-
-html.theme-lobby {
-  --bg: #0b0c10;
-  --bg-soft: #0b0c10;
-  --ink: #e5e7eb;
-  --accent: #6366f1;
-  --accent-soft: #e0e7ff;
-  --soft-line: rgba(229, 231, 235, 0.14);
-  --muted: rgba(229, 231, 235, 0.72);
-  --sky-1: rgba(99, 102, 241, 0.4);
-  --sky-2: rgba(236, 72, 153, 0.28);
-  --sky-3: rgba(125, 211, 252, 0.26);
-  --sky-4: rgba(224, 231, 255, 0.22);
-}
-
-html.theme-dawn,
-html.theme-midday,
-html.theme-sunset,
-html.theme-dusk,
-html.theme-night,
-html.theme-lobby {
-  --bg: #0b0c10;
-  --bg-soft: #0b0c10;
-  --ink: #e5e7eb;
-  --card: #0b0c10;
-  --card-ink: #e5e7eb;
-  --soft-line: rgba(229, 231, 235, 0.14);
-  --muted: rgba(229, 231, 235, 0.72);
-}
-
 html, body { height: 100%; }
 
 * { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  --bg: #0b0c10;
-  --bg-soft: #0b0c10;
-  --card: #0b0c10;
-  --card-ink: #e5e7eb;
-  --ink: #e5e7eb;
-  --soft-line: rgba(229, 231, 235, 0.14);
-  --muted: rgba(229, 231, 235, 0.72);
-  background: var(--bg);
-  color: var(--ink);
-  font-family: "Nunito", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  position: relative;
-  min-height: 100%;
-  --layout-pad-top: var(--layout-pad-base);
-  --layout-pad-bottom: clamp(72px, 12vh, 160px);
-  transition: background-color 360ms ease, color 360ms ease;
-}
 
 body::before {
   content: "";
@@ -368,18 +247,71 @@ body.layout-top .stage-center.stage-center--solo {
 .card--soft { box-shadow: var(--shadow-soft); }
 .card--center { align-items: center; text-align: center; }
 
-.round-panel {
+/* ===========================
+   Questions summary row (chevrons + steps)
+   =========================== */
+
+.view-questions .questions-summary-row {
   width: 100%;
-  max-width: 440px;
-  background: var(--card);
-  border-radius: var(--radius);
-  color: var(--card-ink);
-  box-shadow: var(--shadow);
-  padding: 38px clamp(26px, 6vw, 42px);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 22px;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+/* Chevrons that point in towards the step bubbles */
+.view-questions .questions-summary-chevrons {
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 80%, #ffffff 20%);
+  opacity: 0;
+  transform: translateX(0);
+  transition: opacity 0.16s ease-out, transform 0.16s ease-out;
+}
+
+/* Only visible in submit-ready / summary mode */
+.view-questions .questions-summary-chevrons.is-visible {
+  opacity: 1;
+}
+
+/* Two-step “nudge” animation towards the step row */
+.view-questions .questions-summary-chevrons--left.is-visible {
+  animation: summaryChevronLeft 0.6s steps(2, jump-none) infinite;
+}
+
+.view-questions .questions-summary-chevrons--right.is-visible {
+  animation: summaryChevronRight 0.6s steps(2, jump-none) infinite;
+}
+
+@keyframes summaryChevronLeft {
+  0% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-8px);
+  }
+}
+
+@keyframes summaryChevronRight {
+  0% {
+    transform: translateX(8px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(8px);
+  }
 }
 
 .round-panel.round-panel--ready-preview {
@@ -961,6 +893,107 @@ body.layout-top .stage-center.stage-center--solo {
 .round-panel.round-panel--submit-ready .round-panel__choices,
 .round-panel.round-panel--submit-ready .round-panel__question {
   opacity: 0.6;
+}
+
+/* ===========================
+   Questions: EDIT / CONTINUE strip
+   =========================== */
+
+.round-panel__ready-actions {
+  width: 100%;
+  display: none;
+  align-items: stretch;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.round-panel__ready-actions.is-visible {
+  display: flex;
+}
+
+.round-panel__ready-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 2px;
+}
+
+/* Big EDIT ANSWERS block */
+.round-panel__ready-edit {
+  padding: 14px 18px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--soft-line);
+  background: color-mix(in srgb, var(--bg-soft) 96%, transparent);
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+  min-width: 260px;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
+}
+
+.round-panel__ready-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* CONTINUE button in this strip reuses .round-panel__submit + .btn.btn-ready */
+
+.round-panel__ready-actions .round-panel__submit {
+  min-width: 220px;
+}
+
+/* Arrow hints on either side */
+.round-panel__ready-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  color: color-mix(in srgb, var(--accent) 80%, #ffffff 20%);
+  padding: 0 2px;
+  align-self: stretch;
+  min-width: 22px;
+}
+
+.round-panel__ready-arrow--left {
+  animation: readyArrowLeft 0.7s steps(2, jump-none) infinite;
+}
+
+.round-panel__ready-arrow--right {
+  animation: readyArrowRight 0.7s steps(2, jump-none) infinite;
+}
+
+@keyframes readyArrowLeft {
+  0% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-6px);
+  }
+}
+
+@keyframes readyArrowRight {
+  0% {
+    transform: translateX(6px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(6px);
+  }
 }
 
 .round-panel.round-panel--maths-clue .round-panel__content {
