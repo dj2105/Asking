@@ -1,0 +1,229 @@
+/* src/styles/questions-retro.css  */
+/* Retro skin for QUESTIONS stage only */
+
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+.view-questions {
+  /* keep existing layout, just override typography + colours */
+  font-family: "Press Start 2P", system-ui, monospace;
+  color: #fdf7e3;
+}
+
+/* --- Main panel/card ---------------------------------------------------- */
+
+.view-questions .round-panel {
+  box-sizing: border-box;
+  max-width: 360px;              /* deliberately narrow, mobile-first */
+  margin: 32px auto 24px;
+  padding: 18px 16px 20px;
+  background: #000000;
+  border: 4px solid #fdf7e3;
+  border-radius: 0;              /* keep it chunky / non-rounded */
+}
+
+/* When in “ready preview” / maths clue, keep same shell */
+.view-questions .round-panel--ready-preview {
+  background: #000000;
+}
+
+/* --- Heading ("Questions") --------------------------------------------- */
+
+.view-questions .round-panel__heading {
+  margin: 4px 0 14px;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: 3px;
+  font-size: 18px;
+  color: #00f0ff;                /* cyan */
+}
+
+/* --- Step numbers row (13 / 14 / 15) ----------------------------------- */
+
+.view-questions .round-panel__steps {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+/* hide row when JS decides; just ensure no extra spacing */
+.view-questions .round-panel__steps.is-hidden {
+  display: none;
+}
+
+.view-questions .round-panel__step {
+  min-width: 52px;               /* wider to fit 2 digits */
+  height: 32px;
+  border: 3px solid #fdf7e3;
+  background: #000000;
+  color: #fdf7e3;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+
+/* answered but not currently active – magenta */
+.view-questions .round-panel__step.is-answered {
+  background: #ff2ebd;
+  color: #000000;
+}
+
+/* active step – yellow with triangle */
+.view-questions .round-panel__step.is-active {
+  background: #ffe600;
+  color: #000000;
+}
+
+.view-questions .round-panel__step.is-active::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 10px solid #ffe600;  /* downward-pointing triangle */
+  margin-top: 2px;
+}
+
+/* when the whole triplet is complete (submit ready),
+   treat all steps as magenta “final” bubbles */
+.view-questions .round-panel__steps.is-complete .round-panel__step {
+  background: #ff2ebd;
+  color: #000000;
+}
+
+/* --- Question text ------------------------------------------------------ */
+
+.view-questions .round-panel__content {
+  margin-top: 4px;
+}
+
+/* “status” / commentary layouts keep the same frame */
+.view-questions .round-panel__content--status,
+.view-questions .round-panel__content--comment {
+  text-align: center;
+}
+
+/* The text itself (you already balance with \n in JS) */
+.view-questions .round-panel__question {
+  margin: 10px 4px 18px;
+}
+
+.view-questions .round-panel__question-text {
+  display: block;
+  white-space: pre-line;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* status-note under question */
+.view-questions .round-panel__status-note {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  color: #ff2ebd;
+}
+
+/* --- Answer buttons ----------------------------------------------------- */
+
+.view-questions .round-panel__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* base style for both options */
+.view-questions .round-panel__choice {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 3px solid #000000;
+  background: #fdf7e3;           /* cream */
+  color: #000000;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #000000, 0 3px 0 #000000; /* chunky pixel shadow */
+}
+
+/* selected answer (yellow, like original “correct” bar) */
+.view-questions .round-panel__choice.is-selected {
+  background: #ffe600;
+}
+
+/* ready-preview: both options appear dormant but still fit theme */
+.view-questions .round-panel__choice.is-ready-preview {
+  opacity: 0.75;
+}
+
+/* blink states – keep them visible but simple */
+.view-questions .round-panel__choice.is-blinking {
+  animation: q-blink 0.35s steps(2, start) 2;
+}
+
+.view-questions .round-panel__choice.is-blinking-fast {
+  animation: q-blink-fast 0.2s steps(2, start) 3;
+}
+
+@keyframes q-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+@keyframes q-blink-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.1; }
+}
+
+/* --- Submit / Go to Marking buttons ------------------------------------ */
+
+.view-questions .round-panel__submit {
+  width: 100%;
+  margin-top: 18px;
+  padding: 10px 12px;
+  border: 3px solid #fdf7e3;
+  background: #000000;
+  color: #00f0ff;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* ready to press – throb slightly */
+.view-questions .round-panel__submit--ready.throb {
+  animation: q-pulse 0.9s ease-in-out infinite alternate;
+}
+
+.view-questions .round-panel__submit--waiting {
+  color: #fdf7e3;
+  opacity: 0.7;
+  cursor: default;
+}
+
+@keyframes q-pulse {
+  0% { transform: translateY(0); box-shadow: 0 0 0 0 #00f0ff; }
+  100% { transform: translateY(-1px); box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.35); }
+}
+
+/* --- Back confirm overlay (keep simple but on-theme) -------------------- */
+
+.view-questions .back-confirm__panel {
+  font-family: "Press Start 2P", system-ui, monospace;
+  background: #000000;
+  border: 4px solid #fdf7e3;
+  color: #fdf7e3;
+}
+
+.view-questions .back-confirm__btn {
+  border: 3px solid #fdf7e3;
+  background: #000000;
+  color: #00f0ff;
+}
