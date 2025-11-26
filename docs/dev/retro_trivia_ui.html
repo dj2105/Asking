@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retro Trivia Game</title>
+  <!-- Pixel-style font -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #000000;
+      --panel-border: #fdf7e3;
+      --panel-bg: #000000;
+      --text-main: #fdf7e3;
+      --accent-yellow: #ffe600;
+      --accent-cyan: #00f0ff;
+      --accent-pink: #ff2ebd;
+      --button-bg: #fdf7e3;
+      --button-text: #000000;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: "Press Start 2P", monospace;
+      image-rendering: pixelated;
+      text-rendering: optimizeLegibility;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .game-shell {
+      width: 100%;
+      max-width: 360px; /* deliberately narrow even on desktop */
+      padding: 16px 8px 32px;
+      font-family: "Press Start 2P", monospace;
+    }
+
+    .game-shell * {
+      font-family: "Press Start 2P", monospace;
+    }
+
+    .pixel-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 6px;
+    }
+
+    .pixel-row.top {
+      color: var(--accent-yellow); /* HEADER ZONE COLOUR */
+      background: rgba(255, 230, 0, 0.08);
+    }
+
+    .pixel-row.top span.right {
+      color: var(--accent-cyan);
+    }
+
+    .pixel-row.names {
+      margin-top: 6px;
+      color: var(--text-main);
+    }
+
+    .scores-row {
+      justify-content: space-between;
+    }
+
+    .player-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: flex-start;
+    }
+
+    .player-name {
+      font-size: 12px;
+    }
+
+    .player-score {
+      font-size: 18px;
+      color: var(--accent-cyan); /* SCOREBOARD ZONE COLOUR */
+    }
+
+    .pixel-row .name {
+      flex: 1;
+    }
+
+    .pixel-row .score {
+      min-width: 18px;
+      text-align: right;
+    }
+
+    /* Ticker strip under the HUD */
+    .ticker {
+      margin-top: 6px;
+      height: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .ticker-text {
+      position: absolute;
+      white-space: nowrap;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent-pink); /* TICKER ZONE COLOUR */
+      top: 4px;
+      left: 100%;
+    }
+
+    @keyframes ticker-scroll {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-200%);
+      }
+    }
+
+    .ticker-animate {
+      animation: ticker-scroll 8s linear forwards;
+    }
+
+    .panel {
+      margin-top: 16px;
+      border: 3px solid var(--panel-border);
+      padding: 12px 10px 18px;
+      position: relative;
+      background: var(--panel-bg);
+    }
+
+    .panel-title {
+      text-align: center;
+      font-size: 18px;
+      letter-spacing: 3px;
+      color: var(--accent-cyan); /* MAIN PANEL ZONE COLOUR */
+      margin: 8px 0 10px; /* padding-like space above and below title */
+    }
+
+    /* Question navigation buttons (1,2,3) */
+    .question-nav {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin: 10px 0 16px; /* space above and below number row */
+    }
+
+    .nav-btn {
+      width: 40px;  /* increased width for double‑digit numbers */
+      height: 28px;
+      border: 2px solid var(--panel-border);
+      background: transparent;
+      color: var(--text-main);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      position: relative; /* for triangle indicator */
+    }
+
+    .nav-btn-current {
+      background: var(--accent-yellow);
+      color: #000000;
+    }
+
+    .nav-btn-current::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;  /* half of new width */
+      border-right: 20px solid transparent; /* half of new width */
+      border-top: 9px solid var(--accent-yellow);
+      margin-top: 2px;
+    }
+
+    .nav-btn-answered {
+      background: var(--accent-pink);
+      color: #000000;
+    }
+
+    .nav-btn-final {
+      background: var(--accent-pink);
+      color: #000000;
+    }
+
+    .nav-btn-final-current::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;  /* half of new width */
+      border-right: 20px solid transparent; /* half of new width */
+      border-top: 9px solid var(--accent-pink);
+      margin-top: 2px;
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .dot-strip {
+      display: none;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px; /* slightly square to feel pixel-ish */
+      background: #ffffff;
+      box-shadow: 0 0 0 2px #000000;
+      opacity: 0.4;
+    }
+
+    .dot.active {
+      background: var(--accent-pink);
+      opacity: 1;
+    }
+
+    .question-text {
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: center;
+      margin: 10px 4px 20px; /* space above and below question text */
+      min-height: 60px;
+    }
+
+    .answers {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px; /* space above answers block */
+    }
+
+    .answer-btn {
+      border: 0;
+      padding: 10px 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      cursor: pointer;
+      position: relative;
+      /* chunky pixel shadow */
+      box-shadow: 0 0 0 2px #000000, 0 3px 0 #000000;
+    }
+
+    .answer-btn.selected {
+      background: var(--accent-yellow);
+      color: #000000;
+    }
+
+    .answer-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 2px #000000, 0 1px 0 #000000;
+    }
+
+    .answer-btn:hover {
+      outline: 2px solid var(--accent-cyan);
+    }
+
+    @keyframes quick-flash {
+      0% { opacity: 1; }
+      25% { opacity: 0; }
+      50% { opacity: 1; }
+      75% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    .flash {
+      animation: quick-flash 0.5s linear infinite;
+    }
+
+    .continue-view {
+      text-align: center;
+      min-height: 120px;
+      display: none;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .continue-text {
+      font-size: 14px;
+    }
+
+    .continue-btn {
+      border: 2px solid var(--panel-border);
+      padding: 10px 12px;
+      background: #000000;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 420px) {
+      .game-shell {
+        padding-inline: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <!-- Top HUD rows -->
+    <div class="pixel-row top">
+      <span>S7H</span>
+      <span class="right">Round 1</span>
+    </div>
+
+    <div class="pixel-row names scores-row">
+      <div class="player-block">
+        <span class="player-name">Daniel</span>
+        <span class="player-score">07</span>
+      </div>
+      <div class="player-block" style="align-items: flex-end; text-align: right;">
+        <span class="player-name">Jaime</span>
+        <span class="player-score">09</span>
+      </div>
+    </div>
+
+    <!-- Scrolling ticker -->
+    <div class="ticker">
+      <div id="ticker-text" class="ticker-text"></div>
+    </div>
+
+    <!-- Main question panel -->
+    <div class="panel">
+      <div class="panel-title">Questions</div>
+
+      <!-- Question navigation buttons -->
+      <div id="question-nav" class="question-nav"></div>
+
+      <!-- Progress dots -->
+      <div class="dot-strip" id="dot-strip">
+        <div class="dot" data-index="0"></div>
+        <div class="dot" data-index="1"></div>
+        <div class="dot" data-index="2"></div>
+      </div>
+
+      <!-- Question + answers view -->
+      <div id="question-view">
+        <p id="question-text" class="question-text"></p>
+        <div id="answers" class="answers"></div>
+      </div>
+
+      <!-- Continue view -->
+      <div id="continue-view" class="continue-view">
+        <p class="continue-text">Select number to review answer, or:</p>
+        <button id="continue-btn" class="continue-btn">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // --- Game Data (11) ---
+      const questions = [
+        {
+          id: 143,
+          text: "Which hardness scale begins with talc at 1 and ends with diamond at 10?",
+          options: [
+            { id: "Mohs", text: "The Mohs scale" },
+            { id: "Richter", text: "The Richter scale" },
+          ],
+        },
+        {
+          id: 1,
+          text: "Which chemical element has the atomic number 79 and symbol Au?",
+          options: [
+            { id: "Gold", text: "Gold" },
+            { id: "Silver", text: "Silver" },
+          ],
+        },
+        {
+          id: 15,
+          text: "What is the approximate speed of light in a vacuum (km/s)?",
+          options: [
+            { id: "300k", text: "299,792 km/s" },
+            { id: "150k", text: "150,000 km/s" },
+          ],
+        },
+      ];
+
+      // --- State ---
+      let currentQuestionIndex = 0; // (11, 12)
+      let userAnswers = {}; // (12)
+      let flashingAnswerId = null; // (15)
+      let typingInterval = null; // (13)
+      let inContinueView = false;
+      let tickerIndex = 0; // (18)
+      const tickerMessages = [
+        "Select number to review answer",
+        "Round timer active: fastest player +1 pt",
+      ];
+
+      // --- DOM refs ---
+      const questionTextEl = document.getElementById("question-text");
+      const answersEl = document.getElementById("answers");
+      const navEl = document.getElementById("question-nav");
+      const dotStripEl = document.getElementById("dot-strip");
+      const questionViewEl = document.getElementById("question-view");
+      const continueViewEl = document.getElementById("continue-view");
+      const continueBtnEl = document.getElementById("continue-btn");
+      const tickerTextEl = document.getElementById("ticker-text");
+
+      function allAnswered() {
+        return Object.keys(userAnswers).length === questions.length;
+      }
+
+      // --- Typewriter effect (13) ---
+      function playTypewriter(text) {
+        if (typingInterval) {
+          clearInterval(typingInterval);
+        }
+        questionTextEl.textContent = "";
+        let idx = 0;
+        typingInterval = setInterval(() => {
+          if (idx <= text.length) {
+            questionTextEl.textContent = text.slice(0, idx);
+            idx++;
+          } else {
+            clearInterval(typingInterval);
+            typingInterval = null;
+          }
+        }, 15);
+      }
+
+      // --- Render navigation buttons (6, 16, 17) ---
+      function renderNavButtons() {
+        navEl.innerHTML = "";
+        const finalState = allAnswered();
+
+        questions.forEach((q, index) => {
+          const btn = document.createElement("button");
+          btn.className = "nav-btn";
+          btn.textContent = 13 + index;
+
+          const answered = userAnswers.hasOwnProperty(index);
+
+          if (finalState) {
+            // final: all numbers magenta
+            btn.classList.add("nav-btn-final");
+            // only show magenta triangle when NOT on the continue screen
+            if (!inContinueView && index === currentQuestionIndex) {
+              btn.classList.add("nav-btn-final-current");
+            }
+          } else if (index === currentQuestionIndex) {
+            btn.classList.add("nav-btn-current");
+          } else if (answered) {
+            btn.classList.add("nav-btn-answered");
+          }
+
+          if (flashingAnswerId !== null) {
+            btn.disabled = true;
+          }
+
+          btn.addEventListener("click", () => {
+            if (flashingAnswerId !== null) return;
+            currentQuestionIndex = index;
+            showQuestionView();
+            updateUI();
+          });
+
+          navEl.appendChild(btn);
+        });
+      }
+
+      // --- Render dots (for current question) ---
+      function updateDots() {
+        const dots = dotStripEl.querySelectorAll(".dot");
+        dots.forEach((dot, i) => {
+          dot.classList.toggle("active", i === currentQuestionIndex);
+        });
+      }
+
+      // --- Render answers (12, 15) ---
+      function renderAnswers() {
+        answersEl.innerHTML = "";
+        const q = questions[currentQuestionIndex];
+        const selected = userAnswers[currentQuestionIndex];
+
+        q.options.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.className = "answer-btn";
+          btn.textContent = opt.text;
+
+          if (selected === opt.id) {
+            btn.classList.add("selected");
+          }
+          if (flashingAnswerId === opt.id) {
+            btn.classList.add("flash");
+          }
+
+          btn.addEventListener("click", () => {
+            if (flashingAnswerId !== null) return;
+            handleAnswerSelect(opt.id);
+          });
+
+          answersEl.appendChild(btn);
+        });
+      }
+
+      // --- Handle answer select (12, 15, 17) ---
+      function handleAnswerSelect(optionId) {
+        // record
+        userAnswers[currentQuestionIndex] = optionId;
+        flashingAnswerId = optionId;
+        renderAnswers();
+        renderNavButtons();
+
+        // wait then move on
+        setTimeout(() => {
+          flashingAnswerId = null;
+          const nextIndex = questions.findIndex(
+            (_, i) => !userAnswers.hasOwnProperty(i)
+          );
+
+          if (nextIndex !== -1) {
+            currentQuestionIndex = nextIndex;
+            showQuestionView();
+          } else {
+            showContinueView();
+          }
+          updateUI();
+        }, 1000);
+      }
+
+      // --- Views (9, 17) ---
+      function showQuestionView() {
+        inContinueView = false;
+        questionViewEl.style.display = "block";
+        continueViewEl.style.display = "none";
+      }
+
+      function showContinueView() {
+        inContinueView = true;
+        questionViewEl.style.display = "none";
+        continueViewEl.style.display = "flex";
+
+        // Remove ALL triangle indicators when continue screen is shown
+        const finalTriangles = document.querySelectorAll('.nav-btn-final-current');
+        finalTriangles.forEach(btn => btn.classList.remove('nav-btn-final-current'));
+        const currentTriangles = document.querySelectorAll('.nav-btn-current');
+        currentTriangles.forEach(btn => btn.classList.remove('nav-btn-current'));
+      }
+
+      function resetGame() {
+        userAnswers = {};
+        flashingAnswerId = null;
+        currentQuestionIndex = 0;
+        showQuestionView();
+        updateUI();
+      }
+
+      // --- Ticker rotation (4, 18) ---
+      function startTicker() {
+        if (!tickerTextEl) return;
+
+        function setMessage(index) {
+          tickerIndex = index;
+          tickerTextEl.textContent = tickerMessages[index];
+
+          tickerTextEl.classList.remove("ticker-animate");
+          // force reflow to restart animation
+          void tickerTextEl.offsetWidth;
+          tickerTextEl.classList.add("ticker-animate");
+        }
+
+        tickerTextEl.addEventListener("animationend", () => {
+          setTimeout(() => {
+            const next = (tickerIndex + 1) % tickerMessages.length;
+            setMessage(next);
+          }, 3000);
+        });
+
+        setMessage(0);
+      }
+
+      // --- Main UI update ---
+      function updateUI() {
+        const q = questions[currentQuestionIndex];
+        const text = q.text;
+        playTypewriter(text);
+        renderAnswers();
+        renderNavButtons();
+        updateDots();
+      }
+
+      // --- Init ---
+      document.addEventListener("DOMContentLoaded", () => {
+        continueBtnEl.addEventListener("click", resetGame);
+        startTicker();
+        showQuestionView();
+        updateUI();
+      });
+    })();
+  </script>
+</body>
+</html>
