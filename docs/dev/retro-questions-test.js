@@ -1,4 +1,6 @@
+import Questions from "../src/views/Questions.js";
 import ScoreStrip from "../src/lib/ScoreStrip.js";
+import "../src/styles/questions-retro.css";
 
 const questions = [
   {
@@ -67,22 +69,18 @@ function renderNav() {
   if (!nav) return;
   nav.innerHTML = "";
   const allAnswered = isComplete();
-  nav.classList.toggle("hide-triangles", state.inContinueView);
+  nav.classList.toggle("is-complete", allAnswered);
 
   questions.forEach((q, idx) => {
     const btn = document.createElement("button");
-    btn.className = "qn-btn";
+    btn.className = "round-panel__step mono";
     btn.textContent = q.number;
 
     const answered = state.userAnswers[idx] !== null;
     const isCurrent = idx === state.currentQuestionIndex;
 
-    if (allAnswered) btn.classList.add("final");
-    else if (answered) btn.classList.add("answered");
-    if (isCurrent && !state.inContinueView) {
-      btn.classList.add("with-triangle");
-      btn.classList.add(allAnswered ? "final" : "current");
-    }
+    if (answered) btn.classList.add("is-answered");
+    if (isCurrent && !state.inContinueView) btn.classList.add("is-active");
 
     btn.addEventListener("click", () => {
       state.currentQuestionIndex = idx;
@@ -90,16 +88,6 @@ function renderNav() {
     });
 
     nav.appendChild(btn);
-  });
-}
-
-function renderDots() {
-  const dots = document.querySelectorAll("#dot-strip .dot");
-  const allAnswered = isComplete();
-  dots.forEach((dot, idx) => {
-    dot.classList.toggle("active", idx === state.currentQuestionIndex && !state.inContinueView);
-    dot.classList.toggle("answered", state.userAnswers[idx] !== null && !allAnswered);
-    dot.classList.toggle("final", allAnswered);
   });
 }
 
@@ -111,10 +99,10 @@ function renderAnswers() {
 
   question.answers.forEach((label, idx) => {
     const btn = document.createElement("button");
-    btn.className = "answer-btn";
+    btn.className = "round-panel__choice mono";
     btn.textContent = label;
     if (state.userAnswers[state.currentQuestionIndex] === idx) {
-      btn.classList.add("selected");
+      btn.classList.add("is-selected");
     }
     btn.addEventListener("click", () => handleAnswer(idx, btn));
     answersEl.appendChild(btn);
@@ -126,8 +114,12 @@ function handleAnswer(answerIndex, btn) {
   state.inContinueView = isComplete();
 
   if (btn) {
-    btn.classList.add("flash");
-    setTimeout(() => btn.classList.remove("flash"), 700);
+    btn.classList.add("is-blinking");
+    btn.classList.add("is-blinking-fast");
+    setTimeout(() => {
+      btn.classList.remove("is-blinking");
+      btn.classList.remove("is-blinking-fast");
+    }, 700);
   }
 
   if (!state.inContinueView) {
@@ -143,7 +135,11 @@ function renderContinueView() {
   const btn = document.getElementById("continue-btn");
   if (!view || !btn) return;
 
-  view.classList.toggle("active", state.inContinueView);
+  view.classList.toggle("is-hidden", !state.inContinueView);
+
+  btn.classList.toggle("round-panel__submit--ready", state.inContinueView);
+  btn.classList.toggle("round-panel__submit--waiting", !state.inContinueView);
+  btn.classList.toggle("throb", state.inContinueView);
 
   btn.onclick = () => {
     state.userAnswers = Array(questions.length).fill(null);
@@ -162,7 +158,6 @@ function renderQuestion() {
 
 function render() {
   renderNav();
-  renderDots();
   renderQuestion();
   renderContinueView();
 }
@@ -172,25 +167,31 @@ function initQuestionsPanel() {
   if (!root) return;
 
   root.innerHTML = `
-    <div class="panel">
-      <div class="panel-title">Questions</div>
+    <div class="view view-questions stage-center">
+      <div class="round-panel">
+        <h2 class="round-panel__heading mono">QUESTIONS</h2>
 
-      <div id="question-nav" class="question-nav"></div>
+        <div id="question-nav" class="round-panel__steps"></div>
 
-      <div class="dot-strip" id="dot-strip">
-        <div class="dot" data-index="0"></div>
-        <div class="dot" data-index="1"></div>
-        <div class="dot" data-index="2"></div>
-      </div>
+        <div id="question-view" class="round-panel__content">
+          <div class="round-panel__question mono">
+            <span id="question-text" class="round-panel__question-text"></span>
+          </div>
+          <div id="answers" class="round-panel__choices"></div>
+        </div>
 
-      <div id="question-view">
-        <p id="question-text" class="question-text"></p>
-        <div id="answers" class="answers"></div>
-      </div>
-
-      <div id="continue-view" class="continue-view">
-        <p class="continue-text">Select number to review answer, or:</p>
-        <button id="continue-btn" class="continue-btn">Continue</button>
+        <div id="continue-view" class="round-panel__submit-continue">
+          <p class="round-panel__status-note mono continue-text">
+            Select number to review answer, or:
+          </p>
+          <button
+            id="continue-btn"
+            class="round-panel__submit mono round-panel__submit--waiting"
+            type="button"
+          >
+            Continue
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -220,6 +221,7 @@ function bootstrap() {
     initScoreStrip();
     initTicker();
     initQuestionsPanel();
+    window.Questions = Questions;
   });
 }
 
