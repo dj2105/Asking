@@ -4,13 +4,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 
 .view-questions {
-  --rq-bg: #151821;
+  --rq-bg: #0b0c10;
   --rq-border: #ffffff;
-  --rq-shadow: #0d1019;
+  --rq-shadow: #04060c;
   --rq-yellow: #fff87a;
   --rq-pink: #ff6ad5;
   --rq-magenta: #ff00a8;
   --rq-cyan: #00f3ff;
+  --rq-green: #5aff9b;
   --rq-ink: #e5e7eb;
   --rq-muted: rgba(229, 231, 235, 0.72);
   font-family: "Press Start 2P", system-ui, monospace;
@@ -48,7 +49,7 @@
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .view-questions .round-panel__steps.is-hidden {
@@ -97,7 +98,7 @@
 }
 
 .view-questions .round-panel__content {
-  margin-top: 6px;
+  margin-top: 4px;
   text-align: center;
 }
 
@@ -131,7 +132,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .view-questions .round-panel__choice {
@@ -208,21 +209,21 @@
 
 .view-questions .round-panel__submit {
   width: 100%;
-  margin-top: 18px;
-  padding: 12px 8px 4px;
-  border: none;
-  background: var(--rq-bg);
-  color: var(--rq-cyan);
+  margin-top: 10px;
+  padding: 12px 8px 10px;
+  border: 3px solid var(--rq-green);
+  background: var(--rq-green);
+  color: #000000;
   font-size: 12px;
   letter-spacing: 2px;
   text-transform: uppercase;
   cursor: pointer;
   border-radius: 0;
-  box-shadow: none;
+  box-shadow: 0 0 0 3px var(--rq-shadow);
 }
 
 .view-questions .round-panel__submit--ready {
-  color: var(--rq-yellow);
+  color: #000000;
 }
 
 .view-questions .round-panel__submit--ready.throb {
@@ -263,4 +264,47 @@
 .view-questions .back-confirm__btn.outline {
   border-color: var(--rq-border);
   color: var(--rq-border);
+}
+
+.view-questions .round-panel__ready-actions {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.view-questions .round-panel__ready-actions.is-visible {
+  display: flex;
+}
+
+.view-questions .round-panel__ready-arrows {
+  color: var(--rq-cyan);
+  letter-spacing: 6px;
+  animation: arrowsHop 0.7s steps(2, jump-both) infinite;
+  text-align: center;
+  margin-top: 2px;
+}
+
+.view-questions .round-panel__ready-label {
+  color: var(--rq-ink);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.view-questions .round-panel__ready-actions .round-panel__submit {
+  margin-top: 6px;
+}
+
+@keyframes arrowsHop {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }

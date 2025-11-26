@@ -191,9 +191,30 @@ export default {
         class: "btn round-panel__submit mono btn-ready",
         type: "button",
       },
-      "SUBMIT"
+      "CONTINUE"
     );
     readyBtn.style.display = "none";
+
+    const readyActions = el("div", { class: "round-panel__ready-actions" });
+    const readyArrows = el(
+      "div",
+      { class: "round-panel__ready-arrows mono", "aria-hidden": "true" },
+      "^^^^^^^^^^"
+    );
+    const readyEditLabel = el(
+      "div",
+      { class: "round-panel__ready-label mono" },
+      "EDIT ANSWERS"
+    );
+    const readyOrLabel = el(
+      "div",
+      { class: "round-panel__ready-label mono" },
+      "OR"
+    );
+    readyActions.appendChild(readyArrows);
+    readyActions.appendChild(readyEditLabel);
+    readyActions.appendChild(readyOrLabel);
+    readyActions.appendChild(readyBtn);
 
     const toMarkingBtn = el(
       "button",
@@ -207,8 +228,8 @@ export default {
 
     panel.appendChild(heading);
     panel.appendChild(steps);
+    panel.appendChild(readyActions);
     panel.appendChild(content);
-    panel.appendChild(readyBtn);
     panel.appendChild(toMarkingBtn);
     root.appendChild(panel);
 
@@ -462,13 +483,14 @@ export default {
       content.classList.remove("round-panel__content--ready-preview");
       readyBtn.style.display = "none";
       readyBtn.disabled = false;
-      readyBtn.textContent = "SUBMIT";
+      readyBtn.textContent = "CONTINUE";
       readyBtn.classList.remove("round-panel__submit--ready");
       readyBtn.classList.remove("round-panel__submit--waiting");
       if (!readyBtn.classList.contains("btn-ready")) {
         readyBtn.classList.add("btn-ready");
       }
       readyBtn.classList.remove("throb");
+      readyActions.classList.remove("is-visible");
       hideStatusNote();
       setHeading(DEFAULT_HEADING);
       heading.style.display = "";
@@ -494,11 +516,12 @@ export default {
         applySubmitReadyLayout(true, { forceChoicesVisible: true });
         readyBtn.style.display = "";
         readyBtn.disabled = false;
-        readyBtn.textContent = "SUBMIT";
+        readyBtn.textContent = "CONTINUE";
         readyBtn.classList.add("btn-ready");
         readyBtn.classList.add("round-panel__submit--ready");
         readyBtn.classList.remove("round-panel__submit--waiting");
         readyBtn.classList.add("throb");
+        readyActions.classList.add("is-visible");
       };
       if (animate) animateSwap(render);
       else render();
@@ -571,6 +594,7 @@ export default {
       panel.classList.remove("round-panel--maths-clue");
       setChoicesVisible(false);
       readyBtn.style.display = "none";
+      readyActions.classList.remove("is-visible");
       pauseRoundTimer(timerContext);
       hideMarkingCountdown();
     };
@@ -1081,7 +1105,7 @@ export default {
           console.warn("[questions] publish failed:", err);
           submitting = false;
           readyBtn.disabled = false;
-          readyBtn.textContent = "SUBMIT";
+          readyBtn.textContent = "CONTINUE";
           resumeRoundTimer(timerContext);
           renderSteps();
           showReadyPrompt({ animate: false });
