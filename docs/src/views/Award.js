@@ -247,7 +247,7 @@ export default {
     const code = clampCode(qs.get("code") || "");
     let round = parseInt(qs.get("round") || "1", 10) || 1;
 
-    applyStageTheme("award", round);
+    applyStageTheme("award", round, code);
 
     container.innerHTML = "";
 
