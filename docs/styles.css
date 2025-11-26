@@ -1,15 +1,17 @@
 /* ===========================
    Jemima’s Asking — Global UI
    =========================== */
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+@import url("./src/styles/questions-retro.css");
 
 /* Palette + typography for the new card-table aesthetic. */
 :root {
   --ink-h: 210; /* hue used by legacy logic for highlights */
   --ink-s: 62%;
   --ink-l: 18%;
-  --bg: #f5f7ff;
-  --bg-soft: #ffffff;
-  --ink: #111827;
+  --bg: #0b0c10;
+  --bg-soft: #0b0c10;
+  --ink: #e5e7eb;
   --accent: #60a5fa;
   --accent-soft: #dbeafe;
   --muted: rgba(17, 24, 39, 0.64);
@@ -113,17 +115,32 @@ html.theme-night {
 }
 
 html.theme-lobby {
-  --bg: #eef2ff;
-  --bg-soft: #ffffff;
-  --ink: #0f172a;
+  --bg: #0b0c10;
+  --bg-soft: #0b0c10;
+  --ink: #e5e7eb;
   --accent: #6366f1;
   --accent-soft: #e0e7ff;
-  --soft-line: rgba(15, 23, 42, 0.09);
-  --muted: rgba(15, 23, 42, 0.68);
+  --soft-line: rgba(229, 231, 235, 0.14);
+  --muted: rgba(229, 231, 235, 0.72);
   --sky-1: rgba(99, 102, 241, 0.4);
   --sky-2: rgba(236, 72, 153, 0.28);
   --sky-3: rgba(125, 211, 252, 0.26);
   --sky-4: rgba(224, 231, 255, 0.22);
+}
+
+html.theme-dawn,
+html.theme-midday,
+html.theme-sunset,
+html.theme-dusk,
+html.theme-night,
+html.theme-lobby {
+  --bg: #0b0c10;
+  --bg-soft: #0b0c10;
+  --ink: #e5e7eb;
+  --card: #0b0c10;
+  --card-ink: #e5e7eb;
+  --soft-line: rgba(229, 231, 235, 0.14);
+  --muted: rgba(229, 231, 235, 0.72);
 }
 
 html, body { height: 100%; }
@@ -132,6 +149,13 @@ html, body { height: 100%; }
 
 body {
   margin: 0;
+  --bg: #0b0c10;
+  --bg-soft: #0b0c10;
+  --card: #0b0c10;
+  --card-ink: #e5e7eb;
+  --ink: #e5e7eb;
+  --soft-line: rgba(229, 231, 235, 0.14);
+  --muted: rgba(229, 231, 235, 0.72);
   background: var(--bg);
   color: var(--ink);
   font-family: "Nunito", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -150,17 +174,8 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(140% 140% at 16% 18%, var(--sky-1) 0%, rgba(0, 0, 0, 0.06) 62%),
-    radial-gradient(130% 130% at 82% 22%, var(--sky-2) 0%, rgba(0, 0, 0, 0.08) 68%),
-    radial-gradient(150% 150% at 24% 84%, var(--sky-3) 0%, rgba(0, 0, 0, 0.08) 70%),
-    radial-gradient(160% 150% at 78% 80%, var(--sky-4) 0%, rgba(0, 0, 0, 0.1) 76%);
-  background-blend-mode: screen;
-  background-size: 160% 160%, 150% 150%, 150% 150%, 180% 180%;
-  background-position: 12% 18%, 78% 30%, 24% 82%, 70% 74%;
-  filter: saturate(1.02) brightness(0.98);
-  animation: gradientDrift 32s ease-in-out infinite;
-  will-change: background-position, filter;
+  background: #0b0c10;
+  will-change: auto;
 }
 
 @keyframes gradientDrift {
@@ -1629,73 +1644,103 @@ input[type="number"]:focus,
 }
 
 /* ===========================
-   Score strip (floating bar)
+   Score strip (retro bar)
    =========================== */
 .score-strip {
   position: fixed;
-  top: 32px;
+  top: 28px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(480px, calc(100vw - 48px));
-  padding: 14px 24px;
-  border-radius: 999px;
-  background: rgba(10, 14, 28, 0.86);
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  color: #e2e8f0;
-  box-shadow: 0 26px 52px rgba(2, 6, 23, 0.52);
+  width: min(420px, calc(100vw - 32px));
+  font-family: "Press Start 2P", "Courier New", monospace;
+  color: #e5e7eb;
   z-index: 80;
 }
 
-.score-strip__inner {
+.score-strip__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  padding: 18px 20px;
+  border: 4px solid #ffffff;
+  background: #0b0c10;
+  box-shadow: 0 0 0 4px #0d1019;
+  text-transform: uppercase;
 }
 
-.score-strip__left,
-.score-strip__right {
-  display: inline-flex;
+.score-strip__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 92px;
+}
+
+.score-strip__label {
+  opacity: 0.78;
+  letter-spacing: 1px;
+  font-size: 11px;
+}
+
+.score-strip__value {
+  font-size: 16px;
+}
+
+.score-strip__value--code {
+  color: #00f3ff;
+}
+
+.score-strip__value--round {
+  color: #fff87a;
+}
+
+.score-strip__cell--scores {
+  margin-left: auto;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.score-strip__player {
+  display: flex;
+  gap: 8px;
   align-items: baseline;
-  gap: 12px;
 }
 
-.score-strip__left {
-  text-transform: uppercase;
-  font-size: 0.9rem;
-  opacity: 0.9;
+.score-strip__player-name {
+  color: #ff6ad5;
 }
 
-.score-strip__left .ss-round {
-  font-size: 1.05rem;
-  letter-spacing: 0.1em;
+.score-strip__player-score {
+  color: #ffffff;
+  font-size: 16px;
 }
 
-.score-strip__right {
-  text-transform: uppercase;
+.ticker {
+  margin: 8px 4px 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 10px;
+  color: #e5e7eb;
+  background: #0b0c10;
 }
 
-.score-strip__right .ss-name {
-  opacity: 0.76;
+.ticker.is-hidden {
+  display: none;
 }
 
-.score-strip__right .ss-score {
-  min-width: 1.5ch;
+.ticker-marquee {
   display: inline-block;
-  font-size: 1.2rem;
-  font-weight: 800;
-  text-align: right;
-  color: #f8fafc;
+  padding-left: 100%;
+  animation: tickerScroll 14s linear infinite;
 }
 
-.score-strip__right .ss-sep {
-  width: 20px;
-  height: 2px;
-  background: rgba(226, 232, 240, 0.35);
-  border-radius: 999px;
-  align-self: center;
+@keyframes tickerScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 .award-bonus {

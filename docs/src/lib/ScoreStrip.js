@@ -99,18 +99,37 @@ function render() {
   const code  = state.code || "—";
   const round = state.roomData?.round ?? 1;
 
+  const tickerText = (
+    state.roomData?.tickerText ||
+    state.roomData?.ticker ||
+    ""
+  ).trim();
+
   const { hostScore, guestScore } = computeScores(state.roomData || {});
 
-  // Labels fixed by design spec
-  const leftHTML  = `<span class="ss-code">${code}</span><span class="ss-round">Round ${round}</span>`;
-  const rightHTML = `<span class="ss-name">Daniel</span><span class="ss-score">${hostScore}</span>
-                     <span class="ss-sep"></span>
-                     <span class="ss-name">Jaime</span><span class="ss-score">${guestScore}</span>`;
-
   state.node.innerHTML = `
-    <div class="score-strip__inner">
-      <div class="score-strip__left">${leftHTML}</div>
-      <div class="score-strip__right">${rightHTML}</div>
+    <div class="score-strip__bar">
+      <div class="score-strip__cell score-strip__cell--code">
+        <div class="score-strip__label">CODE</div>
+        <div class="score-strip__value score-strip__value--code">${code}</div>
+      </div>
+      <div class="score-strip__cell score-strip__cell--round">
+        <div class="score-strip__label">ROUND</div>
+        <div class="score-strip__value score-strip__value--round">${round}</div>
+      </div>
+      <div class="score-strip__cell score-strip__cell--scores">
+        <div class="score-strip__player">
+          <span class="score-strip__player-name">Daniel</span>
+          <span class="score-strip__player-score">${hostScore}</span>
+        </div>
+        <div class="score-strip__player">
+          <span class="score-strip__player-name">Jaime</span>
+          <span class="score-strip__player-score">${guestScore}</span>
+        </div>
+      </div>
+    </div>
+    <div class="ticker ${tickerText ? "" : "is-hidden"}" aria-live="polite">
+      <span class="ticker-marquee">${tickerText}</span>
     </div>
   `;
   scheduleClearanceUpdate();
@@ -139,7 +158,7 @@ export function mount(container, { code } = {}) {
   if (!container) return;
   if (!state.node) {
     const n = document.createElement("div");
-    n.className = "score-strip mono";
+    n.className = "score-strip";
     container.prepend(n); // top of the view
     state.node = n;
   } else if (!state.node.isConnected) {
