@@ -196,14 +196,20 @@ export default {
     readyBtn.style.display = "none";
 
     const readyActions = el("div", { class: "round-panel__ready-actions" });
-    const readyArrows = el(
+    const readyArrowLeft = el(
       "div",
-      { class: "round-panel__ready-arrows mono", "aria-hidden": "true" },
-      "^^^^^^^^^^"
+      { class: "round-panel__ready-arrow round-panel__ready-arrow--left mono", "aria-hidden": "true" },
+      ">>"
     );
+    const readyArrowRight = el(
+      "div",
+      { class: "round-panel__ready-arrow round-panel__ready-arrow--right mono", "aria-hidden": "true" },
+      "<<"
+    );
+    const readyStack = el("div", { class: "round-panel__ready-stack" });
     const readyEditLabel = el(
       "div",
-      { class: "round-panel__ready-label mono" },
+      { class: "round-panel__ready-edit mono" },
       "EDIT ANSWERS"
     );
     const readyOrLabel = el(
@@ -211,10 +217,12 @@ export default {
       { class: "round-panel__ready-label mono" },
       "OR"
     );
-    readyActions.appendChild(readyArrows);
-    readyActions.appendChild(readyEditLabel);
-    readyActions.appendChild(readyOrLabel);
-    readyActions.appendChild(readyBtn);
+    readyStack.appendChild(readyEditLabel);
+    readyStack.appendChild(readyOrLabel);
+    readyStack.appendChild(readyBtn);
+    readyActions.appendChild(readyArrowLeft);
+    readyActions.appendChild(readyStack);
+    readyActions.appendChild(readyArrowRight);
 
     const toMarkingBtn = el(
       "button",
