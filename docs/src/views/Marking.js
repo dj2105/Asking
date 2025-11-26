@@ -153,7 +153,7 @@ export default {
     const code = clampCode(params.get("code") || "");
     let round = parseInt(params.get("round") || "1", 10) || 1;
 
-    applyStageTheme("marking", round || 1);
+    applyStageTheme("marking", round || 1, code);
 
     container.innerHTML = "";
 
@@ -161,16 +161,39 @@ export default {
       window.scrollTo({ top: 0, behavior: "instant" });
     } catch {}
 
+    const shell = el("div", { class: "retro-shell" });
+    const hudTop = el("div", { class: "retro-pixel-row retro-pixel-row--top" });
+    const hudCode = el("span", {}, code || "---");
+    const hudRound = el("span", { class: "retro-row-right" }, `Round ${round || 1}`);
+    hudTop.appendChild(hudCode);
+    hudTop.appendChild(hudRound);
+
+    const scoreRow = el("div", { class: "retro-pixel-row retro-score-row" });
+    const hostBlock = el("div", { class: "retro-player" }, [
+      el("span", { class: "retro-player__name" }, "Daniel"),
+      el("span", { class: "retro-player__score" }, "00"),
+    ]);
+    const guestBlock = el("div", { class: "retro-player", style: "text-align: right; align-items: flex-end;" }, [
+      el("span", { class: "retro-player__name" }, "Jaime"),
+      el("span", { class: "retro-player__score" }, "00"),
+    ]);
+    scoreRow.appendChild(hostBlock);
+    scoreRow.appendChild(guestBlock);
+
+    const ticker = el("div", { class: "retro-ticker" }, [
+      el("div", { class: "retro-ticker__text" }, "Select number to review answer"),
+    ]);
+
     const root = el("div", { class: "view view-marking stage-center" });
-    const panel = el("div", { class: "round-panel" });
+    const panel = el("div", { class: "round-panel retro-panel" });
     const heading = el("h2", { class: "round-panel__heading mono" }, DEFAULT_HEADING);
 
-    const steps = el("div", { class: "round-panel__steps" });
+    const steps = el("div", { class: "round-panel__steps retro-steps" });
     const stepButtons = [0, 1, 2].map((i) => {
       const btn = el(
         "button",
         {
-          class: "round-panel__step mono",
+          class: "round-panel__step retro-step mono",
           type: "button",
           "aria-label": `Mark ${i + 1}`,
         },
@@ -178,6 +201,13 @@ export default {
       );
       steps.appendChild(btn);
       return btn;
+    });
+
+    const dotStrip = el("div", { class: "retro-dots" });
+    const dots = [0, 1, 2].map(() => {
+      const dot = el("div", { class: "retro-dot" });
+      dotStrip.appendChild(dot);
+      return dot;
     });
 
     const content = el("div", { class: "round-panel__content" });
@@ -194,7 +224,7 @@ export default {
     answerBox.appendChild(answerLabel);
     answerBox.appendChild(answerValue);
 
-    const verdictRow = el("div", { class: "marking-buttons" });
+    const verdictRow = el("div", { class: "marking-buttons retro-answers" });
     const btnRight = el(
       "button",
       {
@@ -264,6 +294,7 @@ export default {
 
     panel.appendChild(heading);
     panel.appendChild(steps);
+    panel.appendChild(dotStrip);
     panel.appendChild(content);
     panel.appendChild(readyBtn);
     root.appendChild(panel);
@@ -289,7 +320,11 @@ export default {
     backOverlay.appendChild(backPanel);
 
     root.appendChild(backOverlay);
-    container.appendChild(root);
+    shell.appendChild(hudTop);
+    shell.appendChild(scoreRow);
+    shell.appendChild(ticker);
+    shell.appendChild(root);
+    container.appendChild(shell);
 
     const setPrompt = (text, { status = false, variant = "question" } = {}) => {
       const displayText = status ? String(text || "") : balanceQuestionText(text);
@@ -468,6 +503,10 @@ export default {
         btn.classList.toggle("is-active", allowActive && i === idx);
         btn.classList.toggle("is-answered", marks[i] !== null);
         btn.disabled = triplet.length === 0 || published || submitting;
+      });
+      dots.forEach((dot, i) => {
+        dot.classList.toggle("is-active", i === idx);
+        dot.classList.toggle("is-answered", marks[i] !== null);
       });
     };
 
@@ -982,7 +1021,7 @@ export default {
           timerContext.round = round;
           unlockStepLabels();
           renderSteps();
-          applyStageTheme("marking", effectiveRound());
+          applyStageTheme("marking", effectiveRound(), code);
         }
       }
 
