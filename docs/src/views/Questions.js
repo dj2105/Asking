@@ -141,19 +141,37 @@ export default {
     const heading = el("h2", { class: "round-panel__heading mono" }, DEFAULT_HEADING);
 
     const steps = el("div", { class: "round-panel__steps" });
-    const stepButtons = [0, 1, 2].map((i) => {
-      const btn = el(
-        "button",
-        {
-          class: "round-panel__step mono",
-          type: "button",
-          "aria-label": `Question ${i + 1}`,
-        },
-        String(i + 1)
-      );
-      steps.appendChild(btn);
-      return btn;
-    });
+
+const chevronsLeft = el(
+  "div",
+  { class: "questions-summary-chevrons questions-summary-chevrons--left mono" },
+  "» »"
+);
+const chevronsRight = el(
+  "div",
+  { class: "questions-summary-chevrons questions-summary-chevrons--right mono" },
+  "« «"
+);
+
+const summaryRow = el("div", { class: "questions-summary-row" }, [
+  chevronsLeft,
+  steps,
+  chevronsRight,
+]);
+
+const stepButtons = [0, 1, 2].map((i) => {
+  const btn = el(
+    "button",
+    {
+      class: "round-panel__step mono",
+      type: "button",
+      "aria-label": `Question ${i + 1}`,
+    },
+    String(i + 1)
+  );
+  steps.appendChild(btn);
+  return btn;
+});
 
     const content = el("div", { class: "round-panel__content" });
     const promptText = el("span", { class: "round-panel__question-text" }, "");
@@ -235,7 +253,7 @@ export default {
     toMarkingBtn.style.display = "none";
 
     panel.appendChild(heading);
-    panel.appendChild(steps);
+    panel.appendChild(summaryRow);
     panel.appendChild(readyActions);
     panel.appendChild(content);
     panel.appendChild(toMarkingBtn);
@@ -454,6 +472,11 @@ export default {
       const dormant = published || submitting;
       steps.classList.toggle("is-dormant", dormant);
       steps.classList.toggle("is-submit-ready", inSubmitReady);
+
+  // Show chevrons only in summary/continue mode
+  chevronsLeft.classList.toggle("is-visible", inSubmitReady);
+  chevronsRight.classList.toggle("is-visible", inSubmitReady);
+      
       const allowActive = !(published || submitting || showingClue || readyPreviewMode);
       const allowAnswered = !readyPreviewMode;
       stepButtons.forEach((btn, i) => {
@@ -484,57 +507,75 @@ export default {
 
     const isRoundComplete = () => triplet.length > 0 && chosen.every((value) => Boolean(value));
 
-    const hideReadyPrompt = () => {
-      showingClue = false;
-      readyPreviewMode = false;
-      panel.classList.remove("round-panel--ready-preview");
-      content.classList.remove("round-panel__content--ready-preview");
-      readyBtn.style.display = "none";
-      readyBtn.disabled = false;
-      readyBtn.textContent = "CONTINUE";
-      readyBtn.classList.remove("round-panel__submit--ready");
-      readyBtn.classList.remove("round-panel__submit--waiting");
-      if (!readyBtn.classList.contains("btn-ready")) {
-        readyBtn.classList.add("btn-ready");
-      }
-      readyBtn.classList.remove("throb");
-      readyActions.classList.remove("is-visible");
-      hideStatusNote();
-      setHeading(DEFAULT_HEADING);
-      heading.style.display = "";
-      applySubmitReadyLayout(false);
-    };
+const hideReadyPrompt = () => {
+  showingClue = false;
+  readyPreviewMode = false;
+  panel.classList.remove("round-panel--ready-preview");
+  content.classList.remove("round-panel__content--ready-preview");
+
+  // hide the EDIT ANSWERS / OR / CONTINUE block
+  readyActions.classList.remove("is-visible");
+
+  readyBtn.style.display = "none";
+  readyBtn.disabled = false;
+  // keep the label consistent with the design
+  readyBtn.textContent = "CONTINUE";
+  readyBtn.classList.remove("round-panel__submit--ready");
+  readyBtn.classList.remove("round-panel__submit--waiting");
+  if (!readyBtn.classList.contains("btn-ready")) {
+    readyBtn.classList.add("btn-ready");
+  }
+  readyBtn.classList.remove("throb");
+
+  statusNote.classList.remove("round-panel__status-note--continue");
+  hideStatusNote();
+  setHeading(DEFAULT_HEADING);
+  heading.style.display = "";
+  applySubmitReadyLayout(false);
+};
 
     const getClueText = () => {
       const text = resolveClue(latestRoomData, fallbackMaths, effectiveRound());
       return text || "Jemima’s clue is on its way…";
     };
 
-    const showReadyPrompt = ({ animate = true } = {}) => {
-      if (published || submitting) return;
-      showingClue = false;
-      readyPreviewMode = true;
-      panel.classList.add("round-panel--ready-preview");
-      content.classList.add("round-panel__content--ready-preview");
-      const render = () => {
-        setHeading(DEFAULT_HEADING);
-        setPrompt("", { status: false });
-        setChoicesVisible(true);
-        hideStatusNote();
-        applySubmitReadyLayout(true, { forceChoicesVisible: true });
-        readyBtn.style.display = "";
-        readyBtn.disabled = false;
-        readyBtn.textContent = "CONTINUE";
-        readyBtn.classList.add("btn-ready");
-        readyBtn.classList.add("round-panel__submit--ready");
-        readyBtn.classList.remove("round-panel__submit--waiting");
-        readyBtn.classList.add("throb");
-        readyActions.classList.add("is-visible");
-      };
-      if (animate) animateSwap(render);
-      else render();
-      renderSteps();
-    };
+const showReadyPrompt = ({ animate = true } = {}) => {
+  if (published || submitting) return;
+  showingClue = false;
+  readyPreviewMode = true;
+
+  panel.classList.add("round-panel--ready-preview");
+  content.classList.add("round-panel__content--ready-preview");
+
+  const render = () => {
+    setHeading(DEFAULT_HEADING);
+
+    // hide the actual question + answer buttons
+    setPrompt("", { status: false });
+    setChoicesVisible(false);
+    applySubmitReadyLayout(true, { forceChoicesVisible: false });
+
+    // hide any generic status note; we’re using the dedicated block instead
+    hideStatusNote();
+    statusNote.classList.remove("round-panel__status-note--continue");
+
+    // show EDIT ANSWERS / OR / CONTINUE block
+    readyActions.classList.add("is-visible");
+
+    readyBtn.style.display = "";
+    readyBtn.disabled = false;
+    readyBtn.textContent = "CONTINUE";
+    readyBtn.classList.add("btn-ready");
+    readyBtn.classList.add("round-panel__submit--ready");
+    readyBtn.classList.remove("round-panel__submit--waiting");
+    readyBtn.classList.add("throb");
+  };
+
+  if (animate) animateSwap(render);
+  else render();
+
+  renderSteps(); // so chevrons + step letters update
+};
 
     const clearCountdownTimer = () => {
       if (countdownTimer) {
