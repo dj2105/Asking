@@ -938,6 +938,7 @@ export default {
           chosen[currentIndex] = "";
           btn.classList.remove("is-blinking");
           btn.classList.remove("is-blinking-fast");
+          btn.classList.remove("is-flashing");
           unlockStepLabels();
           renderChoices();
           renderSteps();
@@ -945,6 +946,7 @@ export default {
         }
         chosen[currentIndex] = text;
         choiceButtons.forEach((choiceBtn) => {
+          choiceBtn.classList.remove("is-flashing");
           choiceBtn.classList.toggle("is-selected", choiceBtn === btn);
           if (choiceBtn !== btn) {
             choiceBtn.classList.remove("is-blinking");
@@ -954,10 +956,12 @@ export default {
         btn.classList.add("is-blinking");
         btn.classList.add("is-blinking-fast");
         const flashDuration = 260;
+        btn.classList.add("is-flashing");
         lockStepLabels(flashDuration);
         setTimeout(() => {
           btn.classList.remove("is-blinking");
           btn.classList.remove("is-blinking-fast");
+          btn.classList.remove("is-flashing");
         }, flashDuration);
         renderChoices();
         renderSteps();
