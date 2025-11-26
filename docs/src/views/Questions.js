@@ -26,7 +26,6 @@ import {
   hasBot,
 } from "../lib/SinglePlayerBot.js";
 import { applyStageTheme } from "../lib/theme.js";
-import "../../styles/questions-retro.css";
 
 const roundTier = (r) => (r <= 1 ? "easy" : r === 2 ? "medium" : "hard");
 
