@@ -2,6 +2,8 @@
    Jemima’s Asking — Global UI
    =========================== */
 
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
 /* Palette + typography for the new card-table aesthetic. */
 :root {
   --ink-h: 210; /* hue used by legacy logic for highlights */
@@ -3201,4 +3203,196 @@ body.retro-active .marking-button[aria-pressed="true"]::after {
     animation-iteration-count: 1 !important;
     transition: none !important;
   }
+}
+
+/* Retro Q&M layout */
+.retro-shell {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px 10px 32px;
+  background: #000;
+  color: #fdf7e3;
+  font-family: "Press Start 2P", monospace;
+  image-rendering: pixelated;
+}
+
+.retro-shell * {
+  font-family: "Press Start 2P", monospace;
+  box-sizing: border-box;
+}
+
+.retro-pixel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 4px 6px;
+}
+
+.retro-pixel-row--top {
+  color: #ffe600;
+  background: rgba(255, 230, 0, 0.08);
+}
+
+.retro-pixel-row--top .retro-row-right {
+  color: #00f0ff;
+}
+
+.retro-score-row {
+  margin-top: 6px;
+  color: #fdf7e3;
+}
+
+.retro-player {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.retro-player__name {
+  font-size: 11px;
+}
+
+.retro-player__score {
+  font-size: 18px;
+  color: #00f0ff;
+}
+
+.retro-ticker {
+  margin-top: 6px;
+  height: 22px;
+  overflow: hidden;
+  position: relative;
+}
+
+.retro-ticker__text {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #ff2ebd;
+  top: 4px;
+  left: 100%;
+  animation: retro-ticker-scroll 8s linear infinite;
+}
+
+@keyframes retro-ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-220%); }
+}
+
+.retro-panel {
+  margin-top: 16px;
+  border: 3px solid #fdf7e3;
+  padding: 12px 10px 18px;
+  background: #000;
+}
+
+.retro-panel h2.round-panel__heading {
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: #00f0ff;
+  margin: 8px 0 10px;
+}
+
+.retro-steps,
+.retro-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.retro-step {
+  width: 40px;
+  height: 28px;
+  border: 2px solid #fdf7e3;
+  background: transparent;
+  color: #fdf7e3;
+  font-size: 14px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  text-transform: uppercase;
+}
+
+.retro-step.is-current {
+  background: #ffe600;
+  color: #000;
+}
+
+.retro-step.is-current::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 9px solid #ffe600;
+  margin-top: 2px;
+}
+
+.retro-step.is-answered { background: #ff2ebd; color: #000; }
+
+.retro-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 2px #000;
+  opacity: 0.4;
+}
+
+.retro-dot.is-active {
+  background: #ff2ebd;
+  opacity: 1;
+}
+
+.retro-question {
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+  margin: 10px 4px 20px;
+  min-height: 60px;
+}
+
+.retro-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.retro-answer {
+  border: 0;
+  padding: 10px 8px;
+  font-size: 14px;
+  letter-spacing: 1px;
+  background: #fdf7e3;
+  color: #000;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 2px #000, 0 3px 0 #000;
+}
+
+.retro-answer.is-selected { background: #ffe600; color: #000; }
+
+.retro-answer:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 2px #000, 0 1px 0 #000;
+}
+
+.retro-answer:hover { outline: 2px solid #00f0ff; }
+
+@media (max-width: 420px) {
+  .retro-shell { padding-inline: 6px; }
 }

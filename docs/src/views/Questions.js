@@ -136,16 +136,39 @@ export default {
       window.scrollTo({ top: 0, behavior: "instant" });
     } catch {}
 
+    const shell = el("div", { class: "retro-shell" });
+    const hudTop = el("div", { class: "retro-pixel-row retro-pixel-row--top" });
+    const hudCode = el("span", {}, code || "---");
+    const hudRound = el("span", { class: "retro-row-right" }, `Round ${round || 1}`);
+    hudTop.appendChild(hudCode);
+    hudTop.appendChild(hudRound);
+
+    const scoreRow = el("div", { class: "retro-pixel-row retro-score-row" });
+    const hostBlock = el("div", { class: "retro-player" }, [
+      el("span", { class: "retro-player__name" }, "Daniel"),
+      el("span", { class: "retro-player__score" }, "00"),
+    ]);
+    const guestBlock = el("div", { class: "retro-player", style: "text-align: right; align-items: flex-end;" }, [
+      el("span", { class: "retro-player__name" }, "Jaime"),
+      el("span", { class: "retro-player__score" }, "00"),
+    ]);
+    scoreRow.appendChild(hostBlock);
+    scoreRow.appendChild(guestBlock);
+
+    const ticker = el("div", { class: "retro-ticker" }, [
+      el("div", { class: "retro-ticker__text" }, "Select number to review answer"),
+    ]);
+
     const root = el("div", { class: "view view-questions stage-center" });
-    const panel = el("div", { class: "round-panel" });
+    const panel = el("div", { class: "round-panel retro-panel" });
     const heading = el("h2", { class: "round-panel__heading mono" }, DEFAULT_HEADING);
 
-    const steps = el("div", { class: "round-panel__steps" });
+    const steps = el("div", { class: "round-panel__steps retro-steps" });
     const stepButtons = [0, 1, 2].map((i) => {
       const btn = el(
         "button",
         {
-          class: "round-panel__step mono",
+          class: "round-panel__step retro-step mono",
           type: "button",
           "aria-label": `Question ${i + 1}`,
         },
@@ -155,8 +178,15 @@ export default {
       return btn;
     });
 
+    const dotStrip = el("div", { class: "retro-dots" });
+    const dots = [0, 1, 2].map(() => {
+      const dot = el("div", { class: "retro-dot" });
+      dotStrip.appendChild(dot);
+      return dot;
+    });
+
     const content = el("div", { class: "round-panel__content" });
-    const promptText = el("span", { class: "round-panel__question-text" }, "");
+    const promptText = el("span", { class: "round-panel__question-text retro-question" }, "");
     const prompt = el("div", { class: "round-panel__question mono" }, [
       promptText,
       el("span", { class: "typing-dots", "aria-hidden": "true" }, [
@@ -170,11 +200,11 @@ export default {
       { class: "round-panel__status-note mono is-hidden" },
       ""
     );
-    const choicesWrap = el("div", { class: "round-panel__choices" });
+    const choicesWrap = el("div", { class: "round-panel__choices retro-answers" });
     const choiceButtons = [0, 1].map(() => {
       const btn = el(
         "button",
-        { class: "round-panel__choice mono", type: "button" },
+        { class: "round-panel__choice mono retro-answer", type: "button" },
         ""
       );
       choicesWrap.appendChild(btn);
@@ -208,9 +238,13 @@ export default {
     panel.appendChild(heading);
     panel.appendChild(steps);
     panel.appendChild(content);
+    panel.appendChild(dotStrip);
     panel.appendChild(readyBtn);
     panel.appendChild(toMarkingBtn);
     root.appendChild(panel);
+    shell.appendChild(hudTop);
+    shell.appendChild(scoreRow);
+    shell.appendChild(ticker);
 
     const markingCountdownOverlay = el("div", { class: "marking-countdown-overlay is-hidden" });
     const markingCountdownValue = el("div", { class: "mono countdown-big" }, "3");
@@ -238,7 +272,8 @@ export default {
     backOverlay.appendChild(backPanel);
 
     root.appendChild(backOverlay);
-    container.appendChild(root);
+    shell.appendChild(root);
+    container.appendChild(shell);
 
     const setPrompt = (text, { status = false, variant = "question", showDots = false } = {}) => {
       const displayText = status ? String(text || "") : balanceQuestionText(text);
@@ -432,6 +467,10 @@ export default {
         btn.classList.toggle("is-active", isActive);
         btn.classList.toggle("is-answered", allowAnswered && Boolean(chosen[i]));
         btn.disabled = triplet.length === 0 || published || submitting;
+      });
+      dots.forEach((dot, i) => {
+        dot.classList.toggle("is-active", i === idx);
+        dot.classList.toggle("is-answered", Boolean(chosen[i]));
       });
     };
 
