@@ -199,7 +199,10 @@ export default {
     const readyArrows = el(
       "div",
       { class: "round-panel__ready-arrows mono", "aria-hidden": "true" },
-      "^^^^^^^^^^"
+      [
+        el("span", { class: "round-panel__ready-arrow round-panel__ready-arrow--left" }, "»»"),
+        el("span", { class: "round-panel__ready-arrow round-panel__ready-arrow--right" }, "««"),
+      ]
     );
     const readyEditLabel = el(
       "div",
