@@ -4,19 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Retro Questions Test</title>
+
+    <!-- Optional: legacy questions-retro styles, harmless for this harness -->
+    <link rel="stylesheet" href="../src/styles/questions-retro.css" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../styles.css" />
+
+    <!-- Do NOT include ../styles.css here; this is a standalone dev page -->
+
     <style>
       :root {
-        --rq-bg: #0b0c10;
-        --rq-border: #00f3ff;
-        --rq-shadow: #ff00a8;
-        --rq-yellow: #ffe66d;
+        --rq-bg: #151821;          /* very dark grey for everything */
+        --rq-border: #ffffff;      /* big white border around panel */
+        --rq-shadow: #000000;
+        --rq-yellow: #fff87a;      /* brighter yellow */
         --rq-pink: #ff6ad5;
         --rq-magenta: #ff00a8;
         --rq-cyan: #00f3ff;
@@ -25,6 +31,8 @@
       }
 
       body {
+        background: var(--rq-bg);
+        color: var(--rq-ink);
         font-family: "Press Start 2P", "Courier New", monospace;
       }
 
@@ -34,75 +42,131 @@
         padding: 0 20px 60px;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
       }
+
+      .game-shell * {
+        font-family: "Press Start 2P", "Courier New", monospace;
+      }
+
+      /* SCORE STRIP */
 
       #score-strip-root {
         position: relative;
       }
 
-      .ticker {
-        background: #0f172a;
-        color: #e2e8f0;
-        border: 3px solid var(--rq-cyan);
-        box-shadow: 0 0 0 3px #000, 0 14px 0 0 var(--rq-shadow);
-        padding: 10px 12px;
-        font-size: 10px;
-        text-transform: uppercase;
+      .score-strip-dev {
         display: flex;
         align-items: center;
-        gap: 12px;
-        overflow: hidden;
-        min-height: 36px;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 18px 20px;
+        border: 4px solid #ffffff;
+        background: var(--rq-bg);
+        box-shadow: 0 0 0 4px #000;
+        font-size: 12px;
+        text-transform: uppercase;
       }
 
-      .ticker-label {
-        color: var(--rq-yellow);
+      .score-strip-dev .cell {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .score-strip-dev .label {
+        opacity: 0.7;
         letter-spacing: 1px;
+        font-size: 11px;
+      }
+
+      .score-strip-dev .value {
+        font-size: 16px;
+      }
+
+      .score-strip-dev .cell.code .value {
+        color: var(--rq-cyan);
+      }
+
+      .score-strip-dev .cell.round .value {
+        color: var(--rq-yellow);
+      }
+
+      .score-strip-dev .cell.score {
+        margin-left: auto;
+        align-items: flex-end;
+        gap: 6px;
+      }
+
+      .score-strip-dev .cell.score .player {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+      }
+
+      .score-strip-dev .cell.score .name {
+        color: var(--rq-pink);
+      }
+
+      .score-strip-dev .cell.score .value {
+        color: #ffffff;
+        font-size: 16px;
+      }
+
+      /* TICKER — bare text, slower scroll */
+
+      .ticker {
+        margin: 8px 4px 4px;
+        overflow: hidden;
+        white-space: nowrap;
+        font-size: 10px;
+        color: var(--rq-ink);
       }
 
       .ticker-marquee {
-        flex: 1;
-        white-space: nowrap;
-        animation: tickerSwap 9s linear infinite;
+        display: inline-block;
+        padding-left: 100%;
+        animation: tickerScroll 14s linear infinite;
       }
 
-      @keyframes tickerSwap {
+      @keyframes tickerScroll {
         0% {
           transform: translateX(0);
         }
         100% {
-          transform: translateX(-40%);
+          transform: translateX(-100%);
         }
       }
+
+      /* QUESTIONS PANEL */
 
       .panel {
         background: var(--rq-bg);
         color: var(--rq-ink);
-        border: 4px solid var(--rq-cyan);
-        box-shadow: 0 0 0 4px #000, 0 18px 0 0 var(--rq-shadow);
-        padding: 18px 16px 24px;
+        border: 4px solid var(--rq-border); /* thick white border */
+        box-shadow: 0 0 0 4px #000;
+        padding: 22px 18px 26px;
         position: relative;
         text-align: center;
       }
 
       .panel-title {
-        font-size: 12px;
-        letter-spacing: 1px;
-        margin: 0 auto 14px;
-        padding: 10px 12px;
-        background: #000;
-        border: 3px solid var(--rq-yellow);
-        box-shadow: 0 0 0 3px #000;
-        width: fit-content;
+        font-size: 22px;             /* larger title */
+        letter-spacing: 2px;
+        margin: 0 0 18px;
+        padding: 0;
+        background: transparent;     /* no box */
+        border: none;
+        box-shadow: none;
         font-weight: 700;
+        color: var(--rq-cyan);       /* cyan text */
       }
 
       .question-nav {
         display: flex;
         justify-content: center;
         gap: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
       }
 
       .qn-btn {
@@ -110,19 +174,19 @@
         min-width: 58px;
         padding: 12px 10px 10px;
         border: 3px solid var(--rq-cyan);
-        background: #000;
+        background: var(--rq-bg);
         color: var(--rq-ink);
         cursor: pointer;
         font-size: 12px;
         letter-spacing: 1px;
         text-align: center;
-        box-shadow: 0 0 0 3px #000, 0 10px 0 0 var(--rq-shadow);
-        transition: transform 120ms ease, box-shadow 120ms ease;
+        box-shadow: 0 0 0 3px #000;  /* no pink bar underneath */
+        transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
       }
 
       .qn-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 0 0 3px #000, 0 14px 0 0 var(--rq-shadow);
+        box-shadow: 0 0 0 3px #000;
       }
 
       .qn-btn.answered {
@@ -147,12 +211,12 @@
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
-        bottom: -14px;
+        bottom: -10px;
         width: 0;
         height: 0;
-        border-left: 12px solid transparent;
-        border-right: 12px solid transparent;
-        border-top: 14px solid var(--rq-yellow);
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 10px solid var(--rq-yellow);
         opacity: 0;
         transition: opacity 80ms ease;
       }
@@ -169,46 +233,18 @@
         opacity: 1;
       }
 
-      .dot-strip {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin: 16px 0 10px;
-      }
-
-      .dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #111827;
-        border: 2px solid var(--rq-cyan);
-        box-shadow: 0 0 0 2px #000, 0 6px 0 0 var(--rq-shadow);
-      }
-
-      .dot.active {
-        background: var(--rq-yellow);
-        border-color: #000;
-      }
-
-      .dot.answered {
-        background: var(--rq-pink);
-      }
-
-      .dot.final {
-        background: var(--rq-magenta);
-        border-color: #000;
-      }
+      /* QUESTION + ANSWERS */
 
       #question-view {
-        background: #000;
-        border: 3px solid var(--rq-cyan);
-        box-shadow: 0 0 0 3px #000;
-        padding: 14px 12px 8px;
+        background: transparent;     /* no inner box */
+        border: none;
+        box-shadow: none;
+        padding: 6px 4px 4px;
         min-height: 150px;
       }
 
       .question-text {
-        font-size: 12px;
+        font-size: 13px;
         line-height: 1.6;
         min-height: 52px;
         text-align: left;
@@ -225,21 +261,21 @@
       .answer-btn {
         width: 100%;
         padding: 12px 14px;
-        background: #0b1224;
+        background: var(--rq-bg);
         color: var(--rq-ink);
         border: 3px solid var(--rq-cyan);
-        box-shadow: 0 0 0 3px #000, 0 10px 0 0 var(--rq-shadow);
+        box-shadow: 0 0 0 3px #000;
         cursor: pointer;
         text-align: left;
         font-size: 11px;
         letter-spacing: 0.4px;
         font-weight: 700;
-        transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+        transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, color 120ms ease;
       }
 
       .answer-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 0 0 3px #000, 0 14px 0 0 var(--rq-shadow);
+        box-shadow: 0 0 0 3px #000;
       }
 
       .answer-btn.selected {
@@ -249,31 +285,32 @@
       }
 
       .answer-btn.flash {
-        animation: flash 0.7s ease;
+        animation: flashPink 0.35s ease;
       }
 
-      @keyframes flash {
+      @keyframes flashPink {
         0% {
-          box-shadow: 0 0 0 3px #000, 0 10px 0 0 var(--rq-shadow), 0 0 0 0 rgba(255, 230, 109, 0.7);
-        }
-        50% {
-          box-shadow: 0 0 0 3px #000, 0 10px 0 0 var(--rq-shadow), 0 0 0 8px rgba(255, 230, 109, 0);
+          background: var(--rq-magenta);
+          color: #000;
         }
         100% {
-          box-shadow: 0 0 0 3px #000, 0 10px 0 0 var(--rq-shadow);
+          background: var(--rq-yellow);
+          color: #000;
         }
       }
 
+      /* CONTINUE VIEW */
+
       .continue-view {
-        margin-top: 14px;
-        background: #000;
-        border: 3px solid var(--rq-magenta);
-        box-shadow: 0 0 0 3px #000;
-        padding: 14px 12px 12px;
+        margin-top: 16px;
+        background: var(--rq-bg);    /* same dark grey */
+        border: none;                /* no magenta box */
+        box-shadow: none;
+        padding: 8px 4px 0;
         display: none;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
       }
 
       .continue-view.active {
@@ -288,20 +325,19 @@
       }
 
       .continue-btn {
-        padding: 12px 16px;
-        background: var(--rq-magenta);
-        border: 3px solid #000;
-        color: #000;
+        padding: 0;
+        background: transparent;     /* just text on background */
+        border: none;
+        color: var(--rq-cyan);
         cursor: pointer;
         font-size: 12px;
         letter-spacing: 1px;
-        box-shadow: 0 0 0 3px #000, 0 10px 0 0 #00000055;
-        transition: transform 120ms ease, box-shadow 120ms ease;
+        text-transform: uppercase;
+        box-shadow: none;
       }
 
       .continue-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 0 0 3px #000, 0 14px 0 0 #00000055;
+        text-decoration: underline;
       }
 
       @media (max-width: 480px) {
@@ -310,20 +346,26 @@
           padding: 0 14px 48px;
         }
 
+        .score-strip-dev {
+          padding: 14px 14px;
+        }
+
         .qn-btn {
           min-width: 52px;
           font-size: 11px;
         }
       }
     </style>
+
   </head>
   <body>
     <div class="game-shell">
       <div id="score-strip-root"></div>
+
       <div id="ticker" class="ticker" aria-live="polite">
-        <span class="ticker-label">Ticker</span>
-        <div class="ticker-marquee" id="ticker-marquee"></div>
+        <span class="ticker-marquee" id="ticker-marquee"></span>
       </div>
+
       <div id="questions-root"></div>
     </div>
 

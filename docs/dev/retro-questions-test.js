@@ -1,6 +1,6 @@
-import Questions from "../src/views/Questions.js";
-import ScoreStrip from "../src/lib/ScoreStrip.js";
-import "../src/styles/questions-retro.css";
+// Standalone retro questions harness for dev
+
+const ROOM_CODE = "DE1";
 
 const questions = [
   {
@@ -15,8 +15,7 @@ const questions = [
   },
   {
     number: 15,
-    text: "Which 80s computer had the BASIC command RUN " +
-      "to start cassette-loaded programs?",
+    text: "Which 80s computer had the BASIC command RUN to start cassette-loaded programs?",
     answers: ["Commodore 64", "Apple IIc", "ZX Spectrum", "Amiga 500"],
   },
 ];
@@ -24,24 +23,38 @@ const questions = [
 const state = {
   currentQuestionIndex: 0,
   userAnswers: Array(questions.length).fill(null),
-  flashingAnswerId: null,
   inContinueView: false,
   typingHandle: 0,
 };
 
-function getCodeFromHash() {
-  const hash = window.location.hash || "";
-  const params = new URLSearchParams(hash.replace(/^#\/?/, ""));
-  const code = (params.get("code") || "").trim().toUpperCase();
-  return code || "DEV123";
-}
-
 function initScoreStrip() {
   const scoreRoot = document.getElementById("score-strip-root");
-  if (scoreRoot) {
-    const code = getCodeFromHash();
-    ScoreStrip.mount(scoreRoot, { code });
-  }
+  if (!scoreRoot) return;
+
+  const code = ROOM_CODE;
+
+  scoreRoot.innerHTML = `
+    <div class="score-strip-dev">
+      <div class="cell code">
+        <span class="label">CODE</span>
+        <span class="value">${code}</span>
+      </div>
+      <div class="cell round">
+        <span class="label">ROUND</span>
+        <span class="value">1</span>
+      </div>
+      <div class="cell score">
+        <span class="player">
+          <span class="name">DANIEL</span>
+          <span class="value">07</span>
+        </span>
+        <span class="player">
+          <span class="name">JAIME</span>
+          <span class="value">09</span>
+        </span>
+      </div>
+    </div>
+  `;
 }
 
 function typeQuestion(text) {
@@ -53,7 +66,7 @@ function typeQuestion(text) {
   const step = () => {
     node.textContent = text.slice(0, i);
     i += 1;
-    if (i <= text.length) {
+    if (i <= text.length && !state.inContinueView) {
       state.typingHandle = setTimeout(step, 22);
     }
   };
@@ -68,22 +81,32 @@ function renderNav() {
   const nav = document.getElementById("question-nav");
   if (!nav) return;
   nav.innerHTML = "";
+
   const allAnswered = isComplete();
-  nav.classList.toggle("is-complete", allAnswered);
+  nav.classList.toggle("hide-triangles", state.inContinueView);
 
   questions.forEach((q, idx) => {
     const btn = document.createElement("button");
-    btn.className = "round-panel__step mono";
+    btn.className = "qn-btn";
     btn.textContent = q.number;
 
     const answered = state.userAnswers[idx] !== null;
     const isCurrent = idx === state.currentQuestionIndex;
 
-    if (answered) btn.classList.add("is-answered");
-    if (isCurrent && !state.inContinueView) btn.classList.add("is-active");
+    if (allAnswered) {
+      btn.classList.add("final");
+    } else if (answered) {
+      btn.classList.add("answered");
+    }
+
+    if (isCurrent && !state.inContinueView) {
+      btn.classList.add("with-triangle");
+      btn.classList.add(allAnswered ? "final" : "current");
+    }
 
     btn.addEventListener("click", () => {
       state.currentQuestionIndex = idx;
+      state.inContinueView = isComplete();
       render();
     });
 
@@ -97,12 +120,15 @@ function renderAnswers() {
   const question = questions[state.currentQuestionIndex];
   answersEl.innerHTML = "";
 
-  question.answers.forEach((label, idx) => {
+  // Only show two answers (correct + one distractor in real data)
+  const choices = (question.answers || []).slice(0, 2);
+
+  choices.forEach((label, idx) => {
     const btn = document.createElement("button");
-    btn.className = "round-panel__choice mono";
+    btn.className = "answer-btn";
     btn.textContent = label;
     if (state.userAnswers[state.currentQuestionIndex] === idx) {
-      btn.classList.add("is-selected");
+      btn.classList.add("selected");
     }
     btn.addEventListener("click", () => handleAnswer(idx, btn));
     answersEl.appendChild(btn);
@@ -111,20 +137,21 @@ function renderAnswers() {
 
 function handleAnswer(answerIndex, btn) {
   state.userAnswers[state.currentQuestionIndex] = answerIndex;
-  state.inContinueView = isComplete();
+  const complete = isComplete();
+  state.inContinueView = complete;
 
   if (btn) {
-    btn.classList.add("is-blinking");
-    btn.classList.add("is-blinking-fast");
+    btn.classList.add("flash");
     setTimeout(() => {
-      btn.classList.remove("is-blinking");
-      btn.classList.remove("is-blinking-fast");
-    }, 700);
+      btn.classList.remove("flash");
+    }, 350);
   }
 
-  if (!state.inContinueView) {
+  if (!complete) {
     const nextIndex = state.userAnswers.findIndex((val) => val === null);
-    state.currentQuestionIndex = nextIndex === -1 ? state.currentQuestionIndex : nextIndex;
+    if (nextIndex !== -1) {
+      state.currentQuestionIndex = nextIndex;
+    }
   }
 
   render();
@@ -133,24 +160,24 @@ function handleAnswer(answerIndex, btn) {
 function renderContinueView() {
   const view = document.getElementById("continue-view");
   const btn = document.getElementById("continue-btn");
-  if (!view || !btn) return;
+  const qView = document.getElementById("question-view");
+  if (!view || !btn || !qView) return;
 
-  view.classList.toggle("is-hidden", !state.inContinueView);
+  const active = state.inContinueView;
 
-  btn.classList.toggle("round-panel__submit--ready", state.inContinueView);
-  btn.classList.toggle("round-panel__submit--waiting", !state.inContinueView);
-  btn.classList.toggle("throb", state.inContinueView);
+  view.classList.toggle("active", active);
+  qView.style.display = active ? "none" : "block";
 
   btn.onclick = () => {
     state.userAnswers = Array(questions.length).fill(null);
     state.currentQuestionIndex = 0;
     state.inContinueView = false;
-    state.flashingAnswerId = null;
     render();
   };
 }
 
 function renderQuestion() {
+  if (state.inContinueView) return;
   const question = questions[state.currentQuestionIndex];
   typeQuestion(question.text);
   renderAnswers();
@@ -167,31 +194,24 @@ function initQuestionsPanel() {
   if (!root) return;
 
   root.innerHTML = `
-    <div class="view view-questions stage-center">
-      <div class="round-panel">
-        <h2 class="round-panel__heading mono">QUESTIONS</h2>
+    <div class="panel">
+      <div class="panel-title">QUESTIONS</div>
 
-        <div id="question-nav" class="round-panel__steps"></div>
+      <div id="question-nav" class="question-nav"></div>
 
-        <div id="question-view" class="round-panel__content">
-          <div class="round-panel__question mono">
-            <span id="question-text" class="round-panel__question-text"></span>
-          </div>
-          <div id="answers" class="round-panel__choices"></div>
-        </div>
+      <div id="question-view">
+        <p id="question-text" class="question-text"></p>
+        <div id="answers" class="answers"></div>
+      </div>
 
-        <div id="continue-view" class="round-panel__submit-continue">
-          <p class="round-panel__status-note mono continue-text">
-            Select number to review answer, or:
-          </p>
-          <button
-            id="continue-btn"
-            class="round-panel__submit mono round-panel__submit--waiting"
-            type="button"
-          >
-            Continue
-          </button>
-        </div>
+      <div id="continue-view" class="continue-view">
+        <p class="continue-text">
+          Select a number to review<br />
+          then press CONTINUE
+        </p>
+        <button id="continue-btn" class="continue-btn" type="button">
+          CONTINUE
+        </button>
       </div>
     </div>
   `;
@@ -203,17 +223,11 @@ function initTicker() {
   const marquee = document.getElementById("ticker-marquee");
   if (!marquee) return;
   const entries = [
-    "Retro rehearsal mode — numbers start at 13 for late-round checks.",
-    "Answers flash + auto-advance. Continue resets the demo.",
-    "ScoreStrip header is live above; code pulled from the hash.",
+    "Retro rehearsal mode — questions 13 to 15.",
+    "Answers flash pink + auto-advance.",
+    "Continue appears only after all three answers are selected.",
   ];
-  let idx = 0;
-  const swap = () => {
-    marquee.textContent = entries[idx];
-    idx = (idx + 1) % entries.length;
-  };
-  swap();
-  setInterval(swap, 4200);
+  marquee.textContent = entries.join("   •   ");
 }
 
 function bootstrap() {
@@ -221,7 +235,6 @@ function bootstrap() {
     initScoreStrip();
     initTicker();
     initQuestionsPanel();
-    window.Questions = Questions;
   });
 }
 
