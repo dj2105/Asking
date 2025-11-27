@@ -221,8 +221,11 @@ const stepButtons = [0, 1, 2].map((i) => {
     );
     const readyArrowRight = el(
       "div",
-      { class: "round-panel__ready-arrow round-panel__ready-arrow--right mono", "aria-hidden": "true" },
-      "<<"
+      { class: "round-panel__ready-arrows mono", "aria-hidden": "true" },
+      [
+        el("span", { class: "round-panel__ready-arrow round-panel__ready-arrow--left" }, "»»"),
+        el("span", { class: "round-panel__ready-arrow round-panel__ready-arrow--right" }, "««"),
+      ]
     );
     const readyStack = el("div", { class: "round-panel__ready-stack" });
     const readyEditLabel = el(
