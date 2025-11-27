@@ -17,7 +17,7 @@ import {
   collection,
   serverTimestamp,
 } from "firebase/firestore";
-import { clampCode, getHashParams } from "../lib/util.js";
+import { clampCode, getHashParams, navigateHash } from "../lib/util.js";
 import { applyStageTheme } from "../lib/theme.js";
 import { buildPlaceholderRounds, buildPlaceholderMaths, padItems, clone } from "../lib/placeholders.js";
 import { normaliseBotConfig, startHash } from "../lib/SinglePlayerBot.js";
@@ -479,7 +479,7 @@ export default {
       updateStatus("Seeding complete. Routing to start…");
       const targetHash = startHash(code, botConfig);
       setTimeout(() => {
-        location.hash = targetHash;
+        navigateHash(targetHash);
       }, 600);
     } catch (err) {
       console.error("[seeding] failed", err);

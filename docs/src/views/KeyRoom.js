@@ -21,7 +21,7 @@ import {
   where,
   serverTimestamp,
 } from "firebase/firestore";
-import { clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
+import { navigateHash, clampCode, copyToClipboard, getHashParams, setStoredRole } from "../lib/util.js";
 import { applyStageTheme } from "../lib/theme.js";
 import { BOT_UID, buildStartOptions, parseStartValue } from "../lib/SinglePlayerBot.js";
 import { ensureLocalPackCache, listReadyPacks } from "../lib/localPackStore.js";
@@ -955,7 +955,7 @@ export default {
         }
         setStoredRole(code, "host");
         status.textContent = `Room ${code} primed. Routing to seeding…`;
-        location.hash = `#/seeding?code=${code}`;
+        navigateHash(`#/seeding?code=${code}`);
       } catch (err) {
         console.error("[keyroom] failed to prepare room", err);
         status.textContent = err?.message || "Failed to prepare room.";
@@ -1021,7 +1021,7 @@ export default {
         }
         setStoredRole(code, "host");
         status.textContent = `Room ${code} primed for single-player. Routing to seeding…`;
-        location.hash = `#/seeding?code=${code}`;
+        navigateHash(`#/seeding?code=${code}`);
       } catch (err) {
         console.error("[keyroom] failed to prepare single-player room", err);
         status.textContent = err?.message || "Failed to prepare single-player room.";
