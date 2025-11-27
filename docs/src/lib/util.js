@@ -21,18 +21,22 @@ export function getHashParams() {
 export function navigateHash(targetHash) {
   if (!targetHash) return;
   const formatted = targetHash.startsWith("#") ? targetHash : `#${targetHash}`;
+  if (window.location.hash === formatted) {
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    return;
+  }
+
   try {
-    const url = new URL(window.location.href);
-    url.hash = formatted;
-    const next = url.toString();
-    if (next === window.location.href) {
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
-      return;
-    }
-    window.location.assign(next);
+    window.location.hash = formatted;
   } catch (err) {
     console.warn("[util] navigateHash failed", err);
-    window.location.hash = formatted;
+    try {
+      const url = new URL(window.location.href);
+      url.hash = formatted;
+      window.location.assign(url.toString());
+    } catch (fallbackErr) {
+      console.warn("[util] navigateHash fallback failed", fallbackErr);
+    }
   }
 }
 
