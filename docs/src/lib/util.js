@@ -18,6 +18,24 @@ export function getHashParams() {
   return new URLSearchParams(raw.split("?")[1] || "");
 }
 
+export function navigateHash(targetHash) {
+  if (!targetHash) return;
+  const formatted = targetHash.startsWith("#") ? targetHash : `#${targetHash}`;
+  try {
+    const url = new URL(window.location.href);
+    url.hash = formatted;
+    const next = url.toString();
+    if (next === window.location.href) {
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+      return;
+    }
+    window.location.assign(next);
+  } catch (err) {
+    console.warn("[util] navigateHash failed", err);
+    window.location.hash = formatted;
+  }
+}
+
 export function timeUntil(msEpoch) {
   const target = Number(msEpoch) || 0;
   if (!Number.isFinite(target) || target <= 0) return 0;
@@ -123,6 +141,7 @@ export function getLastRoomCode() {
 export default {
   clampCode,
   getHashParams,
+  navigateHash,
   timeUntil,
   copyToClipboard,
   canonicalJSONStringify,
