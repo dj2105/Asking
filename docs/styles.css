@@ -232,7 +232,6 @@ body.layout-top.has-score-strip {
 }
 
 body.layout-top .view {
-  justify-content: flex-start;
   min-height: 0;
 }
 
@@ -247,16 +246,8 @@ body.layout-top .view {
   flex: 1 0 auto;
 }
 
-body.layout-top .stage-center {
-  justify-content: flex-start;
-}
-
 .stage-center.stage-center--solo {
   gap: 20px;
-}
-
-body.layout-top .stage-center.stage-center--solo {
-  justify-content: flex-start;
 }
 
 .stage-center .card {
